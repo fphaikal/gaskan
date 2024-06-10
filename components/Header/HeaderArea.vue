@@ -12,7 +12,7 @@ const { isSidebarOpen, toggleSidebar } = useSidebarStore()
     <div class="flex flex-grow items-center justify-end py-4 px-4 shadow-2 md:px-6 2xl:px-11">
       <div class="flex items-center gap-2 sm:gap-4 lg:hidden me-auto">
         <!-- Hamburger Toggle BTN -->
-        <button class="z-99999 block flex items-center lg:hidden my-auto" @click="() => {
+        <button class="z-99999 block items-center lg:hidden my-auto" @click="() => {
           toggleSidebar()
         }">
           <Icon name="mingcute:align-justify-fill" size="24"/>
@@ -48,11 +48,11 @@ const { isSidebarOpen, toggleSidebar } = useSidebarStore()
 
 
           <!-- Notification Menu Area -->
-          <DropdownNotification />
+          <!-- <DropdownNotification /> -->
           <!-- Notification Menu Area -->
 
           <!-- Chat Notification Area -->
-          <DropdownMessage />
+          <!-- <DropdownMessage /> -->
           <!-- Chat Notification Area -->
         </ul>
 

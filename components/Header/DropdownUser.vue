@@ -1,20 +1,19 @@
-<script setup >
-import { onClickOutside } from '@vueuse/core'
-import { ref } from 'vue'
-import { useStorage } from '@vueuse/core'
+<script setup>
+import { ref } from 'vue';
+import { onClickOutside, useStorage } from '@vueuse/core';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '~/store/useAuthStore'; 
 
-const target = ref(null)
-const dropdownOpen = ref(false)
+const target = ref(null);
+const dropdownOpen = ref(false);
 
 onClickOutside(target, () => {
-  dropdownOpen.value = false
-})
+  dropdownOpen.value = false;
+});
 
-import { storeToRefs } from 'pinia'; // import storeToRefs helper hook from pinia
-import { useAuthStore } from '~/store/useAuthStore'; // import the auth store we just created
-
-const { logUserOut } = useAuthStore(); // use authenticateUser action from  auth store
-const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive with storeToRefs
+const { logUserOut } = useAuthStore();
+const { authenticated } = storeToRefs(useAuthStore());
 
 const router = useRouter();
 
@@ -24,53 +23,53 @@ const logout = () => {
 };
 
 const nis = useStorage('nis');
+const role = useStorage('role');
 
-const role = () => {
-  const getRole = useStorage('role');
-  if (getRole.value === 'admin') {
-    return 'admin'
-  } else if(getRole.value === 'developer'){
-    return 'developer'
+const userRole = computed(() => {
+  if (role.value === 'admin') {
+    return 'admin';
+  } else if (role.value === 'developer') {
+    return 'developer';
   } else {
-    return 'siswa'
+    return 'siswa';
   }
-}
-console.log(role())
+});
 
-const {data: user}  = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
-</script> 
+console.log(userRole.value);
+
+const { data: user } = useFetch(`/api/user?role=${userRole.value}&user=${nis.value}`);
+</script>
 
 <template>
   <div class="relative" ref="target">
     <router-link class="flex items-center gap-4" to="#" @click.prevent="dropdownOpen = !dropdownOpen">
       <span v-if="user" class="hidden text-right lg:block">
-        <span  class="block text-sm font-medium text-white">{{ user.Nama }}</span>
+        <span class="block text-sm font-medium text-white">{{ user.Nama }}</span>
         <span class="block text-xs font-medium">{{ user.Kelas }}</span>
       </span>
 
       <span v-if="user" class="h-12 w-12 rounded-full">
         <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/n.jpg" alt="profile cover"
-            class="h-full w-full rounded-full object-cover object-center" />
-          <img v-else src="https://api.tierkun.my.id/file/picture/0000.png" alt="profile cover"/>
+             class="h-full w-full rounded-full object-cover object-center" />
+        <img v-else src="https://api.tierkun.my.id/file/picture/0000.png" alt="profile cover" />
       </span>
 
-      <svg :class="dropdownOpen && 'rotate-180'" class="hidden fill-current sm:block" width="12" height="8"
-        viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg :class="{ 'rotate-180': dropdownOpen }" class="hidden fill-current sm:block" width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path fill-rule="evenodd" clip-rule="evenodd"
-          d="M0.410765 0.910734C0.736202 0.585297 1.26384 0.585297 1.58928 0.910734L6.00002 5.32148L10.4108 0.910734C10.7362 0.585297 11.2638 0.585297 11.5893 0.910734C11.9147 1.23617 11.9147 1.76381 11.5893 2.08924L6.58928 7.08924C6.26384 7.41468 5.7362 7.41468 5.41077 7.08924L0.410765 2.08924C0.0853277 1.76381 0.0853277 1.23617 0.410765 0.910734Z"
-          fill="" />
+              d="M0.410765 0.910734C0.736202 0.585297 1.26384 0.585297 1.58928 0.910734L6.00002 5.32148L10.4108 0.910734C10.7362 0.585297 11.2638 0.585297 11.5893 0.910734C11.9147 1.23617 11.9147 1.76381 11.5893 2.08924L6.58928 7.08924C6.26384 7.41468 5.7362 7.41468 5.41077 7.08924L0.410765 2.08924C0.0853277 1.76381 0.0853277 1.23617 0.410765 0.910734Z"
+              fill="" />
       </svg>
     </router-link>
 
     <!-- Dropdown Start -->
     <div v-show="dropdownOpen"
-      class="absolute right-0 mt-4 flex w-62.5 flex-col rounded-md border border-secondary bg-dark2 shadow-default">
+         class="absolute right-0 mt-4 flex w-62.5 flex-col rounded-md border border-secondary bg-dark2 shadow-default">
       <ul class="flex flex-col gap-5 border-b border-stroke px-6 py-7.5 dark:border-strokedark">
         <li>
           <router-link to="/profile"
-            class="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base">
+                       class="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base">
             <svg class="fill-current" width="22" height="22" viewBox="0 0 22 22" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
+                 xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M11 9.62499C8.42188 9.62499 6.35938 7.59687 6.35938 5.12187C6.35938 2.64687 8.42188 0.618744 11 0.618744C13.5781 0.618744 15.6406 2.64687 15.6406 5.12187C15.6406 7.59687 13.5781 9.62499 11 9.62499ZM11 2.16562C9.28125 2.16562 7.90625 3.50624 7.90625 5.12187C7.90625 6.73749 9.28125 8.07812 11 8.07812C12.7188 8.07812 14.0938 6.73749 14.0938 5.12187C14.0938 3.50624 12.7188 2.16562 11 2.16562Z"
                 fill="" />
@@ -83,9 +82,9 @@ const {data: user}  = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
         </li>
       </ul>
       <button @click.prevent="logout"
-        class="flex items-center gap-3.5 py-4 px-6 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base">
+              class="flex items-center gap-3.5 py-4 px-6 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base">
         <svg class="fill-current" width="22" height="22" viewBox="0 0 22 22" fill="none"
-          xmlns="http://www.w3.org/2000/svg">
+             xmlns="http://www.w3.org/2000/svg">
           <path
             d="M15.5375 0.618744H11.6531C10.7594 0.618744 10.0031 1.37499 10.0031 2.26874V4.64062C10.0031 5.05312 10.3469 5.39687 10.7594 5.39687C11.1719 5.39687 11.55 5.05312 11.55 4.64062V2.23437C11.55 2.16562 11.5844 2.13124 11.6531 2.13124H15.5375C16.3625 2.13124 17.0156 2.78437 17.0156 3.60937V18.3562C17.0156 19.1812 16.3625 19.8344 15.5375 19.8344H11.6531C11.5844 19.8344 11.55 19.8 11.55 19.7312V17.3594C11.55 16.9469 11.2062 16.6031 10.7594 16.6031C10.3125 16.6031 10.0031 16.9469 10.0031 17.3594V19.7312C10.0031 20.625 10.7594 21.3812 11.6531 21.3812H15.5375C17.2219 21.3812 18.5625 20.0062 18.5625 18.3562V3.64374C18.5625 1.95937 17.1875 0.618744 15.5375 0.618744Z"
             fill="" />

@@ -3,24 +3,13 @@ import { useStorage } from '@vueuse/core';
 const role = useStorage('role');
 const nis = useStorage('nis');
 
-const { data: log } = useFetch('/api/log/kehadiran');
-const { data: logSiswa } = await useFetch('/api/log/kehadiran/' + nis.value);
+const { data: log } = useFetch('/api/log/onsite');
 
-const type = (type) => {
-  switch (type) {
-    case 'enter':
-      return 'Masuk';
-    case 'exit':
-      return 'Pulang';
-    default:
-      return 'Tidak diketahui';
-  }
-};
 </script>
 <template>
   <div>
     <div class="flex flex-col">
-      <h1 class="font-bold text-2xl mb-5">Log Presensi</h1>
+      <h1 class="font-bold text-2xl mb-5">On Site</h1>
 
       <div v-if="role === 'admin' || role === 'developer'" v-for="l in log"
         class="flex flex-col md:flex-row gap-3 w-full">

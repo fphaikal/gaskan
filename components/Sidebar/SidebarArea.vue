@@ -32,7 +32,7 @@ const menuGroups = [
       },
       {
         icon: `mingcute:list-check-2-fill`,
-        role: "admin",
+        role: "all",
         label: 'Log Kehadiran',
         route: '/log/kehadiran'
       },

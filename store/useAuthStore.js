@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { useStorage } from '@vueuse/core'
+import { useStorage } from "@vueuse/core";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -10,9 +10,9 @@ export const useAuthStore = defineStore("auth", {
     async authenticateUser({ NIS, Password, force }) {
       try {
         // useFetch from nuxt 3
-        const  data  = await $fetch('https://api.tierkun.my.id/api/login', {
-          method: 'post',
-          headers: { 'Content-Type': 'application/json' },
+        const data = await $fetch("https://api.tierkun.my.id/api/login", {
+          method: "post",
+          headers: { "Content-Type": "application/json" },
           body: {
             NIS,
             Password,
@@ -22,12 +22,12 @@ export const useAuthStore = defineStore("auth", {
 
         console.log(data);
         if (data) {
-          const token = useCookie('token'); // useCookie new hook in nuxt 3
+          const token = useCookie("token"); // useCookie new hook in nuxt 3
           token.value = data?.sessionId; // set token to cookie
           this.authenticated = true; // set authenticated  state value to true
           console.log(data);
-          const nis = useStorage('nis', data.NIS, localStorage)
-          const role = useStorage('role', data.Kelas, localStorage)
+          const nis = useStorage("nis", data.NIS, localStorage);
+          const role = useStorage("role", data.Kelas, localStorage);
         }
       } catch (error) {
         this.loading = false;
@@ -37,23 +37,23 @@ export const useAuthStore = defineStore("auth", {
         throw errorData;
       }
     },
-    
+
     async logUserOut() {
       const router = useRouter();
 
       try {
-        const token = useCookie('token'); // useCookie new hook in nuxt 3
-        const data = await $fetch('https://api.tierkun.my.id/api/logout', {
-          method: 'post',
-          headers: { 'Content-Type': 'application/json' },
+        const token = useCookie("token"); // useCookie new hook in nuxt 3
+        const data = await $fetch("https://api.tierkun.my.id/api/logout", {
+          method: "post",
+          headers: { "Content-Type": "application/json" },
           body: { sessionId: token.value },
         });
-
-        if (data) {
+        
+        if(data){
           this.authenticated = false; // set authenticated  state value to false
           token.value = null; // clear the token cookie
-          const nis = useStorage('nis')
-          const role = useStorage('role')
+          const nis = useStorage("nis");
+          const role = useStorage("role");
           nis.value = null;
           role.value = null;
           router.push("/login");
