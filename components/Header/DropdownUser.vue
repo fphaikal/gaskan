@@ -51,7 +51,7 @@ const { data: user } = useFetch(`/api/user?role=${userRole.value}&user=${nis.val
       <span v-if="user" class="h-12 w-12 rounded-full">
         <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/n.jpg" alt="profile cover"
              class="h-full w-full rounded-full object-cover object-center" />
-        <img v-else src="https://api.tierkun.my.id/file/picture/0000.png" alt="profile cover" />
+        <img v-else :src="user.url_picture" alt="profile cover" class="h-full w-full rounded-full object-cover object-center"/>
       </span>
 
       <svg :class="{ 'rotate-180': dropdownOpen }" class="hidden fill-current sm:block" width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">

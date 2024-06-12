@@ -25,6 +25,12 @@ const menuGroups = [
         route: '/home',
       },
       {
+        icon: `mingcute:location-2-fill`,
+        role: "admin", 
+        label: 'On Site',
+        route: '/log/onsite'
+      },
+      {
         icon: `mingcute:user-3-fill`,
         role: "all",
         label: 'Daftar Siswa',
@@ -35,12 +41,6 @@ const menuGroups = [
         role: "all",
         label: 'Log Kehadiran',
         route: '/log/kehadiran'
-      },
-      {
-        icon: `mingcute:location-2-fill`,
-        role: "admin",
-        label: 'On Site',
-        route: '/log/onsite'
       },
     ]
   }

@@ -6,20 +6,25 @@ const role = () => {
   const getRole = useStorage('role');
   if (getRole.value === 'admin') {
     return 'admin'
-  } else if(getRole.value === 'developer'){
+  } else if (getRole.value === 'developer') {
     return 'developer'
   } else {
     return 'siswa'
   }
 }
-console.log(role())
+const gender = (getGender) => {
+  if (getGender === 'L') {
+    return 'Laki-Laki'
+  } else {
+    return 'Perempuan'
+  } 
+}
 
-const {data: user}  = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
+const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
 </script>
 <template>
   <!-- ====== Profile Section Start -->
-  <div
-    class="overflow-hidden rounded-md bg-dark shadow-default ">
+  <div class="overflow-hidden rounded-md bg-dark shadow-default ">
     <div class="relative z-20 h-35 md:h-65">
       <img src="../assets/images/cover/cover-01.png" alt="profile cover"
         class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center" />
@@ -29,9 +34,10 @@ const {data: user}  = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
       <div v-if="user"
         class="relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-44 sm:p-3">
         <div class="relative z-20 h-[112px] sm:h-[150px] md:h-[150px] mx-auto">
-          <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/n.jpg" alt="profile cover"
+          <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/n.jpg"
+            alt="profile cover" class="h-full w-full rounded-full object-cover object-center" />
+          <img v-else :src="user.url_picture" alt="profile cover"
             class="h-full w-full rounded-full object-cover object-center" />
-          <img v-else src="https://api.tierkun.my.id/file/picture/0000.png" alt="profile cover"/>
         </div>
       </div>
       <div v-if="user" class="mt-4">
@@ -145,6 +151,50 @@ const {data: user}  = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
             </a>
           </div>
         </div> -->
+      </div>
+    </div>
+  </div>
+  <div v-if="user" class="bg-dark shadow-default rounded-md mt-3 p-5">
+    <div class="flex flex-col divide-y divide-dark2">
+      <div class="flex p-2">
+        <div class="w-22 sm:w-44">
+          NIS:
+        </div>
+        <div>
+          {{ user.NIS }}
+        </div>
+      </div>
+      <div class="flex p-2">
+        <div class="w-22 sm:w-44">
+          Gender:
+        </div>
+        <div>
+          {{ gender(user.gender) }}
+        </div>
+      </div>
+      <div class="flex p-2">
+        <div class="w-22 sm:w-44">
+          Tempat, Tanggal Lahir:
+        </div>
+        <div>
+          {{ user.TTL}}
+        </div>
+      </div>
+      <div class="flex p-2">
+        <div class="w-22 sm:w-44">
+          Agama:
+        </div>
+        <div>
+          {{ user.Agama }}
+        </div>
+      </div>
+      <div class="flex p-2">
+        <div class="w-30 sm:w-44">
+          Alamat:
+        </div>
+        <div class="w-fit">
+          {{ user.Alamat }}
+        </div>
       </div>
     </div>
   </div>
