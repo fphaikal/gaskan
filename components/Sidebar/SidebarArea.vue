@@ -36,6 +36,12 @@ const menuGroups = [
         label: 'Log Kehadiran',
         route: '/log/kehadiran'
       },
+      {
+        icon: `mingcute:location-2-fill`,
+        role: "admin",
+        label: 'On Site',
+        route: '/log/onsite'
+      },
     ]
   }
 ]

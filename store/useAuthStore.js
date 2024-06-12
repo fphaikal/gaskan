@@ -8,9 +8,11 @@ export const useAuthStore = defineStore("auth", {
   }),
   actions: {
     async authenticateUser({ NIS, Password, force }) {
+      const config = useRuntimeConfig(); // get runtime config
+
       try {
         // useFetch from nuxt 3
-        const data = await $fetch("https://api.tierkun.my.id/api/login", {
+        const data = await $fetch(config.public.apiBase + "/api/login", {
           method: "post",
           headers: { "Content-Type": "application/json" },
           body: {
@@ -40,24 +42,23 @@ export const useAuthStore = defineStore("auth", {
 
     async logUserOut() {
       const router = useRouter();
+      const config = useRuntimeConfig(); // get runtime config
 
       try {
         const token = useCookie("token"); // useCookie new hook in nuxt 3
-        const data = await $fetch("https://api.tierkun.my.id/api/logout", {
+        this.authenticated = false; // set authenticated  state value to false
+        token.value = null; // clear the token cookie
+        const nis = useStorage("nis");
+        const role = useStorage("role");
+        nis.value = null;
+        role.value = null;
+        router.push("/login");
+        const data = await $fetch(config.public.apiBase + "/api/logout", {
           method: "post",
           headers: { "Content-Type": "application/json" },
           body: { sessionId: token.value },
         });
-        
-        if(data){
-          this.authenticated = false; // set authenticated  state value to false
-          token.value = null; // clear the token cookie
-          const nis = useStorage("nis");
-          const role = useStorage("role");
-          nis.value = null;
-          role.value = null;
-          router.push("/login");
-        }
+
       } catch (error) {
         console.error("Logout error:", error);
       }

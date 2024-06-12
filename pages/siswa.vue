@@ -28,6 +28,16 @@ onMounted(() => {
     classOptions.value = classOptions.value.filter(classOption => classOption !== 'admin' && classOption !== 'developer');
   }
 });
+
+useSeoMeta({
+  title: 'Daftar Siswa | GASKAN',
+  ogTitle: 'Daftar Siswa | GASKAN',
+  description: 'Gerbang Akses Pintar dan Kehadiran',
+  ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogType: 'website',
+  ogSiteName: 'GASKAN',
+  ogLocale: 'id_ID',
+})
 </script>
 
 <template>

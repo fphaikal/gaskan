@@ -3,6 +3,15 @@ definePageMeta({
   layout: 'blank'
 })
 
+useSeoMeta({
+  title: 'GASKAN',
+  ogTitle: 'GASKAN',
+  description: 'Gerbang Akses Pintar dan Kehadiran',
+  ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogType: 'website',
+  ogSiteName: 'GASKAN',
+  ogLocale: 'id_ID',
+})
 </script>
 
 <template>
