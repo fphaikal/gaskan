@@ -25,10 +25,11 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
 <template>
   <!-- ====== Profile Section Start -->
   <div class="overflow-hidden rounded-md bg-dark shadow-default ">
-    <div class="relative z-20 h-35 md:h-65">
-      <img src="../assets/images/cover/cover-01.png" alt="profile cover"
+    <div v-if="user" class="relative z-20 h-35 md:h-65">
+      <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/1.jpg" alt="profile cover"
         class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center" />
-
+      <img v-else src="../assets/images/cover/cover-01.png" alt="profile cover"
+        class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center" />
     </div>
     <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
       <div v-if="user"
@@ -41,7 +42,7 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
         </div>
       </div>
       <div v-if="user" class="mt-4">
-        <h3 class="mb-1.5 text-2xl font-medium text-white">{{ user.Nama }}</h3>
+        <h3 class="mb-1.5 text-2xl font-medium text-white">{{ user.Nama || '' }}</h3>
         <p class="font-medium">{{ user.Kelas }}</p>
         <!-- <div
           class="mx-auto mt-4.5 mb-5.5 grid max-w-94 grid-cols-3 rounded-md border border-stroke py-2.5 shadow-1 dark:border-strokedark dark:bg-[#37404F]">
@@ -169,7 +170,7 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
           Gender:
         </div>
         <div>
-          {{ gender(user.gender) }}
+          {{ gender(user.Gender) }}
         </div>
       </div>
       <div class="flex p-2">
@@ -177,7 +178,7 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
           Tempat, Tanggal Lahir:
         </div>
         <div>
-          {{ user.TTL}}
+          {{ user.TTL || 'Belum diatur'}}
         </div>
       </div>
       <div class="flex p-2">
@@ -185,7 +186,7 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
           Agama:
         </div>
         <div>
-          {{ user.Agama }}
+          {{ user.Agama || '' }}
         </div>
       </div>
       <div class="flex p-2">
@@ -193,7 +194,7 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
           Alamat:
         </div>
         <div class="w-fit">
-          {{ user.Alamat }}
+          {{ user.Alamat || '' }}
         </div>
       </div>
     </div>

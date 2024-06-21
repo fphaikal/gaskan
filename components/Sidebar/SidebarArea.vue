@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { useSidebarStore } from '../../store/sidebar'
-import { onClickOutside } from '@vueuse/core'
+import { onClickOutside, useStorage } from '@vueuse/core'
 import { ref } from 'vue'
-import { useStorage } from '@vueuse/core'
 import SidebarItem from './SidebarItem.vue'
 
 const target = ref(null)
-
 const sidebarStore = useSidebarStore()
 const userRole = useStorage('role') // Assuming the role is stored in localStorage
 
@@ -20,27 +18,33 @@ const menuGroups = [
     menuItems: [
       {
         icon: `mingcute:classify-2-fill`,
-        role: "all",
+        role: ["all"],
         label: 'Dashboard',
         route: '/home',
       },
       {
         icon: `mingcute:location-2-fill`,
-        role: "admin", 
+        role: ["admin", "developer"],
         label: 'On Site',
         route: '/log/onsite'
       },
       {
         icon: `mingcute:user-3-fill`,
-        role: "all",
+        role: ["all"],
         label: 'Daftar Siswa',
         route: '/siswa'
       },
       {
         icon: `mingcute:list-check-2-fill`,
-        role: "all",
+        role: ["all"],
         label: 'Log Kehadiran',
         route: '/log/kehadiran'
+      },
+      {
+        icon: `ic:outline-error`,
+        role: ["developer"],
+        label: 'Log Error',
+        route: '/log/error'
       },
     ]
   }
@@ -78,7 +82,7 @@ const menuGroups = [
           <div>
             <h3 class="mb-4 ml-4 text-sm font-medium text-bodydark2">{{ menuGroup.name }}</h3>
             <ul class="mb-6 flex flex-col gap-1.5">
-              <SidebarItem v-for="menuItem in menuGroup.menuItems" :item="menuItem" :userRole="userRole"/>
+              <SidebarItem v-for="menuItem in menuGroup.menuItems" :key="menuItem.label" :item="menuItem" :userRole="userRole" />
             </ul>
           </div>
         </template>
