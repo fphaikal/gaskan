@@ -41,13 +41,18 @@ const toggleMobileMenu = () => {
             <ul class="flex flex-col mt-4 font-medium lg:flex-row lg:space-x-8 lg:mt-0">
               <li>
                 <a href="/"
-                  class="block py-2 pr-4 pl-3 text-white rounded bg-primary-700 lg:bg-transparent lg:text-primary-700 lg:p-0 dark:text-white"
+                  class="block py-2 pr-4 pl-3 text-white rounded bg-primary-700 lg:bg-transparent lg:text-primary-700 lg:p-0 dark:text-white transition duration-500 hover:text-primary"
                   aria-current="page">Home</a>
               </li>
               <li>
                 <a href="/view/siswa"
-                  class="block py-2 pr-4 pl-3 text-white rounded bg-primary-700 lg:bg-transparent lg:text-primary-700 lg:p-0 dark:text-white"
+                  class="block py-2 pr-4 pl-3 text-white rounded bg-primary-700 lg:bg-transparent lg:text-primary-700 lg:p-0 dark:text-white transition duration-500 hover:text-primary"
                   aria-current="page">Siswa</a>
+              </li>
+              <li>
+                <a href="/team"
+                  class="block py-2 pr-4 pl-3 text-white rounded bg-primary-700 lg:bg-transparent lg:text-primary-700 lg:p-0 dark:text-white transition duration-500 hover:text-primary"
+                  aria-current="page">Team</a>
               </li>
             </ul>
           </div>
