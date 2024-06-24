@@ -4,7 +4,13 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE, // can be overridden by NUXT_PUBLIC_API_BASE environment variable
-    }
+    },
   },
-  modules: ["@nuxtjs/tailwindcss", "@vueuse/nuxt", "@pinia/nuxt", "nuxt-icon"]
-})
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "@vueuse/nuxt",
+    "@pinia/nuxt",
+    "nuxt-icon",
+    "@pinia-plugin-persistedstate/nuxt",
+  ],
+});

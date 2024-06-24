@@ -40,6 +40,15 @@ const forceLogin = async () => {
     }
 };
 
+useSeoMeta({
+  title: 'Login | GASKAN',
+  ogTitle: 'Login | GASKAN',
+  description: 'Gerbang Akses Pintar dan Kehadiran',
+  ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogType: 'website',
+  ogSiteName: 'GASKAN',
+  ogLocale: 'id_ID',
+})
 </script>
 <template>
   <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto h-screen lg:py-0 w-full lg:w-1/3">

@@ -1,6 +1,11 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
+import { format } from 'date-fns'
+import { setupCalendar, Calendar, DatePicker } from 'v-calendar';
+import 'v-calendar/style.css';
+
 const nis = useStorage('nis');
+const date = ref(new Date())
 
 const role = () => {
   const getRole = useStorage('role');
@@ -15,21 +20,48 @@ const role = () => {
 const gender = (getGender) => {
   if (getGender === 'L') {
     return 'Laki-Laki'
-  } else {
+  } else if (getGender === 'P') {
     return 'Perempuan'
-  } 
+  } else {
+    return 'Belum diatur'
+  }
 }
 
 const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
+
+const newData = ref({
+  TTL: ''
+
+});
+
+const editTTL = async () => {
+  const data = {
+    TTL: newData.value.TTL
+  }
+  await fetch(`https://api.tierkun.my.id/api/edit/primary/TTL/${nis.value}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  })
+}
+
+const showDatePicker = ref(false); // Controls popover visibility
+
+const toggleDatePicker = () => {
+  showDatePicker.value = !showDatePicker.value;
+};
 </script>
 <template>
   <!-- ====== Profile Section Start -->
   <div class="overflow-hidden rounded-md bg-dark shadow-default ">
     <div v-if="user" class="relative z-20 h-35 md:h-65">
-      <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/1.jpg" alt="profile cover"
-        class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center" />
-      <img v-else src="../assets/images/cover/cover-01.png" alt="profile cover"
-        class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center" />
+      <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/1.jpg"
+        alt="profile cover" class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-top" />
+      <img v-else
+        src="https://api.elearning.smtijogja.sch.id/api/v1/user-file/stream?file_uri=1859/news/685c8b90-ba1e-4806-81dc-d840c980322d.jpg"
+        alt="profile cover" class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-bottom " />
     </div>
     <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
       <div v-if="user"
@@ -156,48 +188,76 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
     </div>
   </div>
   <div v-if="user" class="bg-dark shadow-default rounded-md mt-3 p-5">
-    <div class="flex flex-col divide-y divide-dark2">
-      <div class="flex p-2">
-        <div class="w-22 sm:w-44">
-          NIS:
-        </div>
-        <div>
-          {{ user.NIS }}
-        </div>
-      </div>
-      <div class="flex p-2">
-        <div class="w-22 sm:w-44">
-          Gender:
-        </div>
-        <div>
-          {{ gender(user.Gender) }}
-        </div>
-      </div>
-      <div class="flex p-2">
-        <div class="w-22 sm:w-44">
-          Tempat, Tanggal Lahir:
-        </div>
-        <div>
-          {{ user.TTL || 'Belum diatur'}}
-        </div>
-      </div>
-      <div class="flex p-2">
-        <div class="w-22 sm:w-44">
-          Agama:
-        </div>
-        <div>
-          {{ user.Agama || '' }}
-        </div>
-      </div>
-      <div class="flex p-2">
-        <div class="w-30 sm:w-44">
-          Alamat:
-        </div>
-        <div class="w-fit">
-          {{ user.Alamat || '' }}
-        </div>
-      </div>
+    <div class="overflow-x-auto">
+      <table class="table">
+        <tbody>
+          <tr>
+            <th>NIS</th>
+            <td>{{ user.NIS }}</td>
+          </tr>
+          <tr>
+            <th>Gender</th>
+            <td>{{ gender(user.Gender) }}</td>
+          </tr>
+          <tr>
+            <th>Tempat, Tanggal Lahir</th>
+            <td class="flex gap-2 ">
+              <span class="flex items-center ">
+                {{ user.TTL || 'Belum Diatur' }}
+              </span>
+              <button class="flex items-center" onclick="editTTL.showModal()">
+                <Icon name="flowbite:edit-solid" class="transition duration-200 hover:text-primary" size="18" />
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <th>Agama</th>
+            <td>{{ user.Agama || 'Belum Diatur' }}</td>
+          </tr>
+          <tr>
+            <th>Plat Nomor</th>
+            <td>{{ user.Plat_Nomor || 'Belum Diatur' }}</td>
+          </tr>
+          <tr>
+            <th>Alamat</th>
+            <td>{{ user.Alamat || 'Belum Diatur' }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
+  <h1>{{ date }}</h1>
+
+  <div class="flex gap-2 p-5">
+    <button class="px-4 py-1.5 bg-primary rounded-md">Change Password</button>
+  </div>
+  <dialog id="editTTL" class="modal">
+    <div class="modal-box bg-dark">
+      <h3 class="font-bold text-lg">Ganti Tempat & Tanggal Lahir Kamu</h3>
+      <div class="flex gap-2 mt-4">
+        <div class="flex flex-col gap-2 w-full">
+          <label for="TTL" class="text-white">Tempat</label>
+          <input type="text" id="TTL" v-model="newData.TTL" class="input input-bordered bg-dark"
+            placeholder="Masukkan tempat lahir" />
+        </div>
+        <div class="flex flex-col gap-2 w-full">
+          <label for="TTL" class="text-white">Tanggal Lahir</label>
+          <button @click="toggleDatePicker" class="py-3 rounded-md bg-primary">{{ format(date, 'yyy-mm-d') }}</button>
+        </div>
+      </div>
+      <div class="modal-action">
+        <form method="dialog">
+          <!-- if there is a button in form, it will close the modal -->
+          <button @click.prevent="editTTL" class="px-4 py-2 bg-primary rounded-md">Simpan</button>
+        </form>
+      </div>
+    </div>
+    <div v-if="showDatePicker" class="absolute z-10 mt-2">
+      <DatePicker v-model="date" mode="date" />
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
   <!-- ====== Profile Section End -->
 </template>

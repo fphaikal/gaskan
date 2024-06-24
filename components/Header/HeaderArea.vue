@@ -15,11 +15,12 @@ const { isSidebarOpen, toggleSidebar } = useSidebarStore()
         <button class="z-99999 block items-center lg:hidden my-auto" @click="() => {
           toggleSidebar()
         }">
-          <Icon name="mingcute:align-justify-fill" size="24"/>
+          <Icon name="mingcute:align-justify-fill" size="24" />
         </button>
         <!-- Hamburger Toggle BTN -->
-        <router-link class="block flex-shrink-0 lg:hidden my-auto" to="/home">
-          GASKAN
+        <router-link class="block flex gap-3 flex-shrink-0 lg:hidden my-auto" to="/home">
+          <img src="../../public/smti_logo.svg" class="w-10 my-auto" alt="">
+          <span class="self-center text-xl font-semibold whitespace-nowrap text-primary my-auto">| GASKAN</span>
         </router-link>
       </div>
       <!-- <div class="hidden sm:block">

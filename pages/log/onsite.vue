@@ -8,7 +8,7 @@ const { data: log } = useFetch('/api/log/onsite');
 </script>
 <template>
   <div>
-    <div class="flex flex-col">
+    <div v-if="role === 'admin' || role === 'developer'" class="flex flex-col">
       <h1 class="font-bold text-2xl mb-5">On Site</h1>
 
       <div v-for="l in log" class="flex flex-col md:flex-row w-full gap-0">
@@ -51,6 +51,11 @@ const { data: log } = useFetch('/api/log/onsite');
 
       </div>
 
+    </div>
+    <div v-else class="flex flex-col justify-center items-center gap-5">
+      <img src="../../public/404_1.svg" class="w-1/4" alt="">
+      <h1 class="text-lg font-semibold">Maaf, Halaman tidak ditemukan</h1>
+      <a href="/home" class="btn btn-primary hover:bg-dark2">Kembali Ke Halaman Utama</a>
     </div>
   </div>
 </template>

@@ -33,7 +33,7 @@ useSeoMeta({
     <div class="flex flex-col">
       <div class="flex justify-between mb-5">
         <h1 class="font-bold text-2xl my-auto">Log Presensi</h1>
-        <div class="flex my-auto gap-2">
+        <div v-if="role === 'admin' || role === 'developer'" class="flex my-auto gap-2">
           <button class="px-4 py-2 bg-primary rounded-lg">
             <a href="https://api.tierkun.my.id/file/kehadiran?type=json">JSON</a>
           </button>
@@ -71,7 +71,7 @@ useSeoMeta({
                       {{ type(d.action) }}
                     </span>
                     <time>
-                      {{ formatDate(d.timestamp) }}
+                      {{ formatLongDate(d.timestamp) }}
                     </time>
                   </div>
                 </div>

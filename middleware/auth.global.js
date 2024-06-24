@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
-import { useStorage } from '@vueuse/core'
+import { useStorage } from '@vueuse/core';
 
 export default defineNuxtRouteMiddleware((to) => {
   const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive
@@ -22,5 +22,22 @@ export default defineNuxtRouteMiddleware((to) => {
   if (!token.value && to?.name !== 'login' && to?.name === 'home') {
     abortNavigation();
     return navigateTo('/login');
+  } else if (!token.value && to?.name !== 'login' && to?.path === '/log/kehadiran') {
+    abortNavigation();
+    return navigateTo('/login');
+  } else if (!token.value && to?.name !== 'login' && to?.path === '/log/error') {
+    abortNavigation();
+    return navigateTo('/login');
+  } else if (!token.value && to?.name !== 'login' && to?.path === '/log/onsite') {
+    abortNavigation();
+    return navigateTo('/login');
+  } else if (!token.value && to?.name !== 'login' && to?.path === '/siswa') {
+    abortNavigation();
+    return navigateTo('/login');
+  }
+
+  if (userRole.value === 'siswa' && to?.path === '/log/error') {
+    abortNavigation();
+    return navigateTo('/');
   }
 });

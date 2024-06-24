@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { useSidebarStore } from '../../store/sidebar'
 import { onClickOutside, useStorage } from '@vueuse/core'
 import { ref } from 'vue'
@@ -59,9 +59,10 @@ const menuGroups = [
       '-translate-x-full': !sidebarStore.isSidebarOpen
     }" ref="target">
     <!-- SIDEBAR HEADER -->
-    <div class="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5">
-      <router-link to="/home">
-        <h1 class="text-2xl font-bold">GASKAN</h1>
+    <div class="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-5">
+      <router-link class="flex gap-3" to="/home">
+        <img src="../../public/smti_logo.svg" class="w-12 my-auto" alt="">
+        <span class="self-center text-2xl font-bold whitespace-nowrap text-primary my-auto">| GASKAN</span>
       </router-link>
 
       <button class="block lg:hidden" @click="sidebarStore.isSidebarOpen = false">
@@ -82,7 +83,8 @@ const menuGroups = [
           <div>
             <h3 class="mb-4 ml-4 text-sm font-medium text-bodydark2">{{ menuGroup.name }}</h3>
             <ul class="mb-6 flex flex-col gap-1.5">
-              <SidebarItem v-for="menuItem in menuGroup.menuItems" :key="menuItem.label" :item="menuItem" :userRole="userRole" />
+              <SidebarItem v-for="menuItem in menuGroup.menuItems" :key="menuItem.label" :item="menuItem"
+                :userRole="userRole" />
             </ul>
           </div>
         </template>
