@@ -27,7 +27,11 @@ useSeoMeta({
 })
 </script>
 <template>
-  <div class="flex flex-col justify-center mx-auto max-w-242.5 h-screen">
+  <div class="flex flex-col  mx-auto max-w-242.5 h-screen">
+    <NuxtLink to="/view/siswa" class="flex gap-2 py-3 transition duration-200 hover:text-primary ">
+      <Icon name="mingcute:back-fill" size="24"/>
+      <span>Kembali</span>
+    </NuxtLink>
     <!-- ====== Profile Section Start -->
     <div class="overflow-hidden rounded-md bg-dark shadow-default ">
       <div v-if="user" class="relative z-20 h-35 md:h-65">

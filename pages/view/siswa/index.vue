@@ -46,7 +46,7 @@ useSeoMeta({
 
 <template>
   <div class="flex flex-col items-center mt-5 min-h-screen">
-    <div class="flex flex-col">
+    <div class="flex flex-col min-w-242.5">
       <select v-model="selectedClass" class="select select-bordered select-primary bg-dark w-full max-w-xs">
         <option value="">All Classes</option>
         <option v-for="option in classOptions" :key="option" :value="option">{{ option }}</option>
