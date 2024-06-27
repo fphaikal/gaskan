@@ -30,12 +30,12 @@ useSeoMeta({
 })
 
 const messages = [
-  { text: 'Hallo Sayangkuuu, Naira👋', img: '/_nuxt/assets/images/gif/yellow-dragon-nailong.gif' },
-  { text: 'Perempuanku yang suka banget makan😋', img: '/_nuxt/assets/images/gif/nailong-yellow-dragon (1).gif' },
-  { text: 'Perempuan yang selalu membuatku rindu🥲', img: '/_nuxt/assets/images/gif/nailong_sad.webp' },
-  { text: 'Perempuan yang aku harapkan menjadi masa depanku🥰', img: '/_nuxt/assets/images/gif/yellow-dragon-nailong (1).gif' },
+  { text: 'Hallo Sayangkuuu, Naira👋', img: '/gif/yellow-dragon-nailong.gif' },
+  { text: 'Perempuanku yang suka banget makan😋', img: '/gif/nailong-yellow-dragon (1).gif' },
+  { text: 'Perempuan yang selalu membuatku rindu🥲', img: '/gif/nailong_sad.webp' },
+  { text: 'Perempuan yang aku harapkan menjadi masa depanku🥰', img: '/gif/yellow-dragon-nailong (1).gif' },
   { text: 'Aku mau tanya dehh😇', img: '' },
-  { text: 'Dihati kamu itu ada aku nggak sih?🤭', img: '/_nuxt/assets/images/gif/nailong.webp' },
+  { text: 'Dihati kamu itu ada aku nggak sih?🤭', img: '/gif/nailong.webp' },
 ];
 
 const currentMessageIndex = ref(0);
