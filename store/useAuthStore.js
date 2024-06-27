@@ -5,7 +5,9 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     authenticated: false,
     loading: false,
+    nis: null,
   }),
+  persist: true,
   actions: {
     async authenticateUser({ NIS, Password, force }) {
       const config = useRuntimeConfig(); // get runtime config
@@ -22,14 +24,20 @@ export const useAuthStore = defineStore("auth", {
           },
         });
 
-        console.log(data);
         if (data) {
           const token = useCookie("token"); // useCookie new hook in nuxt 3
           token.value = data?.sessionId; // set token to cookie
           this.authenticated = true; // set authenticated  state value to true
+          this.nis = data.NIS;
           console.log(data);
-          const nis = useStorage("nis", data.NIS, localStorage);
-          const role = useStorage("role", data.Kelas, localStorage);
+          
+          if (data.Kelas === "admin") {
+            useStorage("_id", config.public.ADMIN_KEY, localStorage);
+          } else if (data.Kelas === "developer") {
+            useStorage("_id", config.public.DEVELOPER_KEY, localStorage);
+          } else {
+            useStorage("_id", data.Kelas, localStorage);
+          }
         }
       } catch (error) {
         this.loading = false;
@@ -46,18 +54,18 @@ export const useAuthStore = defineStore("auth", {
 
       try {
         const token = useCookie("token"); // useCookie new hook in nuxt 3
-        this.authenticated = false; // set authenticated  state value to false
-        token.value = null; // clear the token cookie
-        const nis = useStorage("nis");
-        const role = useStorage("role");
-        nis.value = null;
-        role.value = null;
-        router.push("/login");
-        const data = await $fetch(config.public.apiBase + "/api/logout", {
+        await $fetch(config.public.apiBase + "/api/logout", {
           method: "post",
           headers: { "Content-Type": "application/json" },
           body: { sessionId: token.value },
         });
+        this.authenticated = false; // set authenticated  state value to false
+        token.value = null; // clear the token cookie
+        const nis = useStorage("nis");
+        const role = useStorage('_id');
+        nis.value = null;
+        role.value = null;
+        router.push("/login");
 
       } catch (error) {
         console.error("Logout error:", error);

@@ -1,6 +1,6 @@
 <script setup>
 import { useStorage } from '@vueuse/core';
-const role = useStorage('role');
+const role = useStorage('_id');
 const nis = useStorage('nis');
 
 const { data: log } = useFetch('/api/log/onsite');

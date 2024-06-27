@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore'; 
 
+const config = useRuntimeConfig();
 const target = ref(null);
 const dropdownOpen = ref(false);
 
@@ -13,7 +14,7 @@ onClickOutside(target, () => {
 });
 
 const { logUserOut } = useAuthStore();
-const { authenticated } = storeToRefs(useAuthStore());
+const { nis } = storeToRefs(useAuthStore());
 
 const router = useRouter();
 
@@ -22,20 +23,19 @@ const logout = () => {
   router.push('/login');
 };
 
-const nis = useStorage('nis');
-const role = useStorage('role');
+// const nis = useStorage('nis');
+const role = useStorage('_id');
 
 const userRole = computed(() => {
-  if (role.value === 'admin') {
+  if (role.value === config.public.ADMIN_KEY) {
     return 'admin';
-  } else if (role.value === 'developer') {
+  } else if (role.value === config.public.DEVELOPER_KEY) {
     return 'developer';
   } else {
     return 'siswa';
   }
 });
 
-console.log(userRole.value);
 
 const { data: user } = useFetch(`/api/user?role=${userRole.value}&user=${nis.value}`);
 </script>

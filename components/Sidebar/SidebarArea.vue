@@ -6,7 +6,7 @@ import SidebarItem from './SidebarItem.vue'
 
 const target = ref(null)
 const sidebarStore = useSidebarStore()
-const userRole = useStorage('role') // Assuming the role is stored in localStorage
+const userRole = useStorage('_id') // Assuming the role is stored in localStorage
 
 onClickOutside(target, () => {
   sidebarStore.isSidebarOpen = false

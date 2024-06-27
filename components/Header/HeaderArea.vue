@@ -18,7 +18,7 @@ const { isSidebarOpen, toggleSidebar } = useSidebarStore()
           <Icon name="mingcute:align-justify-fill" size="24" />
         </button>
         <!-- Hamburger Toggle BTN -->
-        <router-link class="block flex gap-3 flex-shrink-0 lg:hidden my-auto" to="/home">
+        <router-link class="flex gap-3 flex-shrink-0 lg:hidden my-auto" to="/home">
           <img src="../../public/smti_logo.svg" class="w-10 my-auto" alt="">
           <span class="self-center text-xl font-semibold whitespace-nowrap text-primary my-auto">| GASKAN</span>
         </router-link>

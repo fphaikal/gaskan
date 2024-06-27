@@ -1,7 +1,13 @@
 <script setup>
 import { useStorage } from '@vueuse/core';
-const role = useStorage('role');
-const nis = useStorage('nis');
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '~/store/useAuthStore';
+
+const { nis } = storeToRefs(useAuthStore()); // make authenticated state reactive
+
+const config = useRuntimeConfig();
+const role = useStorage('_id');
+//const nis = useStorage('nis');
 
 const { data: log } = useFetch('/api/log/kehadiran');
 const { data: logSiswa } = await useFetch('/api/log/kehadiran/' + nis.value);
@@ -33,7 +39,7 @@ useSeoMeta({
     <div class="flex flex-col">
       <div class="flex justify-between mb-5">
         <h1 class="font-bold text-2xl my-auto">Log Presensi</h1>
-        <div v-if="role === 'admin' || role === 'developer'" class="flex my-auto gap-2">
+        <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" class="flex my-auto gap-2">
           <button class="px-4 py-2 bg-primary rounded-lg">
             <a href="https://api.tierkun.my.id/file/kehadiran?type=json">JSON</a>
           </button>
@@ -46,7 +52,7 @@ useSeoMeta({
         </div>
       </div>
 
-      <div v-if="role === 'admin' || role === 'developer'" v-for="l in log"
+      <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" v-for="l in log"
         class="flex flex-col md:flex-row gap-3 w-full">
 
         <ol class="relative border-s border-gray-200 dark:border-gray-700 w-full">

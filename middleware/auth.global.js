@@ -5,7 +5,7 @@ import { useStorage } from '@vueuse/core';
 export default defineNuxtRouteMiddleware((to) => {
   const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive
   const token = useCookie('token'); // get token from cookies
-  const userRole = useStorage('role'); // get user role from cookies
+  const userRole = useStorage('_id'); // get user role from cookies
 
   if (token.value) {
     // check if value exists

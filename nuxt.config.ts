@@ -3,7 +3,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE, // can be overridden by NUXT_PUBLIC_API_BASE environment variable
+      apiBase: process.env.NUXT_PUBLIC_API_BASE,
+      ADMIN_KEY: process.env.NUXT_ROLE_ADMIN_KEY,
+      DEVELOPER_KEY: process.env.NUXT_ROLE_DEVELOPER_KEY,
     },
   },
   modules: [

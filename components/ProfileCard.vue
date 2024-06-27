@@ -3,15 +3,20 @@ import { useStorage } from '@vueuse/core'
 import { format } from 'date-fns'
 import { setupCalendar, Calendar, DatePicker } from 'v-calendar';
 import 'v-calendar/style.css';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '~/store/useAuthStore';
 
-const nis = useStorage('nis');
+const { nis } = storeToRefs(useAuthStore()); // make authenticated state reactive
+
+const config = useRuntimeConfig();
+// const nis = useStorage('nis');
 const date = ref(new Date())
 
 const role = () => {
-  const getRole = useStorage('role');
-  if (getRole.value === 'admin') {
+  const getRole = useStorage('_id');
+  if (getRole.value === config.public.ADMIN_KEY) {
     return 'admin'
-  } else if (getRole.value === 'developer') {
+  } else if (getRole.value === config.public.DEVELOPER_KEY) {
     return 'developer'
   } else {
     return 'siswa'
@@ -31,13 +36,13 @@ const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
 
 const newData = ref({
   TTL: ''
-
 });
 
 const editTTL = async () => {
   const data = {
-    TTL: newData.value.TTL
+    TTL: newData.value.TTL + ', ' + format(date.value, 'yyyy-MM-d')
   }
+
   await fetch(`https://api.tierkun.my.id/api/edit/primary/TTL/${nis.value}`, {
     method: 'PUT',
     headers: {
@@ -45,6 +50,7 @@ const editTTL = async () => {
     },
     body: JSON.stringify(data)
   })
+  location.reload()
 }
 
 const showDatePicker = ref(false); // Controls popover visibility
@@ -60,7 +66,7 @@ const toggleDatePicker = () => {
       <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/1.jpg"
         alt="profile cover" class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-top" />
       <img v-else
-        src="https://api.elearning.smtijogja.sch.id/api/v1/user-file/stream?file_uri=1859/news/685c8b90-ba1e-4806-81dc-d840c980322d.jpg"
+        src="../public/banner.webp"
         alt="profile cover" class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-bottom " />
     </div>
     <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
@@ -226,7 +232,6 @@ const toggleDatePicker = () => {
       </table>
     </div>
   </div>
-  <h1>{{ date }}</h1>
 
   <div class="flex gap-2 p-5">
     <button class="px-4 py-1.5 bg-primary rounded-md">Change Password</button>
@@ -234,7 +239,7 @@ const toggleDatePicker = () => {
   <dialog id="editTTL" class="modal">
     <div class="modal-box bg-dark">
       <h3 class="font-bold text-lg">Ganti Tempat & Tanggal Lahir Kamu</h3>
-      <div class="flex gap-2 mt-4">
+      <div class="flex flex-col md:flex-row gap-2 mt-4">
         <div class="flex flex-col gap-2 w-full">
           <label for="TTL" class="text-white">Tempat</label>
           <input type="text" id="TTL" v-model="newData.TTL" class="input input-bordered bg-dark"
@@ -242,7 +247,7 @@ const toggleDatePicker = () => {
         </div>
         <div class="flex flex-col gap-2 w-full">
           <label for="TTL" class="text-white">Tanggal Lahir</label>
-          <button @click="toggleDatePicker" class="py-3 rounded-md bg-primary">{{ format(date, 'yyy-mm-d') }}</button>
+          <button @click="toggleDatePicker" class="py-3 rounded-md bg-primary">{{ format(date, 'yyyy-MM-d') }}</button>
         </div>
       </div>
       <div class="modal-action">
