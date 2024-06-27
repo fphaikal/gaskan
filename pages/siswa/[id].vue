@@ -21,7 +21,7 @@ const { data: user } = useFetch(`/api/user?role=siswa&user=${nis}`);
       <div v-if="user" class="relative z-20 h-35 md:h-65">
         <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/1.jpg" alt="profile cover"
           class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-top" />
-        <img v-else src="https://api.elearning.smtijogja.sch.id/api/v1/user-file/stream?file_uri=1859/news/685c8b90-ba1e-4806-81dc-d840c980322d.jpg" alt="profile cover"
+        <img v-else src="../../public/banner.webp" alt="profile cover"
           class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-bottom " />
       </div>
       <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
