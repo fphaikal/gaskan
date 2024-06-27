@@ -33,7 +33,7 @@ const messages = [
   { text: 'Hallo Sayangkuuu, Naira👋', img: '/gif/yellow-dragon-nailong.gif' },
   { text: 'Perempuanku yang suka banget makan😋', img: '/gif/nailong-yellow-dragon (1).gif' },
   { text: 'Perempuan yang selalu membuatku rindu🥲', img: '/gif/nailong_sad.webp' },
-  { text: 'Perempuan yang aku harapkan menjadi masa depanku🥰', img: '/gif/yellow-dragon-nailong (1).gif' },
+  { text: 'Perempuan yang aku harapkan bisa menjadi masa depanku🥰', img: '/gif/yellow-dragon-nailong (1).gif' },
   { text: 'Aku mau tanya dehh😇', img: '' },
   { text: 'Dihati kamu itu ada aku nggak sih?🤭', img: '/gif/nailong.webp' },
 ];
