@@ -34,8 +34,12 @@ const gender = (getGender) => {
 
 const { data: user } = useFetch(`/api/user?role=${role()}&user=${nis.value}`);
 
+const err = ref(false);
+const errMsg = ref('');
 const newData = ref({
-  TTL: ''
+  TTL: '',
+  Nomor: '',
+  Plat: ''
 });
 
 const editTTL = async () => {
@@ -53,11 +57,34 @@ const editTTL = async () => {
   location.reload()
 }
 
+const editNomor = async () => {
+  const nomor = {
+    Nomor: newData.value.Nomor
+  }
+  await $fetch(`https://api.tierkun.my.id/api/edit/primary/Nomor/${nis.value}`, {
+    method: 'PUT',
+    body: JSON.stringify(nomor)
+  })
+}
+
+const editPlat = async () => {
+  const nomor = {
+    Plat_Nomor: newData.value.Plat
+  }
+  await $fetch(`https://api.tierkun.my.id/api/edit/primary/Plat_Nomor/${nis.value}`, {
+    method: 'PUT',
+    body: JSON.stringify(nomor)
+  })
+  location.reload()
+}
+
 const showDatePicker = ref(false); // Controls popover visibility
 
 const toggleDatePicker = () => {
   showDatePicker.value = !showDatePicker.value;
 };
+
+
 </script>
 <template>
   <!-- ====== Profile Section Start -->
@@ -65,9 +92,8 @@ const toggleDatePicker = () => {
     <div v-if="user" class="relative z-20 h-35 md:h-65">
       <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/1.jpg"
         alt="profile cover" class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-top" />
-      <img v-else
-        src="../public/banner.webp"
-        alt="profile cover" class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-bottom " />
+      <img v-else src="../public/banner.webp" alt="profile cover"
+        class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-bottom " />
     </div>
     <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
       <div v-if="user"
@@ -221,8 +247,26 @@ const toggleDatePicker = () => {
             <td>{{ user.Agama || 'Belum Diatur' }}</td>
           </tr>
           <tr>
+            <th>Nomor</th>
+            <td class="flex gap-2">
+              <span>
+                {{ user.Nomor || 'Belum Diatur' }}
+              </span>
+              <button class="flex items-center" onclick="editNomor.showModal()">
+                <Icon name="flowbite:edit-solid" class="transition duration-200 hover:text-primary" size="18" />
+              </button>
+            </td>
+          </tr>
+          <tr>
             <th>Plat Nomor</th>
-            <td>{{ user.Plat_Nomor || 'Belum Diatur' }}</td>
+            <td class="flex gap-2">
+              <span>
+                {{ user.Plat_Nomor || 'Belum Diatur' }}
+              </span>
+              <button class="flex items-center" onclick="editPlat.showModal()">
+                <Icon name="flowbite:edit-solid" class="transition duration-200 hover:text-primary" size="18" />
+              </button>
+            </td>
           </tr>
           <tr>
             <th>Alamat</th>
@@ -234,7 +278,7 @@ const toggleDatePicker = () => {
   </div>
 
   <div class="flex gap-2 p-5">
-    <button class="px-4 py-1.5 bg-primary rounded-md">Change Password</button>
+    <button onclick="changePass.showModal()" class="px-4 py-1.5 bg-primary rounded-md">Change Password</button>
   </div>
   <dialog id="editTTL" class="modal">
     <div class="modal-box bg-dark">
@@ -258,7 +302,83 @@ const toggleDatePicker = () => {
       </div>
     </div>
     <div v-if="showDatePicker" class="absolute z-10 mt-2">
-      <DatePicker v-model="date" mode="date" />
+      <DatePicker v-model="date" mode="date" @input="toggleDatePicker" />
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+  <dialog id="editNomor" class="modal">
+    <div class="modal-box bg-dark">
+      <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
+
+      <div class="flex flex-col md:flex-row gap-2 mt-4">
+        <div class="flex flex-col gap-2 w-full">
+          <input type="number" id="Nomor" v-model="newData.Nomor" class="input input-bordered bg-dark"
+            placeholder="Masukkan nomor kamu" />
+            <div class="flex flex-col text-sm text-secondary ">
+              <span>- Masukkan nomor dengan awalan (62), contoh: 62812345678</span>
+              <span>- Pastikan nomor kamu terdaftar di whatsapp</span>
+            </div>
+        </div>
+      </div>
+      <div class="modal-action">
+        <form method="dialog">
+          <!-- if there is a button in form, it will close the modal -->
+          <button @click.prevent="editNomor" class="px-4 py-2 bg-primary rounded-md">Simpan</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+  <dialog id="editPlat" class="modal">
+    <div class="modal-box bg-dark">
+      <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
+
+      <div class="flex flex-col md:flex-row gap-2 mt-4">
+        <div class="flex flex-col gap-2 w-full">
+          <input type="text" id="Plat" v-model="newData.Plat" class="input input-bordered bg-dark"
+            placeholder="Masukkan plat nomor kamu" />
+        </div>
+      </div>
+      <div class="modal-action">
+        <form method="dialog">
+          <!-- if there is a button in form, it will close the modal -->
+          <button @click.prevent="editPlat" class="px-4 py-2 bg-primary rounded-md">Simpan</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+  <dialog v-if="user.Nomor" id="changePass" class="modal">
+    <div class="modal-box bg-dark">
+      <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
+
+      <div class="flex flex-col md:flex-row gap-2 mt-4">
+        <div class="flex flex-col gap-2 w-full">
+          <input type="text" id="Plat" v-model="newData.Plat" class="input input-bordered bg-dark"
+            placeholder="Masukkan plat nomor kamu" />
+        </div>
+      </div>
+      <div class="modal-action">
+        <form method="dialog">
+          <!-- if there is a button in form, it will close the modal -->
+          <button @click.prevent="editPlat" class="px-4 py-2 bg-primary rounded-md">Simpan</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+  <dialog v-else id="changePass" class="modal">
+    <div class="modal-box bg-dark">
+      <h3 class="font-bold text-lg">Isi nomor kamu terlebih dahulu!</h3>
+
     </div>
     <form method="dialog" class="modal-backdrop">
       <button>close</button>

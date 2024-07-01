@@ -4,7 +4,26 @@ const role = useStorage('_id');
 const nis = useStorage('nis');
 
 const { data: log } = useFetch('/api/log/onsite');
+useSeoMeta({
+  title: 'Log Onsite | GASKAN',
+  ogTitle: 'Log Onsite | GASKAN',
+  description: 'Gerbang Akses Pintar dan Kehadiran',
+  image: '/smti_logo.svg',
+  url: 'https://gaskan.smtijogja.sch.id/log/onsite',
+  site_name: 'GASKAN',
+  ogUrl: 'https://gaskan.smtijogja.sch.id/log/onsite',
+  ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogImage: '/smti_logo.svg',
+  ogType: 'website',
+  ogSiteName: 'GASKAN',
+  ogLocale: 'id_ID',
 
+  twitterCard: 'summary_large_image',
+  twitterTitle: `Log Onsite | GASKAN`,
+  twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
+  twitterImage: '/smti_logo.svg',
+  twitterUrl: `https://gaskan.smtijogja.sch.id/log/onsite`,
+})
 </script>
 <template>
   <div>

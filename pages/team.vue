@@ -128,14 +128,34 @@ const team = [
       },
     ]
   },
-  
 ]
+
+useSeoMeta({
+  title: 'Team | GASKAN',
+  ogTitle: 'Team | GASKAN',
+  description: 'Tim Pengembang Gerbang Akses Pintar dan Kehadiran',
+  image: '/smti_logo.svg',
+  url: 'https://gaskan.smtijogja.sch.id/team',
+  site_name: 'GASKAN',
+  ogUrl: 'https://gaskan.smtijogja.sch.id/team',
+  ogDescription: 'Tim Pengembang Gerbang Akses Pintar dan Kehadiran',
+  ogImage: '/smti_logo.svg',
+  ogType: 'website',
+  ogSiteName: 'GASKAN',
+  ogLocale: 'id_ID',
+
+  twitterCard: 'summary_large_image',
+  twitterTitle: `Team | GASKAN`,
+  twitterDescription: `Tim Pengembang Gerbang Akses Pintar dan Kehadiran`,
+  twitterImage: '/smti_logo.svg',
+  twitterUrl: `https://gaskan.smtijogja.sch.id/team`,
+})
 </script>
 <template>
   <div class="min-h-screen flex flex-col justify-center items-center gap-5 sm:gap-10 mt-5 sm:mt-0">
     <h1 class="font-bold text-3xl">Our Team</h1>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4">
-      <div v-for="t in team" class="flex flex-col justify-between transition duration-500 outline-dashed outline-primary hover:bg-dark hover:drop-shadow-2xl hover:outline outline-2 outline-primary p-4 max-w-52 min-h-56 rounded-md">
+      <div v-for="t in team" class="flex flex-col justify-between transition duration-500 outline-dashed hover:bg-dark hover:drop-shadow-2xl hover:outline outline-2 outline-primary p-4 max-w-52 min-h-56 rounded-md">
         <h1 class="font-bold text-lg">{{ t.name }}</h1>
         <div class="flex flex-col gap-2">
           <h2 class="font-light text-sm">{{ t.role }} </h2>

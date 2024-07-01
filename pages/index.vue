@@ -1,6 +1,4 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-
+<script setup >
 definePageMeta({
   layout: 'blank'
 })
@@ -9,10 +7,21 @@ useSeoMeta({
   title: 'GASKAN',
   ogTitle: 'GASKAN',
   description: 'Gerbang Akses Pintar dan Kehadiran',
+  image: '/smti_logo.svg',
+  url: 'https://gaskan.smtijogja.sch.id',
+  site_name: 'GASKAN',
+  ogUrl: 'https://gaskan.smtijogja.sch.id',
   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogImage: '/smti_logo.svg',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
+
+  twitterCard: 'summary_large_image',
+  twitterTitle: `GASKAN`,
+  twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
+  twitterImage: '/smti_logo.svg',
+  twitterUrl: `https://gaskan.smtijogja.sch.id`,
 })
 
 

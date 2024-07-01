@@ -23,15 +23,25 @@ const type = (type) => {
   }
 };
 
-
 useSeoMeta({
   title: 'Log Kehadiran | GASKAN',
   ogTitle: 'Log Kehadiran | GASKAN',
   description: 'Gerbang Akses Pintar dan Kehadiran',
+  image: '/smti_logo.svg',
+  url: 'https://gaskan.smtijogja.sch.idlog/kehadiran',
+  site_name: 'GASKAN',
+  ogUrl: 'https://gaskan.smtijogja.sch.idlog/kehadiran',
   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogImage: '/smti_logo.svg',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
+
+  twitterCard: 'summary_large_image',
+  twitterTitle: `Log Kehadiran | GASKAN`,
+  twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
+  twitterImage: '/smti_logo.svg',
+  twitterUrl: `https://gaskan.smtijogja.sch.idlog/kehadiran`,
 })
 </script>
 <template>

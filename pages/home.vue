@@ -19,14 +19,35 @@ const role = () => {
 
 const { data: user } = await useFetch(`/api/user?role=${role()}&user=${nis.value}`);
 
+// useSeoMeta({
+//   title: 'Home | GASKAN',
+//   ogTitle: 'Home | GASKAN',
+//   description: 'Gerbang Akses Pintar dan Kehadiran',
+//   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+//   ogType: 'website',
+//   ogSiteName: 'GASKAN',
+//   ogLocale: 'id_ID',
+// })
+
 useSeoMeta({
   title: 'Home | GASKAN',
   ogTitle: 'Home | GASKAN',
-  description: 'Gerbang Akses Pintar dan Kehadiran',
-  ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  description: 'Dashboard Gerbang Akses Pintar dan Kehadiran',
+  image: '/smti_logo.svg',
+  url: 'https://gaskan.smtijogja.sch.id/home',
+  site_name: 'GASKAN',
+  ogUrl: 'https://gaskan.smtijogja.sch.id/home',
+  ogDescription: 'Dashboard Gerbang Akses Pintar dan Kehadiran',
+  ogImage: '/smti_logo.svg',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
+
+  twitterCard: 'summary_large_image',
+  twitterTitle: `Home | GASKAN`,
+  twitterDescription: `Dashboard Gerbang Akses Pintar dan Kehadiran`,
+  twitterImage: '/smti_logo.svg',
+  twitterUrl: `https://gaskan.smtijogja.sch.id/home`,
 })
 
 const messages = [

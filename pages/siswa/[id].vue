@@ -12,7 +12,28 @@ const gender = (getGender) => {
   }
 }
 
-const { data: user } = useFetch(`/api/user?role=siswa&user=${nis}`);
+const { data: user } = await useFetch(`/api/user?role=siswa&user=${nis}`);
+
+useSeoMeta({
+  title: `Profil ${user.value.Nama} | GASKAN`,
+  ogTitle: `Profil ${user.value.Nama} | GASKAN`,
+  image: user.value.url_picture,
+  description:  `Profil Siswa ${user.value.Nama}`,
+  url: `https://gaskan.smtijogja.sch.id/siswa/${nis}`,
+  site_name: 'GASKAN',
+  ogUrl: `https://gaskan.smtijogja.sch.id/siswa/${nis}`,
+  ogDescription:  `Profil Siswa ${user.value.Nama}`,
+  ogImage: user.value.url_picture,
+  ogType: 'website',
+  ogSiteName: 'GASKAN',
+  ogLocale: 'id_ID',
+
+  twitterCard: 'summary_large_image',
+  twitterTitle: `${user.value.Name} | GASKAN`,
+  twitterDescription: `Profil ${user.value.Name} | GASKAN`,
+  twitterImage: user.value.url_picture,
+  twitterUrl: `https://gaskan.smtijogja.sch.id/siswa/${nis}`,
+})
 </script>
 <template>
   <div class="mx-auto max-w-242.5">

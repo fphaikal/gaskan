@@ -1,12 +1,23 @@
-<script setup lang="ts">
+<script setup>
 useSeoMeta({
   title: 'Profile | GASKAN',
   ogTitle: 'Profile | GASKAN',
   description: 'Gerbang Akses Pintar dan Kehadiran',
+  image: '/smti_logo.svg',
+  url: 'https://gaskan.smtijogja.sch.id/profile',
+  site_name: 'GASKAN',
+  ogUrl: 'https://gaskan.smtijogja.sch.id/profile',
   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogImage: '/smti_logo.svg',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
+
+  twitterCard: 'summary_large_image',
+  twitterTitle: `Profile | GASKAN`,
+  twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
+  twitterImage: '/smti_logo.svg',
+  twitterUrl: `https://gaskan.smtijogja.sch.id/profile`,
 })
 </script>
 

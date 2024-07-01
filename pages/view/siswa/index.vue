@@ -3,7 +3,7 @@ definePageMeta({
   layout: 'blank'
 })
 
-const { data } = useFetch(`/api/primary`);
+const { data } = await useFetch(`/api/primary`);
 
 const users = ref([]);
 const selectedClass = ref('');
@@ -37,10 +37,21 @@ useSeoMeta({
   title: 'Daftar Siswa | GASKAN',
   ogTitle: 'Daftar Siswa | GASKAN',
   description: 'Gerbang Akses Pintar dan Kehadiran',
+  image: '/smti_logo.svg',
+  url: 'https://gaskan.smtijogja.sch.id/view/siswa',
+  site_name: 'GASKAN',
+  ogUrl: 'https://gaskan.smtijogja.sch.id/view/siswa',
   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogImage: '/smti_logo.svg',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
+
+  twitterCard: 'summary_large_image',
+  twitterTitle: `Daftar Siswa | GASKAN`,
+  twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
+  twitterImage: '/smti_logo.svg',
+  twitterUrl: `https://gaskan.smtijogja.sch.id/view/siswa`,
 })
 </script>
 
