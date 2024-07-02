@@ -5,12 +5,12 @@ useSeoMeta({
   title: 'Log Error | GASKAN',
   ogTitle: 'Log Error | GASKAN',
   description: 'Gerbang Akses Pintar dan Kehadiran',
-  image: '/smti_logo.svg',
+  image: '/banner.webp',
   url: 'https://gaskan.smtijogja.sch.id/log/error',
   site_name: 'GASKAN',
   ogUrl: 'https://gaskan.smtijogja.sch.id/log/error',
   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
-  ogImage: '/smti_logo.svg',
+  ogImage: '/banner.webp',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
@@ -18,7 +18,7 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
   twitterTitle: `Log Error | GASKAN`,
   twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
-  twitterImage: '/smti_logo.svg',
+  twitterImage: '/banner.webp',
   twitterUrl: `https://gaskan.smtijogja.sch.id/log/error`,
 })
 </script>

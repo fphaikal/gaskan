@@ -134,12 +134,12 @@ useSeoMeta({
   title: 'Team | GASKAN',
   ogTitle: 'Team | GASKAN',
   description: 'Tim Pengembang Gerbang Akses Pintar dan Kehadiran',
-  image: '/smti_logo.svg',
+  image: '/banner.webp',
   url: 'https://gaskan.smtijogja.sch.id/team',
   site_name: 'GASKAN',
   ogUrl: 'https://gaskan.smtijogja.sch.id/team',
   ogDescription: 'Tim Pengembang Gerbang Akses Pintar dan Kehadiran',
-  ogImage: '/smti_logo.svg',
+  ogImage: '/banner.webp',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
@@ -147,7 +147,7 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
   twitterTitle: `Team | GASKAN`,
   twitterDescription: `Tim Pengembang Gerbang Akses Pintar dan Kehadiran`,
-  twitterImage: '/smti_logo.svg',
+  twitterImage: '/banner.webp',
   twitterUrl: `https://gaskan.smtijogja.sch.id/team`,
 })
 </script>

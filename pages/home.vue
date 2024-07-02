@@ -33,12 +33,12 @@ useSeoMeta({
   title: 'Home | GASKAN',
   ogTitle: 'Home | GASKAN',
   description: 'Dashboard Gerbang Akses Pintar dan Kehadiran',
-  image: '/smti_logo.svg',
+  image: '/banner.webp',
   url: 'https://gaskan.smtijogja.sch.id/home',
   site_name: 'GASKAN',
   ogUrl: 'https://gaskan.smtijogja.sch.id/home',
   ogDescription: 'Dashboard Gerbang Akses Pintar dan Kehadiran',
-  ogImage: '/smti_logo.svg',
+  ogImage: '/banner.webp',
   ogType: 'website',
   ogSiteName: 'GASKAN',
   ogLocale: 'id_ID',
@@ -46,7 +46,7 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
   twitterTitle: `Home | GASKAN`,
   twitterDescription: `Dashboard Gerbang Akses Pintar dan Kehadiran`,
-  twitterImage: '/smti_logo.svg',
+  twitterImage: '/banner.webp',
   twitterUrl: `https://gaskan.smtijogja.sch.id/home`,
 })
 

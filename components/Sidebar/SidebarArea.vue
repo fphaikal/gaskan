@@ -4,6 +4,7 @@ import { onClickOutside, useStorage } from '@vueuse/core'
 import { ref } from 'vue'
 import SidebarItem from './SidebarItem.vue'
 
+const config = useRuntimeConfig();
 const target = ref(null)
 const sidebarStore = useSidebarStore()
 const userRole = useStorage('_id') // Assuming the role is stored in localStorage
@@ -24,7 +25,7 @@ const menuGroups = [
       },
       {
         icon: `mingcute:location-2-fill`,
-        role: ["admin", "developer"],
+        role: [config.public.ADMIN_KEY, config.public.DEVELOPER_KEY],
         label: 'On Site',
         route: '/log/onsite'
       },
@@ -42,7 +43,7 @@ const menuGroups = [
       },
       {
         icon: `ic:outline-error`,
-        role: ["developer"],
+        role: [config.public.DEVELOPER_KEY],
         label: 'Log Error',
         route: '/log/error'
       },
