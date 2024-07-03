@@ -25,12 +25,12 @@ export const useAuthStore = defineStore("auth", {
         });
 
         if (data) {
-          const token = useCookie("token"); // useCookie new hook in nuxt 3
+          const token = useCookie("token", { maxAge: 3600 }); // set token to expire in 1 hour
           token.value = data?.sessionId; // set token to cookie
-          this.authenticated = true; // set authenticated  state value to true
+          this.authenticated = true; // set authenticated state value to true
           this.nis = data.NIS;
           console.log(data);
-          
+
           if (data.Kelas === "admin") {
             useStorage("_id", config.public.ADMIN_KEY, localStorage);
           } else if (data.Kelas === "developer") {
@@ -38,6 +38,13 @@ export const useAuthStore = defineStore("auth", {
           } else {
             useStorage("_id", data.Kelas, localStorage);
           }
+
+          // Set timeout to clear state and storage after 1 hour
+          setTimeout(() => {
+            this.authenticated = false;
+            this.nis = null;
+            useStorage("_id").value = null;
+          }, 3600 * 1000);
         }
       } catch (error) {
         this.loading = false;
@@ -59,7 +66,7 @@ export const useAuthStore = defineStore("auth", {
           headers: { "Content-Type": "application/json" },
           body: { sessionId: token.value },
         });
-        this.authenticated = false; // set authenticated  state value to false
+        this.authenticated = false; // set authenticated state value to false
         token.value = null; // clear the token cookie
         const nis = useStorage("nis");
         const role = useStorage('_id');

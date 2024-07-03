@@ -1,5 +1,33 @@
 <script setup>
-const { data: err } = useFetch('/api/log/error')
+//const { data: err } = useFetch('/api/log/error')
+const err = ref([]);
+const socket = ref(null);
+
+onMounted(() => {
+  socket.value = new WebSocket('wss://api.tierkun.my.id/error/reverse');
+
+  socket.value.onopen = () => {
+    console.log('Connected to WebSocket server');
+  };
+
+  socket.value.onmessage = async (event) => {
+    try {
+      err.value = await JSON.parse(event.data);
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  };
+
+  socket.value.onclose = () => {
+    console.log('Disconnected from WebSocket server');
+  };
+});
+
+onUnmounted(() => {
+  if (socket.value) {
+    socket.value.close();
+  }
+});
 
 useSeoMeta({
   title: 'Log Error | GASKAN',

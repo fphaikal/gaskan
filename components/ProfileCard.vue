@@ -354,35 +354,37 @@ const toggleDatePicker = () => {
       <button>close</button>
     </form>
   </dialog>
-  <dialog v-if="user.Nomor" id="changePass" class="modal">
-    <div class="modal-box bg-dark">
-      <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
-
-      <div class="flex flex-col md:flex-row gap-2 mt-4">
-        <div class="flex flex-col gap-2 w-full">
-          <input type="text" id="Plat" v-model="newData.Plat" class="input input-bordered bg-dark"
-            placeholder="Masukkan plat nomor kamu" />
+  <div v-if="user">
+    <dialog v-if="user.Nomor" id="changePass" class="modal">
+      <div class="modal-box bg-dark">
+        <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
+  
+        <div class="flex flex-col md:flex-row gap-2 mt-4">
+          <div class="flex flex-col gap-2 w-full">
+            <input type="text" id="Plat" v-model="newData.Plat" class="input input-bordered bg-dark"
+              placeholder="Masukkan plat nomor kamu" />
+          </div>
+        </div>
+        <div class="modal-action">
+          <form method="dialog">
+            <!-- if there is a button in form, it will close the modal -->
+            <button @click.prevent="editPlat" class="px-4 py-2 bg-primary rounded-md">Simpan</button>
+          </form>
         </div>
       </div>
-      <div class="modal-action">
-        <form method="dialog">
-          <!-- if there is a button in form, it will close the modal -->
-          <button @click.prevent="editPlat" class="px-4 py-2 bg-primary rounded-md">Simpan</button>
-        </form>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+    <dialog v-else id="changePass" class="modal">
+      <div class="modal-box bg-dark">
+        <h3 class="font-bold text-lg">Isi nomor kamu terlebih dahulu!</h3>
+  
       </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
-  <dialog v-else id="changePass" class="modal">
-    <div class="modal-box bg-dark">
-      <h3 class="font-bold text-lg">Isi nomor kamu terlebih dahulu!</h3>
-
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+  </div>
   <!-- ====== Profile Section End -->
 </template>

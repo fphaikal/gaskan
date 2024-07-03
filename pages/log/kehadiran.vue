@@ -9,7 +9,36 @@ const config = useRuntimeConfig();
 const role = useStorage('_id');
 //const nis = useStorage('nis');
 
-const { data: log } = useFetch('/api/log/kehadiran');
+const log = ref([]);
+const socket = ref(null);
+
+onMounted(() => {
+  socket.value = new WebSocket('wss://api.tierkun.my.id/log/reverse');
+
+  socket.value.onopen = () => {
+    console.log('Connected to WebSocket server');
+  };
+
+  socket.value.onmessage = async (event) => {
+    try {
+      log.value = await JSON.parse(event.data);
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  };
+
+  socket.value.onclose = () => {
+    console.log('Disconnected from WebSocket server');
+  };
+});
+
+onUnmounted(() => {
+  if (socket.value) {
+    socket.value.close();
+  }
+});
+
+//const { data: log } = useFetch('/api/log/kehadiran');
 const { data: logSiswa } = await useFetch('/api/log/kehadiran/' + nis.value);
 
 const type = (type) => {

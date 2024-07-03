@@ -6,7 +6,7 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE,
       ADMIN_KEY: process.env.NUXT_ROLE_ADMIN_KEY,
       DEVELOPER_KEY: process.env.NUXT_ROLE_DEVELOPER_KEY,
-      buildId: process.env.VERCEL_GIT_COMMIT_SHA
+      buildId: process.env.VERCEL_GIT_COMMIT_SHA || 'development'
     },
   },
   modules: [
