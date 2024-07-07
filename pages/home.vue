@@ -6,6 +6,8 @@ const config = useRuntimeConfig();
 
 const { nis } = storeToRefs(useAuthStore()); // make authenticated state reactive
 
+const getRole = useStorage('_id');
+
 const role = () => {
   const getRole = useStorage('_id');
   if (getRole.value === config.public.ADMIN_KEY) {
@@ -18,6 +20,7 @@ const role = () => {
 }
 
 const { data: user } = await useFetch(`/api/user?role=${role()}&user=${nis.value}`);
+const { data: count } = await useFetch(`/api/count`);
 
 // useSeoMeta({
 //   title: 'Home | GASKAN',
@@ -116,14 +119,41 @@ onBeforeUnmount(() => {
     <div class="flex flex-col gap-4 justify-center items-center h-full">
       <h1 class="text-2xl font-bold text-center">{{ displayedText }}</h1>
       <img v-if="messages[currentMessageIndex].img" :src="messages[currentMessageIndex].img" alt="">
-      <button v-if="currentMessageIndex !== 5" @click="nextMessage" class="bg-primary px-6 py-2 rounded-full">Next</button>
+      <button v-if="currentMessageIndex !== 5" @click="nextMessage"
+        class="bg-primary px-6 py-2 rounded-full">Next</button>
       <div v-else class="relative">
         <a href="/fornaira" class="bg-primary px-6 py-2 rounded-full">Ada</a>
-        <button id="noButton" @mouseover="moveNoButton" class="bg-primary px-6 py-2 rounded-full ms-2">Nggak Ada</button>
+        <button id="noButton" @mouseover="moveNoButton" class="bg-primary px-6 py-2 rounded-full ms-2">Nggak
+          Ada</button>
       </div>
     </div>
   </div>
   <div v-else class="text-white">
-    test
+    <div v-if="getRole === config.public.DEVELOPER_KEY" class="flex flex-col gap-2">
+      <div class="flex gap-2">
+        <div class="bg-primary rounded-md flex flex-col w-full py-4 px-4">
+          <p>Total Developer</p>
+          <p class="text-3xl font-bold">{{ count.klasifikasi.developer }} </p>
+        </div>
+        <div class="bg-primary rounded-md flex flex-col w-full py-4 px-4">
+          <p>Total Admin</p>
+          <p class="text-3xl font-bold">{{ count.klasifikasi.admin }} </p>
+        </div>
+        <div class=" bg-primary rounded-md w-full py-4 px-4">
+          <p>Total Siswa</p>
+          <p class="text-3xl font-bold">{{ count.klasifikasi.siswa }} </p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <div class="bg-secondary/10 rounded-md flex flex-col w-full py-4 px-4">
+          <p>Device Specifications</p>
+          <p class="text-3xl font-bold">{{ count.klasifikasi.developer }} </p>
+        </div>
+        <div class="bg-secondary/10 rounded-md flex flex-col w-full py-4 px-4">
+          <p>Windows Specifications</p>
+          <p class="text-3xl font-bold">{{ count.klasifikasi.admin }} </p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

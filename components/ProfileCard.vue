@@ -58,14 +58,22 @@ const editTTL = async () => {
 }
 
 const editNomor = async () => {
-  const nomor = {
-    Nomor: newData.value.Nomor
+  try {
+    const nomor = {
+      Nomor: newData.value.Nomor.toString()  // Ensure Nomor is a string
+    }
+    const data= await $fetch(`https://api.tierkun.my.id/api/edit/primary/Nomor/${nis.value}`, {
+      method: 'PUT',
+      body: JSON.stringify(nomor)
+    })
+    location.reload()
+  } catch (error) {
+    err.value = true;
+    errMsg.value = error.data.error;
   }
-  await $fetch(`https://api.tierkun.my.id/api/edit/primary/Nomor/${nis.value}`, {
-    method: 'PUT',
-    body: JSON.stringify(nomor)
-  })
 }
+
+
 
 const editPlat = async () => {
   const nomor = {
@@ -311,15 +319,28 @@ const toggleDatePicker = () => {
   <dialog id="editNomor" class="modal">
     <div class="modal-box bg-dark">
       <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
-
+      <div v-if="err" role="alert" class="alert alert-error mt-2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ errMsg }} </span>
+      </div>
       <div class="flex flex-col md:flex-row gap-2 mt-4">
         <div class="flex flex-col gap-2 w-full">
           <input type="number" id="Nomor" v-model="newData.Nomor" class="input input-bordered bg-dark"
             placeholder="Masukkan nomor kamu" />
-            <div class="flex flex-col text-sm text-secondary ">
-              <span>- Masukkan nomor dengan awalan (62), contoh: 62812345678</span>
-              <span>- Pastikan nomor kamu terdaftar di whatsapp</span>
-            </div>
+          <div class="flex flex-col text-sm text-secondary ">
+            <span>- Masukkan nomor dengan awalan (62), contoh: 62812345678</span>
+            <span>- Pastikan nomor kamu terdaftar di whatsapp</span>
+          </div>
         </div>
       </div>
       <div class="modal-action">
@@ -335,8 +356,8 @@ const toggleDatePicker = () => {
   </dialog>
   <dialog id="editPlat" class="modal">
     <div class="modal-box bg-dark">
-      <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
-
+      <h3 class="font-bold text-lg">Ganti Plat Kamu</h3>
+      
       <div class="flex flex-col md:flex-row gap-2 mt-4">
         <div class="flex flex-col gap-2 w-full">
           <input type="text" id="Plat" v-model="newData.Plat" class="input input-bordered bg-dark"
@@ -357,8 +378,8 @@ const toggleDatePicker = () => {
   <div v-if="user">
     <dialog v-if="user.Nomor" id="changePass" class="modal">
       <div class="modal-box bg-dark">
-        <h3 class="font-bold text-lg">Ganti Nomor Kamu</h3>
-  
+        <h3 class="font-bold text-lg">Ganti Password Kamu</h3>
+        
         <div class="flex flex-col md:flex-row gap-2 mt-4">
           <div class="flex flex-col gap-2 w-full">
             <input type="text" id="Plat" v-model="newData.Plat" class="input input-bordered bg-dark"
@@ -379,7 +400,7 @@ const toggleDatePicker = () => {
     <dialog v-else id="changePass" class="modal">
       <div class="modal-box bg-dark">
         <h3 class="font-bold text-lg">Isi nomor kamu terlebih dahulu!</h3>
-  
+
       </div>
       <form method="dialog" class="modal-backdrop">
         <button>close</button>
