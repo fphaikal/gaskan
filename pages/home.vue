@@ -11,26 +11,45 @@ const getRole = useStorage('_id');
 const role = () => {
   const getRole = useStorage('_id');
   if (getRole.value === config.public.ADMIN_KEY) {
-    return 'admin'
+    return 'admin';
   } else if (getRole.value === config.public.DEVELOPER_KEY) {
-    return 'developer'
+    return 'developer';
   } else {
-    return 'siswa'
+    return 'siswa';
   }
-}
+};
 
 const { data: user } = await useFetch(`/api/user?role=${role()}&user=${nis.value}`);
 const { data: count } = await useFetch(`/api/count`);
 
-// useSeoMeta({
-//   title: 'Home | GASKAN',
-//   ogTitle: 'Home | GASKAN',
-//   description: 'Gerbang Akses Pintar dan Kehadiran',
-//   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
-//   ogType: 'website',
-//   ogSiteName: 'GASKAN',
-//   ogLocale: 'id_ID',
-// })
+const system = ref([]);
+const socket = ref(null);
+
+onMounted(async () => {
+  socket.value = new WebSocket('wss://api.tierkun.my.id/system');
+
+  socket.value.onopen = () => {
+    console.log('Connected to WebSocket server');
+  };
+
+  socket.value.onmessage = async (event) => {
+    try {
+      system.value = await JSON.parse(event.data);
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  };
+
+  socket.value.onclose = () => {
+    console.log('Disconnected from WebSocket server');
+  };
+});
+
+onBeforeUnmount(() => {
+  if (socket.value) {
+    socket.value.close();
+  }
+});
 
 useSeoMeta({
   title: 'Home | GASKAN',
@@ -51,7 +70,7 @@ useSeoMeta({
   twitterDescription: `Dashboard Gerbang Akses Pintar dan Kehadiran`,
   twitterImage: '/banner.webp',
   twitterUrl: `https://gaskan.smtijogja.sch.id/home`,
-})
+});
 
 const messages = [
   { text: 'Hallo Sayangkuuu, Naira👋', img: '/gif/yellow-dragon-nailong.gif' },
@@ -72,14 +91,14 @@ const typeText = () => {
     displayIndex.value++;
     setTimeout(typeText, 100); // Adjust the speed by changing the delay
   }
-}
+};
 
 const nextMessage = () => {
   currentMessageIndex.value = (currentMessageIndex.value + 1) % messages.length;
   displayedText.value = '';
   displayIndex.value = 0;
   typeText();
-}
+};
 
 const moveNoButton = () => {
   const button = document.querySelector('#noButton');
@@ -90,12 +109,12 @@ const moveNoButton = () => {
   const newTop = Math.random() * (viewportHeight - buttonRect.height);
   button.style.left = `${newLeft}px`;
   button.style.top = `${newTop}px`;
-}
+};
 
 // Memantau ukuran jendela untuk memastikan tombol "No" tetap di dalam batas layar
 const handleResize = () => {
   moveNoButton(); // Panggil fungsi perpindahan saat jendela diubah ukurannya
-}
+};
 
 onMounted(() => {
   typeText();
@@ -115,43 +134,75 @@ onBeforeUnmount(() => {
 </style>
 
 <template>
-  <div v-if="user.Nama === 'NAIRA SALIMA'" class="text-white relative">
-    <div class="flex flex-col gap-4 justify-center items-center h-full">
-      <h1 class="text-2xl font-bold text-center">{{ displayedText }}</h1>
-      <img v-if="messages[currentMessageIndex].img" :src="messages[currentMessageIndex].img" alt="">
-      <button v-if="currentMessageIndex !== 5" @click="nextMessage"
-        class="bg-primary px-6 py-2 rounded-full">Next</button>
-      <div v-else class="relative">
-        <a href="/fornaira" class="bg-primary px-6 py-2 rounded-full">Ada</a>
-        <button id="noButton" @mouseover="moveNoButton" class="bg-primary px-6 py-2 rounded-full ms-2">Nggak
-          Ada</button>
+  <div v-if="user">
+    <div v-if="user.Nama === 'NAIRA SALIMA'" class="text-white relative">
+      <div class="flex flex-col gap-4 justify-center items-center h-full">
+        <h1 class="text-2xl font-bold text-center">{{ displayedText }}</h1>
+        <img v-if="messages[currentMessageIndex].img" :src="messages[currentMessageIndex].img" alt="">
+        <button v-if="currentMessageIndex !== 5" @click="nextMessage"
+          class="bg-primary px-6 py-2 rounded-full">Next</button>
+        <div v-else class="relative">
+          <a href="/fornaira" class="bg-primary px-6 py-2 rounded-full">Ada</a>
+          <button id="noButton" @mouseover="moveNoButton" class="bg-primary px-6 py-2 rounded-full ms-2">Nggak
+            Ada</button>
+        </div>
       </div>
     </div>
-  </div>
-  <div v-else class="text-white">
-    <div v-if="getRole === config.public.DEVELOPER_KEY" class="flex flex-col gap-2">
-      <div class="flex gap-2">
-        <div class="bg-primary rounded-md flex flex-col w-full py-4 px-4">
-          <p>Total Developer</p>
-          <p class="text-3xl font-bold">{{ count.klasifikasi.developer }} </p>
+    <div v-else class="text-white">
+      <div v-if="getRole === config.public.DEVELOPER_KEY" class="flex flex-col gap-2">
+        <div class="flex gap-2">
+          <div class="bg-primary rounded-md flex flex-col w-full py-4 px-4">
+            <p>Total Developer</p>
+            <p class="text-3xl font-bold">{{ count?.klasifikasi?.developer }} </p>
+          </div>
+          <div class="bg-primary rounded-md flex flex-col w-full py-4 px-4">
+            <p>Total Admin</p>
+            <p class="text-3xl font-bold">{{ count?.klasifikasi?.admin }} </p>
+          </div>
+          <div class="bg-primary rounded-md w-full py-4 px-4">
+            <p>Total Siswa</p>
+            <p class="text-3xl font-bold">{{ count?.klasifikasi?.siswa }} </p>
+          </div>
         </div>
-        <div class="bg-primary rounded-md flex flex-col w-full py-4 px-4">
-          <p>Total Admin</p>
-          <p class="text-3xl font-bold">{{ count.klasifikasi.admin }} </p>
-        </div>
-        <div class=" bg-primary rounded-md w-full py-4 px-4">
-          <p>Total Siswa</p>
-          <p class="text-3xl font-bold">{{ count.klasifikasi.siswa }} </p>
-        </div>
-      </div>
-      <div class="flex gap-2">
-        <div class="bg-secondary/10 rounded-md flex flex-col w-full py-4 px-4">
-          <p>Device Specifications</p>
-          <p class="text-3xl font-bold">{{ count.klasifikasi.developer }} </p>
-        </div>
-        <div class="bg-secondary/10 rounded-md flex flex-col w-full py-4 px-4">
-          <p>Windows Specifications</p>
-          <p class="text-3xl font-bold">{{ count.klasifikasi.admin }} </p>
+        <div v-if="system" class="flex flex-col md:flex-row gap-2">
+          <div class="bg-secondary/10 rounded-md flex flex-col w-full py-4 px-4">
+            <h1 class="mb-3">Device Specifications</h1>
+            <div class="flex gap-6">
+              <p class="w-1/4">Device Name</p>
+              <span class="text-secondary w-3/4">{{ system?.osInfo?.hostname }} </span>
+            </div>
+            <div class="flex gap-6">
+              <p class="w-1/4">Motherboard</p>
+              <span class="text-secondary w-3/4">{{ system?.motherBoard?.model }} </span>
+            </div>
+            <div class="flex gap-6">
+              <p class="w-1/4">Installed RAM</p>
+              <span class="text-secondary w-3/4">16,0 GB ({{ system?.memory?.used }} {{ system?.memory?.unit }} usable) </span>
+            </div>
+            <div class="flex gap-6">
+              <p class="w-1/4">Storage</p>
+              <span class="text-secondary w-3/4">{{ system?.disk?.total }} {{ system?.disk?.unit }} ({{ system?.disk?.used }} {{ system?.disk?.unit }} usable) </span>
+            </div>
+            <div class="flex gap-6">
+              <p class="w-1/4">System Info</p>
+              <span class="text-secondary w-3/4">64-bit operating system, x64-based processor</span>
+            </div>
+          </div>
+          <div class="bg-secondary/10 rounded-md flex flex-col w-full py-4 px-4">
+            <p class="mb-3">Windows Specifications</p>
+            <div class="flex gap-6">
+              <p class="w-1/4">Edition</p>
+              <span class="text-secondary w-3/4">{{ system?.osInfo?.distro }} </span>
+            </div>
+            <div class="flex gap-6">
+              <p class="w-1/4">OS Build</p>
+              <span class="text-secondary w-3/4">{{ system?.osInfo?.build }} </span>
+            </div>
+            <div class="flex gap-6">
+              <p class="w-1/4">Uptime</p>
+              <span class="text-secondary w-3/4">{{ system?.uptime }} (update every 5 second)</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
