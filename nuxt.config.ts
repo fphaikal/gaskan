@@ -21,7 +21,7 @@ export default defineNuxtConfig({
   },
   sitemap: {
     // exclude all URLs that start with /secret
-    exclude: ['/monitor/**'],
+    exclude: ['/monitor/**', '/fornaira'],
   },
   runtimeConfig: {
     public: {
