@@ -16,6 +16,9 @@ export default defineNuxtConfig({
       ],
     },
   },
+  site: {
+    url: process.env.NUXT_PUBLIC_SITE_URL,
+  },
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE,
@@ -31,5 +34,6 @@ export default defineNuxtConfig({
     "@pinia/nuxt",
     "nuxt-icon",
     "@pinia-plugin-persistedstate/nuxt",
+    "@nuxtjs/sitemap"
   ],
 });
