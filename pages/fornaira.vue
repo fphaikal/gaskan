@@ -2,6 +2,9 @@
 definePageMeta({
   layout: 'naira'
 })
+defineRouteRules({
+  robots: false
+})
 onMounted(() => {
   const c = setTimeout(() => {
     document.body.classList.remove("not-loaded");

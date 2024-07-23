@@ -19,6 +19,10 @@ export default defineNuxtConfig({
   site: {
     url: process.env.NUXT_PUBLIC_SITE_URL,
   },
+  sitemap: {
+    // exclude all URLs that start with /secret
+    exclude: ['/monitor/**'],
+  },
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE,
