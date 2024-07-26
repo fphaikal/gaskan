@@ -152,8 +152,11 @@ useSeoMeta({
                       <div class="flex flex-col">
                         <span class="flex gap-3 text-md font font-semibold">
                           {{ d }}
-                          <span class="badge badge-accent my-auto">
-                           
+                          <span v-if="l.indexTelat === false" class="badge badge-accent badge-success my-auto">
+                           Tepat Waktu
+                          </span>
+                          <span v-else class="badge badge-accent badge-error my-auto">
+                           Terlambat
                           </span>
                         </span>
                       </div>
