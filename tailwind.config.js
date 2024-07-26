@@ -39,7 +39,7 @@ export default {
         bodydark2: '#8A99AF',
         dark: "#212134",
         dark2: "#181826",
-        primary: "#4945ff",
+        primary: "#F2C300",
         secondary: "#c0c0cf",
         stroke: '#E2E8F0',
         gray: '#EFF4FB',
@@ -337,8 +337,9 @@ export default {
     themes: [
       {
         mytheme: {
-          primary: "#4945ff",
+          primary: "#F2C300",
           secondary: "#c0c0cf",
+          danger: '#D34053',
         },
       },
     ],
