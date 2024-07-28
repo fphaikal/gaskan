@@ -245,9 +245,9 @@ const toggleDatePicker = () => {
               <span class="flex items-center ">
                 {{ user.TTL || 'Belum Diatur' }}
               </span>
-              <button class="flex items-center" onclick="editTTL.showModal()">
+              <!-- <button class="flex items-center" onclick="editTTL.showModal()">
                 <Icon name="flowbite:edit-solid" class="transition duration-200 hover:text-primary" size="18" />
-              </button>
+              </button> -->
             </td>
           </tr>
           <tr>
@@ -286,7 +286,7 @@ const toggleDatePicker = () => {
   </div>
 
   <div class="flex gap-2 p-5">
-    <button onclick="changePass.showModal()" class="px-4 py-1.5 bg-primary rounded-md">Change Password</button>
+    <button onclick="changePass.showModal()" class="px-4 py-1.5 bg-primary text-dark rounded-md">Change Password</button>
   </div>
   <dialog id="editTTL" class="modal">
     <div class="modal-box bg-dark">
