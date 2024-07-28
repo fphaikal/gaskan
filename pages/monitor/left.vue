@@ -6,6 +6,7 @@ definePageMeta({
 const log = ref([]);
 const socket = ref(null);
 let reconnectInterval = null;
+let refreshInterval = null;
 
 const connectWebSocket = () => {
   socket.value = new WebSocket('wss://api.tierkun.my.id/viewlf1');
@@ -41,6 +42,11 @@ const connectWebSocket = () => {
 
 onMounted(() => {
   connectWebSocket();
+
+  // Refresh the page every 5 minutes
+  refreshInterval = setInterval(() => {
+    window.location.reload();
+  }, 5 * 60 * 1000); // 5 minutes in milliseconds
 });
 
 onUnmounted(() => {
@@ -50,11 +56,14 @@ onUnmounted(() => {
   if (reconnectInterval) {
     clearInterval(reconnectInterval);
   }
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
 });
 </script>
 
 <template>
-  <div class="bg-cover" style="background-image: url(https://tailwindcomponents.com/gradient-generator/assets/header.a6837f08.webp);">
+  <div class="bg-cover" style="background-image: url(/header.webp);">
     <div class="flex items-center h-screen">
       <div v-if="log.lf1" class="flex flex-col p-5 h-fit my-auto w-1/2 items-center">
         <div class="bg-dark2 p-5 w-full">

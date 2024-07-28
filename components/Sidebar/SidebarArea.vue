@@ -42,6 +42,12 @@ const menuGroups = [
         route: '/log/kehadiran'
       },
       {
+        icon: `mingcute:enter-door-fill`,
+        role: [config.public.ADMIN_KEY, config.public.DEVELOPER_KEY],
+        label: 'Log Login',
+        route: '/log/login'
+      },
+      {
         icon: `ic:outline-error`,
         role: [config.public.DEVELOPER_KEY],
         label: 'Log Error',

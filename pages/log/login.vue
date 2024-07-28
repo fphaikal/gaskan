@@ -3,44 +3,16 @@ import { useStorage } from '@vueuse/core';
 const role = useStorage('_id');
 const config = useRuntimeConfig();
 
-//const { data: err } = useFetch('/api/log/error')
-const err = ref([]);
-const socket = ref(null);
-
-onMounted(() => {
-  socket.value = new WebSocket('wss://api.tierkun.my.id/error/reverse');
-
-  socket.value.onopen = () => {
-    console.log('Connected to WebSocket server');
-  };
-
-  socket.value.onmessage = async (event) => {
-    try {
-      err.value = await JSON.parse(event.data);
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  };
-
-  socket.value.onclose = () => {
-    console.log('Disconnected from WebSocket server');
-  };
-});
-
-onUnmounted(() => {
-  if (socket.value) {
-    socket.value.close();
-  }
-});
+const { data: log } = await useFetch('/api/log/login');
 
 useSeoMeta({
-  title: 'Log Error | GASKAN',
-  ogTitle: 'Log Error | GASKAN',
+  title: 'Log Kehadiran | GASKAN',
+  ogTitle: 'Log Kehadiran | GASKAN',
   description: 'Gerbang Akses Pintar dan Kehadiran',
   image: '/banner.webp',
-  url: 'https://gaskan.smtijogja.sch.id/log/error',
+  url: 'https://gaskan.smtijogja.sch.idlog/kehadiran',
   site_name: 'GASKAN',
-  ogUrl: 'https://gaskan.smtijogja.sch.id/log/error',
+  ogUrl: 'https://gaskan.smtijogja.sch.idlog/kehadiran',
   ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
   ogImage: '/banner.webp',
   ogType: 'website',
@@ -48,23 +20,22 @@ useSeoMeta({
   ogLocale: 'id_ID',
 
   twitterCard: 'summary_large_image',
-  twitterTitle: `Log Error | GASKAN`,
+  twitterTitle: `Log Kehadiran | GASKAN`,
   twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
   twitterImage: '/banner.webp',
-  twitterUrl: `https://gaskan.smtijogja.sch.id/log/error`,
+  twitterUrl: `https://gaskan.smtijogja.sch.idlog/kehadiran`,
 })
 </script>
-
 <template>
   <div>
-    <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" class="flex flex-col">
-      <h1 class="font-bold text-2xl my-auto">Log Error</h1>
-      <div v-if="err" v-for="l in err" class="flex flex-col md:flex-row gap-3 w-full mt-5">
-  
+    <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" class="flex flex-col   ">
+      <h1 class="font-bold text-2xl mb-5">Log Login</h1>
+      <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" v-for="l in log"
+        class="flex flex-col md:flex-row gap-3 w-full">
+
         <ol class="relative border-s border-gray-200 dark:border-gray-700 w-full">
           <li class="mb-10 ms-4">
-            <div
-              class="absolute w-3 h-3 bg-white rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700">
+            <div class="absolute w-3 h-3 bg-white rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700">
             </div>
             <time class="mb-1 text-xl font-bold leading-none text-gray-400 dark:text-gray-500">{{ l.tanggal }}</time>
             <div v-for="d in l.data" class="flex bg-dark w-full p-4 rounded-md space-y-2 mt-2">
@@ -72,15 +43,20 @@ useSeoMeta({
                 <div class="flex flex-col justify-between">
                   <div class="flex flex-col">
                     <span class="text-md font font-semibold">
-                      {{ d.code }} | {{ d.msg }}
+                      {{ d.Nama }}
                     </span>
                     <span>
                       {{ d.Kelas }}
                     </span>
                   </div>
-                  <time>
-                    {{ formatLongDate(d.timestamp, true) }}
-                  </time>
+                  <div class="flex gap-2 items-center">
+                    <span class="badge badge-accent">
+                      {{ d.action }}
+                    </span>
+                    <time>
+                      {{ formatLongDate(d.timestamp) }}
+                    </time>
+                  </div>
                 </div>
               </div>
             </div>

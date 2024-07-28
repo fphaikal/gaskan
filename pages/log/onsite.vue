@@ -71,10 +71,10 @@ useSeoMeta({
         </ol>
       </div>
     </div>
-    <div v-else class="flex flex-col ">
-      <img src="../../public/404_1.svg" class="w-1/4" alt="">
-      <h1 class="text-lg font-semibold">Maaf, Halaman tidak ditemukan</h1>
-      <a href="/home" class="btn btn-primary hover:bg-dark2">Kembali Ke Halaman Utama</a>
+    <div v-else class="flex flex-col mt-10 gap-4">
+      <img :src="'/404_1.svg'" class="w-1/4 mx-auto" alt="">
+      <h1 class="text-lg font-semibold mx-auto">Maaf, Halaman tidak ditemukan</h1>
+      <a href="/home" class="btn btn-primary hover:bg-dark2 w-fit mx-auto">Kembali Ke Halaman Utama</a>
     </div>
   </div>
 </template>

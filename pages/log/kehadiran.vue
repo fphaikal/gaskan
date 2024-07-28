@@ -126,7 +126,6 @@ useSeoMeta({
         </ol>
       </div>
       <div v-else v-if="logSiswa" v-for="l in logSiswa.absen" class="flex flex-col md:flex-row gap-3 w-full">
-
         <ol class="relative border-s border-gray-200 dark:border-gray-700 w-full">
           <li class="mb-10 ms-4">
             <div
@@ -199,7 +198,6 @@ useSeoMeta({
                   </div>
                 </div>
               </div>
-
             </div>
           </li>
         </ol>

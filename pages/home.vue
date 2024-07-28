@@ -21,6 +21,7 @@ const role = () => {
 
 const { data: user } = await useFetch(`/api/user?role=${role()}&user=${nis.value}`);
 const { data: count } = await useFetch(`/api/count`);
+const { data: login } = await useFetch('/api/log/login');
 
 const system = ref([]);
 const socket = ref(null);
@@ -149,8 +150,8 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <div v-else class="text-white">
-      <div v-if="getRole === config.public.DEVELOPER_KEY" class="flex flex-col gap-2">
-        <div class="flex gap-2">
+      <div v-if="getRole === config.public.DEVELOPER_KEY || getRole === config.public.ADMIN_KEY" class="flex flex-col gap-2">
+        <div class="flex gap-2 text-dark ">
           <div class="bg-primary rounded-md flex flex-col w-full py-4 px-4">
             <p>Total Developer</p>
             <p class="text-3xl font-bold">{{ count?.klasifikasi?.developer }} </p>
@@ -164,7 +165,18 @@ onBeforeUnmount(() => {
             <p class="text-3xl font-bold">{{ count?.klasifikasi?.siswa }} </p>
           </div>
         </div>
-        <div v-if="system" class="flex flex-col md:flex-row gap-2">
+        <div class="flex gap-2 items-center bg-dark text-primary p-4 rounded-md">
+          <p class="font-bold">Total Siswa Onsite</p>
+          <progress class="progress progress-primary bg-dark2" :value="count?.onsite_only" :max="count?.klasifikasi.siswa"></progress>
+          <p class="font-bold">{{ count?.onsite_siswa }} </p>
+        </div>
+        <div class="flex gap-2 items-center bg-dark text-primary p-4 rounded-md">
+          <p class="font-bold">Total User Login</p>
+          <progress class="progress progress-primary bg-dark2" :value="login?.length" :max="count?.total"></progress>
+          <p class="font-bold">{{ login?.length }}/{{ count?.total }} </p>
+        </div>
+
+        <div v-if="system && getRole === config.public.DEVELOPER_KEY" class="flex flex-col md:flex-row gap-2">
           <div class="bg-secondary/10 rounded-md flex flex-col w-full py-4 px-4">
             <h1 class="mb-3">Device Specifications</h1>
             <div class="flex gap-6">

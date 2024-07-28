@@ -6,6 +6,7 @@ definePageMeta({
 const log = ref([]);
 const socket = ref(null);
 let reconnectInterval = null;
+let refreshInterval = null;
 
 const connectWebSocket = () => {
   socket.value = new WebSocket('wss://api.tierkun.my.id/viewlf3');
@@ -41,6 +42,11 @@ const connectWebSocket = () => {
 
 onMounted(() => {
   connectWebSocket();
+
+  // Refresh the page every 5 minutes
+  refreshInterval = setInterval(() => {
+    window.location.reload();
+  }, 5 * 60 * 1000); // 5 minutes in milliseconds
 });
 
 onUnmounted(() => {
@@ -49,6 +55,9 @@ onUnmounted(() => {
   }
   if (reconnectInterval) {
     clearInterval(reconnectInterval);
+  }
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
   }
 });
 </script>

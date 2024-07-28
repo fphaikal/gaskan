@@ -18,6 +18,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
     'log-kehadiran',
     'log-error',
     'log-onsite',
+    'log-login',
     'siswa',
     'siswa-id' // using named route for dynamic route
   ];
