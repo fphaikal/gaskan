@@ -35,6 +35,25 @@ const team = [
     ]
   },
   {
+    name: 'Muhammad Ranah Azaly',
+    role: 'Hardware Engineer',
+    image: 'https://api.tierkun.my.id/file/picture/0000.png',
+    socmed: [
+      {
+        name: 'Instagram',
+        link: 'https://instagram.com/razy_azaly'
+      },
+      {
+        name: 'LinkedIn',
+        link: 'https://LinkedIn.com/in/muhammad-ranah-azaly'
+      },
+      {
+        name: 'github',
+        link: 'https://github.com/MRAzaly20'
+      },
+    ]
+  },
+  {
     name: 'Muhammad Tier Sinyo C.U.S.',
     role: 'Backend Developer',
     image: 'sinyo.jpeg',
