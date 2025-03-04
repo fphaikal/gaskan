@@ -115,7 +115,7 @@ onUnmounted(() => {
         <div class="flex flex-col p-5 h-fit my-auto w-1/2 items-center">
           <div class="bg-dark2 p-5 w-full">
             <p>- | X KA C</p>
-            <p class="text-2xl font-bold">Medina Karin Xenna</p>
+            <p class="text-2xl font-bold">MEDINA KARIN XENNA</p>
           </div>
           <div class="flex w-full">
             <div class="bg-dark px-5 py-2 w-5/6">
@@ -129,8 +129,8 @@ onUnmounted(() => {
         </div>
         <div class="flex flex-col p-5 h-fit my-auto w-1/2 items-center">
           <div class="bg-dark2 p-5 w-full">
-            <p>- | X KA C</p>
-            <p class="text-2xl font-bold">Medina Karin Xenna</p>
+            <p>22100697 | XII KA A</p>
+            <p class="text-2xl font-bold">NAIRA SALIMA</p>
           </div>
           <div class="flex w-full">
             <div class="bg-dark px-5 py-2 w-5/6">

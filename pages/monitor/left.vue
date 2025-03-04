@@ -111,6 +111,39 @@ onUnmounted(() => {
           <p v-if="log.lf2.action === 'exit'" class="text-3xl font-bold">SELAMAT BERISTIRAHAT KAK NAIRA CANTIK</p>
         </div>
       </div>
+      <div v-else class="flex w-full">
+        <div class="flex flex-col p-5 h-fit my-auto w-1/2 items-center">
+          <div class="bg-dark2 p-5 w-full">
+            <p>22100597 | X KA C</p>
+            <p class="text-2xl font-bold">NAIRA SALIMA</p>
+          </div>
+          <div class="flex w-full">
+            <div class="bg-dark px-5 py-2 w-5/6">
+              <p class="text-xl font-semibold ">{{ new Date().toLocaleString('id-ID') }}</p>
+            </div>
+            <div class="bg-success px-5 py-2 w-3/6">
+              <p class="text-xl font-semibold flex justify-end">Tepat Waktu</p>
+            </div>
+          </div>
+          <img src="/smti_logo.svg" class="w-1/3 flex justify-center items-center mt-10" alt="">
+        </div>
+        <div class="flex flex-col p-5 h-fit my-auto w-1/2 items-center">
+          <div class="bg-dark2 p-5 w-full">
+            <p>- | X KA C</p>
+            <p class="text-2xl font-bold">Medina Karin Xenna</p>
+          </div>
+          <div class="flex w-full">
+            <div class="bg-dark px-5 py-2 w-5/6">
+              <p class="text-xl font-semibold ">{{ new Date().toLocaleString('id-ID') }}</p>
+            </div>
+            <div class="bg-success px-5 py-2 w-3/6">
+              <p class="text-xl font-semibold flex justify-end">Tepat Waktu</p>
+            </div>
+          </div>
+          <img src="/smti_logo.svg" class="w-1/3 flex justify-center items-center mt-10" alt="">
+        </div>
+        
+      </div>
     </div>
   </div>
 </template>
