@@ -1,5 +1,5 @@
 <script setup>
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: false })
 
 useSeoMeta({
   title: 'GASKAN',
