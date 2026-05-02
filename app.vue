@@ -1,5 +1,9 @@
+<script setup>
+const { theme } = useTheme()
+</script>
+
 <template>
-  <div>
+  <div :data-theme="theme">
     <NuxtLayout>
       <NuxtLoadingIndicator />
       <NuxtPage />
