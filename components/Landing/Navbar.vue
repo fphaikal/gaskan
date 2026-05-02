@@ -4,23 +4,11 @@ const route = useRoute()
 const scrolled = ref(false)
 let scrollHandler = null
 
-// Detect if we're on the landing page
-const isLanding = computed(() => route.path === '/')
-
-// Nav links differ based on route context
-const navLinks = computed(() =>
-  isLanding.value
-    ? [
-        { label: 'Fitur', href: '#fitur' },
-        { label: 'Statistik', href: '#statistik' },
-        { label: 'FAQ', href: '#faq' },
-      ]
-    : [
-        { label: 'Beranda', href: '/' },
-        { label: 'Siswa', href: '/view/siswa' },
-        { label: 'Tim', href: '/team' },
-      ]
-)
+const navLinks = [
+  { label: 'Beranda', href: '/' },
+  { label: 'Siswa', href: '/view/siswa' },
+  { label: 'Tim', href: '/team' },
+]
 
 onMounted(() => {
   scrollHandler = () => { scrolled.value = window.scrollY > 10 }
