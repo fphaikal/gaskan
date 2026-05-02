@@ -1,7 +1,26 @@
 <script setup>
 const { isDark, toggleTheme } = useTheme()
+const route = useRoute()
 const scrolled = ref(false)
 let scrollHandler = null
+
+// Detect if we're on the landing page
+const isLanding = computed(() => route.path === '/')
+
+// Nav links differ based on route context
+const navLinks = computed(() =>
+  isLanding.value
+    ? [
+        { label: 'Fitur', href: '#fitur' },
+        { label: 'Statistik', href: '#statistik' },
+        { label: 'FAQ', href: '#faq' },
+      ]
+    : [
+        { label: 'Beranda', href: '/' },
+        { label: 'Siswa', href: '/view/siswa' },
+        { label: 'Tim', href: '/team' },
+      ]
+)
 
 onMounted(() => {
   scrollHandler = () => { scrolled.value = window.scrollY > 10 }
@@ -25,11 +44,17 @@ onBeforeUnmount(() => {
         <span class="text-xl font-extrabold tracking-tight">GASKAN</span>
       </a>
 
-      <!-- Nav links (desktop) -->
+      <!-- Nav links (desktop) — route-aware -->
       <div class="hidden md:flex items-center gap-8 text-sm font-medium">
-        <a href="#fitur" class="opacity-60 hover:opacity-100 hover:text-primary transition-all duration-200">Fitur</a>
-        <a href="#statistik" class="opacity-60 hover:opacity-100 hover:text-primary transition-all duration-200">Statistik</a>
-        <a href="#faq" class="opacity-60 hover:opacity-100 hover:text-primary transition-all duration-200">FAQ</a>
+        <a
+          v-for="link in navLinks"
+          :key="link.href"
+          :href="link.href"
+          class="opacity-60 hover:opacity-100 hover:text-primary transition-all duration-200"
+          :class="route.path === link.href ? 'opacity-100 text-primary' : ''"
+        >
+          {{ link.label }}
+        </a>
       </div>
 
       <!-- Right side -->
