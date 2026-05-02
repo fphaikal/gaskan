@@ -1,16 +1,18 @@
 <script setup>
 const { theme } = useTheme()
 
-// Apply data-theme on <html> element so DaisyUI CSS variables cascade correctly
-// Placing on a child <div> won't affect body/html base styles
 useHead({
-  htmlAttrs: { 'data-theme': theme }
+  htmlAttrs: {
+    'data-theme': () => theme.value
+  }
 })
 </script>
 
 <template>
-  <NuxtLayout>
-    <NuxtLoadingIndicator />
-    <NuxtPage />
-  </NuxtLayout>
+  <div class="min-h-screen bg-base-100 text-base-content transition-colors duration-300">
+    <NuxtLayout>
+      <NuxtLoadingIndicator />
+      <NuxtPage />
+    </NuxtLayout>
+  </div>
 </template>

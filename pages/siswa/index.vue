@@ -52,19 +52,21 @@ useSeoMeta({
 </script>
 
 <template>
-  <div>
-    <select v-model="selectedClass" class="select select-bordered select-primary bg-dark w-full max-w-xs">
+  <div class="px-4 pb-8 max-w-6xl mx-auto">
+    <div class="mb-6">
+      <select v-model="selectedClass" class="select select-bordered select-primary bg-base-200 w-full max-w-xs focus:outline-none">
       <option value="">All Classes</option>
       <option v-for="option in classOptions" :key="option" :value="option">{{ option }}</option>
     </select>
-    <NuxtLink :to="'/siswa/'+ user.NIS" class="flex flex-row gap-4" v-for="user in filteredUsers" :key="user.NIS">
-      <div class="flex bg-dark w-full mt-2 p-5 rounded-md gap-4">
-        <div class="flex w-22">
-          <span class="text-white">{{ user.NIS }}</span>
+    </div>
+    <NuxtLink :to="'/siswa/'+ user.NIS" class="flex flex-row gap-4 group" v-for="user in filteredUsers" :key="user.NIS">
+      <div class="flex bg-base-200 border border-base-300 w-full mt-2 p-5 rounded-xl gap-4 transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-md">
+        <div class="flex w-24">
+          <span class="text-base-content font-mono font-medium">{{ user.NIS }}</span>
         </div>
-        <div class="flex flex-col md:flex-row gap-2 w-full md:justify-between">
-          <span class="text-white">{{ user.Nama }}</span>
-          <span class="text-white bg-primary rounded-full px-2 py-0.5 text-xs font-medium w-fit">{{ user.Kelas }}</span>
+        <div class="flex flex-col md:flex-row gap-2 w-full md:justify-between md:items-center">
+          <span class="text-base-content font-bold">{{ user.Nama }}</span>
+          <span class="text-primary-content bg-primary rounded-full px-3 py-1 text-xs font-bold w-fit">{{ user.Kelas }}</span>
         </div>
       </div>
     </NuxtLink>
