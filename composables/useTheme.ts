@@ -13,11 +13,19 @@ export const useTheme = () => {
     }
   }
 
-  // On first mount (client side), restore from localStorage
+  // On first mount (client side), restore from localStorage and apply
   onMounted(() => {
     const stored = localStorage.getItem('gaskan-theme')
     if (stored && stored !== theme.value) {
       theme.value = stored
+    }
+    document.documentElement.setAttribute('data-theme', theme.value)
+  })
+
+  // Watch for changes and update the DOM immediately
+  watch(theme, (newTheme) => {
+    if (import.meta.client) {
+      document.documentElement.setAttribute('data-theme', newTheme)
     }
   })
 
