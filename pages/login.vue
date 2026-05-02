@@ -1,6 +1,5 @@
 <script setup>
 definePageMeta({ layout: false })
-const { theme } = useTheme()
 
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
@@ -59,7 +58,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <div :data-theme="theme" class="min-h-screen flex items-stretch">
+  <div class="min-h-screen flex items-stretch">
     <!-- Left panel: Branding -->
     <div class="hidden lg:flex lg:w-1/2 bg-primary/10 border-r border-base-300 relative overflow-hidden flex-col items-center justify-center p-12 gap-8">
       <!-- Background blobs -->
