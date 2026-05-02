@@ -1,3 +1,5 @@
+import { useStorage } from '@vueuse/core'
+
 export const useTheme = () => {
   const theme = useStorage('gaskan-theme', 'mytheme')
 
