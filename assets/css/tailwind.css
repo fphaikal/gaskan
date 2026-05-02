@@ -548,3 +548,32 @@ input[type='search']::-webkit-search-cancel-button {
 [x-cloak] {
   display: none !important;
 }
+
+/* ===== Landing Page Animations ===== */
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(90px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(90px) rotate(-360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+@utility animate-orbit {
+  animation: orbit 5s linear infinite;
+}
+
+@utility animate-orbit-delay {
+  animation: orbit 5s linear infinite;
+  animation-delay: -1.66s;
+}
+
+@utility animate-orbit-delay2 {
+  animation: orbit 5s linear infinite;
+  animation-delay: -3.33s;
+}
+
+@utility animate-float {
+  animation: float 3.5s ease-in-out infinite;
+}
