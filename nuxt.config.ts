@@ -1,6 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import tailwindcss from '@tailwindcss/vite'
+
 export default defineNuxtConfig({
+  compatibilityDate: '2025-12-12',
   devtools: { enabled: true },
+
+  css: ['~/assets/css/tailwind.css'],
+
+  vite: {
+    plugins: [tailwindcss()],
+  },
+
   app: {
     head: {
       meta: [
@@ -21,7 +31,7 @@ export default defineNuxtConfig({
   },
   sitemap: {
     // exclude all URLs that start with /secret
-  exclude: ['/monitor/**', '/fornaira', '/log/**'],
+    exclude: ['/monitor/**', '/fornaira', '/log/**'],
   },
   runtimeConfig: {
     public: {
@@ -33,10 +43,9 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    "@nuxtjs/tailwindcss",
     "@vueuse/nuxt",
     "@pinia/nuxt",
-    "nuxt-icon",
+    "@nuxt/icon",
     "@pinia-plugin-persistedstate/nuxt",
     "@nuxtjs/sitemap"
   ],

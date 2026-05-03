@@ -1,5 +1,11 @@
 <script setup>
 const { theme } = useTheme()
+
+useHead({
+  htmlAttrs: {
+    'data-theme': theme,
+  },
+})
 </script>
 
 <template>

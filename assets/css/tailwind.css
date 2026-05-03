@@ -3,7 +3,7 @@
 
 /* Override DaisyUI primary color to yellow */
 :root,
-[data-theme="mytheme"] {
+[data-theme="dark"] {
   --p: 83.4% 0.164 85.84;
   /* primary - yellow #F2C300 */
   --pf: 73.4% 0.164 85.84;
@@ -63,7 +63,7 @@
   --tab-radius: 0.5rem;
 }
 
-[data-theme="mytheme-light"] {
+[data-theme="light"] {
   --p: 83.4% 0.164 85.84;      /* primary yellow - same */
   --pf: 73.4% 0.164 85.84;
   --pc: 20% 0.05 85;

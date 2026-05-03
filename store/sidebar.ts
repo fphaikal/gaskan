@@ -4,6 +4,8 @@ import { ref } from 'vue'
 
 export const useSidebarStore = defineStore('sidebar', () => {
   const isSidebarOpen = ref(false)
+  // Persisted collapsed state for desktop mini-sidebar
+  const isCollapsed = useStorage('sidebar-collapsed', false)
   const selected = useStorage('selected', ref('eCommerce'))
   const page = useStorage('page', ref('Dashboard'))
 
@@ -11,5 +13,9 @@ export const useSidebarStore = defineStore('sidebar', () => {
     isSidebarOpen.value = !isSidebarOpen.value
   }
 
-  return { isSidebarOpen, toggleSidebar, selected, page }
+  function toggleCollapse() {
+    isCollapsed.value = !isCollapsed.value
+  }
+
+  return { isSidebarOpen, isCollapsed, toggleSidebar, toggleCollapse, selected, page }
 })

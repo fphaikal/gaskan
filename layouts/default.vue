@@ -1,6 +1,11 @@
 <script setup>
+import { storeToRefs } from 'pinia'
+import { useSidebarStore } from '../store/sidebar'
 import HeaderArea from '../components/Header/HeaderArea.vue'
 import SidebarArea from '../components/Sidebar/SidebarArea.vue'
+
+const sidebarStore = useSidebarStore()
+const { isCollapsed } = storeToRefs(sidebarStore)
 </script>
 
 <template>
@@ -11,7 +16,11 @@ import SidebarArea from '../components/Sidebar/SidebarArea.vue'
     <!-- ===== Sidebar End ===== -->
 
     <!-- ===== Content Area Start ===== -->
-    <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+    <div
+      :class="[
+        'relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden transition-all duration-300',
+      ]"
+    >
       <!-- ===== Header Start ===== -->
       <HeaderArea />
       <!-- ===== Header End ===== -->

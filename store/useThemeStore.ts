@@ -1,23 +1,24 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { computed, watch } from 'vue'
 
 export const useThemeStore = defineStore('theme', () => {
-  const theme = ref('mytheme')
+  const theme = useCookie('theme-mode', { default: () => 'dark', watch: true })
 
-  const isDark = computed(() => theme.value === 'mytheme')
+  const isDark = computed(() => theme.value === 'dark')
 
   const toggleTheme = () => {
-    theme.value = theme.value === 'mytheme' ? 'mytheme-light' : 'mytheme'
+    const next = theme.value === 'dark' ? 'light' : 'dark'
+    console.debug('[theme] toggleTheme ->', { from: theme.value, to: next })
+    theme.value = next
   }
 
   // Watch for changes and apply to DOM manually
   watch(theme, (newTheme) => {
-    if (import.meta.client) {
-      document.documentElement.setAttribute('data-theme', newTheme)
+    if (typeof document !== 'undefined') {
+      console.debug('[theme] applying to DOM ->', newTheme)
+      document.documentElement.setAttribute('data-theme', newTheme || 'dark')
     }
   }, { immediate: true })
 
   return { theme, isDark, toggleTheme }
-}, {
-  persist: true
 })
