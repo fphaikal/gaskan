@@ -16,10 +16,12 @@ const currentPage = route.name
 
 <template>
   <li v-if="item.role.includes('all') || item.role.includes(userRole)">
-    <router-link :to="item.route"
-      class="group relative flex items-center gap-2.5 rounded-md py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4"
-      :class="route.path === item.route ? 'bg-graydark dark:bg-meta-4' : ''">
-      <Icon :name="item.icon" size="24"></Icon>
+    <router-link
+      :to="item.route"
+      class="group relative flex items-center gap-2.5 rounded-xl px-4 py-2.5 font-medium text-base-content duration-300 ease-in-out hover:bg-base-200"
+      active-class="bg-primary/10 text-primary hover:bg-primary/20"
+    >
+      <Icon :name="item.icon" size="20" class="group-[.router-link-exact-active]:text-primary" />
       {{ item.label }}
       <svg v-if="item.children" class="absolute right-4 top-1/2 -translate-y-1/2 fill-current"
         :class="{ 'rotate-180': sidebarStore.page === item.label }" width="20" height="20" viewBox="0 0 20 20"
