@@ -3,13 +3,21 @@ import { useAuthStore } from '~/store/useAuthStore';
 import { useStorage } from '@vueuse/core';
 
 export default defineNuxtRouteMiddleware((to, from) => {
-  const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive
+  const authStore = useAuthStore();
+  const { authenticated } = storeToRefs(authStore); // make authenticated state reactive
   const token = useCookie('token'); // get token from cookies
   const userRole = useStorage('_id'); // get user role from storage
 
   if (token.value) {
     // TODO: Verify if token is valid, before updating the state
     authenticated.value = true; // update the state to authenticated
+  } else {
+    // Token is gone (expired or never set) — clean up stale state
+    // This is the critical fix: without this, _id persists in localStorage
+    // and the next login would read the wrong role.
+    authenticated.value = false;
+    userRole.value = null;
+    authStore.nis = null;
   }
 
   const loginRoutes = ['login', 'register'];
@@ -40,3 +48,4 @@ export default defineNuxtRouteMiddleware((to, from) => {
     return navigateTo('/');
   }
 });
+

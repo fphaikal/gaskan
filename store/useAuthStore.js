@@ -31,20 +31,20 @@ export const useAuthStore = defineStore("auth", {
           this.nis = data.NIS;
           console.log(data);
 
+          // FIX: Must assign .value to actually write to localStorage.
+          // useStorage("_id", defaultValue) only sets a default — it won't
+          // overwrite an existing key, causing stale roles from previous sessions.
+          const roleStorage = useStorage("_id");
           if (data.Kelas === "admin") {
-            useStorage("_id", config.public.ADMIN_KEY, localStorage);
+            roleStorage.value = config.public.ADMIN_KEY;
           } else if (data.Kelas === "developer") {
-            useStorage("_id", config.public.DEVELOPER_KEY, localStorage);
+            roleStorage.value = config.public.DEVELOPER_KEY;
           } else {
-            useStorage("_id", data.Kelas, localStorage);
+            roleStorage.value = data.Kelas;
           }
-
-          // Set timeout to clear state and storage after 1 hour
-          setTimeout(() => {
-            this.authenticated = false;
-            this.nis = null;
-            useStorage("_id").value = null;
-          }, 3600 * 1000);
+          // NOTE: Session expiry cleanup is now handled by the global auth
+          // middleware on every navigation. The unreliable setTimeout has been
+          // removed because it is lost on page refresh/tab close.
         }
       } catch (error) {
         this.loading = false;
