@@ -5,7 +5,7 @@ import SidebarArea from '../components/Sidebar/SidebarArea.vue'
 
 <template>
   <!-- ===== Page Wrapper Start ===== -->
-  <div class="flex h-screen overflow-hidden">
+  <div class="flex h-screen overflow-hidden bg-base-100 text-base-content transition-colors duration-300">
     <!-- ===== Sidebar Start ===== -->
     <SidebarArea />
     <!-- ===== Sidebar End ===== -->
@@ -17,7 +17,7 @@ import SidebarArea from '../components/Sidebar/SidebarArea.vue'
       <!-- ===== Header End ===== -->
 
       <!-- ===== Main Content Start ===== -->
-      <main>
+      <main class="bg-base-200 flex-1 transition-colors duration-300">
         <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
           <NuxtPage />
         </div>
