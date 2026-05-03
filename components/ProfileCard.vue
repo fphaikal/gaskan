@@ -98,18 +98,14 @@ const toggleDatePicker = () => {
   <!-- ====== Profile Section Start -->
   <div class="overflow-hidden rounded-md bg-dark shadow-default ">
     <div v-if="user" class="relative z-20 h-35 md:h-65">
-      <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/1.jpg"
-        alt="profile cover" class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-top" />
-      <img v-else src="../public/banner.webp" alt="profile cover"
-        class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-bottom " />
+      <img src="../public/banner.webp" alt="profile cover"
+        class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-bottom" />
     </div>
     <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
       <div v-if="user"
         class="relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-44 sm:p-3">
         <div class="relative z-20 h-[112px] sm:h-[150px] md:h-[150px] mx-auto">
-          <img v-if="user.Nama === 'FAHREZA PASHA HAIKAL'" src="https://api.tierkun.my.id/file/picture/n.jpg"
-            alt="profile cover" class="h-full w-full rounded-full object-cover object-center" />
-          <img v-else :src="user.url_picture" alt="profile cover"
+          <img :src="user.url_picture" alt="profile cover"
             class="h-full w-full rounded-full object-cover object-center" />
         </div>
       </div>
