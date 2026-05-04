@@ -6,7 +6,6 @@ let scrollHandler = null
 
 const navLinks = [
   { label: 'Beranda', href: '/' },
-  { label: 'Siswa', href: '/view/siswa' },
   { label: 'Tim', href: '/team' },
 ]
 

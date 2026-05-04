@@ -23,7 +23,7 @@ const login = async () => {
     }
   } catch (err) {
     error.value = true
-    errorMessage.value = err
+    errorMessage.value = err.data?.data || err.data || { error: err.message || 'Terjadi kesalahan internal' }
   } finally {
     isLoading.value = false
   }

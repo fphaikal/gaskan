@@ -1,50 +1,54 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { useRequestFetch } from '#app';
 import { useAuthStore } from '~/store/useAuthStore';
-import { useStorage } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import DashboardAdmin from '~/components/Dashboard/DashboardAdmin.vue';
 import DashboardSiswa from '~/components/Dashboard/DashboardSiswa.vue';
 
-const config = useRuntimeConfig();
 const authStore = useAuthStore();
-const { nis } = storeToRefs(authStore);
+const { nis, role: sessionRole } = storeToRefs(authStore);
+const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
-const getRole = useStorage('_id');
-
-const role = () => {
-  if (getRole.value === config.public.ADMIN_KEY) return 'admin';
-  if (getRole.value === config.public.DEVELOPER_KEY) return 'developer';
-  return 'siswa';
-};
-
-const isAdminOrDev = computed(() => ['admin', 'developer'].includes(role()));
+const currentRole = computed(() => sessionRole.value || 'siswa');
+const isAdminOrDev = computed(() => ['admin', 'developer'].includes(currentRole.value));
+const isDeveloper = computed(() => currentRole.value === 'developer');
 
 // Fetch Data
-const { data: user } = await useFetch(`/api/user?role=${role()}&user=${nis.value}`);
-const { data: count } = await useFetch(`/api/count`);
-const { data: login } = await useFetch('/api/log/login');
+const { data: user } = await useFetch(
+  computed(() => `/api/user?role=${currentRole.value}&user=${nis.value}`)
+);
+
+const count = ref(null);
+const login = ref(null);
+
+if (isAdminOrDev.value) {
+  count.value = await sessionFetch('/api/count');
+  login.value = await sessionFetch('/api/log/login');
+}
 
 const system = ref(null);
-const socket = ref(null);
+let systemInterval = null;
+
+const refreshSystem = async () => {
+  if (!isDeveloper.value) return;
+
+  try {
+    system.value = await sessionFetch('/api/dev/system');
+  } catch (error) {
+    console.error('Error fetching system data:', error);
+  }
+};
 
 onMounted(async () => {
-  if (isAdminOrDev.value) {
-    socket.value = new WebSocket('wss://api.tierkun.my.id/system');
-    socket.value.onopen = () => console.log('Connected to WebSocket server');
-    socket.value.onmessage = async (event) => {
-      try {
-        system.value = await JSON.parse(event.data);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
-    socket.value.onclose = () => console.log('Disconnected from WebSocket server');
+  if (isDeveloper.value) {
+    await refreshSystem();
+    systemInterval = setInterval(refreshSystem, 5000);
   }
 });
 
 onBeforeUnmount(() => {
-  if (socket.value) socket.value.close();
+  if (systemInterval) clearInterval(systemInterval);
 });
 
 useSeoMeta({
@@ -75,3 +79,4 @@ useSeoMeta({
     </div>
   </div>
 </template>
+

@@ -1,51 +1,60 @@
-import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
-import { useStorage } from '@vueuse/core';
 
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware(async (to, from) => {
   const authStore = useAuthStore();
-  const { authenticated } = storeToRefs(authStore); // make authenticated state reactive
-  const token = useCookie('token'); // get token from cookies
-  const userRole = useStorage('_id'); // get user role from storage
-
-  if (token.value) {
-    // TODO: Verify if token is valid, before updating the state
-    authenticated.value = true; // update the state to authenticated
-  } else {
-    // Token is gone (expired or never set) — clean up stale state
-    // This is the critical fix: without this, _id persists in localStorage
-    // and the next login would read the wrong role.
-    authenticated.value = false;
-    userRole.value = null;
-    authStore.nis = null;
-  }
 
   const loginRoutes = ['login', 'register'];
   const protectedRoutes = [
     'home',
+    'profile',
     'log-kehadiran',
     'log-error',
     'log-onsite',
     'log-login',
     'siswa',
-    'siswa-id' // using named route for dynamic route
+    'siswa-id',
+    'view-siswa',
+    'view-siswa-id'
   ];
+  const adminRoutes = ['log-kehadiran', 'log-onsite', 'log-login', 'siswa', 'siswa-id', 'view-siswa', 'view-siswa-id'];
+  const developerRoutes = ['log-error'];
+
+  const routeName = to.name?.toString();
+  const isMonitorRoute = to.path.startsWith('/monitor');
+  const isProtectedRoute = protectedRoutes.includes(routeName) || isMonitorRoute;
+  const shouldCheckSession = isProtectedRoute || loginRoutes.includes(routeName);
+
+  let user = authStore.authenticated ? { role: authStore.role } : null;
+
+  if (shouldCheckSession) {
+    try {
+      user = await authStore.refreshSession();
+    } catch {
+      user = null;
+    }
+  }
 
   // Redirect authenticated users away from login/register pages
-  if (token.value && loginRoutes.includes(to.name)) {
+  if (user && loginRoutes.includes(routeName)) {
     return navigateTo('/home');
   }
 
   // Redirect unauthenticated users to login page
-  if (!token.value && protectedRoutes.includes(to.name)) {
+  if (!user && isProtectedRoute) {
     abortNavigation();
     return navigateTo('/login');
   }
 
-  // Additional role-based redirection
-  if (userRole.value === 'siswa' && to.path === '/log/error') {
+  if (!user) return;
+
+  if (developerRoutes.includes(routeName) && user.role !== 'developer') {
     abortNavigation();
-    return navigateTo('/');
+    return navigateTo('/home');
+  }
+
+  if ((adminRoutes.includes(routeName) || isMonitorRoute) && !['admin', 'developer'].includes(user.role)) {
+    abortNavigation();
+    return navigateTo('/home');
   }
 });
 

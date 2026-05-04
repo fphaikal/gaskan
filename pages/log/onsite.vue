@@ -1,36 +1,36 @@
 <script setup>
-import { useStorage } from '@vueuse/core';
-const role = useStorage('_id');
-const nis = useStorage('nis');
-const config = useRuntimeConfig();
+import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { useRequestFetch } from '#app';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '~/store/useAuthStore';
+
+const { role } = storeToRefs(useAuthStore());
+const isAdminOrDev = computed(() => ['admin', 'developer'].includes(role.value));
+const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
 const log = ref([]);
-const socket = ref(null);
+let logInterval = null;
+
+const refreshLog = async () => {
+  if (!isAdminOrDev.value) return;
+
+  try {
+    log.value = await sessionFetch('/api/log/onsite');
+  } catch (error) {
+    console.error('Error fetching onsite log:', error);
+  }
+};
+
+await refreshLog();
 
 onMounted(() => {
-  socket.value = new WebSocket('wss://api.tierkun.my.id/onsite/reverse');
-
-  socket.value.onopen = () => {
-    console.log('Connected to WebSocket server');
-  };
-
-  socket.value.onmessage = async (event) => {
-    try {
-      log.value = await JSON.parse(event.data);
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  };
-
-  socket.value.onclose = () => {
-    console.log('Disconnected from WebSocket server');
-  };
+  if (isAdminOrDev.value) {
+    logInterval = setInterval(refreshLog, 5000);
+  }
 });
 
 onUnmounted(() => {
-  if (socket.value) {
-    socket.value.close();
-  }
+  if (logInterval) clearInterval(logInterval);
 });
 
 useSeoMeta({
@@ -56,25 +56,126 @@ useSeoMeta({
 </script>
 
 <template>
-  <div>
-    <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" class="flex flex-col   ">
-      <h1 class="font-bold text-2xl mb-5">On Site</h1>
-      <div v-for="l in log" :key="l.id || l.NIS" class="flex flex-col md:flex-row w-full gap-0">
-        <ol class="relative border-s border-gray-200 dark:border-gray-700 w-full">
-          <li class="mb-5 ms-6">
-            <div class="absolute w-3 h-3 bg-white rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
-            <div class="items-center p-4 bg-dark rounded-lg shadow-sm sm:flex dark:bg-gray-700 dark:border-gray-600">
-              <time class="text-xs font-normal text-gray-400 sm:mb-0 w-28">{{ new Date(l.time_enter).toLocaleString() }}</time>
-              <div class="text-sm font-normal text-gray-500 dark:text-gray-300">{{ l.Nama }}</div>
+  <div class="max-w-5xl mx-auto px-4 md:px-0 py-6">
+    <div v-if="isAdminOrDev">
+      
+      <!-- Header Area -->
+      <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <h1 class="text-3xl font-extrabold tracking-tight text-base-content">Log On-Site</h1>
+            <!-- Live Indicator -->
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+              </span>
+              <span class="text-xs font-bold text-success uppercase tracking-wider">Live</span>
             </div>
-          </li>
-        </ol>
+          </div>
+          <p class="text-base-content/60 text-sm">Pemantauan aktivitas masuk area dengan auto-refresh aman</p>
+        </div>
+        <div class="flex items-center gap-2 text-sm font-semibold text-base-content bg-base-200/50 px-4 py-2 rounded-xl border border-base-300/50 shadow-sm">
+          <Icon name="mingcute:group-fill" size="18" class="text-primary" />
+          <span>{{ log.length }} Total Tercatat</span>
+        </div>
+      </div>
+
+      <!-- Timeline Container -->
+      <div class="bg-base-100 border border-base-200/60 rounded-3xl p-6 md:p-8 shadow-sm">
+        <!-- Empty State -->
+        <div v-if="log.length === 0" class="flex flex-col items-center justify-center py-16 text-base-content/40">
+          <div class="relative w-16 h-16 mb-4 flex items-center justify-center rounded-2xl bg-base-200/50 border border-base-300/50">
+            <Icon name="mingcute:radar-line" size="32" class="animate-spin-slow opacity-50" />
+          </div>
+          <p class="font-medium text-lg">Menunggu data masuk...</p>
+          <p class="text-sm mt-1 opacity-70">Sistem siap menangkap log berikutnya.</p>
+        </div>
+        
+        <!-- Timeline State -->
+        <div v-else class="relative border-l-2 border-base-200/80 ml-3 md:ml-4">
+          <TransitionGroup name="list" tag="div" class="flex flex-col gap-6">
+            <div v-for="(l, index) in log" :key="l.id || l.NIS || index" class="relative pl-6 md:pl-8 group">
+              <!-- Timeline Dot -->
+              <div class="absolute -left-[9px] top-4 flex h-4 w-4 items-center justify-center rounded-full bg-base-100 border-2 border-primary ring-4 ring-base-100 transition-transform group-hover:scale-125"></div>
+              
+              <!-- Card -->
+              <div class="bg-base-100 hover:bg-base-200/30 border border-base-200/60 rounded-2xl p-4 transition-all duration-300 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md flex flex-col sm:flex-row sm:items-center gap-4">
+                
+                <!-- Time Badge -->
+                <div class="shrink-0 flex items-center justify-center bg-base-200/70 text-base-content/80 rounded-xl px-3 py-2 border border-base-300/50 w-fit group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                  <Icon name="mingcute:time-fill" size="18" class="mr-2" />
+                  <time class="text-sm font-mono font-bold tracking-tight">
+                    {{ new Date(l.time_enter).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}
+                  </time>
+                  <span class="ml-2 text-xs font-semibold uppercase opacity-60">WIB</span>
+                </div>
+                
+                <!-- User Info -->
+                <div class="flex-1 flex flex-col">
+                  <h3 class="text-lg font-bold text-base-content">{{ l.Nama || 'Tanpa Nama' }}</h3>
+                  <div class="flex items-center gap-3 mt-1 text-xs text-base-content/50 font-semibold uppercase tracking-wider">
+                    <span v-if="l.NIS" class="flex items-center gap-1.5"><Icon name="mingcute:idcard-fill" size="14"/> {{ l.NIS }}</span>
+                    <span v-if="l.NIS && l.Kelas" class="opacity-40">&bull;</span>
+                    <span v-if="l.Kelas" class="flex items-center gap-1.5"><Icon name="mingcute:book-2-fill" size="14"/> {{ l.Kelas }}</span>
+                  </div>
+                </div>
+                
+                <!-- Status Action / Tag -->
+                <div class="shrink-0 flex sm:flex-col items-end gap-2 sm:gap-1 mt-2 sm:mt-0">
+                  <div class="px-3 py-1.5 text-xs font-bold text-success bg-success/10 rounded-lg border border-success/20 uppercase tracking-widest inline-flex items-center gap-1.5">
+                    <Icon name="mingcute:check-circle-fill" size="14"/>
+                    On-Site
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </TransitionGroup>
+        </div>
       </div>
     </div>
-    <div v-else class="flex flex-col mt-10 gap-4">
-      <img :src="'/404_1.svg'" class="w-1/4 mx-auto" alt="">
-      <h1 class="text-lg font-semibold mx-auto">Maaf, Halaman tidak ditemukan</h1>
-      <a href="/home" class="btn btn-primary hover:bg-dark2 w-fit mx-auto">Kembali Ke Halaman Utama</a>
+    
+    <!-- Unauthorized State -->
+    <div v-else class="min-h-[70vh] flex flex-col items-center justify-center text-center gap-6">
+      <div class="relative w-48 h-48 mb-4 group">
+        <div class="absolute inset-0 bg-error/20 rounded-full blur-3xl group-hover:bg-error/30 transition-colors duration-500"></div>
+        <img :src="'/404_1.svg'" class="relative z-10 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" alt="Not Found">
+      </div>
+      <div>
+        <h1 class="text-4xl font-extrabold text-base-content mb-3 tracking-tight">Akses Ditolak</h1>
+        <p class="text-base-content/60 text-lg max-w-md mx-auto leading-relaxed">Anda tidak memiliki hak akses (Admin/Developer) untuk melihat log on-site real-time.</p>
+      </div>
+      <a href="/home" class="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary/30 mt-6 font-semibold">Kembali Ke Dashboard</a>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Transition Group Animations for live data */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translateX(-40px) scale(0.95);
+}
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(40px) scale(0.95);
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
+

@@ -12,9 +12,12 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 hover:-translate-y-1 hover:shadow
     <!-- Profil Siswa (2x1 on large) -->
     <div :class="[bentoCard, 'lg:col-span-2 bg-gradient-to-br from-primary/20 to-base-100']">
       <div class="flex items-center gap-6">
-        <div class="avatar placeholder">
-          <div class="bg-primary text-primary-content rounded-full w-20">
-            <span class="text-3xl">{{ user?.Nama?.charAt(0) || 'S' }}</span>
+        <div class="avatar">
+          <div class="w-20 rounded-full overflow-hidden bg-primary text-primary-content shadow-inner">
+            <img v-if="user?.url_picture" :src="user.url_picture" :alt="user?.Nama" class="w-full h-full object-cover" />
+            <div v-else class="w-full h-full flex items-center justify-center text-3xl font-bold">
+              {{ user?.Nama?.charAt(0) || 'S' }}
+            </div>
           </div>
         </div>
         <div>

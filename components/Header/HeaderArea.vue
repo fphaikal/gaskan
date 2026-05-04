@@ -19,6 +19,7 @@ const pageTitle = computed(() => {
   const map: Record<string, string> = {
     'home': 'Dashboard',
     'siswa': 'Daftar Siswa',
+    'siswa-id': 'Profil Siswa',
     'log-kehadiran': 'Log Kehadiran',
     'log-onsite': 'Log On Site',
     'log-login': 'Log Login',

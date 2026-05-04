@@ -1,8 +1,11 @@
 export default defineEventHandler(async (event) => {
+    const requestedNis = ensureAlphanumeric(event.context.params.id, 'student id');
+    const session = requireSelfOrRole(event, requestedNis, ['admin', 'developer']);
     const config = useRuntimeConfig(); // get runtime config
   
-    const res = await fetch(config.public.apiBase + `/api/siswa/${event.context.params.id}?reverse=true`);
-    const data = await res.json();
-    return data;
+    const res = await fetch(config.public.apiBase + `/api/siswa/${requestedNis}?reverse=true`, {
+      headers: getUpstreamAuthHeaders(session),
+    });
+    return readUpstreamJson(res);
   });
   

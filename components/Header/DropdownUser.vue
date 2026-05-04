@@ -1,10 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { onClickOutside, useStorage } from '@vueuse/core';
+import { onClickOutside } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore'; 
 
-const config = useRuntimeConfig();
 const target = ref(null);
 const dropdownOpen = ref(false);
 
@@ -12,13 +11,11 @@ onClickOutside(target, () => {
   dropdownOpen.value = false;
 });
 
-const { nis } = storeToRefs(useAuthStore());
-
-const role = useStorage('_id');
+const { nis, role } = storeToRefs(useAuthStore());
 
 const userRole = computed(() => {
-  if (role.value === config.public.ADMIN_KEY) return 'admin';
-  if (role.value === config.public.DEVELOPER_KEY) return 'developer';
+  if (role.value === 'admin') return 'admin';
+  if (role.value === 'developer') return 'developer';
   return 'siswa';
 });
 
@@ -103,3 +100,4 @@ const { data: user } = useFetch(
   transform: translateY(-6px);
 }
 </style>
+

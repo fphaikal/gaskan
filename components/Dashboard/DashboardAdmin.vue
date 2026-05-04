@@ -1,6 +1,7 @@
 <script setup>
-import { useRuntimeConfig } from '#app';
-import { useStorage } from '@vueuse/core';
+import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '~/store/useAuthStore';
 
 const props = defineProps({
   count: Object,
@@ -8,9 +9,8 @@ const props = defineProps({
   system: Object
 });
 
-const config = useRuntimeConfig();
-const getRole = useStorage('_id');
-const isDev = getRole.value === config.public.DEVELOPER_KEY;
+const { role } = storeToRefs(useAuthStore());
+const isDev = computed(() => role.value === 'developer');
 
 // Base bento card class
 const bentoCard = "bg-base-100 rounded-3xl p-6 hover:-translate-y-1 hover:shadow-lg hover:shadow-base-300/50 transition-all duration-300 flex flex-col justify-center";
@@ -78,3 +78,4 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 hover:-translate-y-1 hover:shadow
     </div>
   </div>
 </template>
+

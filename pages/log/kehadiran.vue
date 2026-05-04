@@ -1,45 +1,42 @@
 <script setup>
-import { useStorage } from '@vueuse/core';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { useRequestFetch } from '#app';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
 
-const { nis } = storeToRefs(useAuthStore()); // make authenticated state reactive
-
-const config = useRuntimeConfig();
-const role = useStorage('_id');
-//const nis = useStorage('nis');
+const { nis, role } = storeToRefs(useAuthStore()); // make authenticated state reactive
+const isAdminOrDev = computed(() => ['admin', 'developer'].includes(role.value));
+const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
 const log = ref([]);
-const socket = ref(null);
+const logSiswa = ref(null);
+let logInterval = null;
+
+const refreshLog = async () => {
+  if (!isAdminOrDev.value) return;
+
+  try {
+    log.value = await sessionFetch('/api/log/kehadiran');
+  } catch (error) {
+    console.error('Error fetching attendance log:', error);
+  }
+};
+
+if (isAdminOrDev.value) {
+  await refreshLog();
+} else {
+  logSiswa.value = await sessionFetch('/api/log/kehadiran/' + nis.value);
+}
 
 onMounted(() => {
-  socket.value = new WebSocket('wss://api.tierkun.my.id/log/reverse');
-
-  socket.value.onopen = () => {
-    console.log('Connected to WebSocket server');
-  };
-
-  socket.value.onmessage = async (event) => {
-    try {
-      log.value = await JSON.parse(event.data);
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  };
-
-  socket.value.onclose = () => {
-    console.log('Disconnected from WebSocket server');
-  };
-});
-
-onUnmounted(() => {
-  if (socket.value) {
-    socket.value.close();
+  if (isAdminOrDev.value) {
+    logInterval = setInterval(refreshLog, 5000);
   }
 });
 
-//const { data: log } = useFetch('/api/log/kehadiran');
-const { data: logSiswa } = await useFetch('/api/log/kehadiran/' + nis.value);
+onUnmounted(() => {
+  if (logInterval) clearInterval(logInterval);
+});
 
 const type = (type) => {
   switch (type) {
@@ -74,134 +71,178 @@ useSeoMeta({
 })
 </script>
 <template>
-  <div>
-    <div class="flex flex-col">
-      <div class="flex justify-between mb-5">
-        <h1 class="font-bold text-2xl my-auto">Log Presensi</h1>
-        <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" class="flex my-auto gap-2">
-          <button class="px-4 py-2 bg-primary rounded-lg">
-            <a href="https://api.tierkun.my.id/file/kehadiran?type=json">JSON</a>
-          </button>
-          <button class="px-4 py-2 bg-primary rounded-lg">
-            <a href="https://api.tierkun.my.id/file/kehadiran?type=txt">TXT</a>
-          </button>
-          <button class="px-4 py-2 bg-primary rounded-lg">
-            <a href="https://api.tierkun.my.id/file/kehadiran?type=xlsx">XLSX</a>
-          </button>
+  <div class="max-w-7xl mx-auto px-4 md:px-0 py-6">
+    <!-- Admin/Developer View -->
+    <div v-if="isAdminOrDev">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 class="text-3xl font-extrabold tracking-tight text-base-content mb-2 flex items-center gap-3">
+            Log Presensi
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+              </span>
+              <span class="text-xs font-bold text-success uppercase tracking-wider">Live</span>
+            </div>
+          </h1>
+          <p class="text-base-content/60 text-sm">Pemantauan rekapitulasi kehadiran dengan auto-refresh aman</p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-primary btn-sm rounded-xl px-4">
+              <Icon name="mingcute:download-2-fill" size="18" class="mr-1"/>
+              Export Data
+              <Icon name="mingcute:down-fill" size="16" class="ml-1 opacity-70"/>
+            </div>
+            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-xl bg-base-100 rounded-2xl w-52 border border-base-200/80 mt-2 font-medium">
+              <li><a href="/api/log/kehadiran/export?type=json" target="_blank" class="hover:text-primary"><Icon name="mingcute:braces-fill" size="18" class="opacity-70"/> JSON Format</a></li>
+              <li><a href="/api/log/kehadiran/export?type=txt" target="_blank" class="hover:text-primary"><Icon name="mingcute:document-text-fill" size="18" class="opacity-70"/> Text Format</a></li>
+              <li><a href="/api/log/kehadiran/export?type=xlsx" target="_blank" class="hover:text-primary"><Icon name="mingcute:table-2-fill" size="18" class="opacity-70"/> Excel Format</a></li>
+            </ul>
+          </div>
         </div>
       </div>
 
-      <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" v-for="l in log"
-        class="flex flex-col md:flex-row gap-3 w-full">
+      <div v-if="log.length === 0" class="bg-base-100 border border-base-200/60 rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-base-content/40">
+        <div class="relative w-16 h-16 mb-4 flex items-center justify-center rounded-2xl bg-base-200/50 border border-base-300/50">
+            <Icon name="mingcute:radar-line" size="32" class="animate-spin-slow opacity-50" />
+        </div>
+        <p class="font-medium text-lg">Menunggu data rekap...</p>
+      </div>
 
-        <ol class="relative border-s border-gray-200 dark:border-gray-700 w-full">
-          <li class="mb-10 ms-4">
-            <div class="absolute w-3 h-3 bg-white rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700">
+      <div v-else class="space-y-12">
+        <TransitionGroup name="list" tag="div" class="space-y-10">
+          <div v-for="l in log" :key="l.tanggal" class="relative">
+            <!-- Date Header -->
+            <div class="sticky top-[64px] z-10 bg-base-100/95 backdrop-blur-md py-4 mb-4 flex items-center gap-4 border-b border-base-200/50">
+              <div class="h-8 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]"></div>
+              <h2 class="text-2xl font-extrabold text-base-content tracking-tight">{{ l.tanggal }}</h2>
             </div>
-            <time class="mb-1 text-xl font-bold leading-none text-gray-400 dark:text-gray-500">{{ l.tanggal }}</time>
-            <div v-for="d in l.data" class="flex bg-dark w-full p-4 rounded-md space-y-2 mt-2">
-              <div class="flex space-x-4">
-                <img class="w-1/5 rounded-sm" :src="d.Image" alt="avatar">
-                <div class="flex flex-col justify-between">
-                  <div class="flex flex-col">
-                    <span class="text-md font font-semibold">
-                      {{ d.Nama }}
-                    </span>
-                    <span>
-                      {{ d.Kelas }}
-                    </span>
-                  </div>
-                  <div class="flex gap-2">
-                    <span class="badge badge-accent">
+            
+            <!-- Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div v-for="d in l.data" :key="d.timestamp" class="bg-base-100 border border-base-200/80 hover:border-primary/30 rounded-3xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex gap-4 items-center group cursor-default">
+                <div class="relative w-16 h-16 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-base-200 shrink-0 shadow-inner">
+                  <img :src="d.Image" alt="avatar" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
+                  <div class="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-base font-bold text-base-content truncate group-hover:text-primary transition-colors">{{ d.Nama }}</h3>
+                  <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-widest mb-2 truncate">{{ d.Kelas }}</p>
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border"
+                          :class="d.action === 'enter' ? 'bg-success/10 text-success border-success/20 shadow-[0_0_10px_rgba(var(--success),0.1)]' : (d.action === 'exit' ? 'bg-error/10 text-error border-error/20 shadow-[0_0_10px_rgba(var(--error),0.1)]' : 'bg-base-200 text-base-content/60')">
                       {{ type(d.action) }}
                     </span>
-                    <time>
-                      {{ formatLongDate(d.timestamp) }}
-                    </time>
+                    <span class="text-xs font-mono font-bold text-base-content/60 bg-base-200/50 px-2 py-1 border border-base-300/50 rounded-lg">
+                      {{ formatLongDate(d.timestamp).split(' ').slice(1).join(' ') || formatLongDate(d.timestamp) }}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-          </li>
-        </ol>
+          </div>
+        </TransitionGroup>
       </div>
-      <div v-else v-if="logSiswa" v-for="l in logSiswa.absen" class="flex flex-col md:flex-row gap-3 w-full">
-        <ol class="relative border-s border-gray-200 dark:border-gray-700 w-full">
-          <li class="mb-10 ms-4">
-            <div
-              class="absolute w-3 h-3 bg-white rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700">
+    </div>
+
+    <!-- Siswa View -->
+    <div v-else-if="logSiswa">
+      <div class="mb-10">
+        <h1 class="text-4xl font-black tracking-tight text-base-content mb-3">Riwayat Kehadiran</h1>
+        <p class="text-base-content/60 text-base">Rekapitulasi jam masuk dan pulang harian Anda</p>
+      </div>
+
+      <div v-if="!logSiswa.absen || logSiswa.absen.length === 0" class="bg-base-100 border border-base-200/60 rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-base-content/40">
+        <Icon name="mingcute:calendar-time-line" size="64" class="opacity-30 mb-5" />
+        <p class="font-medium text-xl">Belum ada riwayat kehadiran.</p>
+      </div>
+
+      <div v-else class="space-y-8 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-gradient-to-b before:from-primary/50 before:to-transparent before:rounded-full">
+        <div v-for="(l, i) in logSiswa.absen" :key="l.tanggal" class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+          
+          <!-- Icon Marker -->
+          <div class="flex items-center justify-center w-12 h-12 rounded-full border-[6px] border-base-100 bg-primary text-primary-content shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 transition-transform group-hover:scale-110">
+            <Icon name="mingcute:calendar-month-fill" size="20"/>
+          </div>
+          
+          <!-- Card -->
+          <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] bg-base-100 hover:bg-base-100/80 border border-base-200/80 rounded-3xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+            <!-- Background glow decoration -->
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"></div>
+
+            <div class="flex items-center justify-between mb-5 border-b border-base-200/60 pb-4 relative z-10">
+              <time class="text-xl font-extrabold text-base-content">{{ l.tanggal }}</time>
+              <div class="px-3 py-1 bg-base-200/50 rounded-lg border border-base-300 text-xs font-bold text-base-content/50 uppercase">Hari ke-{{ logSiswa.absen.length - i }}</div>
             </div>
-            <time class="mb-1 text-xl font-bold leading-none text-gray-400 dark:text-gray-500">{{ l.tanggal }}</time>
-            <div class="flex space-x-2">
-              <div class="flex flex-col w-full">
-                <div class="flex bg-success w-full p-4 rounded-t-md space-y-2 mt-2">
-                  <div class="flex space-x-4">
-                    <div class="flex flex-col justify-between">
-                      <div class="flex flex-col">
-                        <span class="text-md font font-semibold">
-                          Masuk
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+            
+            <div class="grid grid-cols-2 gap-4 relative z-10">
+              <!-- Masuk Column -->
+              <div class="bg-success/5 rounded-2xl border border-success/10 overflow-hidden flex flex-col transition-colors hover:bg-success/10">
+                <div class="bg-success/10 px-4 py-2.5 border-b border-success/10 flex items-center gap-2">
+                  <Icon name="mingcute:arrow-right-circle-fill" size="18" class="text-success" />
+                  <span class="text-xs font-black text-success uppercase tracking-widest">Masuk</span>
                 </div>
-                <div v-for="d in l.enter.time" class="flex bg-dark w-full p-4 space-y-2">
-                  <div class="flex space-x-4">
-                    <div class="flex flex-col justify-between">
-                      <div class="flex flex-col">
-                        <span class="flex gap-3 text-md font font-semibold">
-                          {{ d }}
-                          <span v-if="l.indexTelat === false" class="badge badge-accent badge-success my-auto">
-                           Tepat Waktu
-                          </span>
-                          <span v-else class="badge badge-accent badge-error my-auto">
-                           Terlambat
-                          </span>
-                        </span>
-                      </div>
-                    </div>
+                <div class="p-4 flex-1 flex flex-col gap-3 justify-center">
+                  <div v-if="!l.enter.time || l.enter.time.length === 0" class="text-sm text-base-content/40 font-medium italic text-center py-2">Tidak ada data</div>
+                  <div v-else v-for="d in l.enter.time" :key="d" class="flex flex-col gap-2 items-start">
+                    <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
+                    <span v-if="l.indexTelat === false" class="px-2.5 py-1 text-[10px] font-black text-success bg-success/20 border border-success/30 rounded-lg w-fit tracking-widest uppercase">TEPAT WAKTU</span>
+                    <span v-else class="px-2.5 py-1 text-[10px] font-black text-error bg-error/20 border border-error/30 rounded-lg w-fit tracking-widest uppercase">TERLAMBAT</span>
                   </div>
                 </div>
               </div>
-              <div class="flex flex-col w-full">
-                <div class="flex bg-error w-full p-4 rounded-t-md space-y-2 mt-2">
-                  <div class="flex space-x-4">
-                    <div class="flex flex-col justify-between">
-                      <div class="flex flex-col">
-                        <span class="text-md font font-semibold">
-                          Keluar
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+              
+              <!-- Keluar Column -->
+              <div class="bg-error/5 rounded-2xl border border-error/10 overflow-hidden flex flex-col transition-colors hover:bg-error/10">
+                <div class="bg-error/10 px-4 py-2.5 border-b border-error/10 flex items-center gap-2">
+                  <Icon name="mingcute:arrow-left-circle-fill" size="18" class="text-error" />
+                  <span class="text-xs font-black text-error uppercase tracking-widest">Pulang</span>
                 </div>
-                <div v-if="l.exit.time.length > 0" v-for="d in l.exit.time" class="flex bg-dark w-full p-4 space-y-2">
-                  <div class="flex space-x-4">
-                    <div class="flex flex-col justify-between">
-                      <div class="flex flex-col">
-                        <span class="text-md font font-semibold">
-                          {{ d }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="flex bg-dark w-full p-4 space-y-2">
-                  <div class="flex space-x-4">
-                    <div class="flex flex-col justify-between">
-                      <div class="flex flex-col">
-                        <span class="text-md font font-semibold">
-                          Anda Belum Keluar Sekolah
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <div class="p-4 flex-1 flex flex-col gap-3 justify-center">
+                   <div v-if="!l.exit.time || l.exit.time.length === 0" class="text-sm text-base-content/40 font-medium flex flex-col items-center justify-center gap-2 py-2 text-center">
+                     <Icon name="mingcute:time-fill" size="24" class="opacity-30"/> 
+                     <span>Belum Pulang</span>
+                   </div>
+                   <div v-else v-for="d in l.exit.time" :key="d" class="flex flex-col gap-2 items-start">
+                     <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
+                   </div>
                 </div>
               </div>
             </div>
-          </li>
-        </ol>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Transition Group Animations for live data */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

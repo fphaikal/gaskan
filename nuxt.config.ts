@@ -34,10 +34,10 @@ export default defineNuxtConfig({
     exclude: ['/monitor/**', '/fornaira', '/log/**'],
   },
   runtimeConfig: {
+    sessionSecret: process.env.NUXT_SESSION_SECRET || process.env.SESSION_SECRET,
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE,
-      ADMIN_KEY: process.env.NUXT_ROLE_ADMIN_KEY,
-      DEVELOPER_KEY: process.env.NUXT_ROLE_DEVELOPER_KEY,
+      wsBase: process.env.NUXT_PUBLIC_WS_BASE || 'wss://api.tierkun.my.id',
       buildId: process.env.VERCEL_GIT_COMMIT_SHA || "development",
     },
   },

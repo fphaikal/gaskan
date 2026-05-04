@@ -1,47 +1,48 @@
 <script setup>
-import { useStorage } from '@vueuse/core';
-const role = useStorage('_id');
-const config = useRuntimeConfig();
+import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { useRequestFetch } from '#app';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '~/store/useAuthStore';
+
+const { role } = storeToRefs(useAuthStore());
+const isDeveloper = computed(() => role.value === 'developer');
+const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
 //const { data: err } = useFetch('/api/log/error')
 const err = ref([]);
-const socket = ref(null);
+let errInterval = null;
+
+const refreshErrorLog = async () => {
+  if (!isDeveloper.value) return;
+
+  try {
+    err.value = await sessionFetch('/api/log/error');
+  } catch (error) {
+    console.error('Error fetching error log:', error);
+  }
+};
+
+await refreshErrorLog();
 
 onMounted(() => {
-  socket.value = new WebSocket('wss://api.tierkun.my.id/error/reverse');
-
-  socket.value.onopen = () => {
-    console.log('Connected to WebSocket server');
-  };
-
-  socket.value.onmessage = async (event) => {
-    try {
-      err.value = await JSON.parse(event.data);
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  };
-
-  socket.value.onclose = () => {
-    console.log('Disconnected from WebSocket server');
-  };
+  if (isDeveloper.value) {
+    errInterval = setInterval(refreshErrorLog, 5000);
+  }
 });
 
 onUnmounted(() => {
-  if (socket.value) {
-    socket.value.close();
-  }
+  if (errInterval) clearInterval(errInterval);
 });
 
 useSeoMeta({
   title: 'Log Error | GASKAN',
   ogTitle: 'Log Error | GASKAN',
-  description: 'Gerbang Akses Pintar dan Kehadiran',
+  description: 'Log riwayat error dan anomali sistem',
   image: '/banner.webp',
   url: 'https://gaskan.smtijogja.sch.id/log/error',
   site_name: 'GASKAN',
   ogUrl: 'https://gaskan.smtijogja.sch.id/log/error',
-  ogDescription: 'Gerbang Akses Pintar dan Kehadiran',
+  ogDescription: 'Log riwayat error dan anomali sistem',
   ogImage: '/banner.webp',
   ogType: 'website',
   ogSiteName: 'GASKAN',
@@ -49,49 +50,112 @@ useSeoMeta({
 
   twitterCard: 'summary_large_image',
   twitterTitle: `Log Error | GASKAN`,
-  twitterDescription: `Gerbang Akses Pintar dan Kehadiran`,
+  twitterDescription: `Log riwayat error dan anomali sistem`,
   twitterImage: '/banner.webp',
   twitterUrl: `https://gaskan.smtijogja.sch.id/log/error`,
 })
 </script>
 
 <template>
-  <div>
-    <div v-if="role === config.public.ADMIN_KEY || role === config.public.DEVELOPER_KEY" class="flex flex-col">
-      <h1 class="font-bold text-2xl my-auto">Log Error</h1>
-      <div v-if="err" v-for="l in err" class="flex flex-col md:flex-row gap-3 w-full mt-5">
-  
-        <ol class="relative border-s border-gray-200 dark:border-gray-700 w-full">
-          <li class="mb-10 ms-4">
-            <div
-              class="absolute w-3 h-3 bg-white rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700">
+  <div class="max-w-7xl mx-auto px-4 md:px-0 py-6">
+    <!-- Developer View -->
+    <div v-if="isDeveloper">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 class="text-3xl font-extrabold tracking-tight text-base-content mb-2 flex items-center gap-3">
+            Log Sistem (Error)
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error/10 border border-error/20">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+              </span>
+              <span class="text-xs font-bold text-error uppercase tracking-wider">Live</span>
             </div>
-            <time class="mb-1 text-xl font-bold leading-none text-gray-400 dark:text-gray-500">{{ l.tanggal }}</time>
-            <div v-for="d in l.data" class="flex bg-dark w-full p-4 rounded-md space-y-2 mt-2">
-              <div class="flex space-x-4">
-                <div class="flex flex-col justify-between">
-                  <div class="flex flex-col">
-                    <span class="text-md font font-semibold">
-                      {{ d.code }} | {{ d.msg }}
-                    </span>
-                    <span>
-                      {{ d.Kelas }}
-                    </span>
+          </h1>
+          <p class="text-base-content/60 text-sm">Pemantauan aktivitas anomali dan error sistem dengan auto-refresh aman</p>
+        </div>
+      </div>
+
+      <div v-if="!err || err.length === 0" class="bg-base-100 border border-base-200/60 rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-base-content/40">
+        <div class="relative w-16 h-16 mb-4 flex items-center justify-center rounded-2xl bg-base-200/50 border border-base-300/50">
+            <Icon name="mingcute:bug-line" size="32" class="opacity-50" />
+        </div>
+        <p class="font-medium text-lg">Sistem berjalan normal. Belum ada error tercatat.</p>
+      </div>
+
+      <div v-else class="space-y-12">
+        <TransitionGroup name="list" tag="div" class="space-y-10">
+          <div v-for="l in err" :key="l.tanggal" class="relative">
+            <!-- Date Header -->
+            <div class="sticky top-[64px] z-10 bg-base-100/95 backdrop-blur-md py-4 mb-4 flex items-center gap-4 border-b border-base-200/50">
+              <div class="h-8 w-1.5 rounded-full bg-error shadow-[0_0_10px_rgba(var(--error),0.5)]"></div>
+              <h2 class="text-2xl font-extrabold text-base-content tracking-tight">{{ l.tanggal }}</h2>
+            </div>
+            
+            <!-- Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div v-for="d in l.data" :key="d.timestamp" class="bg-base-100 border border-base-200/80 hover:border-error/30 rounded-3xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-4 group cursor-default relative overflow-hidden">
+                
+                <!-- Background subtle glow -->
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-error/5 rounded-full blur-2xl group-hover:bg-error/10 transition-colors"></div>
+
+                <div class="flex gap-4 items-start relative z-10">
+                  <div class="relative w-12 h-12 rounded-2xl overflow-hidden bg-error/10 text-error flex items-center justify-center shrink-0 shadow-inner">
+                    <Icon name="mingcute:warning-fill" size="24" class="group-hover:scale-110 transition-transform duration-500" />
+                    <div class="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl"></div>
                   </div>
-                  <time>
-                    {{ formatLongDate(d.timestamp, true) }}
-                  </time>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-base font-bold text-base-content line-clamp-2 leading-tight group-hover:text-error transition-colors">{{ d.msg }}</h3>
+                    <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-widest mt-1 truncate">{{ d.Kelas || 'Sistem' }}</p>
+                  </div>
                 </div>
+
+                <div class="flex items-center justify-between border-t border-base-200/60 pt-3 relative z-10">
+                  <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border bg-error/10 text-error border-error/20 shadow-[0_0_10px_rgba(var(--error),0.1)]">
+                    ERR: {{ d.code || 'UNKNOWN' }}
+                  </span>
+                  <span class="text-xs font-mono font-bold text-base-content/60 bg-base-200/50 px-2 py-1 border border-base-300/50 rounded-lg">
+                    {{ formatLongDate(d.timestamp).split(' ').slice(1).join(' ') || formatLongDate(d.timestamp) }}
+                  </span>
+                </div>
+
               </div>
             </div>
-          </li>
-        </ol>
+          </div>
+        </TransitionGroup>
       </div>
     </div>
-    <div v-else class="flex flex-col mt-10 gap-4">
-      <img :src="'/404_1.svg'" class="w-1/4 mx-auto" alt="">
-      <h1 class="text-lg font-semibold mx-auto">Maaf, Halaman tidak ditemukan</h1>
-      <a href="/home" class="btn btn-primary hover:bg-dark2 w-fit mx-auto">Kembali Ke Halaman Utama</a>
+    
+    <!-- Unauthorized View -->
+    <div v-else class="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center px-4">
+      <div class="relative">
+        <div class="absolute inset-0 bg-error/20 blur-3xl rounded-full"></div>
+        <Icon name="mingcute:lock-fill" size="120" class="text-error relative z-10 drop-shadow-[0_0_15px_rgba(var(--error),0.5)]" />
+      </div>
+      <div class="max-w-md">
+        <h1 class="text-4xl font-black text-base-content mb-3 tracking-tight">Akses Ditolak</h1>
+        <p class="text-base-content/60 font-medium mb-8">Halaman ini dikhususkan untuk Developer. Anda tidak memiliki izin untuk melihat log error sistem.</p>
+        <NuxtLink to="/home" class="btn btn-primary hover:scale-105 transition-transform shadow-lg shadow-primary/30 rounded-2xl px-8">
+          <Icon name="mingcute:home-3-fill" size="20" class="mr-2" />
+          Kembali ke Beranda
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Transition Group Animations for live data */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+</style>

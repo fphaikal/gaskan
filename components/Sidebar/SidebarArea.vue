@@ -2,20 +2,17 @@
 import { useSidebarStore } from '../../store/sidebar'
 import { useAuthStore } from '~/store/useAuthStore'
 import { storeToRefs } from 'pinia'
-import { onClickOutside, useStorage } from '@vueuse/core'
+import { onClickOutside } from '@vueuse/core'
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import SidebarItem from './SidebarItem.vue'
 
-const config = useRuntimeConfig()
 const target = ref(null)
 const sidebarStore = useSidebarStore()
 const { isCollapsed } = storeToRefs(sidebarStore)
-const userRole = useStorage('_id')
-const router = useRouter()
-
-const { nis } = storeToRefs(useAuthStore())
-const { logUserOut } = useAuthStore()
+const authStore = useAuthStore()
+const { nis, role: userRole } = storeToRefs(authStore)
+const { logUserOut } = authStore
+const currentRole = computed(() => userRole.value || 'siswa')
 
 // Close mobile sidebar on click outside
 onClickOutside(target, () => {
@@ -24,19 +21,18 @@ onClickOutside(target, () => {
 
 // Derive role label
 const roleLabel = computed(() => {
-  if (userRole.value === config.public.ADMIN_KEY) return 'Admin'
-  if (userRole.value === config.public.DEVELOPER_KEY) return 'Developer'
+  if (currentRole.value === 'admin') return 'Admin'
+  if (currentRole.value === 'developer') return 'Developer'
   return 'Siswa'
 })
 
 // Fetch current user for footer card
 const { data: currentUser } = useFetch(
-  computed(() => `/api/user?role=${roleLabel.value.toLowerCase()}&user=${nis.value}`)
+  computed(() => `/api/user?role=${currentRole.value}&user=${nis.value}`)
 )
 
 const logout = () => {
   logUserOut()
-  router.push('/login')
 }
 
 const menuGroups = [
@@ -51,13 +47,13 @@ const menuGroups = [
       },
       {
         icon: `mingcute:location-2-fill`,
-        role: [config.public.ADMIN_KEY, config.public.DEVELOPER_KEY],
+        role: ['admin', 'developer'],
         label: 'On Site',
         route: '/log/onsite'
       },
       {
         icon: `mingcute:user-3-fill`,
-        role: ["all"],
+        role: ['admin', 'developer'],
         label: 'Daftar Siswa',
         route: '/siswa'
       },
@@ -74,13 +70,13 @@ const menuGroups = [
     menuItems: [
       {
         icon: `mingcute:enter-door-fill`,
-        role: [config.public.ADMIN_KEY, config.public.DEVELOPER_KEY],
+        role: ['admin', 'developer'],
         label: 'Log Login',
         route: '/log/login'
       },
       {
         icon: `ic:outline-error`,
-        role: [config.public.DEVELOPER_KEY],
+        role: ['developer'],
         label: 'Log Error',
         route: '/log/error'
       },
@@ -154,7 +150,7 @@ const menuGroups = [
         <template v-for="menuGroup in menuGroups" :key="menuGroup.name">
           <!-- Filter: Only show group if it has visible items for this role -->
           <div
-            v-if="menuGroup.menuItems.some(i => i.role.includes('all') || i.role.includes(userRole))"
+            v-if="menuGroup.menuItems.some(i => i.role.includes('all') || i.role.includes(currentRole))"
           >
             <!-- Group Label -->
             <div
@@ -186,7 +182,7 @@ const menuGroups = [
                 v-for="menuItem in menuGroup.menuItems"
                 :key="menuItem.label"
                 :item="menuItem"
-                :userRole="userRole"
+                :userRole="currentRole"
                 :isCollapsed="isCollapsed"
               />
             </ul>
@@ -267,3 +263,4 @@ const menuGroups = [
   scrollbar-width: none;
 }
 </style>
+
