@@ -9,6 +9,9 @@ export const useAuthStore = defineStore("auth", {
     role: null,
     kelas: null,
     nama: null,
+    initialized: false,
+    userData: null,
+    userLoading: false,
   }),
   actions: {
     setSessionUser(user) {
@@ -25,6 +28,7 @@ export const useAuthStore = defineStore("auth", {
       this.role = null;
       this.kelas = null;
       this.nama = null;
+      this.userData = null;
     },
 
     async refreshSession() {
@@ -32,10 +36,30 @@ export const useAuthStore = defineStore("auth", {
         const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
         const data = await sessionFetch("/api/auth/me");
         this.setSessionUser(data.user);
+        this.initialized = true;
         return data.user;
       } catch (error) {
         this.clearSessionUser();
+        this.initialized = true;
         throw error;
+      }
+    },
+
+    async fetchUserData(force = false) {
+      if (this.userData && !force) return this.userData;
+      if (!this.authenticated) return null;
+
+      this.userLoading = true;
+      try {
+        const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
+        const data = await sessionFetch("/api/user");
+        this.userData = data;
+        return data;
+      } catch (error) {
+        console.error("[AuthStore] Failed to fetch detailed user data:", error);
+        return null;
+      } finally {
+        this.userLoading = false;
       }
     },
 
@@ -57,7 +81,6 @@ export const useAuthStore = defineStore("auth", {
       } catch (error) {
         this.loading = false;
         console.error("Authentication error:", error.data);
-        console.error("Authentication error:", error);
         const errorData = error.data;
         throw errorData;
       }
@@ -65,17 +88,14 @@ export const useAuthStore = defineStore("auth", {
 
     async logUserOut() {
       try {
-        await $fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
         this.clearSessionUser();
-
-        // Redirect to login manually since router cannot be used here safely
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
+        $fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
       } catch (error) {
         console.error("Logout error:", error);
       }
     },
   }
 });
-

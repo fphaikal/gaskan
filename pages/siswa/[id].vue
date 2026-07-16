@@ -15,24 +15,12 @@ const gender = (getGender) => {
 const { data: user } = await useFetch(`/api/user?role=siswa&user=${nis}`);
 
 useSeoMeta({
-  title: `Profil ${user.value.Nama} | GASKAN`,
-  ogTitle: `Profil ${user.value.Nama} | GASKAN`,
-  image: user.value.url_picture,
-  description:  `Profil Siswa ${user.value.Nama}`,
+  title: computed(() => `Profil ${user.value?.Nama || 'Siswa'} | GASKAN`),
+  ogTitle: computed(() => `Profil ${user.value?.Nama || 'Siswa'} | GASKAN`),
+  image: computed(() => user.value?.url_picture),
+  description: computed(() => `Profil Siswa ${user.value?.Nama || ''}`),
   url: `https://gaskan.smtijogja.sch.id/siswa/${nis}`,
-  site_name: 'GASKAN',
   ogUrl: `https://gaskan.smtijogja.sch.id/siswa/${nis}`,
-  ogDescription:  `Profil Siswa ${user.value.Nama}`,
-  ogImage: user.value.url_picture,
-  ogType: 'website',
-  ogSiteName: 'GASKAN',
-  ogLocale: 'id_ID',
-
-  twitterCard: 'summary_large_image',
-  twitterTitle: `${user.value.Name} | GASKAN`,
-  twitterDescription: `Profil ${user.value.Name} | GASKAN`,
-  twitterImage: user.value.url_picture,
-  twitterUrl: `https://gaskan.smtijogja.sch.id/siswa/${nis}`,
 })
 </script>
 <template>
@@ -76,9 +64,7 @@ useSeoMeta({
               </div>
               <div class="flex-1">
                 <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-1">Tempat, Tanggal Lahir</p>
-                <div class="flex items-center justify-between">
-                  <p class="text-base font-medium text-base-content">{{ user.TTL || 'Belum Diatur' }}</p>
-                </div>
+                <p class="text-base font-medium text-base-content">{{ user.TTL }}</p>
               </div>
             </div>
             <div class="flex items-start gap-4">
@@ -87,7 +73,16 @@ useSeoMeta({
               </div>
               <div>
                 <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-1">Gender / Agama</p>
-                <p class="text-base font-medium text-base-content">{{ gender(user.Gender) }} &bull; {{ user.Agama || 'Belum Diatur' }}</p>
+                <p class="text-base font-medium text-base-content">{{ user.Gender }} &bull; {{ user.Agama }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-base-200/50 text-base-content/60">
+                <Icon name="mingcute:mail-fill" size="20" />
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-1">Email</p>
+                <p class="text-base font-medium text-base-content">{{ user.Email || 'Belum Diatur' }}</p>
               </div>
             </div>
             <div class="flex items-start gap-4">
@@ -96,7 +91,7 @@ useSeoMeta({
               </div>
               <div>
                 <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-1">Alamat</p>
-                <p class="text-base font-medium text-base-content leading-relaxed">{{ user.Alamat || 'Belum Diatur' }}</p>
+                <p class="text-base font-medium text-base-content leading-relaxed">{{ user.Alamat }}</p>
               </div>
             </div>
           </div>
@@ -118,7 +113,7 @@ useSeoMeta({
             </div>
             <div>
               <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-1">WhatsApp / Telp</p>
-              <p class="text-lg font-bold text-base-content">{{ user.Nomor || 'Belum Diatur' }}</p>
+              <p class="text-lg font-bold text-base-content">{{ user.Nomor }}</p>
             </div>
           </div>
         </div>
@@ -138,6 +133,93 @@ useSeoMeta({
                 <span class="text-md font-mono font-bold tracking-widest text-base-content">{{ user.Plat_Nomor || '----' }}</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Attendance Log Block -->
+        <div class="rounded-3xl bg-base-100 p-6 shadow-sm border border-base-200/60 relative">
+          <div class="flex items-center justify-between mb-5 pb-3 border-b border-base-200/60">
+            <h4 class="text-sm font-bold text-base-content/60 uppercase tracking-wider">Log Kehadiran Terbaru</h4>
+            <span class="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg uppercase">10 Terakhir</span>
+          </div>
+          
+          <div v-if="user.attendances && user.attendances.length > 0" class="flex flex-col gap-4">
+            <div v-for="log in user.attendances" :key="log.id" class="flex items-center justify-between group">
+              <div class="flex items-center gap-3">
+                <div :class="['w-10 h-10 rounded-xl flex items-center justify-center transition-colors', 
+                  log.status === 'HADIR' ? 'bg-success/10 text-success' : 
+                  log.status === 'TERLAMBAT' ? 'bg-warning/10 text-warning' : 
+                  'bg-error/10 text-error'
+                ]">
+                  <Icon :name="log.status === 'HADIR' ? 'mingcute:check-2-fill' : 'mingcute:time-fill'" size="20" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-base-content">{{ log.status }}</p>
+                  <p class="text-[10px] font-medium text-base-content/40">
+                    {{ new Date(log.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) }}, 
+                    {{ new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}
+                  </p>
+                </div>
+              </div>
+              <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                 <div class="badge badge-ghost badge-xs text-[8px] font-bold uppercase tracking-tighter">{{ log.method }}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="flex flex-col items-center justify-center py-10 text-center opacity-40">
+            <Icon name="mingcute:empty-box-line" size="40" class="mb-2" />
+            <p class="text-xs font-bold uppercase tracking-widest">Belum Ada Data</p>
+          </div>
+        </div>
+        
+        <!-- Leave Requests Block -->
+        <div class="rounded-3xl bg-base-100 p-6 shadow-sm border border-base-200/60 relative">
+          <div class="flex items-center justify-between mb-5 pb-3 border-b border-base-200/60">
+            <h4 class="text-sm font-bold text-base-content/60 uppercase tracking-wider">Riwayat Surat Izin</h4>
+            <span class="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg uppercase">Terbaru</span>
+          </div>
+          
+          <div v-if="user.leaveRequests && user.leaveRequests.length > 0" class="flex flex-col gap-5">
+            <div v-for="leave in user.leaveRequests" :key="leave.id" class="relative group">
+              <div class="flex items-start gap-4">
+                <div :class="['w-10 h-10 rounded-xl flex items-center justify-center shrink-0', 
+                  leave.type === 'SAKIT' ? 'bg-error/10 text-error' : 'bg-info/10 text-info'
+                ]">
+                  <Icon :name="leave.type === 'SAKIT' ? 'mingcute:hospital-fill' : 'mingcute:file-info-fill'" size="20" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs font-bold text-base-content">{{ leave.type }}</p>
+                    <span :class="['text-[9px] font-black uppercase px-2 py-0.5 rounded-md', 
+                      leave.status === 'APPROVED' ? 'bg-success/10 text-success' : 
+                      leave.status === 'PENDING' ? 'bg-warning/10 text-warning' : 
+                      'bg-error/10 text-error'
+                    ]">
+                      {{ leave.status }}
+                    </span>
+                  </div>
+                  <p class="text-[10px] font-bold text-base-content/40 mb-2">
+                    {{ new Date(leave.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) }} 
+                    - 
+                    {{ new Date(leave.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) }}
+                  </p>
+                  <p class="text-[10px] text-base-content/60 leading-relaxed italic line-clamp-2">"{{ leave.reason }}"</p>
+                  
+                  <div v-if="leave.proofs?.length" class="mt-3 flex gap-2">
+                    <a v-for="proof in leave.proofs" :key="proof.id" :href="proof.fileUrl" target="_blank" class="btn btn-ghost btn-xs rounded-lg bg-base-200/50 gap-1 text-[9px] font-bold lowercase">
+                      <Icon name="mingcute:attachment-2-line" />
+                      bukti
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="flex flex-col items-center justify-center py-10 text-center opacity-40">
+            <Icon name="mingcute:document-fill" size="40" class="mb-2" />
+            <p class="text-xs font-bold uppercase tracking-widest">Tidak Ada Izin</p>
           </div>
         </div>
 

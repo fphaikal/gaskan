@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore'; 
@@ -11,17 +11,37 @@ onClickOutside(target, () => {
   dropdownOpen.value = false;
 });
 
-const { nis, role } = storeToRefs(useAuthStore());
+const { userData: user, authenticated } = storeToRefs(useAuthStore());
+const { fetchUserData, logUserOut } = useAuthStore();
 
 const userRole = computed(() => {
-  if (role.value === 'admin') return 'admin';
-  if (role.value === 'developer') return 'developer';
+  const r = role.value;
+  if (r === 'admin') return 'admin';
+  if (r === 'developer') return 'developer';
+  if (r === 'guru') return 'guru';
   return 'siswa';
 });
 
-const { data: user } = useFetch(
-  computed(() => `/api/user?role=${userRole.value}&user=${nis.value}`)
-);
+const showLogoutModal = ref(false);
+
+const logout = () => {
+  dropdownOpen.value = false;
+  showLogoutModal.value = true;
+};
+
+const confirmLogout = () => {
+  showLogoutModal.value = false;
+  logUserOut();
+};
+
+// Use centralized fetcher — only call if not already loaded
+if (authenticated.value) {
+  fetchUserData();
+} else {
+  const unwatchHeader = watch(authenticated, (val) => {
+    if (val) { fetchUserData(); unwatchHeader(); }
+  });
+}
 </script>
 
 <template>
@@ -83,9 +103,43 @@ const { data: user } = useFetch(
             <Icon name="mingcute:user-3-line" class="text-base text-base-content/50" />
             My Profile
           </router-link>
+
+          <button
+            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error/80 hover:text-error hover:bg-error/5 transition-colors duration-150"
+            @click="logout"
+          >
+            <Icon name="mingcute:exit-line" class="text-base text-error/50" />
+            Log Out
+          </button>
         </div>
       </div>
     </Transition>
+
+    <!-- Logout Confirmation Modal -->
+    <Teleport to="body">
+      <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showLogoutModal }]">
+        <div class="modal-box bg-base-100 border border-base-300 shadow-2xl rounded-3xl">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 rounded-full bg-error/10 text-error flex items-center justify-center shrink-0">
+              <Icon name="mingcute:exit-line" class="text-2xl" />
+            </div>
+            <div>
+              <h3 class="font-bold text-lg">Konfirmasi Keluar</h3>
+              <p class="text-sm text-base-content/60">Apakah Anda yakin ingin keluar dari sistem?</p>
+            </div>
+          </div>
+          <div class="modal-action gap-3">
+            <button class="btn btn-ghost rounded-xl flex-1" @click="showLogoutModal = false">Batal</button>
+            <button class="btn btn-error rounded-xl flex-1 text-white shadow-lg shadow-error/20" @click="confirmLogout">
+              Ya, Keluar
+            </button>
+          </div>
+        </div>
+        <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm" @click="showLogoutModal = false">
+          <button>close</button>
+        </form>
+      </dialog>
+    </Teleport>
   </div>
 </template>
 
@@ -100,4 +154,3 @@ const { data: user } = useFetch(
   transform: translateY(-6px);
 }
 </style>
-

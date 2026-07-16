@@ -1,7 +1,7 @@
 const asTrimmedString = (value) => (typeof value === 'string' ? value.trim() : '');
 
 const badRequest = (message) => {
-  throw new Error(message);
+  throw createError({ statusCode: 400, statusMessage: message });
 };
 
 export const normalizeTtl = (value) => {
@@ -32,7 +32,7 @@ export const normalizePlateNumber = (value) => {
 export const normalizePassword = (value) => {
   const password = typeof value === 'string' ? value : '';
   if (!password) badRequest('Password is required');
-  if (password.length < 8) badRequest('Password must be at least 8 characters');
+  if (password.length < 6) badRequest('Password minimal 6 karakter');
   if (password.length > 128) badRequest('Password is too long');
   return password;
 };
@@ -43,14 +43,34 @@ export const toProfileValidationError = (error) =>
     statusMessage: error?.message || 'Bad Request: invalid profile input',
   });
 
-export const forwardProfileUpdate = async (event, field, body) => {
+/**
+ * Generic profile update — forwards PATCH /api/profile/me to backend
+ * payload: object with fields to update (snake_case matches new backend schema)
+ */
+export const forwardProfileUpdate = async (event, _field, payload) => {
   const session = requireSession(event);
   const config = useRuntimeConfig();
 
-  const response = await fetch(`${config.public.apiBase}/api/edit/primary/${field}/${session.nis}`, {
+  const response = await fetch(`${config.public.apiBase}/api/profile/me`, {
     method: 'PUT',
     headers: getUpstreamAuthHeaders(session, { 'Content-Type': 'application/json' }),
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
+  });
+
+  return readUpstreamJson(response);
+};
+
+/**
+ * Password change — forwards to PUT /api/profile/password
+ */
+export const forwardPasswordChange = async (event, currentPassword, newPassword) => {
+  const session = requireSession(event);
+  const config = useRuntimeConfig();
+
+  const response = await fetch(`${config.public.apiBase}/api/profile/password`, {
+    method: 'PUT',
+    headers: getUpstreamAuthHeaders(session, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ currentPassword, newPassword }),
   });
 
   return readUpstreamJson(response);

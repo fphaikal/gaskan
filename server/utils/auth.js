@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const SESSION_COOKIE_NAME = 'gaskan_session';
-export const SESSION_MAX_AGE_SECONDS = 60 * 60;
+export const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 Days
 const DEV_SESSION_SECRET = 'development-only-gaskan-session-secret';
-const ALLOWED_ROLES = new Set(['admin', 'developer', 'siswa']);
+const ALLOWED_ROLES = new Set(['admin', 'developer', 'guru', 'siswa']);
 
 const toBase64Url = (value) => Buffer.from(value).toString('base64url');
 
@@ -13,8 +13,10 @@ const sign = (payload, secret) =>
   createHmac('sha256', secret).update(payload).digest('base64url');
 
 export const normalizeRole = (role) => {
-  if (role === 'admin') return 'admin';
-  if (role === 'developer') return 'developer';
+  const r = role?.toLowerCase();
+  if (r === 'admin') return 'admin';
+  if (r === 'developer') return 'developer';
+  if (r === 'guru') return 'guru';
   return 'siswa';
 };
 
@@ -61,6 +63,9 @@ export const canAccessUser = (session, requestedRole, requestedUser) => {
   if (!session || !requestedRole || !requestedUser) return false;
   if (!ALLOWED_ROLES.has(requestedRole)) return false;
   if (session.role === 'admin' || session.role === 'developer') return true;
+  // Guru can view any profile (they need to manage students)
+  if (session.role === 'guru') return true;
+  // Siswa can view their own profile
   return requestedRole === 'siswa' && session.nis?.toString() === requestedUser.toString();
 };
 
@@ -77,7 +82,7 @@ export const getUpstreamAuthHeaders = (session, extraHeaders = {}) => {
 };
 
 export const createSessionFromLogin = (data, now = Date.now()) => {
-  if (!data?.sessionId || !data?.NIS) {
+  if (!data?.token || !data?.user) {
     throw createError({
       statusCode: 502,
       statusMessage: 'Bad Gateway: invalid login response',
@@ -86,11 +91,11 @@ export const createSessionFromLogin = (data, now = Date.now()) => {
 
   return {
     exp: now + SESSION_MAX_AGE_SECONDS * 1000,
-    kelas: data.Kelas || '',
-    nama: data.Nama || '',
-    nis: data.NIS.toString(),
-    role: normalizeRole(data.Kelas),
-    sessionId: data.sessionId,
+    kelas: data.user.role || '',
+    nama: data.user.name || '',
+    nis: data.user.nis?.toString() || data.user.email || '',
+    role: data.user.role?.toLowerCase() || 'siswa',
+    sessionId: data.token,
   };
 };
 

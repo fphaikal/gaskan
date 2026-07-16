@@ -23,7 +23,15 @@ const login = async () => {
     }
   } catch (err) {
     error.value = true
-    errorMessage.value = err.data?.data || err.data || { error: err.message || 'Terjadi kesalahan internal' }
+    // Robust error message extraction
+    const rawError = err.data?.data || err.data || err
+    if (typeof rawError === 'string') {
+      errorMessage.value = { error: rawError }
+    } else if (rawError.message && !rawError.error) {
+      errorMessage.value = { error: rawError.message, ...rawError }
+    } else {
+      errorMessage.value = rawError
+    }
   } finally {
     isLoading.value = false
   }
@@ -112,20 +120,21 @@ useSeoMeta({
         <!-- Heading -->
         <div class="space-y-1">
           <h1 class="text-3xl font-extrabold">Selamat Datang</h1>
-          <p class="opacity-50 text-sm">Masuk dengan NIS dan password kamu</p>
+          <p class="opacity-50 text-sm">Masuk dengan NIS / Email dan password kamu</p>
         </div>
 
         <!-- Error alert -->
         <Transition name="fade">
-          <div v-if="error" class="alert alert-error rounded-xl text-sm">
-            <Icon name="mingcute:warning-fill" class="text-lg shrink-0" />
-            <div class="flex-1">
-              <span>{{ errorMessage.error }}</span>
+          <div v-if="error" class="alert alert-error rounded-xl text-sm py-3 px-4 flex items-start gap-3 border-none shadow-lg shadow-error/20 bg-error text-error-content">
+            <Icon name="mingcute:warning-fill" class="text-xl shrink-0 mt-0.5" />
+            <div class="flex-1 flex flex-col gap-1 text-left">
+              <span class="font-bold">Login Gagal</span>
+              <span class="opacity-90 leading-tight">{{ errorMessage.error || errorMessage.message || 'Email/NIS atau password salah' }}</span>
             </div>
             <button
               v-if="errorMessage.code === 400"
               @click.prevent="forceLogin"
-              class="btn btn-sm btn-ghost"
+              class="btn btn-xs btn-ghost bg-white/20 hover:bg-white/30"
             >
               Paksa Masuk
             </button>
@@ -134,18 +143,18 @@ useSeoMeta({
 
         <!-- Form -->
         <form class="space-y-5" @submit.prevent="login">
-          <!-- NIS field -->
+          <!-- NIS / Email field -->
           <div class="space-y-2">
-            <label for="nis" class="block text-sm font-semibold">NIS</label>
+            <label for="nis" class="block text-sm font-semibold">NIS / Email</label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <Icon name="mingcute:user-4-line" class="text-lg opacity-40" />
               </div>
               <input
-                type="number"
+                type="text"
                 id="nis"
                 v-model="user.NIS"
-                placeholder="Masukkan NIS kamu"
+                placeholder="Masukkan NIS / Email kamu"
                 required
                 class="input input-bordered w-full pl-10 rounded-xl bg-base-200 border-base-300 focus:border-primary focus:outline-none"
               />
@@ -154,7 +163,12 @@ useSeoMeta({
 
           <!-- Password field -->
           <div class="space-y-2">
-            <label for="password" class="block text-sm font-semibold">Password</label>
+            <div class="flex items-center justify-between">
+              <label for="password" class="block text-sm font-semibold">Password</label>
+              <NuxtLink to="/forgot-password" class="text-xs font-bold text-primary hover:opacity-80 transition-opacity">
+                Lupa Password?
+              </NuxtLink>
+            </div>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <Icon name="mingcute:lock-line" class="text-lg opacity-40" />
@@ -189,11 +203,10 @@ useSeoMeta({
           </button>
         </form>
 
-        <!-- Back to landing -->
         <p class="text-center text-sm opacity-40">
-          <a href="/" class="hover:opacity-80 transition-opacity hover:text-primary">
+          <NuxtLink to="/" class="hover:opacity-80 transition-opacity hover:text-primary">
             ← Kembali ke halaman utama
-          </a>
+          </NuxtLink>
         </p>
       </div>
     </div>

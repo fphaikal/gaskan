@@ -1,18 +1,21 @@
 <script setup>
 import { useSidebarStore } from '../../store/sidebar'
 import { useAuthStore } from '~/store/useAuthStore'
+import { useThemeStore } from '../../store/useThemeStore'
 import { storeToRefs } from 'pinia'
 import { onClickOutside } from '@vueuse/core'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import SidebarItem from './SidebarItem.vue'
 
 const target = ref(null)
 const sidebarStore = useSidebarStore()
 const { isCollapsed } = storeToRefs(sidebarStore)
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
+const { isDark } = storeToRefs(themeStore)
 const { nis, role: userRole } = storeToRefs(authStore)
-const { logUserOut } = authStore
-const currentRole = computed(() => userRole.value || 'siswa')
+const { fetchUserData, logUserOut } = authStore
+const currentRole = computed(() => (userRole.value || 'siswa').toLowerCase())
 
 // Close mobile sidebar on click outside
 onClickOutside(target, () => {
@@ -21,17 +24,32 @@ onClickOutside(target, () => {
 
 // Derive role label
 const roleLabel = computed(() => {
-  if (currentRole.value === 'admin') return 'Admin'
-  if (currentRole.value === 'developer') return 'Developer'
+  const r = currentRole.value
+  if (r === 'admin') return 'Admin'
+  if (r === 'developer') return 'Developer'
+  if (r === 'guru') return 'Guru'
   return 'Siswa'
 })
 
-// Fetch current user for footer card
-const { data: currentUser } = useFetch(
-  computed(() => `/api/user?role=${currentRole.value}&user=${nis.value}`)
-)
+const { userData: currentUser, authenticated } = storeToRefs(authStore)
+
+// Use centralized fetcher
+if (authenticated.value) {
+  fetchUserData()
+} else {
+  const unwatchSidebar = watch(authenticated, (val) => {
+    if (val) { fetchUserData(); unwatchSidebar() }
+  })
+}
+
+const showLogoutModal = ref(false)
 
 const logout = () => {
+  showLogoutModal.value = true
+}
+
+const confirmLogout = () => {
+  showLogoutModal.value = false
   logUserOut()
 }
 
@@ -40,49 +58,114 @@ const menuGroups = [
     name: 'MENU UTAMA',
     menuItems: [
       {
-        icon: `mingcute:classify-2-fill`,
-        role: ["all"],
+        icon: 'mingcute:classify-2-fill',
+        role: ['all'],
         label: 'Dashboard',
         route: '/home',
       },
       {
-        icon: `mingcute:location-2-fill`,
-        role: ['admin', 'developer'],
-        label: 'On Site',
-        route: '/log/onsite'
-      },
-      {
-        icon: `mingcute:user-3-fill`,
-        role: ['admin', 'developer'],
-        label: 'Daftar Siswa',
-        route: '/siswa'
-      },
-      {
-        icon: `mingcute:list-check-2-fill`,
-        role: ["all"],
-        label: 'Log Kehadiran',
-        route: '/log/kehadiran'
+        icon: 'mingcute:user-3-line',
+        role: ['all'],
+        label: 'Profil Saya',
+        route: '/profile',
       },
     ]
   },
   {
-    name: 'LOG SISTEM',
+    name: 'DATA MASTER',
     menuItems: [
       {
-        icon: `mingcute:enter-door-fill`,
-        role: ['admin', 'developer'],
-        label: 'Log Login',
-        route: '/log/login'
+        icon: 'mingcute:user-3-fill',
+        role: ['admin', 'developer', 'guru'],
+        label: 'Daftar Siswa',
+        route: '/siswa',
       },
       {
-        icon: `ic:outline-error`,
+        icon: 'mingcute:school-fill',
+        role: ['admin', 'developer', 'guru'],
+        label: 'Manajemen Kelas',
+        route: '/kelas',
+      },
+      {
+        icon: 'mingcute:calendar-2-fill',
+        role: ['admin'],
+        label: 'Semester',
+        route: '/semester',
+      },
+      {
+        icon: 'mingcute:user-setting-fill',
+        role: ['admin', 'developer'],
+        label: 'Manajemen User',
+        route: '/admin/users',
+      },
+      {
+        icon: 'mingcute:group-fill',
+        role: ['admin', 'developer'],
+        label: 'Manajemen Tim',
+        route: '/admin/team',
+      },
+    ]
+  },
+  {
+    name: 'PRESENSI & KEHADIRAN',
+    menuItems: [
+      {
+        icon: 'mingcute:clipboard-fill',
+        role: ['admin', 'developer', 'guru'],
+        label: 'Absensi',
+        route: '/absensi',
+      },
+      {
+        icon: 'mingcute:list-check-2-fill',
+        role: ['all'],
+        label: 'Log Kehadiran',
+        route: '/log/kehadiran',
+      },
+      {
+        icon: 'mingcute:location-2-fill',
+        role: ['admin', 'developer', 'guru'],
+        label: 'On Site',
+        route: '/log/onsite',
+      },
+      {
+        icon: 'mingcute:document-2-fill',
+        role: ['all'],
+        label: 'Surat Izin',
+        route: '/izin',
+      },
+      {
+        icon: 'mingcute:file-export-fill',
+        role: ['admin', 'developer', 'guru'],
+        label: 'Laporan Absensi',
+        route: '/absensi/laporan',
+      },
+    ]
+  },
+  {
+    name: 'SISTEM & LOG',
+    menuItems: [
+      {
+        icon: 'mingcute:settings-6-fill',
+        role: ['admin'],
+        label: 'Konfigurasi Mesin',
+        route: '/config/device',
+      },
+      {
+        icon: 'mingcute:enter-door-fill',
+        role: ['admin', 'developer'],
+        label: 'Log Login',
+        route: '/log/login',
+      },
+      {
+        icon: 'ic:outline-error',
         role: ['developer'],
         label: 'Log Error',
-        route: '/log/error'
+        route: '/log/error',
       },
     ]
   }
 ]
+
 </script>
 
 <template>
@@ -113,7 +196,12 @@ const menuGroups = [
         :class="['flex items-center gap-3 overflow-hidden transition-all duration-300', isCollapsed ? 'lg:justify-center' : '']"
       >
         <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-          <img src="../../public/smti_logo.svg" class="w-5 h-5" alt="GASKAN Logo" />
+          <img 
+            src="../../public/smti_logo.svg" 
+            class="w-5 h-5 transition-all duration-300" 
+            :style="!isDark ? 'filter: invert(1) brightness(0)' : ''" 
+            alt="GASKAN Logo" 
+          />
         </div>
         <span
           :class="['text-lg font-bold text-primary whitespace-nowrap transition-all duration-300', isCollapsed ? 'lg:hidden' : '']"
@@ -241,6 +329,30 @@ const menuGroups = [
       </div>
     </div>
   </aside>
+  
+  <!-- Logout Confirmation Modal -->
+  <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showLogoutModal }]">
+    <div class="modal-box bg-base-100 border border-base-300 shadow-2xl rounded-3xl">
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 rounded-full bg-error/10 text-error flex items-center justify-center shrink-0">
+          <Icon name="mingcute:exit-line" class="text-2xl" />
+        </div>
+        <div>
+          <h3 class="font-bold text-lg">Konfirmasi Keluar</h3>
+          <p class="text-sm text-base-content/60">Apakah Anda yakin ingin keluar dari sistem?</p>
+        </div>
+      </div>
+      <div class="modal-action gap-3">
+        <button class="btn btn-ghost rounded-xl flex-1" @click="showLogoutModal = false">Batal</button>
+        <button class="btn btn-error rounded-xl flex-1 text-white shadow-lg shadow-error/20" @click="confirmLogout">
+          Ya, Keluar
+        </button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm" @click="showLogoutModal = false">
+      <button>close</button>
+    </form>
+  </dialog>
 </template>
 
 <style scoped>

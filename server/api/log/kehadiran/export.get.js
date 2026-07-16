@@ -5,7 +5,7 @@ const CONTENT_TYPES = {
 };
 
 export default defineEventHandler(async (event) => {
-  const session = requireRole(event, ['admin', 'developer']);
+  const session = requireRole(event, ['admin', 'developer', 'guru']);
   const query = getQuery(event);
   const type = query.type?.toString().toLowerCase();
 

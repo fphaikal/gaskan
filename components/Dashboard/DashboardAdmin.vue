@@ -1,81 +1,361 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
+import { format, parseISO } from 'date-fns';
+import { id } from 'date-fns/locale';
 
-const props = defineProps({
-  count: Object,
-  login: Array,
-  system: Object
+const props = defineProps({ count: Object, login: Array, system: Object });
+
+const authStore = useAuthStore();
+const { role, userData: user } = storeToRefs(authStore);
+
+const isDev = computed(() => role.value === 'developer');
+const isAdmin = computed(() => role.value === 'admin' || isDev.value);
+const isGuru = computed(() => role.value === 'guru');
+
+// FIX: userData uses 'Nama' (capital N) from the user proxy mapping
+const displayName = computed(() => user.value?.Nama || user.value?.name || 'Administrator');
+const firstWord = computed(() => displayName.value.split(' ')[0]);
+
+const today = props.count?.today || { present: 0, late: 0, absent: 0, izin: 0, sakit: 0, attendancePercentage: 0 };
+const todayStr = computed(() => format(new Date(), "EEEE, d MMMM yyyy", { locale: id }));
+
+const greeting = computed(() => {
+  const h = new Date().getHours();
+  if (h < 11) return 'Selamat Pagi';
+  if (h < 15) return 'Selamat Siang';
+  if (h < 19) return 'Selamat Sore';
+  return 'Selamat Malam';
 });
 
-const { role } = storeToRefs(useAuthStore());
-const isDev = computed(() => role.value === 'developer');
+const formatTime = (ts) => ts ? format(parseISO(ts), 'HH:mm') : '-';
+const formatFull = (ts) => ts ? format(parseISO(ts), "EEEE, d MMM yyyy · HH:mm", { locale: id }) : '-';
 
-// Base bento card class
-const bentoCard = "bg-base-100 rounded-3xl p-6 hover:-translate-y-1 hover:shadow-lg hover:shadow-base-300/50 transition-all duration-300 flex flex-col justify-center";
+const methodLabel = (m) => {
+  if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:face-recognition-line', color: 'text-primary' };
+  if (m === 'QR_CODE') return { label: 'QR Code', icon: 'mingcute:qrcode-2-line', color: 'text-info' };
+  return { label: 'Manual', icon: 'mingcute:edit-2-line', color: 'text-base-content/40' };
+};
+
+const statusMap = {
+  HADIR:     { color: 'text-emerald-500', dot: 'bg-emerald-500', badge: 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500' },
+  TERLAMBAT: { color: 'text-amber-500',   dot: 'bg-amber-500',   badge: 'bg-amber-500/10 border border-amber-500/30 text-amber-500' },
+  IZIN:      { color: 'text-sky-500',     dot: 'bg-sky-500',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-500' },
+  SAKIT:     { color: 'text-orange-400',  dot: 'bg-orange-400',  badge: 'bg-orange-400/10 border border-orange-400/30 text-orange-400' },
+  ALPHA:     { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500' },
+};
+const getStatus = (s) => statusMap[s] || statusMap.ALPHA;
+
+const avatarColors = [
+  'bg-primary/20 text-primary',
+  'bg-emerald-500/20 text-emerald-600',
+  'bg-amber-500/20 text-amber-600',
+  'bg-sky-500/20 text-sky-600',
+  'bg-rose-500/20 text-rose-600',
+  'bg-violet-500/20 text-violet-600',
+];
+const avatarColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
+
+// === MODAL STATE ===
+const selectedAttendance = ref(null);
+const showModal = ref(false);
+
+const openDetail = (a) => {
+  selectedAttendance.value = a;
+  showModal.value = true;
+};
+const closeModal = () => { showModal.value = false; selectedAttendance.value = null; };
+
+const useRouter = () => useNuxtApp().$router;
+const navigateTo = useNuxtApp().$router?.push ?? (() => {});
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Overview Stats -->
-    <div :class="bentoCard">
-      <div class="flex items-center justify-between">
-        <p class="text-base-content/70 font-medium">Total Developer</p>
-        <div class="bg-primary/20 p-2 rounded-full"><Icon name="mingcute:code-fill" class="text-primary text-xl" /></div>
-      </div>
-      <p class="text-4xl font-bold mt-4 text-base-content">{{ count?.klasifikasi?.developer || 0 }}</p>
-    </div>
-    <div :class="bentoCard">
-      <div class="flex items-center justify-between">
-        <p class="text-base-content/70 font-medium">Total Admin</p>
-        <div class="bg-primary/20 p-2 rounded-full"><Icon name="mingcute:user-setting-fill" class="text-primary text-xl" /></div>
-      </div>
-      <p class="text-4xl font-bold mt-4 text-base-content">{{ count?.klasifikasi?.admin || 0 }}</p>
-    </div>
-    <div :class="bentoCard">
-      <div class="flex items-center justify-between">
-        <p class="text-base-content/70 font-medium">Total Siswa</p>
-        <div class="bg-primary/20 p-2 rounded-full"><Icon name="mingcute:group-fill" class="text-primary text-xl" /></div>
-      </div>
-      <p class="text-4xl font-bold mt-4 text-base-content">{{ count?.klasifikasi?.siswa || 0 }}</p>
+  <div class="flex flex-col gap-4 animate-in fade-in duration-700" style="max-height:calc(100vh - 96px)">
+
+    <!-- ROW 1: Hero + Stat Cards -->
+    <div class="grid grid-cols-12 gap-4 shrink-0">
+
+      <!-- Hero -->
+      <NuxtLink to="/profile" class="col-span-12 md:col-span-5 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-400 rounded-3xl p-6 relative overflow-hidden shadow-xl shadow-orange-500/25 min-h-[100px] flex flex-col justify-between hover:scale-[1.01] transition-transform cursor-pointer group">
+        <div class="relative z-10">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 mb-0.5">{{ greeting }} — {{ todayStr }}</p>
+          <h1 class="text-2xl font-black text-white leading-tight">{{ firstWord }}</h1>
+          <p class="text-[11px] text-white/70 font-semibold mt-1">
+            {{ count?.klasifikasi?.siswa || 0 }} siswa · {{ count?.pendingLeaves || 0 }} izin pending · {{ today.attendancePercentage || 0 }}% hadir
+          </p>
+        </div>
+        <div class="absolute right-5 top-1/2 -translate-y-1/2 grid grid-cols-4 gap-1 opacity-10 group-hover:opacity-20 transition-opacity">
+          <div v-for="i in 16" :key="i" class="w-3 h-3 rounded-sm bg-white"></div>
+        </div>
+      </NuxtLink>
+
+      <!-- Alpha -->
+      <NuxtLink to="/absensi" class="col-span-3 md:col-span-2 bg-rose-500 rounded-3xl p-4 text-white shadow-lg shadow-rose-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+        <Icon name="mingcute:close-circle-fill" size="20" class="mb-1 opacity-70" />
+        <p class="text-3xl font-black leading-none">{{ today.absent }}</p>
+        <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-70">Alpha</p>
+      </NuxtLink>
+
+      <!-- Izin -->
+      <NuxtLink to="/izin" class="col-span-3 md:col-span-2 bg-amber-500 rounded-3xl p-4 text-white shadow-lg shadow-amber-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+        <Icon name="mingcute:document-fill" size="20" class="mb-1 opacity-70" />
+        <p class="text-3xl font-black leading-none">{{ today.izin + today.sakit }}</p>
+        <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-70">Izin/Sakit</p>
+      </NuxtLink>
+
+      <!-- Terlambat -->
+      <NuxtLink to="/absensi" class="col-span-3 md:col-span-1 bg-orange-400 rounded-3xl p-4 text-white shadow-lg shadow-orange-400/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+        <Icon name="mingcute:time-fill" size="18" class="mb-1 opacity-70" />
+        <p class="text-2xl font-black leading-none">{{ today.late }}</p>
+        <p class="text-[8px] font-black uppercase tracking-widest mt-1 opacity-70">Lambat</p>
+      </NuxtLink>
+
+      <!-- Hadir (large) -->
+      <NuxtLink to="/absensi" class="col-span-3 md:col-span-2 bg-emerald-500 rounded-3xl p-4 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+        <Icon name="mingcute:check-circle-fill" size="20" class="mb-1 opacity-70" />
+        <p class="text-3xl font-black leading-none">{{ today.present + today.late }}</p>
+        <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-70">Hadir</p>
+        <div class="w-full bg-white/20 h-1 rounded-full mt-2 overflow-hidden">
+          <div class="h-full bg-white rounded-full transition-all duration-1000" :style="{ width: `${today.attendancePercentage || 0}%` }"></div>
+        </div>
+        <p class="text-[8px] opacity-60 mt-0.5">{{ today.attendancePercentage || 0 }}%</p>
+      </NuxtLink>
     </div>
 
-    <!-- Progress Metrics -->
-    <div :class="[bentoCard, 'md:col-span-2 lg:col-span-1']">
-      <p class="text-base-content/70 font-medium mb-4">Siswa Onsite</p>
-      <div class="flex items-center gap-4">
-        <progress class="progress progress-primary w-full bg-base-200" :value="count?.onsite_only || 0" :max="count?.klasifikasi?.siswa || 100"></progress>
-        <p class="font-bold text-base-content whitespace-nowrap">{{ count?.onsite_siswa || 0 }} / {{ count?.klasifikasi?.siswa || 0 }}</p>
+    <!-- ROW 2: Table + Sidebar -->
+    <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
+
+      <!-- Activity Table -->
+      <div class="col-span-12 lg:col-span-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm flex flex-col min-h-0 overflow-hidden">
+        <div class="px-6 py-4 border-b border-base-200/40 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-1 h-5 rounded-full bg-orange-500"></div>
+            <h3 class="text-sm font-black text-base-content tracking-wide">Aktivitas Absensi Hari Ini</h3>
+            <div class="badge badge-sm bg-orange-500/10 text-orange-500 border-0 font-black text-[9px]">{{ count?.recentAttendances?.length || 0 }}</div>
+          </div>
+          <NuxtLink to="/absensi" class="text-[10px] font-black uppercase text-orange-500 hover:underline tracking-widest">Lihat Semua →</NuxtLink>
+        </div>
+
+        <!-- Col headers -->
+        <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0">
+          <div class="col-span-4">Siswa</div>
+          <div class="col-span-3">Kelas / Jurusan</div>
+          <div class="col-span-2">Waktu</div>
+          <div class="col-span-2">Metode</div>
+          <div class="col-span-1 text-right">Status</div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-200/20">
+          <div v-for="a in count?.recentAttendances || []" :key="a.id"
+               @click="openDetail(a)"
+               class="grid grid-cols-12 items-center px-6 py-3 hover:bg-orange-500/5 transition-colors group cursor-pointer">
+
+            <!-- Avatar + Name -->
+            <div class="col-span-4 flex items-center gap-3 min-w-0">
+              <div :class="['w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 group-hover:scale-110 transition-transform', avatarColor(a.studentName)]">
+                {{ a.studentName?.charAt(0) }}
+              </div>
+              <span class="font-semibold text-sm text-base-content truncate group-hover:text-orange-500 transition-colors">{{ a.studentName }}</span>
+            </div>
+
+            <!-- Class/Major -->
+            <div class="col-span-3 min-w-0">
+              <p class="text-xs font-bold text-base-content/70 truncate">{{ a.className || '—' }}</p>
+              <p class="text-[9px] font-black text-base-content/25 uppercase tracking-wider truncate">{{ a.majorName || 'Belum ada kelas' }}</p>
+            </div>
+
+            <!-- Time -->
+            <div class="col-span-2">
+              <span class="text-xs font-bold text-base-content/50">{{ formatTime(a.time) }}</span>
+            </div>
+
+            <!-- Method -->
+            <div class="col-span-2">
+              <div class="flex items-center gap-1.5">
+                <Icon :name="methodLabel(a.method).icon" size="13" :class="methodLabel(a.method).color" />
+                <span :class="['text-[9px] font-black uppercase tracking-tight', methodLabel(a.method).color]">{{ methodLabel(a.method).label }}</span>
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div class="col-span-1 flex justify-end">
+              <div :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wide whitespace-nowrap', getStatus(a.status).badge]">
+                {{ a.status === 'TERLAMBAT' ? 'Lambat' : a.status }}
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!count?.recentAttendances?.length" class="flex flex-col items-center justify-center py-20 opacity-10">
+            <Icon name="mingcute:time-line" size="56" />
+            <p class="text-xs font-black uppercase mt-3 tracking-widest">Belum ada absensi</p>
+          </div>
+        </div>
       </div>
-    </div>
-    <div :class="[bentoCard, 'md:col-span-2 lg:col-span-2']">
-      <p class="text-base-content/70 font-medium mb-4">Total User Login</p>
-      <div class="flex items-center gap-4">
-        <progress class="progress progress-primary w-full bg-base-200" :value="login?.length || 0" :max="count?.total || 100"></progress>
-        <p class="font-bold text-base-content whitespace-nowrap">{{ login?.length || 0 }} / {{ count?.total || 0 }}</p>
+
+      <!-- RIGHT SIDEBAR -->
+      <div class="col-span-12 lg:col-span-4 flex flex-col gap-4 min-h-0">
+
+        <!-- Quick Nav -->
+        <div class="bg-base-100 rounded-3xl p-5 border border-base-200/60 shadow-sm shrink-0">
+          <p class="text-[9px] font-black text-base-content/25 uppercase tracking-[0.2em] mb-4">Navigasi Cepat</p>
+          <div class="grid grid-cols-2 gap-2">
+            <NuxtLink v-for="nav in [
+              { to: '/siswa',            icon: 'mingcute:user-add-fill',    label: 'Daftar Siswa', color: 'text-primary bg-primary/10' },
+              { to: '/izin',             icon: 'mingcute:file-check-fill',  label: 'Review Izin',  color: 'text-amber-500 bg-amber-500/10' },
+              { to: '/absensi',          icon: 'mingcute:calendar-2-fill',  label: 'Absensi',      color: 'text-emerald-600 bg-emerald-500/10' },
+              { to: isAdmin ? '/manajemen-user' : '/profile', icon: 'mingcute:settings-6-fill', label: 'Manajemen', color: 'text-sky-500 bg-sky-500/10' }
+            ]" :key="nav.to" :to="nav.to"
+               class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-base-200/30 hover:bg-base-200/60 hover:scale-[1.02] transition-all group/nav">
+              <div :class="['w-10 h-10 rounded-xl flex items-center justify-center group-hover/nav:scale-110 transition-transform', nav.color]">
+                <Icon :name="nav.icon" size="22" />
+              </div>
+              <span class="text-[9px] font-black uppercase tracking-widest text-base-content/40 text-center leading-tight">{{ nav.label }}</span>
+            </NuxtLink>
+          </div>
+        </div>
+
+        <!-- Context Feed -->
+        <div class="flex-1 bg-base-100 rounded-3xl p-5 border border-base-200/60 shadow-sm flex flex-col min-h-0">
+          <div class="flex items-center justify-between mb-4 shrink-0">
+            <p class="text-[9px] font-black text-base-content/25 uppercase tracking-[0.2em]">{{ isGuru ? 'Izin Menunggu Review' : 'Security Monitor' }}</p>
+            <NuxtLink :to="isGuru ? '/izin' : '/log/login'" class="text-[9px] font-black text-orange-500 uppercase tracking-widest hover:underline">Semua</NuxtLink>
+          </div>
+
+          <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+            <!-- Admin Log -->
+            <template v-if="!isGuru">
+              <div v-for="log in count?.recentLogs || []" :key="log.id"
+                   class="flex items-center gap-3 p-3 rounded-2xl bg-base-200/30 hover:bg-base-200/50 hover:border-orange-500/20 border border-transparent transition-all group cursor-default">
+                <div class="w-8 h-8 rounded-xl bg-white border border-base-200/50 flex items-center justify-center text-orange-500 shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                  <Icon name="mingcute:key-2-fill" size="16" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold truncate text-base-content">{{ log.details?.identifier || 'System' }}</p>
+                  <p class="text-[8px] font-black uppercase text-base-content/20 tracking-tighter">{{ log.action }}</p>
+                </div>
+              </div>
+            </template>
+
+            <!-- Guru Leave Requests -->
+            <template v-else>
+              <div v-for="leave in count?.recentLeaves || []" :key="leave.id"
+                   class="p-4 rounded-2xl bg-base-200/30 hover:bg-base-200/50 border border-transparent hover:border-amber-500/20 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[8px] font-black uppercase tracking-widest text-amber-500 px-2 py-0.5 bg-amber-500/10 rounded-lg border border-amber-500/20">{{ leave.type }}</span>
+                  <span class="text-[8px] text-base-content/30 font-bold">{{ format(parseISO(leave.createdAt), 'dd MMM') }}</span>
+                </div>
+                <p class="text-xs font-bold text-base-content mb-3 truncate">{{ leave.studentName }}</p>
+                <NuxtLink to="/izin" class="btn btn-xs btn-block rounded-xl font-black text-[9px] h-8 min-h-0 bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-sm transition-all">PROSES DATA</NuxtLink>
+              </div>
+              <div v-if="!count?.recentLeaves?.length" class="flex flex-col items-center justify-center py-12 opacity-10">
+                <Icon name="mingcute:document-fill" size="40" />
+                <p class="text-[9px] font-black uppercase mt-2">Tidak ada izin pending</p>
+              </div>
+            </template>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Developer Specs -->
-    <div v-if="system && isDev" :class="[bentoCard, 'lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 !flex-row !justify-start items-start']">
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center gap-2 text-base-content/70"><Icon name="mingcute:computer-line" /><span>Hostname</span></div>
-        <p class="font-semibold text-base-content">{{ system?.osInfo?.hostname }}</p>
+    <!-- Dev strip -->
+    <div v-if="system && isDev" class="shrink-0 flex flex-wrap items-center justify-between gap-4 bg-base-200/30 border border-base-200/40 rounded-2xl px-6 py-2.5">
+      <div v-for="(v, l) in { HOST: system?.osInfo?.hostname, OS: system?.osInfo?.distro, RAM: system?.memory?.used + ' ' + system?.memory?.unit, DISK: system?.disk?.used + '/' + system?.disk?.total }" :key="l" class="flex items-center gap-2">
+        <span class="text-[8px] font-black text-orange-500 uppercase tracking-widest">{{ l }}</span>
+        <span class="text-[10px] font-bold text-base-content/50">{{ v }}</span>
       </div>
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center gap-2 text-base-content/70"><Icon name="mingcute:cpu-line" /><span>OS Build</span></div>
-        <p class="font-semibold text-base-content">{{ system?.osInfo?.distro }} {{ system?.osInfo?.build }}</p>
-      </div>
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center gap-2 text-base-content/70"><Icon name="mingcute:chip-line" /><span>Memory (RAM)</span></div>
-        <p class="font-semibold text-base-content">{{ system?.memory?.used }} {{ system?.memory?.unit }} / 16.0 GB</p>
-      </div>
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center gap-2 text-base-content/70"><Icon name="mingcute:server-line" /><span>Storage</span></div>
-        <p class="font-semibold text-base-content">{{ system?.disk?.used }} / {{ system?.disk?.total }} {{ system?.disk?.unit }}</p>
+      <div class="flex items-center gap-2">
+        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+        <span class="text-[9px] font-black uppercase tracking-widest text-emerald-500">Online</span>
       </div>
     </div>
+
+    <!-- ═══ DETAIL MODAL ═══ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showModal && selectedAttendance" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="closeModal">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden z-10">
+            
+            <!-- Modal Header -->
+            <div :class="['p-6 flex items-center justify-between', getStatus(selectedAttendance.status).dot.replace('bg-', 'bg-').replace('500', '500/10')]">
+              <div class="flex items-center gap-4">
+                <div :class="['w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black', avatarColor(selectedAttendance.studentName)]">
+                  {{ selectedAttendance.studentName?.charAt(0) }}
+                </div>
+                <div>
+                  <h3 class="text-lg font-black text-base-content">{{ selectedAttendance.studentName }}</h3>
+                  <p class="text-xs text-base-content/50 font-bold">{{ selectedAttendance.className || 'Belum ada kelas' }} · {{ selectedAttendance.majorName || '' }}</p>
+                </div>
+              </div>
+              <button @click="closeModal" class="btn btn-ghost btn-sm btn-circle">
+                <Icon name="mingcute:close-line" size="20" />
+              </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4">
+              <!-- Status badge -->
+              <div class="flex items-center justify-between p-4 rounded-2xl bg-base-200/40">
+                <span class="text-xs font-black text-base-content/50 uppercase tracking-widest">Status Kehadiran</span>
+                <div :class="['px-4 py-1.5 rounded-xl text-sm font-black uppercase tracking-wider', getStatus(selectedAttendance.status).badge]">
+                  {{ selectedAttendance.status }}
+                </div>
+              </div>
+
+              <!-- Detail rows -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:time-fill" size="16" />
+                    <span class="text-xs font-bold">Waktu Masuk</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">{{ formatFull(selectedAttendance.time) }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon :name="methodLabel(selectedAttendance.method).icon" size="16" />
+                    <span class="text-xs font-bold">Metode</span>
+                  </div>
+                  <span :class="['text-sm font-black', methodLabel(selectedAttendance.method).color]">{{ methodLabel(selectedAttendance.method).label }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:school-line" size="16" />
+                    <span class="text-xs font-bold">Kelas</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">{{ selectedAttendance.className || '—' }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:building-4-line" size="16" />
+                    <span class="text-xs font-bold">Jurusan</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">{{ selectedAttendance.majorName || '—' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 pt-0 flex gap-3">
+              <button @click="closeModal" class="btn btn-ghost flex-1 rounded-2xl font-black">Tutup</button>
+              <NuxtLink :to="`/absensi`" @click="closeModal" class="btn bg-orange-500 hover:bg-orange-600 text-white flex-1 rounded-2xl font-black border-0 shadow-lg shadow-orange-500/20">
+                Lihat Semua Absensi
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--bc), 0.08); border-radius: 10px; }
+
+.modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95); }
+</style>

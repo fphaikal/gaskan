@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
 
 const { nis, role } = storeToRefs(useAuthStore()); // make authenticated state reactive
-const isAdminOrDev = computed(() => ['admin', 'developer'].includes(role.value));
+const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(role.value));
 const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
 const log = ref([]);

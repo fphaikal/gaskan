@@ -1,9 +1,9 @@
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const Nomor = normalizePhoneNumber(body?.Nomor);
+    const nomor = normalizePhoneNumber(body?.Nomor?.toString());
 
-    return forwardProfileUpdate(event, 'Nomor', { Nomor });
+    return forwardProfileUpdate(event, 'phone', { phone: nomor });
   } catch (error) {
     if (error?.statusCode) throw error;
     throw toProfileValidationError(error);

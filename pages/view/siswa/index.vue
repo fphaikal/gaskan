@@ -3,7 +3,7 @@ definePageMeta({
   layout: 'blank'
 })
 
-const { data } = await useFetch(`/api/primary`);
+const { data } = await useFetch(`/api/students`);
 
 const users = ref([]);
 const selectedClass = ref('');
@@ -11,8 +11,8 @@ const classOptions = ref([]);
 
 const filteredUsers = computed(() => {
   return users.value.filter(user =>
-    user.Kelas !== 'admin' && user.Kelas !== 'developer' &&
-    (selectedClass.value === '' || user.Kelas === selectedClass.value)
+    user.role !== 'ADMIN' && user.role !== 'GURU' &&
+    (selectedClass.value === '' || user.class?.className === selectedClass.value)
   );
 });
 
@@ -20,16 +20,14 @@ const filteredUsers = computed(() => {
 watch(data, (newData) => {
   if (newData) {
     users.value = Array.isArray(newData) ? newData : [];
-    classOptions.value = [...new Set(users.value.map(user => user.Kelas))];
-    classOptions.value = classOptions.value.filter(classOption => classOption !== 'admin' && classOption !== 'developer');
+    classOptions.value = [...new Set(users.value.map(user => user.class?.className).filter(Boolean))];
   }
 });
 
 onMounted(() => {
   if (data.value) {
     users.value = Array.isArray(data.value) ? data.value : [];
-    classOptions.value = [...new Set(users.value.map(user => user.Kelas))];
-    classOptions.value = classOptions.value.filter(classOption => classOption !== 'admin' && classOption !== 'developer');
+    classOptions.value = [...new Set(users.value.map(user => user.class?.className).filter(Boolean))];
   }
 });
 
@@ -62,14 +60,14 @@ useSeoMeta({
         <option value="">All Classes</option>
         <option v-for="option in classOptions" :key="option" :value="option">{{ option }}</option>
       </select>
-      <NuxtLink :to="'/view/siswa/' + user.NIS" class="flex flex-row gap-4" v-for="user in filteredUsers" :key="user.NIS">
+      <NuxtLink :to="'/view/siswa/' + user.nisn" class="flex flex-row gap-4" v-for="user in filteredUsers" :key="user.nisn">
         <div class="flex bg-dark w-full mt-2 p-5 rounded-md gap-4">
           <div class="flex w-22">
-            <span class="text-white">{{ user.NIS }}</span>
+            <span class="text-white">{{ user.nisn }}</span>
           </div>
           <div class="flex flex-col md:flex-row gap-2 w-full md:justify-between">
-            <span class="text-white">{{ user.Nama }}</span>
-            <span class="text-white bg-primary rounded-full px-2 py-0.5 text-xs font-medium w-fit">{{ user.Kelas }}</span>
+            <span class="text-white">{{ user.name }}</span>
+            <span class="text-white bg-primary rounded-full px-2 py-0.5 text-xs font-medium w-fit">{{ user.class?.className || '-' }}</span>
           </div>
         </div>
       </NuxtLink>

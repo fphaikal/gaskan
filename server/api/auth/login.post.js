@@ -10,19 +10,18 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const NIS = ensureAlphanumeric(body.NIS, 'NIS');
+  const identifier = body.NIS?.toString();
 
-  const response = await fetch(`${config.public.apiBase}/api/login`, {
+  const response = await fetch(`${config.public.apiBase}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      NIS: !isNaN(Number(NIS)) ? Number(NIS) : NIS,
-      Password,
-      force: Boolean(body.force),
+      identifier,
+      password: Password,
     }),
   });
   const data = await readUpstreamJson(response);
-  const session = createSessionFromLogin(data);
+  const session = createSessionFromLogin(data.data);
 
   setSessionCookie(event, session);
 

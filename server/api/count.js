@@ -1,9 +1,29 @@
 export default defineEventHandler(async (event) => {
-    const session = requireRole(event, ['admin', 'developer']);
+    const session = requireRole(event, ['admin', 'developer', 'guru']);
     const config = useRuntimeConfig(); // get runtime config
   
-      const res = await fetch(config.public.apiBase + '/api/primary/count', {
-        headers: getUpstreamAuthHeaders(session),
-      });
-      return readUpstreamJson(res);
+    const res = await fetch(config.public.apiBase + '/api/dashboard/stats', {
+      headers: getUpstreamAuthHeaders(session),
     });
+    
+    const json = await readUpstreamJson(res);
+    const data = json?.data;
+    
+    if (!data) return null;
+
+    // Map all backend stats for the new dashboard design
+    return {
+      total: data.totalStudents + data.totalUsers,
+      klasifikasi: {
+        developer: 1,
+        admin: data.totalUsers,
+        siswa: data.totalStudents,
+        guru: data.totalUsers - 1 // Approximation
+      },
+      today: data.today,
+      pendingLeaves: data.pendingLeaves,
+      recentAttendances: data.recentAttendances,
+      recentLogs: data.recentLogs,
+      onsite_siswa: (data.today?.present || 0) + (data.today?.late || 0)
+    };
+  });

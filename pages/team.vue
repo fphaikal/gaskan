@@ -1,93 +1,45 @@
 <script setup>
 definePageMeta({ layout: 'blank' })
 
-const team = [
-  {
-    name: 'Joshua Williem',
-    role: 'Pembimbing',
-    image: 'joshua.jpeg',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/joshua.williem' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/joshua-williem' },
-    ]
-  },
-  {
-    name: 'Falah Khairullah',
-    role: 'Pembimbing',
-    image: 'https://api.tierkun.my.id/file/picture/0000.png',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/fallakhh' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/falah-k-05a9bb152' },
-    ]
-  },
-  {
-    name: 'Muhammad Ranah Azaly',
-    role: 'Hardware Engineer',
-    image: 'https://api.tierkun.my.id/file/picture/0000.png',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/razy_azaly' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/muhammad-ranah-azaly' },
-      { name: 'github', link: 'https://github.com/MRAzaly20' },
-    ]
-  },
-  {
-    name: 'Muhammad Tier Sinyo C.U.S.',
-    role: 'Backend Developer',
-    image: 'sinyo.jpeg',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/tierkunn_' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/tiersinyo' },
-      { name: 'github', link: 'https://github.com/Stalker-moment' },
-    ]
-  },
-  {
-    name: 'Fahreza Pasha Haikal',
-    role: 'Frontend Developer',
-    image: '',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/fp_haikal' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/fphaikal' },
-      { name: 'github', link: 'https://github.com/fphaikal' },
-    ]
-  },
-  {
-    name: 'Benaya Rapha Julianto',
-    role: 'Electrical Developer',
-    image: '',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/benaya_r_j' },
-    ]
-  },
-  {
-    name: 'Bethlehem Alexander Maxymilian Siwy',
-    role: 'Electrical Engineer',
-    image: '',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/maxymiliansiwy' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/bethlehem-maxy' },
-    ]
-  },
-  {
-    name: 'Muhammad Firman Saleh',
-    role: 'Mechanical Engineer',
-    image: '',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/muhammadfirmansaleh82' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/firmansaleh' },
-    ]
-  },
-  {
-    name: 'Radita Aji Firmansyah',
-    role: 'Mechanical Engineer',
-    image: '',
-    socmed: [
-      { name: 'Instagram', link: 'https://instagram.com/raditaji2' },
-      { name: 'LinkedIn', link: 'https://LinkedIn.com/in/raditaaji' },
-    ]
-  },
-]
+
+const team = ref([])
+const loading = ref(true)
+
+const fetchTeam = async () => {
+  try {
+    const res = await $fetch('/api/team')
+    if (res?.data) {
+      team.value = res.data.filter(m => m.isActive)
+    }
+  } catch (error) {
+    console.error('Failed to fetch team:', error)
+    // Fallback to static data if needed, or just leave empty
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(fetchTeam)
+
+const resolvePhoto = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/uploads/team/')) {
+    return `/api${url}`;
+  }
+  return url;
+};
+
+const getSocmed = (m) => {
+  const socmed = []
+  if (m.instagram) socmed.push({ name: 'Instagram', link: m.instagram })
+  if (m.linkedin) socmed.push({ name: 'LinkedIn', link: m.linkedin })
+  if (m.github) socmed.push({ name: 'github', link: m.github })
+  return socmed
+}
 
 const roleColor = (role) => {
+  if (!role) return 'text-secondary'
   if (role.includes('Backend')) return 'text-blue-400'
   if (role.includes('Frontend')) return 'text-green-400'
   if (role.includes('Hardware') || role.includes('Electrical') || role.includes('Mechanical')) return 'text-orange-400'
@@ -131,16 +83,22 @@ useSeoMeta({
         </p>
       </div>
 
+
+      <!-- Loading State -->
+      <div v-if="loading" class="flex justify-center py-20">
+        <span class="loading loading-spinner loading-lg text-primary opacity-40"></span>
+      </div>
+
       <!-- Team grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <div
           v-for="t in team"
-          :key="t.name"
+          :key="t.id"
           class="group bg-base-200 border border-base-300 hover:border-primary/40 rounded-2xl p-5 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
         >
           <!-- Avatar -->
           <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-            <img v-if="t.image && !t.image.includes('0000')" :src="t.image" :alt="t.name" class="w-full h-full object-cover" />
+            <img v-if="t.photoUrl && !t.photoUrl.includes('0000')" :src="resolvePhoto(t.photoUrl)" :alt="t.name" class="w-full h-full object-cover" />
             <Icon v-else name="mingcute:user-4-fill" class="text-2xl text-primary/60" />
           </div>
 
@@ -153,7 +111,7 @@ useSeoMeta({
           <!-- Social links -->
           <div class="flex gap-1.5">
             <a
-              v-for="s in t.socmed"
+              v-for="s in getSocmed(t)"
               :key="s.name"
               :href="s.link"
               target="_blank"

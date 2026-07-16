@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRequestFetch } from '#app';
 import { useAuthStore } from '~/store/useAuthStore';
 import { storeToRefs } from 'pinia';
@@ -11,20 +11,29 @@ const { nis, role: sessionRole } = storeToRefs(authStore);
 const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
 const currentRole = computed(() => sessionRole.value || 'siswa');
-const isAdminOrDev = computed(() => ['admin', 'developer'].includes(currentRole.value));
+const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(currentRole.value));
 const isDeveloper = computed(() => currentRole.value === 'developer');
 
-// Fetch Data
-const { data: user } = await useFetch(
-  computed(() => `/api/user?role=${currentRole.value}&user=${nis.value}`)
-);
+const { userData: user, userLoading } = storeToRefs(authStore);
+
+// Use centralized fetcher
+if (authStore.authenticated) {
+  await authStore.fetchUserData();
+} else {
+  const unwatch = watch(() => authStore.authenticated, async (newVal) => {
+    if (newVal) {
+      await authStore.fetchUserData();
+      unwatch();
+    }
+  });
+}
 
 const count = ref(null);
 const login = ref(null);
 
 if (isAdminOrDev.value) {
-  count.value = await sessionFetch('/api/count');
-  login.value = await sessionFetch('/api/log/login');
+  try { count.value = await sessionFetch('/api/count'); } catch {}
+  try { login.value = await sessionFetch('/api/log/login'); } catch {}
 }
 
 const system = ref(null);
@@ -74,9 +83,14 @@ useSeoMeta({
     />
 
     <!-- Loading State -->
-    <div v-else class="flex items-center justify-center min-h-[50vh]">
+    <div v-else-if="userLoading" class="flex items-center justify-center min-h-[50vh]">
       <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
+
+    <!-- Error State (no user found) -->
+    <div v-else class="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+      <Icon name="mingcute:warning-fill" class="text-5xl text-warning" />
+      <p class="text-base-content/70">Gagal memuat profil. Silakan coba login ulang.</p>
     </div>
   </div>
 </template>
-

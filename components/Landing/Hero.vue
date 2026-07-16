@@ -1,3 +1,11 @@
+<script setup>
+import { useAuthStore } from '~/store/useAuthStore'
+import { storeToRefs } from 'pinia'
+
+const authStore = useAuthStore()
+const { authenticated } = storeToRefs(authStore)
+</script>
+
 <template>
   <section class="min-h-screen flex items-center pt-24 pb-16 relative overflow-hidden">
     <!-- Background blobs -->
@@ -36,14 +44,14 @@
 
         <!-- CTA buttons -->
         <div class="flex flex-wrap gap-3 pt-2">
-          <a
-            href="/login"
+          <NuxtLink
+            :to="authenticated ? '/home' : '/login'"
             id="hero-cta-primary"
             class="btn btn-primary rounded-xl font-bold px-7 shadow-lg hover:shadow-primary/40 transition-shadow duration-300"
           >
-            Mulai Sekarang
+            {{ authenticated ? 'Ke Dashboard' : 'Mulai Sekarang' }}
             <Icon name="mingcute:arrow-right-line" class="ml-1" />
-          </a>
+          </NuxtLink>
           <a
             href="#fitur"
             id="hero-cta-secondary"

@@ -3,30 +3,16 @@ import { useAuthStore } from '~/store/useAuthStore';
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const authStore = useAuthStore();
 
-  const loginRoutes = ['login', 'register'];
-  const protectedRoutes = [
-    'home',
-    'profile',
-    'log-kehadiran',
-    'log-error',
-    'log-onsite',
-    'log-login',
-    'siswa',
-    'siswa-id',
-    'view-siswa',
-    'view-siswa-id'
-  ];
-  const adminRoutes = ['log-kehadiran', 'log-onsite', 'log-login', 'siswa', 'siswa-id', 'view-siswa', 'view-siswa-id'];
-  const developerRoutes = ['log-error'];
-
-  const routeName = to.name?.toString();
-  const isMonitorRoute = to.path.startsWith('/monitor');
-  const isProtectedRoute = protectedRoutes.includes(routeName) || isMonitorRoute;
-  const shouldCheckSession = isProtectedRoute || loginRoutes.includes(routeName);
-
+  const publicRoutes = ['login', 'register', 'index', 'team', 'forgot-password', 'reset-password-token'];
+  const routeName = to.name?.toString() || '';
+  const isPublicRoute = publicRoutes.includes(routeName);
+  
+  // Get user from store
   let user = authStore.authenticated ? { role: authStore.role } : null;
 
-  if (shouldCheckSession) {
+  // If not authenticated and not yet initialized, try to refresh session ONCE
+  // This works even on public routes so we can show "Dashboard" button if logged in
+  if (!user && !authStore.initialized) {
     try {
       user = await authStore.refreshSession();
     } catch {
@@ -35,26 +21,40 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   // Redirect authenticated users away from login/register pages
-  if (user && loginRoutes.includes(routeName)) {
+  if (user && isPublicRoute && ['login', 'register'].includes(routeName)) {
     return navigateTo('/home');
   }
 
-  // Redirect unauthenticated users to login page
-  if (!user && isProtectedRoute) {
-    abortNavigation();
-    return navigateTo('/login');
+  // Redirect unauthenticated users to login page for protected routes
+  if (!user && !isPublicRoute) {
+    if (routeName !== 'login') {
+      return navigateTo('/login');
+    }
   }
 
   if (!user) return;
 
-  if (developerRoutes.includes(routeName) && user.role !== 'developer') {
-    abortNavigation();
+  // Role-based Access Control (RBAC)
+  const path = to.path;
+
+  // Developer-only: /log/error
+  if (path.startsWith('/log/error') && user.role !== 'developer') {
     return navigateTo('/home');
   }
 
-  if ((adminRoutes.includes(routeName) || isMonitorRoute) && !['admin', 'developer'].includes(user.role)) {
-    abortNavigation();
+  // Admin-only: /semester, /admin/*, /config/*
+  const adminOnlyPaths = ['/semester', '/admin', '/config'];
+  if (adminOnlyPaths.some(p => path.startsWith(p)) && !['admin', 'developer'].includes(user.role)) {
     return navigateTo('/home');
+  }
+
+  // Staff (Admin, Guru, Developer): /absensi, /siswa, /log/* (except error), /kelas
+  const staffPaths = ['/absensi', '/siswa', '/log', '/kelas', '/monitor', '/jurusan'];
+  if (staffPaths.some(p => path.startsWith(p)) && !['admin', 'developer', 'guru'].includes(user.role)) {
+    if (path.startsWith('/siswa/')) {
+       // Allow individual student profiles
+    } else {
+      return navigateTo('/home');
+    }
   }
 });
-

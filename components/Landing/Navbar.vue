@@ -1,5 +1,10 @@
 <script setup>
+import { useAuthStore } from '~/store/useAuthStore'
+import { storeToRefs } from 'pinia'
+
 const { isDark, toggleTheme } = useTheme()
+const authStore = useAuthStore()
+const { authenticated } = storeToRefs(authStore)
 const route = useRoute()
 const scrolled = ref(false)
 let scrollHandler = null
@@ -59,10 +64,14 @@ onBeforeUnmount(() => {
           </Transition>
         </button>
 
-        <!-- Login CTA -->
-        <a href="/login" id="nav-login-btn" class="btn btn-primary btn-sm rounded-lg font-semibold shadow-md hover:shadow-primary/30 transition-shadow">
-          Masuk
-        </a>
+        <!-- Login/Dashboard CTA -->
+        <NuxtLink 
+          :to="authenticated ? '/home' : '/login'" 
+          id="nav-login-btn" 
+          class="btn btn-primary btn-sm rounded-lg font-semibold shadow-md hover:shadow-primary/30 transition-shadow"
+        >
+          {{ authenticated ? 'Dashboard' : 'Masuk' }}
+        </NuxtLink>
       </div>
     </div>
   </nav>
