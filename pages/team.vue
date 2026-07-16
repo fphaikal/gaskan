@@ -21,6 +21,25 @@ const fetchTeam = async () => {
 
 onMounted(fetchTeam)
 
+const groupedTeam = computed(() => {
+  const groups = {}
+  team.value.forEach(m => {
+    const yr = m.year || '2024'
+    if (!groups[yr]) {
+      groups[yr] = []
+    }
+    groups[yr].push(m)
+  })
+
+  // Sort chronologically (oldest to newest)
+  const sortedYears = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+
+  return sortedYears.map(yr => ({
+    year: yr,
+    members: groups[yr].sort((a, b) => (a.order || 0) - (b.order || 0))
+  }))
+})
+
 const resolvePhoto = (url) => {
   if (!url) return null;
   if (url.startsWith('http')) return url;
@@ -89,39 +108,66 @@ useSeoMeta({
         <span class="loading loading-spinner loading-lg text-primary opacity-40"></span>
       </div>
 
-      <!-- Team grid -->
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <!-- Grouped Team Timeline -->
+      <div v-else class="relative border-l-2 border-dashed border-base-300 pl-8 ml-4 sm:ml-8 space-y-16 py-4">
         <div
-          v-for="t in team"
-          :key="t.id"
-          class="group bg-base-200 border border-base-300 hover:border-primary/40 rounded-2xl p-5 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+          v-for="group in groupedTeam"
+          :key="group.year"
+          class="relative group/timeline"
         >
-          <!-- Avatar -->
-          <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-            <img v-if="t.photoUrl && !t.photoUrl.includes('0000')" :src="resolvePhoto(t.photoUrl)" :alt="t.name" class="w-full h-full object-cover" />
-            <Icon v-else name="mingcute:user-4-fill" class="text-2xl text-primary/60" />
+          <!-- Timeline Indicator Dot -->
+          <div class="absolute -left-[45px] top-2 w-6 h-6 rounded-full bg-base-100 border-2 border-primary flex items-center justify-center shadow-lg transition-transform duration-300 group-hover/timeline:scale-110">
+            <div class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></div>
           </div>
 
-          <!-- Info -->
-          <div class="flex-1">
-            <h3 class="font-bold text-sm leading-tight">{{ t.name }}</h3>
-            <p class="text-xs mt-1 font-medium" :class="roleColor(t.role)">{{ t.role }}</p>
+          <!-- Section Year Title -->
+          <div class="mb-8 text-left">
+            <div class="flex items-center gap-3">
+              <h2 class="text-2xl md:text-3xl font-black tracking-tight text-base-content">
+                Periode <span class="text-primary">{{ group.year }}</span>
+              </h2>
+              <span class="badge badge-primary badge-outline font-semibold px-2 py-3 text-xs">
+                {{ group.members.length }} Anggota
+              </span>
+            </div>
+            <p class="text-xs opacity-50 mt-1">Tim pengembang yang aktif pada periode {{ group.year }}.</p>
           </div>
 
-          <!-- Social links -->
-          <div class="flex gap-1.5">
-            <a
-              v-for="s in getSocmed(t)"
-              :key="s.name"
-              :href="s.link"
-              target="_blank"
-              class="w-7 h-7 rounded-lg bg-base-300 hover:bg-primary hover:text-dark flex items-center justify-center transition-colors duration-200"
-              :aria-label="s.name"
+          <!-- Team grid for this year -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div
+              v-for="t in group.members"
+              :key="t.id"
+              class="group bg-base-200 border border-base-300 hover:border-primary/40 rounded-2xl p-5 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
             >
-              <Icon v-if="s.name === 'Instagram'" name="mage:instagram-circle" class="text-sm" />
-              <Icon v-else-if="s.name === 'LinkedIn'" name="entypo-social:linkedin-with-circle" class="text-sm" />
-              <Icon v-else-if="s.name === 'github'" name="mdi:github" class="text-sm" />
-            </a>
+              <!-- Avatar -->
+              <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                <img v-if="t.photoUrl && !t.photoUrl.includes('0000')" :src="resolvePhoto(t.photoUrl)" :alt="t.name" class="w-full h-full object-cover" />
+                <Icon v-else name="mingcute:user-4-fill" class="text-2xl text-primary/60" />
+              </div>
+
+              <!-- Info -->
+              <div class="flex-1 text-left">
+                <h3 class="font-bold text-sm leading-tight text-base-content">{{ t.name }}</h3>
+                <p class="text-xs mt-1 font-medium" :class="roleColor(t.role)">{{ t.role }}</p>
+              </div>
+
+              <!-- Social links -->
+              <div class="flex gap-1.5">
+                <a
+                  v-for="s in getSocmed(t)"
+                  :key="s.name"
+                  :href="s.link"
+                  target="_blank"
+                  class="w-7 h-7 rounded-lg bg-base-300 hover:bg-primary hover:text-dark flex items-center justify-center transition-colors duration-200"
+                  :aria-label="s.name"
+                >
+                  <Icon v-if="s.name === 'Instagram'" name="mage:instagram-circle" class="text-sm text-base-content/60 group-hover:text-primary-content" />
+                  <Icon v-else-if="s.name === 'LinkedIn'" name="entypo-social:linkedin-with-circle" class="text-sm text-base-content/60 group-hover:text-primary-content" />
+                  <Icon v-else-if="s.name === 'github'" name="mdi:github" class="text-sm text-base-content/60 group-hover:text-primary-content" />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>

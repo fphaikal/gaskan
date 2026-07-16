@@ -30,6 +30,7 @@ const form = ref({
   linkedin: '',
   instagram: '',
   email: '',
+  year: '2024',
   order: 0,
   isActive: true,
 });
@@ -93,6 +94,7 @@ const openCreate = () => {
     linkedin: '',
     instagram: '',
     email: '',
+    year: '2024',
     order: members.value.length,
     isActive: true,
   };
@@ -246,6 +248,9 @@ const roleColor = (role) => {
               </a>
             </div>
           </div>
+          <div class="flex-1 min-w-0">
+            <!-- Space for actions -->
+          </div>
           <div class="flex flex-col gap-2">
             <button @click="openEdit(m)" class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary">
               <Icon name="mingcute:edit-2-line" />
@@ -260,7 +265,10 @@ const roleColor = (role) => {
             <div :class="['w-2 h-2 rounded-full', m.isActive ? 'bg-success' : 'bg-base-300']"></div>
             <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40">{{ m.isActive ? 'Aktif' : 'Nonaktif' }}</span>
           </div>
-          <span class="text-[10px] font-bold text-base-content/20">Order: {{ m.order }}</span>
+          <div class="flex items-center gap-3">
+            <span class="badge badge-sm badge-outline text-[10px] py-2 opacity-60">Periode {{ m.year || '2024' }}</span>
+            <span class="text-[10px] font-bold text-base-content/20">Order: {{ m.order }}</span>
+          </div>
         </div>
       </div>
 
@@ -312,6 +320,10 @@ const roleColor = (role) => {
           <div class="form-control">
             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Email</span></label>
             <input v-model="form.email" type="email" placeholder="email@example.com" class="input input-bordered w-full rounded-2xl bg-base-200/30" />
+          </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Tahun / Periode</span></label>
+            <input v-model="form.year" type="text" placeholder="Contoh: 2025 - 2026 atau 2026 - sekarang" class="input input-bordered w-full rounded-2xl bg-base-200/30" />
           </div>
           <div class="form-control">
             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Urutan Tampil</span></label>
