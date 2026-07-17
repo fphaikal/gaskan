@@ -131,7 +131,7 @@ useSeoMeta({
                 <div class="flex-1 min-w-0">
                   <h3 class="text-base font-bold text-base-content truncate group-hover:text-primary transition-colors">{{ d.Nama }}</h3>
                   <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-widest mb-2 truncate">{{ d.Kelas }}</p>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
                     <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border"
                           :class="d.action === 'enter' ? 'bg-success/10 text-success border-success/20 shadow-[0_0_10px_rgba(var(--success),0.1)]' : (d.action === 'exit' ? 'bg-error/10 text-error border-error/20 shadow-[0_0_10px_rgba(var(--error),0.1)]' : 'bg-base-200 text-base-content/60')">
                       {{ type(d.action) }}
@@ -139,6 +139,10 @@ useSeoMeta({
                     <span class="text-xs font-mono font-bold text-base-content/60 bg-base-200/50 px-2 py-1 border border-base-300/50 rounded-lg">
                       {{ formatLongDate(d.timestamp).split(' ').slice(1).join(' ') || formatLongDate(d.timestamp) }}
                     </span>
+                  </div>
+                  <div v-if="d.Gate" class="flex items-center gap-1 text-[10px] font-semibold text-primary/80 bg-primary/5 px-2 py-0.5 rounded-md w-fit border border-primary/10">
+                    <Icon name="mingcute:location-fill" size="12" />
+                    <span>{{ d.Gate }}</span>
                   </div>
                 </div>
               </div>
@@ -187,8 +191,13 @@ useSeoMeta({
                 </div>
                 <div class="p-4 flex-1 flex flex-col gap-3 justify-center">
                   <div v-if="!l.enter.time || l.enter.time.length === 0" class="text-sm text-base-content/40 font-medium italic text-center py-2">Tidak ada data</div>
-                  <div v-else v-for="d in l.enter.time" :key="d" class="flex flex-col gap-2 items-start">
-                    <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
+                  <div v-else v-for="(d, idx) in l.enter.time" :key="d" class="flex flex-col gap-2 items-start w-full">
+                    <div class="flex items-center justify-between w-full gap-2">
+                      <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
+                      <span v-if="l.enter.gate && l.enter.gate[idx]" class="text-[9px] font-bold text-success/80 bg-success/5 px-2 py-0.5 rounded border border-success/10 truncate max-w-[120px]" :title="l.enter.gate[idx]">
+                        {{ l.enter.gate[idx] }}
+                      </span>
+                    </div>
                     <span v-if="l.indexTelat === false" class="px-2.5 py-1 text-[10px] font-black text-success bg-success/20 border border-success/30 rounded-lg w-fit tracking-widest uppercase">TEPAT WAKTU</span>
                     <span v-else class="px-2.5 py-1 text-[10px] font-black text-error bg-error/20 border border-error/30 rounded-lg w-fit tracking-widest uppercase">TERLAMBAT</span>
                   </div>
@@ -206,8 +215,13 @@ useSeoMeta({
                      <Icon name="mingcute:time-fill" size="24" class="opacity-30"/> 
                      <span>Belum Pulang</span>
                    </div>
-                   <div v-else v-for="d in l.exit.time" :key="d" class="flex flex-col gap-2 items-start">
-                     <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
+                   <div v-else v-for="(d, idx) in l.exit.time" :key="d" class="flex flex-col gap-2 items-start w-full">
+                     <div class="flex items-center justify-between w-full gap-2">
+                       <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
+                       <span v-if="l.exit.gate && l.exit.gate[idx]" class="text-[9px] font-bold text-error/80 bg-error/5 px-2 py-0.5 rounded border border-error/10 truncate max-w-[120px]" :title="l.exit.gate[idx]">
+                         {{ l.exit.gate[idx] }}
+                       </span>
+                     </div>
                    </div>
                 </div>
               </div>
