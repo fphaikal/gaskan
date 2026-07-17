@@ -72,7 +72,7 @@ useSeoMeta({
     <DashboardAdmin 
       v-if="user && isAdminOrDev" 
       :count="count" 
-      :login="login" 
+      :login="login?.data || []" 
       :system="system" 
     />
     

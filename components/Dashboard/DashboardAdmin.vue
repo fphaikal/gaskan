@@ -33,7 +33,7 @@ const formatTime = (ts) => ts ? format(parseISO(ts), 'HH:mm') : '-';
 const formatFull = (ts) => ts ? format(parseISO(ts), "EEEE, d MMM yyyy · HH:mm", { locale: id }) : '-';
 
 const methodLabel = (m) => {
-  if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:face-recognition-line', color: 'text-primary' };
+  if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:faceid-line', color: 'text-primary' };
   if (m === 'QR_CODE') return { label: 'QR Code', icon: 'mingcute:qrcode-2-line', color: 'text-info' };
   return { label: 'Manual', icon: 'mingcute:edit-2-line', color: 'text-base-content/40' };
 };
@@ -205,7 +205,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
               { to: '/siswa',            icon: 'mingcute:user-add-fill',    label: 'Daftar Siswa', color: 'text-primary bg-primary/10' },
               { to: '/izin',             icon: 'mingcute:file-check-fill',  label: 'Review Izin',  color: 'text-amber-500 bg-amber-500/10' },
               { to: '/absensi',          icon: 'mingcute:calendar-2-fill',  label: 'Absensi',      color: 'text-emerald-600 bg-emerald-500/10' },
-              { to: isAdmin ? '/manajemen-user' : '/profile', icon: 'mingcute:settings-6-fill', label: 'Manajemen', color: 'text-sky-500 bg-sky-500/10' }
+              { to: isAdmin ? '/admin/users' : '/profile', icon: 'mingcute:settings-6-fill', label: 'Manajemen', color: 'text-sky-500 bg-sky-500/10' }
             ]" :key="nav.to" :to="nav.to"
                class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-base-200/30 hover:bg-base-200/60 hover:scale-[1.02] transition-all group/nav">
               <div :class="['w-10 h-10 rounded-xl flex items-center justify-center group-hover/nav:scale-110 transition-transform', nav.color]">
