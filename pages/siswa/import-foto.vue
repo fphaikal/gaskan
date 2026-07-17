@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onUnmounted } from 'vue';
+import { ref, onUnmounted, watch, nextTick } from 'vue';
 
 const { $toast } = useNuxtApp();
 
@@ -21,6 +21,103 @@ const successCount = ref(0);
 const failCount = ref(0);
 const successList = ref([]);
 const failList = ref([]);
+
+// Manual link states
+const showManualLinkModal = ref(false);
+const fileToLink = ref(null);
+const studentSearchQuery = ref('');
+const studentSearchResults = ref([]);
+const studentSearchPending = ref(false);
+const selectedStudentToLink = ref(null);
+const linkingState = ref(false);
+
+const openManualLink = (failFilename) => {
+  const item = selectedFiles.value.find(f => f.file.name === failFilename);
+  if (!item) {
+    $toast.error('File gambar tidak ditemukan');
+    return;
+  }
+  fileToLink.value = item;
+  studentSearchQuery.value = '';
+  studentSearchResults.value = [];
+  selectedStudentToLink.value = null;
+  showManualLinkModal.value = true;
+};
+
+const searchStudentsForLink = async () => {
+  if (!studentSearchQuery.value) {
+    studentSearchResults.value = [];
+    return;
+  }
+  studentSearchPending.value = true;
+  try {
+    const res = await $fetch('/api/students', {
+      query: {
+        search: studentSearchQuery.value,
+        limit: 10,
+        status: 'AKTIF'
+      }
+    });
+    studentSearchResults.value = res?.data || [];
+  } catch (e) {
+    console.error('Failed to search students:', e);
+  } finally {
+    studentSearchPending.value = false;
+  }
+};
+
+let searchDebounce = null;
+watch(studentSearchQuery, () => {
+  if (searchDebounce) clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(searchStudentsForLink, 300);
+});
+
+const linkStudentAndUpload = async () => {
+  if (!selectedStudentToLink.value || !fileToLink.value) return;
+  linkingState.value = true;
+  
+  const formData = new FormData();
+  formData.append('photo', fileToLink.value.file);
+  
+  try {
+    const res = await $fetch(`/api/students/${selectedStudentToLink.value.id}/photo`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (res.success) {
+      $toast.success(`Foto profil "${selectedStudentToLink.value.name}" berhasil dihubungkan!`);
+      
+      // Mark file as success in our local files list
+      fileToLink.value.status = 'success';
+      fileToLink.value.errorMsg = '';
+      
+      // Update uploadResult summary statistics
+      if (uploadResult.value) {
+        uploadResult.value.failList = uploadResult.value.failList.filter(
+          f => f.filename !== fileToLink.value.file.name
+        );
+        uploadResult.value.failCount = uploadResult.value.failList.length;
+        
+        // Add to successList
+        uploadResult.value.successList.push({
+          filename: fileToLink.value.file.name,
+          studentName: selectedStudentToLink.value.name,
+          nis: selectedStudentToLink.value.nis,
+          photoUrl: res.photoUrl
+        });
+        uploadResult.value.successCount = uploadResult.value.successList.length;
+      }
+      
+      showManualLinkModal.value = false;
+    }
+  } catch (err) {
+    console.error('Failed to manually link photo:', err);
+    $toast.error(err.data?.message || 'Gagal mengunggah foto');
+  } finally {
+    linkingState.value = false;
+  }
+};
 
 const onFileChange = (e) => {
   const files = Array.from(e.target.files || []);
@@ -385,13 +482,22 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
           <div v-if="uploadResult.failList && uploadResult.failList.length > 0" class="space-y-3 pt-2">
             <h3 class="text-xs font-black uppercase text-base-content/40 tracking-wider text-left">Rincian Kegagalan</h3>
-            <div class="max-h-48 overflow-y-auto border border-base-200 rounded-2xl p-2.5 space-y-2 bg-base-200/10 custom-scrollbar text-left">
+            <div class="max-h-64 overflow-y-auto border border-base-200 rounded-2xl p-2.5 space-y-2 bg-base-200/10 custom-scrollbar text-left">
               <div 
                 v-for="(fail, idx) in uploadResult.failList" :key="fail.filename + idx"
-                class="text-xs border-b border-base-200/50 last:border-0 pb-2 last:pb-0"
+                class="text-xs border-b border-base-200/50 last:border-0 pb-2.5 last:pb-0 flex items-start justify-between gap-4"
               >
-                <p class="font-bold text-base-content truncate">{{ fail.filename }}</p>
-                <p class="text-rose-500 mt-0.5 font-medium leading-relaxed">{{ fail.reason }}</p>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-base-content truncate">{{ fail.filename }}</p>
+                  <p class="text-rose-500 mt-0.5 font-medium leading-relaxed">{{ fail.reason }}</p>
+                </div>
+                <button 
+                  @click="openManualLink(fail.filename)"
+                  class="btn btn-ghost btn-xs text-primary font-bold shrink-0 hover:bg-primary/10 rounded-lg h-7 px-2.5"
+                >
+                  <Icon name="mingcute:user-link-line" class="mr-1" />
+                  Hubungkan
+                </button>
               </div>
             </div>
           </div>
@@ -436,6 +542,98 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
         </table>
       </div>
     </div>
+
+    <!-- Manual Link Modal -->
+    <dialog :class="['modal sm:modal-middle', showManualLinkModal ? 'modal-open' : '']">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-md overflow-visible text-left">
+        <h3 class="text-2xl font-black text-base-content mb-2">Pilih Siswa Manual</h3>
+        <p class="text-xs text-base-content/50 font-medium mb-6">
+          Hubungkan file foto berikut ke data profil siswa secara manual.
+        </p>
+
+        <div v-if="fileToLink" class="space-y-4">
+          <!-- Photo Thumbnail and Filename -->
+          <div class="flex items-center gap-4 bg-base-200/50 p-4 rounded-2xl border border-base-200/80">
+            <div class="w-14 h-14 rounded-xl overflow-hidden bg-base-200 border border-base-300 shrink-0 shadow-inner">
+              <img :src="fileToLink.previewUrl" class="w-full h-full object-cover" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="font-bold text-sm text-base-content truncate">{{ fileToLink.file.name }}</p>
+              <p class="text-[10px] text-base-content/40 font-mono mt-0.5">
+                {{ (fileToLink.file.size / (1024 * 1024)).toFixed(2) }} MB
+              </p>
+            </div>
+          </div>
+
+          <!-- Search Input -->
+          <div class="form-control relative">
+            <label class="label"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-40">Cari Nama / NIS / NISN Siswa</span></label>
+            <div class="relative">
+              <Icon name="mingcute:search-line" class="absolute left-4 top-1/2 -translate-y-1/2 opacity-35" size="18" />
+              <input 
+                v-model="studentSearchQuery"
+                type="text" 
+                placeholder="Ketik nama siswa..." 
+                class="input input-bordered w-full pl-11 bg-base-200/30 rounded-2xl font-bold"
+                @input="searchStudentsForLink"
+              />
+            </div>
+          </div>
+
+          <!-- Search Results -->
+          <div class="space-y-2">
+            <label class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest">Pilih Hasil Pencarian</label>
+            <div class="max-h-40 overflow-y-auto border border-base-200 rounded-2xl p-2 bg-base-200/20 custom-scrollbar space-y-1">
+              <div v-if="studentSearchPending" class="text-center py-6 text-xs text-base-content/40 font-bold flex items-center justify-center gap-1.5 animate-pulse">
+                <span class="loading loading-spinner loading-xs text-primary"></span>
+                Mencari siswa...
+              </div>
+              <div v-else-if="studentSearchResults.length === 0" class="text-center py-8 text-xs text-base-content/30 italic">
+                {{ studentSearchQuery ? 'Siswa tidak ditemukan' : 'Ketik nama siswa di atas untuk mencari' }}
+              </div>
+              <button 
+                v-else
+                v-for="s in studentSearchResults" :key="s.id"
+                @click="selectedStudentToLink = s"
+                type="button"
+                :class="[
+                  'w-full text-left p-3 rounded-xl font-bold text-xs flex items-center justify-between transition-colors border',
+                  selectedStudentToLink?.id === s.id 
+                    ? 'bg-primary/10 text-primary border-primary/20' 
+                    : 'bg-base-100 text-base-content border-transparent hover:bg-base-200/55'
+                ]"
+              >
+                <div>
+                  <p class="font-black text-sm">{{ s.name }}</p>
+                  <p class="text-[10px] font-medium text-base-content/40 mt-0.5">NIS: {{ s.nis }} | Kelas: {{ s.class?.className || 'N/A' }}</p>
+                </div>
+                <Icon 
+                  v-if="selectedStudentToLink?.id === s.id" 
+                  name="mingcute:checkbox-fill" 
+                  class="text-primary shrink-0" 
+                  size="18" 
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-action flex justify-between gap-4 mt-8">
+          <button @click="showManualLinkModal = false" class="btn btn-ghost rounded-2xl flex-1 font-bold" :disabled="linkingState">Batal</button>
+          <button 
+            @click="linkStudentAndUpload" 
+            class="btn btn-primary rounded-2xl flex-1 font-bold shadow-lg shadow-primary/20" 
+            :disabled="linkingState || !selectedStudentToLink"
+          >
+            <span v-if="linkingState" class="loading loading-spinner loading-xs mr-1"></span>
+            Hubungkan
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="!linkingState && (showManualLinkModal = false)">
+        <button :disabled="linkingState">close</button>
+      </form>
+    </dialog>
 
   </div>
 </template>

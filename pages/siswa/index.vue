@@ -470,12 +470,16 @@ const confirmDeleteStudent = async () => {
   }
 };
 
-// Update classOptions and majors when data changes
+// Update majors when data changes
 watch(data, (newData) => {
   const rawData = toValue(newData);
   const list = Array.isArray(rawData?.data) ? rawData.data : (Array.isArray(rawData) ? rawData : []);
-  classOptions.value = [...new Set(list.map(user => user.class?.className).filter(Boolean))].sort();
   majors.value = [...new Set(list.map(user => user.class?.major?.name).filter(Boolean))].sort();
+}, { immediate: true });
+
+// Update classOptions from all database classes
+watch(classes, (newClasses) => {
+  classOptions.value = [...new Set(newClasses.map(c => c.className).filter(Boolean))].sort();
 }, { immediate: true });
 
 onMounted(async () => {
