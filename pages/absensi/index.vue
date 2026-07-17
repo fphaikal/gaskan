@@ -378,7 +378,6 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
         </div>
       </Transition>
     </Teleport>
-  </div>
 </template>
 
 <style scoped>

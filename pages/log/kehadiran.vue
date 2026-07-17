@@ -391,7 +391,6 @@ useSeoMeta({
         </div>
       </Transition>
     </Teleport>
-  </div>
 </template>
 
 <style scoped>
