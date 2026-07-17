@@ -13,17 +13,19 @@ useSeoMeta({
 });
 
 // State
-const users = ref([]);
 const classes = ref([]);
-const loading = ref(true);
 const showModal = ref(false);
 const editMode = ref(false);
 const saving = ref(false);
-const searchQuery = ref('');
-const filterRole = ref('');
 const showDeleteModal = ref(false);
 const deleteId = ref(null);
 const activeDropdown = ref(null);
+
+// Pagination + filter state
+const searchQuery = ref('');
+const filterRole = ref('');
+const currentPage = ref(1);
+const itemsPerPage = ref(15);
 
 // Helper for Profile Picture
 const getAvatar = (user) => {
@@ -62,19 +64,23 @@ if (process.client) {
   });
 }
 
-// Fetch data
-const fetchUsers = async () => {
-  loading.value = true;
-  try {
-    const data = await $fetch('/api/users');
-    users.value = Array.isArray(data?.data) ? data.data : [];
-  } catch (e) {
-    console.error('Failed to fetch users:', e);
-    users.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
+// Server-side fetch with pagination
+const { data: userData, refresh: refreshUsers, pending: loading } = useFetch('/api/users', {
+  query: computed(() => ({
+    page: currentPage.value,
+    limit: itemsPerPage.value,
+    search: searchQuery.value,
+    role: filterRole.value,
+  })),
+  watch: [currentPage, itemsPerPage, searchQuery, filterRole],
+});
+
+const pagedUsers = computed(() => Array.isArray(userData.value?.data) ? userData.value.data : []);
+const totalCount = computed(() => userData.value?.pagination?.total || 0);
+const totalPages = computed(() => Math.ceil(totalCount.value / itemsPerPage.value));
+
+// Reset page on filter change
+watch([searchQuery, filterRole, itemsPerPage], () => { currentPage.value = 1; });
 
 const fetchClasses = async () => {
   try {
@@ -85,29 +91,7 @@ const fetchClasses = async () => {
   }
 };
 
-onMounted(() => {
-  fetchUsers();
-  fetchClasses();
-});
-
-const filteredUsers = computed(() => {
-  if (!Array.isArray(users.value)) return [];
-  
-  return users.value.filter(u => {
-    if (!u) return false;
-    const name = u.name || '';
-    const email = u.email || '';
-    const nis = u.nis || '';
-    
-    const matchesSearch = !searchQuery.value || 
-      name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      nis.toLowerCase().includes(searchQuery.value.toLowerCase());
-      
-    const matchesRole = !filterRole.value || u.role === filterRole.value;
-    return matchesSearch && matchesRole;
-  });
-});
+onMounted(() => { fetchClasses(); });
 
 const form = ref({
   id: null,
@@ -163,7 +147,7 @@ const saveUser = async () => {
 
     showModal.value = false;
     $toast.success(editMode.value ? 'User diperbarui' : 'User ditambahkan');
-    await fetchUsers();
+    await refreshUsers();
   } catch (e) {
     const msg = e?.data?.message || e?.message || 'Error';
     $toast.error('Gagal simpan: ' + msg);
@@ -178,7 +162,7 @@ const deleteUser = async () => {
     await $fetch(`/api/users/${deleteId.value}`, { method: 'DELETE' });
     $toast.success('User dihapus');
     showDeleteModal.value = false;
-    await fetchUsers();
+    await refreshUsers();
   } catch (e) {
     $toast.error('Gagal hapus user');
   }
@@ -240,7 +224,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
         </select>
       </div>
       <div class="flex items-center justify-center font-bold text-[10px] md:text-xs text-base-content/40 uppercase tracking-widest">
-        Total: {{ filteredUsers.length }} User
+        Total: <span class="text-primary ml-1">{{ totalCount }}</span>&nbsp;User
       </div>
     </div>
 
@@ -253,7 +237,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
     <div v-else class="space-y-3">
       <!-- Desktop Table -->
       <div :class="[bentoCard, 'hidden md:block p-0 overflow-hidden']">
-        <div class="overflow-x-auto max-h-[600px] custom-scrollbar">
+        <div class="overflow-x-auto">
           <table class="table table-lg w-full border-separate border-spacing-0">
             <thead class="sticky top-0 z-10 bg-base-100 shadow-sm">
               <tr class="bg-base-200/50 text-base-content/50 uppercase text-[10px] tracking-widest font-black">
@@ -265,7 +249,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
               </tr>
             </thead>
             <tbody class="divide-y divide-base-200/40">
-              <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-base-200/30 transition-colors group">
+              <tr v-for="user in pagedUsers" :key="user.id" class="hover:bg-base-200/30 transition-colors group">
                 <td class="pl-8">
                   <div class="flex items-center gap-3 py-1">
                     <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-primary/5">
@@ -303,11 +287,21 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
             </tbody>
           </table>
         </div>
+        <!-- Pagination -->
+        <UIPagination
+          :currentPage="currentPage"
+          :totalPages="totalPages"
+          :totalItems="totalCount"
+          :itemsPerPage="itemsPerPage"
+          itemLabel="user"
+          @update:currentPage="currentPage = $event"
+          @update:itemsPerPage="itemsPerPage = $event"
+        />
       </div>
 
-      <!-- Mobile List -->
+      <!-- Mobile List + Pagination -->
       <div class="md:hidden space-y-3">
-        <div v-for="user in filteredUsers" :key="user.id" :class="[bentoCard, 'p-4 border-l-4 !overflow-visible', user?.role === 'ADMIN' ? 'border-l-violet-500' : user?.role === 'GURU' ? 'border-l-indigo-500' : 'border-l-emerald-500']">
+        <div v-for="user in pagedUsers" :key="user.id" :class="[bentoCard, 'p-4 border-l-4 !overflow-visible', user?.role === 'ADMIN' ? 'border-l-violet-500' : user?.role === 'GURU' ? 'border-l-indigo-500' : 'border-l-emerald-500']">
           <div v-if="user" class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-base-content/40 shrink-0 overflow-hidden border border-base-300">
@@ -353,9 +347,18 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
              </div>
           </div>
         </div>
+        <UIPagination
+          :currentPage="currentPage"
+          :totalPages="totalPages"
+          :totalItems="totalCount"
+          :itemsPerPage="itemsPerPage"
+          itemLabel="user"
+          @update:currentPage="currentPage = $event"
+          @update:itemsPerPage="itemsPerPage = $event"
+        />
       </div>
 
-      <div v-if="filteredUsers.length === 0" class="text-center py-20 text-base-content/30 italic bg-base-100 rounded-[2rem] border border-base-200/60">
+      <div v-if="pagedUsers.length === 0 && !loading" class="text-center py-20 text-base-content/30 italic bg-base-100 rounded-[2rem] border border-base-200/60">
         Tidak ada data user yang ditemukan
       </div>
     </div>

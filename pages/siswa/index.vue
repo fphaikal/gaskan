@@ -674,36 +674,17 @@ useSeoMeta({
         </TransitionGroup>
       </div>
 
-      <!-- Pagination Controller -->
-      <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 py-5 border-t border-base-200/60 bg-base-100/50">
-        <button 
-          @click="currentPage--" 
-          :disabled="currentPage === 1"
-          class="btn btn-circle btn-ghost disabled:opacity-30 btn-sm"
-        >
-          <Icon name="mingcute:left-line" size="20" />
-        </button>
-        
-        <div class="flex items-center gap-1">
-          <button 
-            v-for="p in totalPages" :key="p"
-            v-show="p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2"
-            @click="currentPage = p"
-            :class="['btn btn-xs rounded-lg w-8 h-8 font-bold border-0', currentPage === p ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'btn-ghost']"
-          >
-            {{ p }}
-          </button>
-        </div>
-
-        <button 
-          @click="currentPage++" 
-          :disabled="currentPage === totalPages"
-          class="btn btn-circle btn-ghost disabled:opacity-30 btn-sm"
-        >
-          <Icon name="mingcute:right-line" size="20" />
-        </button>
-      </div>
+      <UIPagination
+        :currentPage="currentPage"
+        :totalPages="totalPages"
+        :totalItems="totalCount"
+        :itemsPerPage="itemsPerPage"
+        itemLabel="siswa"
+        @update:currentPage="currentPage = $event"
+        @update:itemsPerPage="itemsPerPage = $event; currentPage = 1"
+      />
     </div>
+
 
     <!-- Add Student Modal -->
     <dialog :class="['modal sm:modal-middle', showAddModal ? 'modal-open' : '']">

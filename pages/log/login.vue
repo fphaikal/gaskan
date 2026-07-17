@@ -221,35 +221,17 @@ useSeoMeta({
         </div>
       </div>
 
-      <!-- Pagination Controller -->
-      <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8 pb-12">
-        <button 
-          @click="page--" 
-          :disabled="page === 1"
-          class="btn btn-circle btn-ghost disabled:opacity-30"
-        >
-          <Icon name="mingcute:left-line" size="24" />
-        </button>
-        
-        <div class="flex items-center gap-1">
-          <button 
-            v-for="p in totalPages" :key="p"
-            v-show="p === 1 || p === totalPages || Math.abs(p - page) <= 2"
-            @click="page = p"
-            :class="['btn btn-sm rounded-xl w-10', page === p ? 'btn-primary' : 'btn-ghost']"
-          >
-            {{ p }}
-          </button>
-        </div>
-
-        <button 
-          @click="page++" 
-          :disabled="page === totalPages"
-          class="btn btn-circle btn-ghost disabled:opacity-30"
-        >
-          <Icon name="mingcute:right-line" size="24" />
-        </button>
-      </div>
+      <UIPagination
+        class="mt-6"
+        :currentPage="page"
+        :totalPages="totalPages"
+        :totalItems="logResponse?.pagination?.total || 0"
+        :itemsPerPage="limit"
+        :perPageOptions="[25, 50, 100]"
+        itemLabel="log"
+        @update:currentPage="page = $event"
+        @update:itemsPerPage="limit = $event; page = 1"
+      />
 
     </div>
     
