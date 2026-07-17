@@ -68,10 +68,10 @@ const toggleSelectStudent = (id) => {
 };
 
 const toggleSelectAll = () => {
-  if (selectedStudents.value.length === filteredUsers.value.length) {
+  if (selectedStudents.value.length === paginatedUsers.value.length) {
     selectedStudents.value = [];
   } else {
-    selectedStudents.value = filteredUsers.value.map(u => u.id);
+    selectedStudents.value = paginatedUsers.value.map(u => u.id);
   }
 };
 
@@ -241,35 +241,42 @@ const toggleClassDropdown = () => {
   }
 };
 
+const currentPage = ref(1);
+const itemsPerPage = ref(15); // Show 15 students per page
+
 const { data, refresh, pending } = useFetch(`/api/students`, {
   query: computed(() => ({ 
     status: filterStatus.value === 'ALL' ? 'ALL' : filterStatus.value, 
-    limit: 500, // Fetch more to allow client-side major filtering if needed
+    limit: itemsPerPage.value,
+    page: currentPage.value,
     search: searchQuery.value,
-    classId: classes.value.find(c => c.className === selectedClass.value)?.id
+    classId: classes.value.find(c => c.className === selectedClass.value)?.id,
+    major: filterMajor.value,
+    sortBy: sortBy.value
   })),
-  watch: [searchQuery, selectedClass, filterStatus],
+  watch: [searchQuery, selectedClass, filterStatus, filterMajor, sortBy, currentPage],
   key: 'student-list'
 });
 
-const filteredUsers = computed(() => {
+const totalPages = computed(() => {
   const rawData = toValue(data);
-  let list = Array.isArray(rawData?.data) ? rawData.data : (Array.isArray(rawData) ? rawData : []);
-  
-  // Client-side Major Filtering
-  if (filterMajor.value) {
-    list = list.filter(u => u.class?.major?.name === filterMajor.value);
-  }
+  if (!rawData?.pagination) return 0;
+  return Math.ceil(rawData.pagination.total / itemsPerPage.value);
+});
 
-  // Sorting
-  list = [...list].sort((a, b) => {
-    if (sortBy.value === 'name-asc') return (a.name || '').localeCompare(b.name || '');
-    if (sortBy.value === 'name-desc') return (b.name || '').localeCompare(a.name || '');
-    if (sortBy.value === 'newest') return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    return 0;
-  });
-  
-  return list;
+const totalCount = computed(() => {
+  const rawData = toValue(data);
+  return rawData?.pagination?.total || 0;
+});
+
+const paginatedUsers = computed(() => {
+  const rawData = toValue(data);
+  return Array.isArray(rawData?.data) ? rawData.data : (Array.isArray(rawData) ? rawData : []);
+});
+
+// Reset page to 1 when filters change
+watch([searchQuery, selectedClass, filterStatus, filterMajor, sortBy], () => {
+  currentPage.value = 1;
 });
 
 const fetchClasses = async () => {
@@ -521,7 +528,7 @@ useSeoMeta({
       
       <!-- Stats Summary (Top) -->
       <div class="px-8 py-4 bg-base-200/20 border-b border-base-200/60 flex justify-between items-center">
-        <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Ditemukan {{ filteredUsers.length }} Siswa</p>
+        <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Ditemukan {{ totalCount }} Siswa</p>
         <div v-if="filterStatus !== 'ALL' || selectedClass || filterMajor || searchQuery" class="flex items-center gap-1 text-[9px] font-bold text-base-content/40 uppercase">
           <Icon name="mingcute:filter-fill" class="text-primary/60" />
           Filter Aktif
@@ -534,7 +541,7 @@ useSeoMeta({
           <input 
             type="checkbox" 
             class="checkbox checkbox-primary rounded-lg checkbox-sm border-base-content/20 shrink-0"
-            :checked="selectedStudents.length === filteredUsers.length && filteredUsers.length > 0"
+            :checked="selectedStudents.length === paginatedUsers.length && paginatedUsers.length > 0"
             @change="toggleSelectAll"
           />
           <span>Informasi Siswa</span>
@@ -545,7 +552,7 @@ useSeoMeta({
       </div>
 
       <!-- Skeleton Loading State -->
-      <div v-if="pending && filteredUsers.length === 0" class="divide-y divide-base-200/60 px-4 md:px-8">
+      <div v-if="pending && paginatedUsers.length === 0" class="divide-y divide-base-200/60 px-4 md:px-8">
         <div v-for="i in 5" :key="i" class="py-6 animate-pulse">
           <div class="flex items-center gap-5">
             <div class="w-14 h-14 rounded-2xl bg-base-200"></div>
@@ -558,7 +565,7 @@ useSeoMeta({
       </div>
 
       <!-- Enhanced Empty State -->
-      <div v-else-if="filteredUsers.length === 0" class="flex flex-col items-center justify-center py-24 text-center px-4">
+      <div v-else-if="paginatedUsers.length === 0" class="flex flex-col items-center justify-center py-24 text-center px-4">
         <div class="relative mb-8">
           <div class="absolute inset-0 bg-primary/10 blur-[60px] rounded-full scale-150 animate-pulse"></div>
           <div class="w-32 h-32 bg-base-100 border border-base-200 rounded-[2.5rem] flex items-center justify-center shadow-xl relative z-10">
@@ -576,7 +583,7 @@ useSeoMeta({
       <div v-else class="divide-y divide-base-200/40 relative">
         <TransitionGroup name="list">
           <div 
-            v-for="user in filteredUsers" :key="user.id"
+            v-for="user in paginatedUsers" :key="user.id"
             class="group flex flex-col lg:grid lg:grid-cols-12 items-start lg:items-center px-6 lg:px-8 py-5 lg:py-4 hover:bg-base-200/30 transition-all gap-4 lg:gap-0 relative"
           >
             <!-- Left border accent -->
@@ -665,6 +672,36 @@ useSeoMeta({
             </div>
           </div>
         </TransitionGroup>
+      </div>
+
+      <!-- Pagination Controller -->
+      <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 py-5 border-t border-base-200/60 bg-base-100/50">
+        <button 
+          @click="currentPage--" 
+          :disabled="currentPage === 1"
+          class="btn btn-circle btn-ghost disabled:opacity-30 btn-sm"
+        >
+          <Icon name="mingcute:left-line" size="20" />
+        </button>
+        
+        <div class="flex items-center gap-1">
+          <button 
+            v-for="p in totalPages" :key="p"
+            v-show="p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2"
+            @click="currentPage = p"
+            :class="['btn btn-xs rounded-lg w-8 h-8 font-bold border-0', currentPage === p ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'btn-ghost']"
+          >
+            {{ p }}
+          </button>
+        </div>
+
+        <button 
+          @click="currentPage++" 
+          :disabled="currentPage === totalPages"
+          class="btn btn-circle btn-ghost disabled:opacity-30 btn-sm"
+        >
+          <Icon name="mingcute:right-line" size="20" />
+        </button>
       </div>
     </div>
 

@@ -38,18 +38,32 @@ const { nis, role } = storeToRefs(useAuthStore());
 const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(role.value));
 const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
-const log = ref([]);
+const logResponse = ref(null);
 const logSiswa = ref(null);
 const isLive = ref(false); // true saat socket terhubung
+
+const currentPage = ref(1);
+const itemsPerPage = ref(20); // Show 20 records per page
+
+const totalPages = computed(() => {
+  if (!logResponse.value?.pagination) return 0;
+  return Math.ceil(logResponse.value.pagination.total / itemsPerPage.value);
+});
+
+const paginatedLog = computed(() => {
+  return logResponse.value?.data || [];
+});
 
 const refreshLog = async () => {
   if (!isAdminOrDev.value) return;
   try {
-    log.value = await sessionFetch('/api/log/kehadiran');
+    logResponse.value = await sessionFetch(`/api/log/kehadiran?page=${currentPage.value}&limit=${itemsPerPage.value}`);
   } catch (error) {
     console.error('Error fetching attendance log:', error);
   }
 };
+
+watch(currentPage, refreshLog);
 
 if (isAdminOrDev.value) {
   await refreshLog();
@@ -77,15 +91,14 @@ onMounted(() => {
   const onDisconnect = () => { isLive.value = false; };
 
   const onAttendanceNew = (data) => {
-    // Find today's group or create it
+    if (!logResponse.value) return;
     const key = todayKey();
-    const todayGroup = log.value.find((g) => g.tgal === key);
+    const list = logResponse.value.data || [];
+    const todayGroup = list.find((g) => g.tanggal === key);
     if (todayGroup) {
-      // Prepend new entry so it appears at top
-      todayGroup.a = [data, ...todayGroup.a];
+      todayGroup.data = [data, ...todayGroup.data];
     } else {
-      // No group for today yet, add one
-      log.value = [{ tgal: key, a: [data] }, ...log.value];
+      logResponse.value.data = [{ tanggal: key, data: [data] }, ...list];
     }
   };
 
@@ -175,7 +188,7 @@ useSeoMeta({
         </div>
       </div>
 
-      <div v-if="log.length === 0" class="bg-base-100 border border-base-200/60 rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-base-content/40">
+      <div v-if="!logResponse || paginatedLog.length === 0" class="bg-base-100 border border-base-200/60 rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-base-content/40">
         <div class="relative w-16 h-16 mb-4 flex items-center justify-center rounded-2xl bg-base-200/50 border border-base-300/50">
             <Icon name="mingcute:radar-line" size="32" class="animate-spin-slow opacity-50" />
         </div>
@@ -184,7 +197,7 @@ useSeoMeta({
 
       <div v-else class="space-y-12">
         <TransitionGroup name="list" tag="div" class="space-y-10">
-          <div v-for="l in log" :key="l.tanggal" class="relative">
+          <div v-for="l in paginatedLog" :key="l.tanggal" class="relative">
             <!-- Date Header -->
             <div class="sticky top-[64px] z-10 bg-base-100/95 backdrop-blur-md py-4 mb-4 flex items-center gap-4 border-b border-base-200/50">
               <div class="h-8 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]"></div>
@@ -229,6 +242,36 @@ useSeoMeta({
             </div>
           </div>
         </TransitionGroup>
+
+        <!-- Pagination Controller -->
+        <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 py-4">
+          <button 
+            @click="currentPage--" 
+            :disabled="currentPage === 1"
+            class="btn btn-circle btn-ghost disabled:opacity-30 btn-sm"
+          >
+            <Icon name="mingcute:left-line" size="20" />
+          </button>
+          
+          <div class="flex items-center gap-1">
+            <button 
+              v-for="p in totalPages" :key="p"
+              v-show="p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2"
+              @click="currentPage = p"
+              :class="['btn btn-xs rounded-lg w-8 h-8 font-bold border-0', currentPage === p ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'btn-ghost']"
+            >
+              {{ p }}
+            </button>
+          </div>
+
+          <button 
+            @click="currentPage++" 
+            :disabled="currentPage === totalPages"
+            class="btn btn-circle btn-ghost disabled:opacity-30 btn-sm"
+          >
+            <Icon name="mingcute:right-line" size="20" />
+          </button>
+        </div>
       </div>
     </div>
 
