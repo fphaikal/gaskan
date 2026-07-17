@@ -38,6 +38,26 @@ const isBulkRegister = ref(false);
 const selectedStudents = ref([]);
 const studentPhotoUploading = ref(false);
 
+const showBulkDeleteModal = ref(false);
+const openBulkDeleteConfirm = () => { showBulkDeleteModal.value = true; };
+const confirmBulkDelete = async () => {
+  try {
+    const res = await $fetch('/api/students/bulk', {
+      method: 'DELETE',
+      body: { studentIds: selectedStudents.value }
+    });
+    if (res?.success) {
+      $toast.success(res.message || 'Siswa berhasil dihapus');
+      selectedStudents.value = [];
+      showBulkDeleteModal.value = false;
+      refresh();
+    }
+  } catch (e) {
+    console.error('Bulk delete failed:', e);
+    $toast.error(e.data?.message || 'Gagal menghapus siswa secara massal');
+  }
+};
+
 const toggleSelectStudent = (id) => {
   const idx = selectedStudents.value.indexOf(id);
   if (idx > -1) {
@@ -766,6 +786,26 @@ useSeoMeta({
       </div>
     </dialog>
 
+    <!-- Bulk Delete Modal -->
+    <dialog :class="['modal sm:modal-middle', showBulkDeleteModal ? 'modal-open' : '']">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-sm text-center">
+        <div class="w-16 h-16 bg-error/10 text-error rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Icon name="mingcute:delete-2-fill" size="32" />
+        </div>
+        <h3 class="text-2xl font-black text-base-content mb-2">Hapus Massal?</h3>
+        <p class="text-base-content/60 font-medium mb-8">
+          Apakah Anda yakin ingin menghapus <span class="text-primary font-black">{{ selectedStudents.length }}</span> siswa terpilih? Tindakan ini tidak dapat dibatalkan.
+        </p>
+
+        <div class="flex gap-4">
+          <button @click="showBulkDeleteModal = false" class="btn btn-ghost rounded-2xl flex-1 font-bold">Batal</button>
+          <button @click="confirmBulkDelete" class="btn btn-error rounded-2xl flex-1 font-bold shadow-lg shadow-error/20 text-white">
+            Ya, Hapus Semua
+          </button>
+        </div>
+      </div>
+    </dialog>
+
     <!-- Register to Device Modal -->
     <dialog :class="['modal sm:modal-middle', showRegisterDeviceModal ? 'modal-open' : '']">
       <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-md overflow-visible">
@@ -864,6 +904,10 @@ useSeoMeta({
         <button @click="openBulkRegisterModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-2">
           <Icon name="mingcute:fingerprint-fill" />
           Daftarkan ke Alat (Bulk)
+        </button>
+        <button @click="openBulkDeleteConfirm" class="btn btn-error btn-sm rounded-xl font-bold text-white gap-2">
+          <Icon name="mingcute:delete-2-fill" />
+          Hapus (Bulk)
         </button>
         <button @click="selectedStudents = []" class="btn btn-ghost btn-sm rounded-xl font-bold">
           Batal

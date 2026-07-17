@@ -14,6 +14,10 @@ const openDetail = (d) => {
 };
 const closeModal = () => { showModal.value = false; selectedAttendance.value = null; };
 
+const activePreviewImage = ref(null);
+const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
+const closeImagePreview = () => { activePreviewImage.value = null; };
+
 const formatTimeOnly = (ts) => {
   if (!ts) return '-';
   return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -318,8 +322,11 @@ useSeoMeta({
             <!-- Modal Header -->
             <div class="p-6 flex items-center justify-between bg-primary/5">
               <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-200 shrink-0">
-                  <img :src="selectedAttendance.Image" alt="avatar" class="w-full h-full object-cover" />
+                <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative">
+                  <img :src="selectedAttendance.Image" 
+                       alt="avatar" 
+                       class="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform duration-300"
+                       @click="openImagePreview(selectedAttendance.Image)" />
                 </div>
                 <div>
                   <h3 class="text-lg font-black text-base-content">{{ selectedAttendance.Nama }}</h3>
@@ -362,7 +369,10 @@ useSeoMeta({
                   <div v-for="log in selectedAttendance.logs" :key="log.id" class="flex items-center gap-3 p-2.5 rounded-2xl bg-base-200/30 border border-base-200/50 hover:bg-base-200/50 transition-colors">
                     <!-- Attendance Image -->
                     <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative">
-                      <img :src="log.Image" alt="scan" class="w-full h-full object-cover" />
+                      <img :src="log.Image" 
+                           alt="scan" 
+                           class="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform duration-300"
+                           @click="openImagePreview(log.Image)" />
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
@@ -388,6 +398,18 @@ useSeoMeta({
               <button @click="closeModal" class="btn btn-ghost btn-block rounded-2xl font-black">Tutup</button>
             </div>
           </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══ IMAGE PREVIEW MODAL (LIGHTBOX) ═══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="activePreviewImage" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4" @click="closeImagePreview">
+          <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors btn btn-ghost btn-circle">
+            <Icon name="mingcute:close-line" size="28" />
+          </button>
+          <img :src="activePreviewImage" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10" @click.stop />
         </div>
       </Transition>
     </Teleport>
@@ -426,4 +448,7 @@ useSeoMeta({
 
 .modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
 .modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95); }
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
