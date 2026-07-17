@@ -167,8 +167,19 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
             </div>
 
             <!-- Time -->
-            <div class="col-span-2">
-              <span class="text-xs font-bold text-base-content/50">{{ formatTime(a.time) }}</span>
+            <div class="col-span-2 flex flex-col justify-center min-w-0">
+              <div class="flex items-center gap-1">
+                <span class="text-[8px] font-black uppercase text-emerald-500/80">IN</span>
+                <span class="text-xs font-bold text-base-content/60">{{ formatTime(a.time) }}</span>
+              </div>
+              <div class="flex items-center gap-1" v-if="a.lastOutTime">
+                <span class="text-[8px] font-black uppercase text-rose-500/80">OUT</span>
+                <span class="text-xs font-bold text-base-content/60">{{ formatTime(a.lastOutTime) }}</span>
+              </div>
+              <div class="flex items-center gap-1" v-else>
+                <span class="text-[8px] font-black uppercase text-base-content/20">OUT</span>
+                <span class="text-xs font-bold text-base-content/30">-</span>
+              </div>
             </div>
 
             <!-- Method -->
@@ -295,7 +306,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
             </div>
 
             <!-- Modal Body -->
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
               <!-- Status badge -->
               <div class="flex items-center justify-between p-4 rounded-2xl bg-base-200/40">
                 <span class="text-xs font-black text-base-content/50 uppercase tracking-widest">Status Kehadiran</span>
@@ -312,6 +323,13 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
                     <span class="text-xs font-bold">Waktu Masuk</span>
                   </div>
                   <span class="text-sm font-black text-base-content">{{ formatFull(selectedAttendance.time) }}</span>
+                </div>
+                <div class="flex items-center justify-between" v-if="selectedAttendance.lastOutTime">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:time-fill" size="16" />
+                    <span class="text-xs font-bold">Waktu Pulang</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">{{ formatFull(selectedAttendance.lastOutTime) }}</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2 text-base-content/40">
@@ -333,6 +351,31 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
                     <span class="text-xs font-bold">Jurusan</span>
                   </div>
                   <span class="text-sm font-black text-base-content">{{ selectedAttendance.majorName || '—' }}</span>
+                </div>
+              </div>
+
+              <!-- Detailed Scan Logs with Captured Photos -->
+              <div class="pt-4 border-t border-base-200/50 space-y-3" v-if="selectedAttendance.logs && selectedAttendance.logs.length">
+                <h4 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Detail Scan Wajah & Foto</h4>
+                <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1.5 custom-scrollbar">
+                  <div v-for="log in selectedAttendance.logs" :key="log.id" class="flex items-center gap-3 p-2.5 rounded-2xl bg-base-200/30 border border-base-200/50 hover:bg-base-200/50 transition-colors">
+                    <!-- Attendance Image (Photo taken during scan) -->
+                    <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative">
+                      <img :src="log.notes || selectedAttendance.photoUrl || 'https://api.tierkun.my.id/file/picture/0000.png'" alt="scan" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-mono font-bold text-base-content">{{ formatTime(log.timestamp) }}</span>
+                        <span :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider', getStatus(log.status).badge]">
+                          {{ log.status === 'TERLAMBAT' ? 'Lambat' : log.status }}
+                        </span>
+                      </div>
+                      <p class="text-[9px] font-bold text-base-content/40 truncate mt-0.5" v-if="log.gate">
+                        <Icon name="mingcute:location-fill" size="11" class="text-primary/70 mr-0.5 inline shrink-0" />
+                        {{ log.gate }}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -4,6 +4,32 @@ import { useRequestFetch } from '#app';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
 
+// === MODAL STATE ===
+const selectedAttendance = ref(null);
+const showModal = ref(false);
+
+const openDetail = (d) => {
+  selectedAttendance.value = d;
+  showModal.value = true;
+};
+const closeModal = () => { showModal.value = false; selectedAttendance.value = null; };
+
+const formatTimeOnly = (ts) => {
+  if (!ts) return '-';
+  return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+};
+
+const getStatus = (s) => {
+  const statusMap = {
+    HADIR:     { color: 'text-emerald-500', badge: 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500', label: 'Hadir' },
+    TERLAMBAT: { color: 'text-amber-500',   badge: 'bg-amber-500/10 border border-amber-500/30 text-amber-500', label: 'Lambat' },
+    IZIN:      { color: 'text-sky-500',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-500', label: 'Izin' },
+    SAKIT:     { color: 'text-orange-400',  badge: 'bg-orange-400/10 border border-orange-400/30 text-orange-400', label: 'Sakit' },
+    ALPHA:     { color: 'text-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500', label: 'Alpha' },
+  };
+  return statusMap[s] || statusMap.ALPHA;
+};
+
 const { nis, role } = storeToRefs(useAuthStore());
 const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(role.value));
 const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
@@ -163,7 +189,9 @@ useSeoMeta({
             
             <!-- Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              <div v-for="d in l.data" :key="d.timestamp" class="bg-base-100 border border-base-200/80 hover:border-primary/30 rounded-3xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex gap-4 items-center group cursor-default">
+              <div v-for="d in l.data" :key="d.timestamp"
+                   @click="openDetail(d)"
+                   class="bg-base-100 border border-base-200/80 hover:border-primary/30 rounded-3xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex gap-4 items-center group cursor-pointer">
                 <div class="relative w-16 h-16 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-base-200 shrink-0 shadow-inner">
                   <img :src="d.Image" alt="avatar" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
                   <div class="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl"></div>
@@ -171,18 +199,26 @@ useSeoMeta({
                 <div class="flex-1 min-w-0">
                   <h3 class="text-base font-bold text-base-content truncate group-hover:text-primary transition-colors">{{ d.Nama }}</h3>
                   <p class="text-[11px] font-bold text-base-content/40 uppercase tracking-widest mb-2 truncate">{{ d.Kelas }}</p>
-                  <div class="flex items-center gap-2 flex-wrap mb-1">
-                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border"
-                          :class="d.action === 'enter' ? 'bg-success/10 text-success border-success/20 shadow-[0_0_10px_rgba(var(--success),0.1)]' : (d.action === 'exit' ? 'bg-error/10 text-error border-error/20 shadow-[0_0_10px_rgba(var(--error),0.1)]' : 'bg-base-200 text-base-content/60')">
-                      {{ type(d.action) }}
-                    </span>
-                    <span class="text-xs font-mono font-bold text-base-content/60 bg-base-200/50 px-2 py-1 border border-base-300/50 rounded-lg">
-                      {{ formatLongDate(d.timestamp).split(' ').slice(1).join(' ') || formatLongDate(d.timestamp) }}
-                    </span>
-                  </div>
-                  <div v-if="d.Gate" class="flex items-center gap-1 text-[10px] font-semibold text-primary/80 bg-primary/5 px-2 py-0.5 rounded-md w-fit border border-primary/10">
-                    <Icon name="mingcute:location-fill" size="12" />
-                    <span>{{ d.Gate }}</span>
+                  
+                  <div class="flex flex-col gap-1.5 mb-1">
+                    <div class="flex items-center gap-2">
+                      <span class="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded bg-success/10 text-success border border-success/20">Masuk</span>
+                      <span class="text-xs font-mono font-bold text-base-content/70">
+                        {{ d.timestamp ? formatTimeOnly(d.timestamp) : '-' }}
+                      </span>
+                      <span v-if="d.Gate" class="text-[8px] font-bold text-base-content/35 truncate max-w-[80px]" :title="d.Gate">
+                        ({{ d.Gate.split(' ')[0] }})
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">Pulang</span>
+                      <span class="text-xs font-mono font-bold text-base-content/70">
+                        {{ d.lastOutTime ? formatTimeOnly(d.lastOutTime) : 'Belum pulang' }}
+                      </span>
+                      <span v-if="d.lastOutGate" class="text-[8px] font-bold text-base-content/35 truncate max-w-[80px]" :title="d.lastOutGate">
+                        ({{ d.lastOutGate.split(' ')[0] }})
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -271,6 +307,91 @@ useSeoMeta({
       </div>
     </div>
   </div>
+
+    <!-- ═══ DETAIL MODAL ═══ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showModal && selectedAttendance" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="closeModal">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden z-10">
+            
+            <!-- Modal Header -->
+            <div class="p-6 flex items-center justify-between bg-primary/5">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-200 shrink-0">
+                  <img :src="selectedAttendance.Image" alt="avatar" class="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-black text-base-content">{{ selectedAttendance.Nama }}</h3>
+                  <p class="text-xs text-base-content/50 font-bold">{{ selectedAttendance.Kelas }}</p>
+                </div>
+              </div>
+              <button @click="closeModal" class="btn btn-ghost btn-sm btn-circle">
+                <Icon name="mingcute:close-line" size="20" />
+              </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+              <!-- Detail rows -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:time-fill" size="16" />
+                    <span class="text-xs font-bold">Waktu Masuk</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">
+                    {{ selectedAttendance.timestamp ? formatTimeOnly(selectedAttendance.timestamp) : '-' }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between" v-if="selectedAttendance.lastOutTime">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:time-fill" size="16" />
+                    <span class="text-xs font-bold">Waktu Pulang</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">
+                    {{ formatTimeOnly(selectedAttendance.lastOutTime) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Detailed Scan Logs with Captured Photos -->
+              <div class="pt-4 border-t border-base-200/50 space-y-3" v-if="selectedAttendance.logs && selectedAttendance.logs.length">
+                <h4 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Detail Scan Wajah & Foto</h4>
+                <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1.5 custom-scrollbar">
+                  <div v-for="log in selectedAttendance.logs" :key="log.id" class="flex items-center gap-3 p-2.5 rounded-2xl bg-base-200/30 border border-base-200/50 hover:bg-base-200/50 transition-colors">
+                    <!-- Attendance Image -->
+                    <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative">
+                      <img :src="log.Image" alt="scan" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-mono font-bold text-base-content">
+                          {{ formatTimeOnly(log.timestamp) }}
+                        </span>
+                        <span :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider', getStatus(log.status).badge]">
+                          {{ getStatus(log.status).label }}
+                        </span>
+                      </div>
+                      <p class="text-[9px] font-bold text-base-content/40 truncate mt-0.5" v-if="log.Gate">
+                        <Icon name="mingcute:location-fill" size="11" class="text-primary/70 mr-0.5 inline shrink-0" />
+                        {{ log.Gate }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 pt-0">
+              <button @click="closeModal" class="btn btn-ghost btn-block rounded-2xl font-black">Tutup</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
 </template>
 
 <style scoped>
@@ -299,4 +420,11 @@ useSeoMeta({
     transform: rotate(360deg);
   }
 }
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--bc), 0.08); border-radius: 10px; }
+
+.modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95); }
 </style>

@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
@@ -59,6 +59,33 @@ const markAttendance = async (studentId, status) => {
   } finally {
     markingId.value = null;
   }
+};
+
+// === MODAL STATE ===
+const selectedAttendance = ref(null);
+const showModal = ref(false);
+
+const openDetail = (student) => {
+  if (student.attendance) {
+    selectedAttendance.value = {
+      studentName: student.name,
+      photoUrl: student.photoUrl,
+      className: student.class?.className || '-',
+      status: student.attendance.status,
+      time: student.attendance.firstIn.timestamp,
+      lastOutTime: student.attendance.lastOut?.timestamp || null,
+      method: student.attendance.method,
+      logs: student.attendance.logs
+    };
+    showModal.value = true;
+  }
+};
+const closeModal = () => { showModal.value = false; selectedAttendance.value = null; };
+
+const methodLabel = (m) => {
+  if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:faceid-line', color: 'text-primary' };
+  if (m === 'QR_CODE') return { label: 'QR Code', icon: 'mingcute:qrcode-2-line', color: 'text-info' };
+  return { label: 'Manual', icon: 'mingcute:edit-2-line', color: 'text-base-content/40' };
 };
 
 // Status helpers
@@ -166,7 +193,9 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
             </tr>
           </thead>
           <tbody class="divide-y divide-base-200/50">
-            <tr v-for="(student, idx) in students" :key="student.id" class="group hover:bg-base-200/30 transition-colors">
+            <tr v-for="(student, idx) in students" :key="student.id"
+                @click="openDetail(student)"
+                class="group hover:bg-base-200/30 transition-colors cursor-pointer">
               <td class="pl-6 text-[10px] font-black text-base-content/30">{{ idx + 1 }}</td>
               <td class="py-3">
                 <div class="flex items-center gap-3">
@@ -192,8 +221,24 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
                 </div>
                 <span v-else class="text-[9px] font-bold text-base-content/30 uppercase tracking-widest italic">Belum absen</span>
               </td>
-              <td class="text-[10px] font-bold text-base-content/60">
-                {{ student.attendance ? formatTime(student.attendance.timestamp) : '-' }}
+              <td class="py-3">
+                <template v-if="student.attendance">
+                  <div class="flex flex-col gap-0.5 justify-center">
+                    <div class="flex items-center gap-1">
+                      <span class="text-[8px] font-black uppercase text-emerald-500/80">IN</span>
+                      <span class="text-[10px] font-bold text-base-content/60">{{ formatTime(student.attendance.firstIn.timestamp) }}</span>
+                    </div>
+                    <div class="flex items-center gap-1" v-if="student.attendance.lastOut">
+                      <span class="text-[8px] font-black uppercase text-rose-500/80">OUT</span>
+                      <span class="text-[10px] font-bold text-base-content/60">{{ formatTime(student.attendance.lastOut.timestamp) }}</span>
+                    </div>
+                    <div class="flex items-center gap-1" v-else>
+                      <span class="text-[8px] font-black uppercase text-base-content/20">OUT</span>
+                      <span class="text-[10px] font-bold text-base-content/30">-</span>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>-</template>
               </td>
               <td class="text-[10px] font-bold text-base-content/30 uppercase tracking-widest">
                 <template v-if="student.attendance">
@@ -201,7 +246,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
                 </template>
                 <template v-else>-</template>
               </td>
-              <td class="pr-6 text-right">
+              <td class="pr-6 text-right" @click.stop>
                 <div v-if="!student.attendance" class="flex justify-end gap-1">
                   <div class="dropdown dropdown-end">
                     <label tabindex="0" class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-lg font-black px-3 h-8 gap-1.5 shadow-sm shadow-orange-500/20">
@@ -231,4 +276,116 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
       </div>
     </div>
   </div>
+
+    <!-- ═══ DETAIL MODAL ═══ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showModal && selectedAttendance" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="closeModal">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden z-10">
+            
+            <!-- Modal Header -->
+            <div :class="['p-6 flex items-center justify-between', getStatus(selectedAttendance.status).bg.replace('/10', '/5')]">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-200 shrink-0">
+                  <img v-if="selectedAttendance.photoUrl" :src="selectedAttendance.photoUrl" :alt="selectedAttendance.studentName" class="w-full h-full object-cover" />
+                  <div v-else class="w-full h-full flex items-center justify-center text-primary font-black text-xl bg-primary/10">
+                    {{ selectedAttendance.studentName?.charAt(0) }}
+                  </div>
+                </div>
+                <div>
+                  <h3 class="text-lg font-black text-base-content">{{ selectedAttendance.studentName }}</h3>
+                  <p class="text-xs text-base-content/50 font-bold">{{ selectedAttendance.className }}</p>
+                </div>
+              </div>
+              <button @click="closeModal" class="btn btn-ghost btn-sm btn-circle">
+                <Icon name="mingcute:close-line" size="20" />
+              </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+              <!-- Status badge -->
+              <div class="flex items-center justify-between p-4 rounded-2xl bg-base-200/40">
+                <span class="text-xs font-black text-base-content/50 uppercase tracking-widest">Status Kehadiran</span>
+                <div :class="['px-4 py-1.5 rounded-xl text-sm font-black uppercase tracking-wider', getStatus(selectedAttendance.status).badge]">
+                  {{ getStatus(selectedAttendance.status).label }}
+                </div>
+              </div>
+
+              <!-- Detail rows -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:time-fill" size="16" />
+                    <span class="text-xs font-bold">Waktu Masuk</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">
+                    {{ selectedAttendance.time ? new Date(selectedAttendance.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-' }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between" v-if="selectedAttendance.lastOutTime">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:time-fill" size="16" />
+                    <span class="text-xs font-bold">Waktu Pulang</span>
+                  </div>
+                  <span class="text-sm font-black text-base-content">
+                    {{ new Date(selectedAttendance.lastOutTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon :name="methodLabel(selectedAttendance.method).icon" size="16" />
+                    <span class="text-xs font-bold">Metode</span>
+                  </div>
+                  <span :class="['text-sm font-black', methodLabel(selectedAttendance.method).color]">{{ methodLabel(selectedAttendance.method).label }}</span>
+                </div>
+              </div>
+
+              <!-- Detailed Scan Logs with Captured Photos -->
+              <div class="pt-4 border-t border-base-200/50 space-y-3" v-if="selectedAttendance.logs && selectedAttendance.logs.length">
+                <h4 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Detail Scan Wajah & Foto</h4>
+                <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1.5 custom-scrollbar">
+                  <div v-for="log in selectedAttendance.logs" :key="log.id" class="flex items-center gap-3 p-2.5 rounded-2xl bg-base-200/30 border border-base-200/50 hover:bg-base-200/50 transition-colors">
+                    <!-- Attendance Image -->
+                    <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative">
+                      <img :src="log.notes || selectedAttendance.photoUrl || 'https://api.tierkun.my.id/file/picture/0000.png'" alt="scan" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-mono font-bold text-base-content">
+                          {{ new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}
+                        </span>
+                        <span :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider', getStatus(log.status).badge]">
+                          {{ getStatus(log.status).label }}
+                        </span>
+                      </div>
+                      <p class="text-[9px] font-bold text-base-content/40 truncate mt-0.5" v-if="log.gate">
+                        <Icon name="mingcute:location-fill" size="11" class="text-primary/70 mr-0.5 inline shrink-0" />
+                        {{ log.gate }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 pt-0">
+              <button @click="closeModal" class="btn btn-ghost btn-block rounded-2xl font-black">Tutup</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--bc), 0.08); border-radius: 10px; }
+
+.modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95); }
+</style>
