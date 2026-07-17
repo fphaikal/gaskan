@@ -86,8 +86,8 @@ const formatTime = (isoString) => {
 };
 
 useSeoMeta({
-  title: 'Log Login | GASKAN',
-  description: 'Log riwayat akses login pengguna',
+  title: 'Log Sistem | GASKAN',
+  description: 'Log riwayat aktivitas sistem dan akses pengguna',
 })
 </script>
 
@@ -99,9 +99,9 @@ useSeoMeta({
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
         <div class="flex-1">
           <h1 class="text-3xl font-extrabold tracking-tight text-base-content mb-2 flex items-center gap-3">
-            Log Sistem (Login)
+            Log Sistem
           </h1>
-          <p class="text-base-content/60 text-sm">Pemantauan riwayat aktivitas akses sistem pengguna</p>
+          <p class="text-base-content/60 text-sm">Pemantauan riwayat aktivitas sistem, scan wajah perangkat, dan akses pengguna</p>
         </div>
         
         <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">

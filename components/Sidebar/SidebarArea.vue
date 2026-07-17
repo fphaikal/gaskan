@@ -153,7 +153,7 @@ const menuGroups = [
       {
         icon: 'mingcute:enter-door-fill',
         role: ['admin', 'developer'],
-        label: 'Log Login',
+        label: 'Log Sistem',
         route: '/log/login',
       },
       {

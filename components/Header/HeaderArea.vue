@@ -82,7 +82,7 @@ const pageTitle = computed(() => {
     'siswa-id': 'Profil Siswa',
     'log-kehadiran': 'Log Kehadiran',
     'log-onsite': 'Log On Site',
-    'log-login': 'Log Login',
+    'log-login': 'Log Sistem',
     'log-error': 'Log Error',
     'profile': 'Profil Saya',
     'admin-team': 'Manajemen Tim',
