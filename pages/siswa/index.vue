@@ -15,6 +15,9 @@ const showAdvanceFilters = ref(false); // New: Toggle
 const saving = ref(false);
 const { $toast } = useNuxtApp();
 
+const filterPhoto = ref('ALL');
+const filterDeviceSync = ref('ALL');
+
 const form = ref({
   name: '',
   nis: '',
@@ -345,9 +348,11 @@ const { data, refresh, pending } = useFetch(`/api/students`, {
     search: searchQuery.value,
     classId: classes.value.find(c => c.className === selectedClass.value)?.id,
     major: filterMajor.value,
-    sortBy: sortBy.value
+    sortBy: sortBy.value,
+    filterPhoto: filterPhoto.value,
+    filterDeviceSync: filterDeviceSync.value
   })),
-  watch: [searchQuery, selectedClass, filterStatus, filterMajor, sortBy, currentPage],
+  watch: [searchQuery, selectedClass, filterStatus, filterMajor, sortBy, filterPhoto, filterDeviceSync, currentPage],
   key: 'student-list'
 });
 
@@ -368,7 +373,7 @@ const paginatedUsers = computed(() => {
 });
 
 // Reset page to 1 when filters change
-watch([searchQuery, selectedClass, filterStatus, filterMajor, sortBy], () => {
+watch([searchQuery, selectedClass, filterStatus, filterMajor, sortBy, filterPhoto, filterDeviceSync], () => {
   currentPage.value = 1;
 });
 
@@ -591,7 +596,7 @@ useSeoMeta({
         leave-from-class="transform translate-y-0 opacity-100"
         leave-to-class="transform -translate-y-4 opacity-0"
       >
-        <div v-if="showAdvanceFilters" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-base-200/30 p-5 rounded-3xl border border-base-200/60 shadow-inner">
+        <div v-if="showAdvanceFilters" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 bg-base-200/30 p-5 rounded-3xl border border-base-200/60 shadow-inner">
           <!-- Status Filter -->
           <div class="form-control">
             <label class="label pt-0"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Status Keaktifan</span></label>
@@ -611,6 +616,26 @@ useSeoMeta({
             </select>
           </div>
 
+          <!-- Photo Filter -->
+          <div class="form-control">
+            <label class="label pt-0"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Foto Profil / Wajah</span></label>
+            <select v-model="filterPhoto" class="select select-bordered select-sm rounded-xl bg-base-100 font-bold h-11">
+              <option value="ALL">Semua</option>
+              <option value="WITH_PHOTO">Sudah Ada Foto</option>
+              <option value="WITHOUT_PHOTO">Belum Ada Foto</option>
+            </select>
+          </div>
+
+          <!-- Device Sync Filter -->
+          <div class="form-control">
+            <label class="label pt-0"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Status Sinkronisasi Alat</span></label>
+            <select v-model="filterDeviceSync" class="select select-bordered select-sm rounded-xl bg-base-100 font-bold h-11">
+              <option value="ALL">Semua</option>
+              <option value="SYNCED">Sudah Sinkron</option>
+              <option value="NOT_SYNCED">Belum Sinkron</option>
+            </select>
+          </div>
+
           <!-- Sort Order -->
           <div class="form-control">
             <label class="label pt-0"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Urutkan Berdasarkan</span></label>
@@ -623,7 +648,7 @@ useSeoMeta({
 
           <!-- Reset Button -->
           <div class="flex items-end">
-            <button @click="searchQuery = ''; selectedClass = ''; filterMajor = ''; filterStatus = 'AKTIF'; sortBy = 'name-asc'" class="btn btn-ghost btn-sm w-full h-11 rounded-xl gap-2 font-bold hover:bg-error/10 hover:text-error transition-colors">
+            <button @click="searchQuery = ''; selectedClass = ''; filterMajor = ''; filterStatus = 'AKTIF'; filterPhoto = 'ALL'; filterDeviceSync = 'ALL'; sortBy = 'name-asc'" class="btn btn-ghost btn-sm w-full h-11 rounded-xl gap-2 font-bold hover:bg-error/10 hover:text-error transition-colors">
               <Icon name="mingcute:refresh-1-line" />
               Reset Filter
             </button>
