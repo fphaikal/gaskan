@@ -81,12 +81,18 @@ const isUploading = ref(false);
 const onFileChange = (e) => {
   const files = e.target.files;
   if (files && files[0]) {
+    const file = files[0];
+    if (file.size > 2 * 1024 * 1024) {
+      $toast.error('Ukuran file foto maksimal adalah 2MB!');
+      if (fileInput.value) fileInput.value.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       rawImage.value = event.target.result;
       showCropper.value = true;
     };
-    reader.readAsDataURL(files[0]);
+    reader.readAsDataURL(file);
   }
 };
 

@@ -27,6 +27,73 @@ const isEditing = ref(false);
 const editingId = ref(null);
 const showDeleteModal = ref(false);
 const studentToDelete = ref(null);
+
+const showRegisterDeviceModal = ref(false);
+const studentToRegister = ref(null);
+const selectedDeviceForRegister = ref('ALL');
+const activeDevices = ref([]);
+const registeringState = ref(false);
+
+const openRegisterDeviceModal = async (student) => {
+  studentToRegister.value = student;
+  selectedDeviceForRegister.value = 'ALL';
+  showRegisterDeviceModal.value = true;
+  
+  try {
+    const res = await $fetch('/api/device');
+    activeDevices.value = (res?.data || []).filter(d => d.isActive);
+  } catch (e) {
+    console.error('Gagal mengambil daftar perangkat:', e);
+  }
+};
+
+const handleRegisterToDevice = async () => {
+  if (!studentToRegister.value) return;
+  
+  const devicesToSync = selectedDeviceForRegister.value === 'ALL'
+    ? activeDevices.value
+    : activeDevices.value.filter(d => d.id === selectedDeviceForRegister.value);
+    
+  if (devicesToSync.length === 0) {
+    $toast.error('Tidak ada perangkat aktif yang dipilih');
+    return;
+  }
+  
+  registeringState.value = true;
+  let successCount = 0;
+  let failCount = 0;
+  let lastMessage = '';
+  
+  for (const device of devicesToSync) {
+    try {
+      const res = await $fetch(`/api/students/${studentToRegister.value.id}/register-device`, {
+        method: 'POST',
+        body: { deviceId: device.id }
+      });
+      if (res?.success) {
+        successCount++;
+        lastMessage = res.message;
+      } else {
+        failCount++;
+      }
+    } catch (e) {
+      failCount++;
+      console.error(`Gagal daftarkan ke mesin ${device.name}:`, e);
+    }
+  }
+  
+  registeringState.value = false;
+  showRegisterDeviceModal.value = false;
+  
+  if (failCount === 0) {
+    $toast.success(lastMessage || `Berhasil mendaftarkan siswa ke ${successCount} mesin!`);
+  } else if (successCount > 0) {
+    $toast.warning(`Berhasil di ${successCount} mesin, gagal di ${failCount} mesin.`);
+  } else {
+    $toast.error('Gagal mendaftarkan siswa ke mesin absensi.');
+  }
+  refresh();
+};
 const classSearch = ref('');
 const showClassDropdown = ref(false);
 
@@ -399,6 +466,10 @@ useSeoMeta({
                   <span :class="['text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md', user.isActive ? 'bg-success/10 text-success' : 'bg-error/10 text-error']">
                     {{ user.isActive ? 'Aktif' : 'Nonaktif' }}
                   </span>
+                  <span :class="['text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md flex items-center gap-1', user.faceToken ? 'bg-primary/10 text-primary' : 'bg-base-200 text-base-content/40']">
+                    <Icon :name="user.faceToken ? 'mingcute:face-line' : 'mingcute:face-fill'" size="12" />
+                    {{ user.faceToken ? 'Wajah Sinkron' : 'Belum Sinkron' }}
+                  </span>
                   <span class="lg:hidden text-xs font-black text-base-content/40 tracking-wider">#{{ user.nis }}</span>
                 </div>
               </div>
@@ -429,8 +500,16 @@ useSeoMeta({
             </div>
 
             <!-- Col 11-12: Actions -->
-            <div class="col-span-2 flex justify-end gap-2 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-none border-base-200/60">
-              <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-sm rounded-xl px-4 font-bold gap-2 hover:bg-primary/10 hover:text-primary">
+            <div class="col-span-2 flex justify-end gap-1.5 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-none border-base-200/60">
+              <button 
+                @click="openRegisterDeviceModal(user)" 
+                class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary text-primary/70"
+                title="Daftarkan ke Perangkat Absensi"
+              >
+                <Icon name="mingcute:fingerprint-fill" />
+                <span class="lg:hidden">Daftarkan</span>
+              </button>
+              <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary">
                 <Icon name="mingcute:eye-2-line" />
                 <span class="lg:hidden">Lihat</span>
               </NuxtLink>
@@ -568,6 +647,62 @@ useSeoMeta({
           </button>
         </div>
       </div>
+    </dialog>
+
+    <!-- Register to Device Modal -->
+    <dialog :class="['modal sm:modal-middle', showRegisterDeviceModal ? 'modal-open' : '']">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-md overflow-visible">
+        <h3 class="text-2xl font-black text-base-content mb-2">Daftarkan Wajah ke Alat</h3>
+        <p class="text-xs text-base-content/50 font-medium mb-6">
+          Kirim data kredensial dan foto biometrik wajah siswa ke perangkat absensi Hikvision.
+        </p>
+
+        <div v-if="studentToRegister" class="space-y-4">
+          <!-- Student Mini Card -->
+          <div class="flex items-center gap-4 bg-base-200/50 p-4 rounded-2xl border border-base-200/80">
+            <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 shrink-0">
+              <img 
+                :src="studentToRegister.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentToRegister.name)}&background=6366f1&color=ffffff&bold=true`" 
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <h4 class="font-bold text-sm text-base-content">{{ studentToRegister.name }}</h4>
+              <p class="text-xs text-base-content/40 font-mono">NISN: {{ studentToRegister.nisn || studentToRegister.nis }}</p>
+            </div>
+          </div>
+
+          <!-- Device Selector -->
+          <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-40">Pilih Mesin Absensi*</span></label>
+            <select v-model="selectedDeviceForRegister" class="select select-bordered w-full rounded-2xl bg-base-200/30 font-bold">
+              <option value="ALL">Semua Perangkat Aktif</option>
+              <option v-for="d in activeDevices" :key="d.id" :value="d.id">
+                {{ d.name }} ({{ d.location }})
+              </option>
+            </select>
+          </div>
+
+          <!-- Sync Warning if no photoUrl -->
+          <div v-if="!studentToRegister.photoUrl" class="bg-warning/5 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 mt-4">
+            <Icon name="mingcute:warning-line" class="text-warning shrink-0" size="18" />
+            <div class="text-[10px] font-bold text-warning/80 tracking-wider leading-relaxed">
+              PERHATIAN: SISWA TIDAK MEMILIKI FOTO PROFIL. SISWA HANYA AKAN TERDAFTAR SECARA DATA USER TANPA BIOMETRIK WAJAH. HARAP UPLOAD FOTO PROFIL TERLEBIH DAHULU UNTUK SYNC WAJAH.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-action flex justify-between gap-4 mt-8">
+          <button @click="showRegisterDeviceModal = false" class="btn btn-ghost rounded-2xl flex-1 font-bold" :disabled="registeringState">Batal</button>
+          <button @click="handleRegisterToDevice" class="btn btn-primary rounded-2xl flex-1 font-bold shadow-lg shadow-primary/20" :disabled="registeringState || activeDevices.length === 0">
+            <span v-if="registeringState" class="loading loading-spinner loading-xs mr-1"></span>
+            Daftarkan
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="showRegisterDeviceModal = false">
+        <button>close</button>
+      </form>
     </dialog>
   </div>
 </template>
