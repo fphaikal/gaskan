@@ -45,9 +45,29 @@ onMounted(async () => {
 });
 
 // -- Preview -------------------------------------------
+const currentPage = ref(1);
+const itemsPerPage = ref(15);
+
+const paginatedRows = computed(() => {
+  if (!previewData.value?.rows) return [];
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return previewData.value.rows.slice(start, end);
+});
+
+const totalPages = computed(() => {
+  if (!previewData.value?.rows) return 0;
+  return Math.ceil(previewData.value.rows.length / itemsPerPage.value);
+});
+
+const totalCount = computed(() => {
+  return previewData.value?.rows?.length || 0;
+});
+
 const handlePreview = async () => {
   previewing.value = true;
   previewData.value = null;
+  currentPage.value = 1;
   try {
     const q = new URLSearchParams(Object.fromEntries(Object.entries(filters.value).filter(([, v]) => v))).toString();
     const res = await $fetch(`/api/attendance/preview?${q}`);
@@ -409,7 +429,7 @@ const monthRange = computed(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in previewData.rows" :key="row.id" class="group hover:bg-base-200/20">
+              <tr v-for="row in paginatedRows" :key="row.id" class="group hover:bg-base-200/20">
                 <!-- No -->
                 <td class="sticky left-0 z-10 bg-base-100 group-hover:bg-base-200/20 text-center text-[10px] font-black text-base-content/30 border-r border-base-200/20 py-1.5">{{ row.no }}</td>
                 <!-- Name -->
@@ -425,7 +445,7 @@ const monthRange = computed(() => {
                   <div v-if="row.cells[d]"
                        :class="['w-7 h-7 mx-auto rounded-lg flex items-center justify-center text-[9px] font-black cursor-default', cellStyle(row.cells[d]).bg, cellStyle(row.cells[d]).text]"
                        :title="row.cells[d]">
-                    {{ cellStyle(row.cells[d]).short }}
+                     {{ cellStyle(row.cells[d]).short }}
                   </div>
                   <div v-else class="w-7 h-7 mx-auto rounded-lg bg-base-200/30 border border-dashed border-base-200"></div>
                 </td>
@@ -460,6 +480,17 @@ const monthRange = computed(() => {
             </tbody>
           </table>
         </div>
+
+        <!-- UIPagination component to split rendering load -->
+        <UIPagination
+          :currentPage="currentPage"
+          :totalPages="totalPages"
+          :totalItems="totalCount"
+          :itemsPerPage="itemsPerPage"
+          itemLabel="siswa"
+          @update:currentPage="currentPage = $event"
+          @update:itemsPerPage="itemsPerPage = $event; currentPage = 1"
+        />
 
         <!-- Footer stats -->
         <div class="px-6 py-4 border-t border-base-200/40 flex flex-wrap items-center justify-between gap-4 bg-base-200/10">

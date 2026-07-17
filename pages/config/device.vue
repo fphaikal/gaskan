@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 const { $toast } = useNuxtApp();
 
 useSeoMeta({
@@ -16,6 +16,21 @@ const testingId = ref(null);
 const lateHour = ref(7);
 const lateMinute = ref(0);
 const savingSettings = ref(false);
+
+const lateTime = computed({
+  get() {
+    const h = String(lateHour.value).padStart(2, '0');
+    const m = String(lateMinute.value).padStart(2, '0');
+    return `${h}:${m}`;
+  },
+  set(val) {
+    if (val) {
+      const [h, m] = val.split(':');
+      lateHour.value = Number(h);
+      lateMinute.value = Number(m);
+    }
+  }
+});
 
 // Modal state
 const showModal = ref(false);
@@ -421,23 +436,13 @@ const saveLateSettings = async () => {
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="form-control">
-          <label class="label"><span class="label-text font-bold text-base-content/80">Jam <span class="text-error">*</span></span></label>
-          <select v-model="lateHour" class="select select-bordered rounded-2xl font-semibold">
-            <option v-for="h in 24" :key="h-1" :value="h-1">
-              {{ String(h-1).padStart(2, '0') }}
-            </option>
-          </select>
-        </div>
-        <div class="form-control">
-          <label class="label"><span class="label-text font-bold text-base-content/80">Menit <span class="text-error">*</span></span></label>
-          <select v-model="lateMinute" class="select select-bordered rounded-2xl font-semibold">
-            <option v-for="m in 60" :key="m-1" :value="m-1">
-              {{ String(m-1).padStart(2, '0') }}
-            </option>
-          </select>
-        </div>
+      <div class="form-control mb-6 max-w-xs">
+        <label class="label"><span class="label-text font-bold text-base-content/80">Batas Waktu Masuk <span class="text-error">*</span></span></label>
+        <input 
+          v-model="lateTime" 
+          type="time" 
+          class="input input-bordered w-full rounded-2xl font-bold text-base h-12"
+        />
       </div>
 
       <div class="flex justify-end pt-4 border-t border-base-200/60">

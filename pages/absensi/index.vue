@@ -12,31 +12,31 @@ const { role } = storeToRefs(useAuthStore());
 const { $toast } = useNuxtApp();
 
 // State
-const students = ref([]);
-const summary = ref({});
-const classes = ref([]);
 const selectedClass = ref('');
-const loading = ref(true);
+const searchQuery = ref('');
+const currentPage = ref(1);
+const itemsPerPage = ref(30);
 const markingId = ref(null);
 
-// Fetch
-const fetchClassAttendance = async () => {
-  loading.value = true;
-  try {
-    const params = selectedClass.value ? `?classId=${selectedClass.value}` : '';
-    const data = await $fetch(`/api/attendance/class-today${params}`);
-    students.value = data?.data || [];
-    summary.value = data?.summary || {};
-    classes.value = data?.classes || [];
-  } catch (e) {
-    console.error('Failed to fetch:', e);
-  } finally {
-    loading.value = false;
-  }
-};
+// Server-side fetch with pagination
+const { data: attendanceData, refresh: refreshAttendance, pending: loading } = useFetch('/api/attendance/class-today', {
+  query: computed(() => ({
+    classId: selectedClass.value || undefined,
+    page: currentPage.value,
+    limit: itemsPerPage.value,
+    search: searchQuery.value || undefined,
+  })),
+  watch: [selectedClass, currentPage, itemsPerPage, searchQuery],
+});
 
-onMounted(fetchClassAttendance);
-watch(selectedClass, fetchClassAttendance);
+const students = computed(() => attendanceData.value?.data || []);
+const summary = computed(() => attendanceData.value?.summary || {});
+const classes = computed(() => attendanceData.value?.classes || []);
+const totalCount = computed(() => attendanceData.value?.pagination?.total || 0);
+const totalPages = computed(() => Math.ceil(totalCount.value / itemsPerPage.value));
+
+// Reset page on filter/search change
+watch([selectedClass, searchQuery, itemsPerPage], () => { currentPage.value = 1; });
 
 // Mark attendance manually
 const markAttendance = async (studentId, status) => {
@@ -52,7 +52,7 @@ const markAttendance = async (studentId, status) => {
       },
     });
     $toast.success('Absensi berhasil dicatat');
-    await fetchClassAttendance();
+    await refreshAttendance();
   } catch (e) {
     console.error('Mark failed:', e);
     $toast.error('Gagal mencatat absensi: ' + (e?.data?.message || e?.message || ''));
@@ -121,17 +121,28 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
         <p class="text-sm text-base-content/40 font-medium mt-0.5">{{ todayStr }}</p>
       </div>
 
-      <!-- Class Filter -->
-      <div class="relative w-full md:w-56 shrink-0">
-        <select
-          v-model="selectedClass"
-          class="select select-bordered select-sm h-10 w-full rounded-xl bg-base-100 font-bold border-base-300"
-        >
-          <option value="">Semua Kelas</option>
-          <option v-for="cls in classes" :key="cls.id" :value="cls.id">
-            {{ cls.className }}
-          </option>
-        </select>
+      <!-- Class Filter & Search -->
+      <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
+        <div class="relative w-full sm:w-64">
+          <Icon name="mingcute:search-line" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30" />
+          <input 
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari Siswa / NIS..."
+            class="input input-bordered input-sm h-10 w-full pl-9 rounded-xl bg-base-100 font-bold border-base-300"
+          />
+        </div>
+        <div class="relative w-full sm:w-48">
+          <select
+            v-model="selectedClass"
+            class="select select-bordered select-sm h-10 w-full rounded-xl bg-base-100 font-bold border-base-300"
+          >
+            <option value="">Semua Kelas</option>
+            <option v-for="cls in classes" :key="cls.id" :value="cls.id">
+              {{ cls.className }}
+            </option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -179,104 +190,115 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
       <div v-else-if="!students.length" class="text-center py-16">
         <Icon name="mingcute:user-3-line" class="text-6xl text-base-content/20 mb-4" />
         <p class="text-lg font-semibold text-base-content/50">Tidak ada siswa ditemukan</p>
-        <p class="text-sm text-base-content/40 mt-1">Pilih kelas untuk melihat daftar siswa</p>
+        <p class="text-sm text-base-content/40 mt-1">Pilih kelas atau sesuaikan pencarian Anda</p>
       </div>
 
       <!-- Table -->
-      <div v-else class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
-            <tr class="bg-base-200/30 text-[10px] font-black uppercase tracking-widest text-base-content/40 border-b border-base-200">
-              <th class="py-4 pl-6 w-12">#</th>
-              <th class="py-4">Informasi Siswa</th>
-              <th class="py-4">Kelas</th>
-              <th class="py-4">Status</th>
-              <th class="py-4">Waktu</th>
-              <th class="py-4">Metode</th>
-              <th class="py-4 pr-6 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-base-200/50">
-            <tr v-for="(student, idx) in students" :key="student.id"
-                @click="openDetail(student)"
-                class="group hover:bg-base-200/30 transition-colors cursor-pointer">
-              <td class="pl-6 text-[10px] font-black text-base-content/30">{{ idx + 1 }}</td>
-              <td class="py-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0">
-                    <img v-if="student.photoUrl" :src="student.photoUrl" :alt="student.name" class="w-full h-full object-cover" />
-                    <div v-else class="w-full h-full flex items-center justify-center text-primary/50 font-black text-xs uppercase">
-                      {{ student.name?.charAt(0) }}
+      <div v-else>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr class="bg-base-200/30 text-[10px] font-black uppercase tracking-widest text-base-content/40 border-b border-base-200">
+                <th class="py-4 pl-6 w-12">#</th>
+                <th class="py-4">Informasi Siswa</th>
+                <th class="py-4">Kelas</th>
+                <th class="py-4">Status</th>
+                <th class="py-4">Waktu</th>
+                <th class="py-4">Metode</th>
+                <th class="py-4 pr-6 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-base-200/50">
+              <tr v-for="(student, idx) in students" :key="student.id"
+                  @click="openDetail(student)"
+                  class="group hover:bg-base-200/30 transition-colors cursor-pointer">
+                <td class="pl-6 text-[10px] font-black text-base-content/30">{{ (currentPage - 1) * itemsPerPage + idx + 1 }}</td>
+                <td class="py-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0">
+                      <img v-if="student.photoUrl" :src="student.photoUrl" :alt="student.name" class="w-full h-full object-cover" />
+                      <div v-else class="w-full h-full flex items-center justify-center text-primary/50 font-black text-xs uppercase">
+                        {{ student.name?.charAt(0) }}
+                      </div>
+                    </div>
+                    <div class="min-w-0">
+                      <p class="font-bold text-sm text-base-content group-hover:text-primary transition-colors truncate">{{ student.name }}</p>
+                      <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-widest">{{ student.nis }}</p>
                     </div>
                   </div>
-                  <div class="min-w-0">
-                    <p class="font-bold text-sm text-base-content group-hover:text-primary transition-colors truncate">{{ student.name }}</p>
-                    <p class="text-[10px] font-bold text-base-content/30 uppercase tracking-widest">{{ student.nis }}</p>
+                </td>
+                <td class="text-[10px] font-black text-base-content/50">{{ student.class?.className || '-' }}</td>
+                <td>
+                  <div v-if="student.attendance" class="flex items-center gap-1.5">
+                    <div :class="['w-1.5 h-1.5 rounded-full', getStatus(student.attendance.status).bg.replace('/10', '')]"></div>
+                    <span :class="['text-[10px] font-black uppercase tracking-wider', getStatus(student.attendance.status).color]">
+                      {{ getStatus(student.attendance.status).label }}
+                    </span>
                   </div>
-                </div>
-              </td>
-              <td class="text-[10px] font-black text-base-content/50">{{ student.class?.className || '-' }}</td>
-              <td>
-                <div v-if="student.attendance" class="flex items-center gap-1.5">
-                  <div :class="['w-1.5 h-1.5 rounded-full', getStatus(student.attendance.status).bg.replace('/10', '')]"></div>
-                  <span :class="['text-[10px] font-black uppercase tracking-wider', getStatus(student.attendance.status).color]">
-                    {{ getStatus(student.attendance.status).label }}
-                  </span>
-                </div>
-                <span v-else class="text-[9px] font-bold text-base-content/30 uppercase tracking-widest italic">Belum absen</span>
-              </td>
-              <td class="py-3">
-                <template v-if="student.attendance">
-                  <div class="flex flex-col gap-0.5 justify-center">
-                    <div class="flex items-center gap-1">
-                      <span class="text-[8px] font-black uppercase text-emerald-500/80">IN</span>
-                      <span class="text-[10px] font-bold text-base-content/60">{{ formatTime(student.attendance.firstIn.timestamp) }}</span>
+                  <span v-else class="text-[9px] font-bold text-base-content/30 uppercase tracking-widest italic">Belum absen</span>
+                </td>
+                <td class="py-3">
+                  <template v-if="student.attendance">
+                    <div class="flex flex-col gap-0.5 justify-center">
+                      <div class="flex items-center gap-1">
+                        <span class="text-[8px] font-black uppercase text-emerald-500/80">IN</span>
+                        <span class="text-[10px] font-bold text-base-content/60">{{ formatTime(student.attendance.firstIn.timestamp) }}</span>
+                      </div>
+                      <div class="flex items-center gap-1" v-if="student.attendance.lastOut">
+                        <span class="text-[8px] font-black uppercase text-rose-500/80">OUT</span>
+                        <span class="text-[10px] font-bold text-base-content/60">{{ formatTime(student.attendance.lastOut.timestamp) }}</span>
+                      </div>
+                      <div class="flex items-center gap-1" v-else>
+                        <span class="text-[8px] font-black uppercase text-base-content/20">OUT</span>
+                        <span class="text-[10px] font-bold text-base-content/30">-</span>
+                      </div>
                     </div>
-                    <div class="flex items-center gap-1" v-if="student.attendance.lastOut">
-                      <span class="text-[8px] font-black uppercase text-rose-500/80">OUT</span>
-                      <span class="text-[10px] font-bold text-base-content/60">{{ formatTime(student.attendance.lastOut.timestamp) }}</span>
-                    </div>
-                    <div class="flex items-center gap-1" v-else>
-                      <span class="text-[8px] font-black uppercase text-base-content/20">OUT</span>
-                      <span class="text-[10px] font-bold text-base-content/30">-</span>
+                  </template>
+                  <template v-else>-</template>
+                </td>
+                <td class="text-[10px] font-bold text-base-content/30 uppercase tracking-widest">
+                  <template v-if="student.attendance">
+                    {{ student.attendance.method === 'FACE_RECOGNITION' ? 'Face ID' : student.attendance.method === 'QR_CODE' ? 'QR' : 'Manual' }}
+                  </template>
+                  <template v-else>-</template>
+                </td>
+                <td class="pr-6 text-right" @click.stop>
+                  <div v-if="!student.attendance" class="flex justify-end gap-1">
+                    <div class="dropdown dropdown-end">
+                      <label tabindex="0" class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-lg font-black px-3 h-8 gap-1.5 shadow-sm shadow-orange-500/20">
+                        <Icon v-if="markingId === student.id" name="mingcute:loading-fill" class="animate-spin" size="14" />
+                        <Icon v-else name="mingcute:check-2-fill" size="14" />
+                        Absen
+                      </label>
+                      <ul tabindex="0" class="dropdown-content z-[10] menu p-1.5 shadow-xl bg-base-100 rounded-xl w-44 border border-base-200 mt-1">
+                        <li class="menu-title px-3 py-1"><span class="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Pilih Status</span></li>
+                        <li><a @click="markAttendance(student.id, 'HADIR')" class="text-success font-bold text-xs rounded-lg hover:bg-success/10"><Icon name="mingcute:check-circle-line" /> Hadir</a></li>
+                        <li><a @click="markAttendance(student.id, 'TERLAMBAT')" class="text-warning font-bold text-xs rounded-lg hover:bg-warning/10"><Icon name="mingcute:time-line" /> Terlambat</a></li>
+                        <li><a @click="markAttendance(student.id, 'IZIN')" class="text-info font-bold text-xs rounded-lg hover:bg-info/10"><Icon name="mingcute:document-line" /> Izin</a></li>
+                        <li><a @click="markAttendance(student.id, 'SAKIT')" class="text-orange-400 font-bold text-xs rounded-lg hover:bg-orange-400/10"><Icon name="mingcute:heart-line" /> Sakit</a></li>
+                        <li><a @click="markAttendance(student.id, 'ALPHA')" class="text-error font-bold text-xs rounded-lg hover:bg-error/10"><Icon name="mingcute:close-circle-line" /> Alpha</a></li>
+                      </ul>
                     </div>
                   </div>
-                </template>
-                <template v-else>-</template>
-              </td>
-              <td class="text-[10px] font-bold text-base-content/30 uppercase tracking-widest">
-                <template v-if="student.attendance">
-                  {{ student.attendance.method === 'FACE_RECOGNITION' ? 'Face ID' : student.attendance.method === 'QR_CODE' ? 'QR' : 'Manual' }}
-                </template>
-                <template v-else>-</template>
-              </td>
-              <td class="pr-6 text-right" @click.stop>
-                <div v-if="!student.attendance" class="flex justify-end gap-1">
-                  <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-lg font-black px-3 h-8 gap-1.5 shadow-sm shadow-orange-500/20">
-                      <Icon v-if="markingId === student.id" name="mingcute:loading-fill" class="animate-spin" size="14" />
-                      <Icon v-else name="mingcute:check-2-fill" size="14" />
-                      Absen
-                    </label>
-                    <ul tabindex="0" class="dropdown-content z-[10] menu p-1.5 shadow-xl bg-base-100 rounded-xl w-44 border border-base-200 mt-1">
-                      <li class="menu-title px-3 py-1"><span class="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Pilih Status</span></li>
-                      <li><a @click="markAttendance(student.id, 'HADIR')" class="text-success font-bold text-xs rounded-lg hover:bg-success/10"><Icon name="mingcute:check-circle-line" /> Hadir</a></li>
-                      <li><a @click="markAttendance(student.id, 'TERLAMBAT')" class="text-warning font-bold text-xs rounded-lg hover:bg-warning/10"><Icon name="mingcute:time-line" /> Terlambat</a></li>
-                      <li><a @click="markAttendance(student.id, 'IZIN')" class="text-info font-bold text-xs rounded-lg hover:bg-info/10"><Icon name="mingcute:document-line" /> Izin</a></li>
-                      <li><a @click="markAttendance(student.id, 'SAKIT')" class="text-orange-400 font-bold text-xs rounded-lg hover:bg-orange-400/10"><Icon name="mingcute:heart-line" /> Sakit</a></li>
-                      <li><a @click="markAttendance(student.id, 'ALPHA')" class="text-error font-bold text-xs rounded-lg hover:bg-error/10"><Icon name="mingcute:close-circle-line" /> Alpha</a></li>
-                    </ul>
+                  <div v-else class="flex justify-end">
+                     <div class="w-8 h-8 rounded-lg bg-base-200/50 flex items-center justify-center text-base-content/20">
+                       <Icon name="mingcute:check-2-line" size="16" />
+                     </div>
                   </div>
-                </div>
-                <div v-else class="flex justify-end">
-                   <div class="w-8 h-8 rounded-lg bg-base-200/50 flex items-center justify-center text-base-content/20">
-                     <Icon name="mingcute:check-2-line" size="16" />
-                   </div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <UIPagination
+          :currentPage="currentPage"
+          :totalPages="totalPages"
+          :totalItems="totalCount"
+          :itemsPerPage="itemsPerPage"
+          itemLabel="siswa"
+          @update:currentPage="currentPage = $event"
+          @update:itemsPerPage="itemsPerPage = $event; currentPage = 1"
+        />
       </div>
     </div>
   </div>
