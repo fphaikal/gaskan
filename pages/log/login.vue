@@ -19,6 +19,10 @@ const selectedLog = ref(null);
 const locationInfo = ref(null);
 const locationLoading = ref(false);
 
+const activePreviewImage = ref(null);
+const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
+const closeImagePreview = () => { activePreviewImage.value = null; };
+
 const openDetail = async (log) => {
   selectedLog.value = log;
   showDetail.value = true;
@@ -330,6 +334,17 @@ useSeoMeta({
             <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-2">User Agent</p>
             <p class="text-[10px] font-mono text-base-content/60 leading-relaxed italic">{{ selectedLog?.details?.userAgent || 'Tidak ada data user agent' }}</p>
           </div>
+
+          <!-- Captured Scan Photo -->
+          <div v-if="selectedLog?.details?.image" class="bg-base-200/20 p-4 rounded-3xl border border-base-200/50 flex flex-col gap-2">
+            <p class="text-[10px] font-black uppercase tracking-widest text-base-content/40">Foto Scan Wajah</p>
+            <div class="w-full h-48 rounded-2xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative flex items-center justify-center">
+              <img :src="selectedLog.details.image" 
+                   alt="Captured face" 
+                   class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-300"
+                   @click="openImagePreview(selectedLog.details.image)" />
+            </div>
+          </div>
         </div>
 
         <div class="modal-action mt-8">
@@ -342,6 +357,18 @@ useSeoMeta({
         <button>close</button>
       </form>
     </dialog>
+
+    <!-- ═══ IMAGE PREVIEW MODAL (LIGHTBOX) ═══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="activePreviewImage" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4" @click="closeImagePreview">
+          <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors btn btn-ghost btn-circle">
+            <Icon name="mingcute:close-line" size="28" />
+          </button>
+          <img :src="activePreviewImage" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10" @click.stop />
+        </div>
+      </Transition>
+    </Teleport>
     
   </div>
 </template>
@@ -365,5 +392,12 @@ useSeoMeta({
 /* Ensure sticky header background stays solid */
 thead tr th {
   background: inherit;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
