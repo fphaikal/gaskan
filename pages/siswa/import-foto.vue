@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onUnmounted } from 'vue';
 
 const { $toast } = useNuxtApp();
 
@@ -10,11 +10,17 @@ useSeoMeta({
 
 // State
 const fileInput = ref(null);
-const selectedFiles = ref([]);
+const selectedFiles = ref([]); // item: { id, file, previewUrl, status: 'pending'|'uploading'|'success'|'error', errorMsg: '' }
 const matchBy = ref('auto'); // auto, nis, nisn, email, name
 const uploading = ref(false);
 const isDragging = ref(false);
 const uploadResult = ref(null);
+
+const completedCount = ref(0);
+const successCount = ref(0);
+const failCount = ref(0);
+const successList = ref([]);
+const failList = ref([]);
 
 const onFileChange = (e) => {
   const files = Array.from(e.target.files || []);
@@ -38,21 +44,47 @@ const addFiles = (files) => {
   });
 
   newFiles.forEach(file => {
-    if (!selectedFiles.value.some(f => f.name === file.name && f.size === file.size)) {
-      selectedFiles.value.push(file);
+    if (!selectedFiles.value.some(item => item.file.name === file.name && item.file.size === file.size)) {
+      // Safely pre-generate local preview URL on the client-side
+      const previewUrl = window.URL.createObjectURL(file);
+      selectedFiles.value.push({
+        id: Math.random().toString(36).substring(2, 9),
+        file,
+        previewUrl,
+        status: 'pending',
+        errorMsg: ''
+      });
     }
   });
 };
 
 const removeFile = (index) => {
+  const item = selectedFiles.value[index];
+  if (item.previewUrl) {
+    window.URL.revokeObjectURL(item.previewUrl);
+  }
   selectedFiles.value.splice(index, 1);
 };
 
 const clearSelection = () => {
+  selectedFiles.value.forEach(item => {
+    if (item.previewUrl) {
+      window.URL.revokeObjectURL(item.previewUrl);
+    }
+  });
   selectedFiles.value = [];
   uploadResult.value = null;
   if (fileInput.value) fileInput.value.value = '';
 };
+
+// Clean up object URLs to prevent browser memory leaks
+onUnmounted(() => {
+  selectedFiles.value.forEach(item => {
+    if (item.previewUrl) {
+      window.URL.revokeObjectURL(item.previewUrl);
+    }
+  });
+});
 
 const triggerUpload = async () => {
   if (selectedFiles.value.length === 0) {
@@ -61,34 +93,81 @@ const triggerUpload = async () => {
   }
 
   uploading.value = true;
+  completedCount.value = 0;
+  successCount.value = 0;
+  failCount.value = 0;
+  successList.value = [];
+  failList.value = [];
   uploadResult.value = null;
 
-  try {
-    const formData = new FormData();
-    formData.append('matchBy', matchBy.value);
-    
-    selectedFiles.value.forEach(file => {
-      formData.append('photos', file);
-    });
+  const total = selectedFiles.value.length;
+  const queue = [...selectedFiles.value];
+  const concurrencyLimit = 3; // Upload up to 3 files in parallel for efficiency
 
-    const res = await $fetch('/api/students/bulk-photos', {
-      method: 'POST',
-      body: formData,
-    });
+  const runUpload = async (item) => {
+    item.status = 'uploading';
+    try {
+      const formData = new FormData();
+      formData.append('matchBy', matchBy.value);
+      formData.append('photos', item.file);
 
-    if (res?.success) {
-      uploadResult.value = res.data;
-      $toast.success(res.message || 'Bulk upload foto berhasil selesai');
-      selectedFiles.value = [];
-    } else {
-      $toast.error(res?.message || 'Gagal mengupload foto');
+      const res = await $fetch('/api/students/bulk-photos', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res?.success && res.data?.successCount > 0) {
+        item.status = 'success';
+        successCount.value++;
+        successList.value.push(...res.data.successList);
+      } else {
+        item.status = 'error';
+        const reason = res.data?.failList?.[0]?.reason || 'Siswa tidak ditemukan';
+        item.errorMsg = reason;
+        failCount.value++;
+        failList.value.push({ filename: item.file.name, reason });
+      }
+    } catch (error) {
+      item.status = 'error';
+      const reason = error.data?.message || 'Terjadi kesalahan jaringan/server';
+      item.errorMsg = reason;
+      failCount.value++;
+      failList.value.push({ filename: item.file.name, reason });
+    } finally {
+      completedCount.value++;
     }
-  } catch (error) {
-    console.error('[BULK-UPLOAD-PHOTOS]', error);
-    $toast.error(error.data?.message || 'Terjadi kesalahan saat mengupload foto');
-  } finally {
-    uploading.value = false;
+  };
+
+  const processQueue = async () => {
+    while (queue.length > 0) {
+      const item = queue.shift();
+      if (item) {
+        await runUpload(item);
+      }
+    }
+  };
+
+  const processors = [];
+  for (let i = 0; i < Math.min(concurrencyLimit, total); i++) {
+    processors.push(processQueue());
   }
+  await Promise.all(processors);
+
+  // Set final result card summary
+  uploadResult.value = {
+    successCount: successCount.value,
+    failCount: failCount.value,
+    successList: successList.value,
+    failList: failList.value
+  };
+
+  if (successCount.value > 0) {
+    $toast.success(`Proses upload selesai. ${successCount.value} berhasil, ${failCount.value} gagal.`);
+  } else {
+    $toast.error('Gagal mengupload foto siswa');
+  }
+  
+  uploading.value = false;
 };
 
 const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500";
@@ -175,6 +254,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
       <div class="lg:col-span-3 space-y-6">
         <!-- Dropzone -->
         <div 
+          v-if="!uploading && !uploadResult"
           @dragover.prevent="isDragging = true"
           @dragleave.prevent="isDragging = false"
           @drop.prevent="onDrop"
@@ -216,22 +296,43 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
               <Icon name="mingcute:list-check-line" class="text-orange-500" size="20" />
               Daftar Foto Dipilih ({{ selectedFiles.length }})
             </h2>
-            <button @click="clearSelection" class="btn btn-ghost btn-xs text-rose-500 rounded-xl hover:bg-rose-500/10">Hapus Semua</button>
+            <button v-if="!uploading" @click="clearSelection" class="btn btn-ghost btn-xs text-rose-500 rounded-xl hover:bg-rose-500/10">Hapus Semua</button>
           </div>
           
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
             <div 
-              v-for="(file, idx) in selectedFiles" :key="file.name + idx"
-              class="group relative border border-base-200 rounded-2xl p-3 bg-base-200/10 hover:bg-base-200/30 transition-all flex flex-col gap-2 overflow-hidden"
+              v-for="(item, idx) in selectedFiles" :key="item.id"
+              class="group relative border rounded-2xl p-3 bg-base-200/10 hover:bg-base-200/30 transition-all flex flex-col gap-2 overflow-hidden"
+              :class="{
+                'border-orange-500/40': item.status === 'uploading',
+                'border-emerald-500/40': item.status === 'success',
+                'border-rose-500/40': item.status === 'error',
+                'border-base-200/60': item.status === 'pending'
+              }"
             >
               <div class="w-full aspect-square rounded-xl bg-base-200 border border-base-300 overflow-hidden relative shadow-inner">
-                <img :src="URL.createObjectURL(file)" class="w-full h-full object-cover" />
+                <img :src="item.previewUrl" class="w-full h-full object-cover" />
+                
+                <!-- Status Overlay Icon -->
+                <div v-if="item.status !== 'pending'" class="absolute inset-0 bg-black/45 flex items-center justify-center text-white backdrop-blur-[1px] transition-all">
+                  <div v-if="item.status === 'uploading'" class="loading loading-spinner loading-md text-orange-400"></div>
+                  <Icon v-else-if="item.status === 'success'" name="mingcute:check-circle-fill" class="text-emerald-400 animate-in zoom-in-50 duration-300" size="32" />
+                  <Icon v-else-if="item.status === 'error'" name="mingcute:close-circle-fill" class="text-rose-400 animate-in zoom-in-50 duration-300" size="32" />
+                </div>
               </div>
-              <div class="min-w-0">
-                <p class="text-xs font-bold text-base-content truncate" :title="file.name">{{ file.name }}</p>
-                <p class="text-[10px] text-base-content/40 font-mono mt-0.5">{{ (file.size / (1024 * 1024)).toFixed(2) }} MB</p>
+              
+              <div class="min-w-0 text-left">
+                <p class="text-xs font-bold text-base-content truncate" :title="item.file.name">{{ item.file.name }}</p>
+                <p v-if="item.status === 'error'" class="text-[10px] text-rose-500 font-bold mt-0.5 truncate" :title="item.errorMsg">
+                  {{ item.errorMsg }}
+                </p>
+                <p v-else class="text-[10px] text-base-content/40 font-mono mt-0.5">
+                  {{ (item.file.size / (1024 * 1024)).toFixed(2) }} MB
+                </p>
               </div>
+
               <button 
+                v-if="item.status === 'pending' && !uploading"
                 @click="removeFile(idx)" 
                 class="absolute top-4 right-4 btn btn-circle btn-xs btn-error shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
               >
@@ -240,11 +341,22 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
             </div>
           </div>
 
-          <div class="mt-8 border-t border-base-200/60 pt-6 flex justify-end gap-3">
-            <button @click="clearSelection" :disabled="uploading" class="btn btn-ghost rounded-2xl px-6">Batal</button>
-            <button @click="triggerUpload" :disabled="uploading" class="btn bg-orange-500 hover:bg-orange-600 border-0 text-white rounded-2xl px-8 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 active:scale-95">
-              <span v-if="uploading" class="loading loading-spinner"></span>
-              <Icon v-else name="mingcute:upload-cloud-line" />
+          <!-- Concrete Progress Bar -->
+          <div v-if="uploading" class="space-y-2 mt-6">
+            <div class="flex justify-between items-center text-xs font-bold text-base-content/75">
+              <span class="flex items-center gap-1.5">
+                <span class="loading loading-spinner loading-xs text-orange-500"></span>
+                Sedang mengupload foto siswa...
+              </span>
+              <span>{{ completedCount }} / {{ selectedFiles.length }} ({{ Math.round((completedCount / selectedFiles.length) * 100) }}%)</span>
+            </div>
+            <progress class="progress progress-warning w-full h-2.5 rounded-full" :value="completedCount" :max="selectedFiles.length"></progress>
+          </div>
+
+          <div v-if="!uploading" class="mt-8 border-t border-base-200/60 pt-6 flex justify-end gap-3">
+            <button @click="clearSelection" class="btn btn-ghost rounded-2xl px-6">Batal / Reset</button>
+            <button @click="triggerUpload" class="btn bg-orange-500 hover:bg-orange-600 border-0 text-white rounded-2xl px-8 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 active:scale-95">
+              <Icon name="mingcute:upload-cloud-line" />
               Upload & Sinkronkan
             </button>
           </div>
@@ -252,10 +364,13 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
         <!-- Upload Status / Summary Card -->
         <div v-if="uploadResult" :class="bentoCard" class="space-y-6">
-          <h2 class="text-lg font-bold text-base-content flex items-center gap-2">
-            <Icon name="mingcute:task-fill" class="text-emerald-500" size="20" />
-            Hasil Upload Massal
-          </h2>
+          <div class="flex justify-between items-center">
+            <h2 class="text-lg font-bold text-base-content flex items-center gap-2">
+              <Icon name="mingcute:task-fill" class="text-emerald-500" size="20" />
+              Hasil Upload Massal
+            </h2>
+            <button @click="clearSelection" class="btn btn-ghost btn-sm rounded-2xl text-xs font-bold hover:bg-base-200/60">Upload Foto Baru</button>
+          </div>
           
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl flex flex-col items-center">
@@ -269,7 +384,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           </div>
 
           <div v-if="uploadResult.failList && uploadResult.failList.length > 0" class="space-y-3 pt-2">
-            <h3 class="text-xs font-black uppercase text-base-content/40 tracking-wider">Rincian Kegagalan</h3>
+            <h3 class="text-xs font-black uppercase text-base-content/40 tracking-wider text-left">Rincian Kegagalan</h3>
             <div class="max-h-48 overflow-y-auto border border-base-200 rounded-2xl p-2.5 space-y-2 bg-base-200/10 custom-scrollbar text-left">
               <div 
                 v-for="(fail, idx) in uploadResult.failList" :key="fail.filename + idx"
@@ -286,8 +401,8 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
     </div>
 
-    <!-- Complete Detailed Results Modal/Table below if there are results -->
-    <div v-if="uploadResult && uploadResult.successList && uploadResult.successList.length > 0" :class="bentoCard" class="text-left">
+    <!-- Complete Detailed Results Table below if there are results -->
+    <div v-if="uploadResult && uploadResult.successList && uploadResult.successList.length > 0" :class="bentoCard" class="text-left animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h2 class="text-lg font-bold text-base-content mb-6 flex items-center gap-2">
         <Icon name="mingcute:check-circle-line" class="text-emerald-500" size="20" />
         Foto Siswa Berhasil Diperbarui
