@@ -415,7 +415,11 @@ useSeoMeta({
         </button>
         <NuxtLink to="/siswa/import" class="btn btn-ghost bg-base-100 rounded-2xl gap-2 border-base-200 shadow-sm">
           <Icon name="mingcute:file-import-line" size="20" />
-          Import
+          Import Excel
+        </NuxtLink>
+        <NuxtLink to="/siswa/import-foto" class="btn btn-ghost bg-base-100 rounded-2xl gap-2 border-base-200 shadow-sm">
+          <Icon name="mingcute:pic-line" size="20" />
+          Bulk Upload Foto
         </NuxtLink>
         <button @click="openAddModal" class="btn btn-primary rounded-2xl gap-2 shadow-lg shadow-primary/20">
           <Icon name="mingcute:user-add-fill" size="20" />

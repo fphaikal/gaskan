@@ -85,6 +85,7 @@ const pageTitle = computed(() => {
     'log-login': 'Log Sistem',
     'log-error': 'Log Error',
     'profile': 'Profil Saya',
+    'siswa-import-foto': 'Bulk Upload Foto Siswa',
     'admin-team': 'Manajemen Tim',
     'kelas': 'Manajemen Kelas',
   }
