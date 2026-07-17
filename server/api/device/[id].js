@@ -14,6 +14,16 @@ export default defineEventHandler(async (event) => {
     return readUpstreamJson(res);
   }
 
+  if (method === 'POST') {
+    const body = await readBody(event);
+    const res = await fetch(`${config.public.apiBase}/api/device/${id}/setup-push`, {
+      method: 'POST',
+      headers: getUpstreamAuthHeaders(session, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body),
+    });
+    return readUpstreamJson(res);
+  }
+
   if (method === 'DELETE') {
     const res = await fetch(`${config.public.apiBase}/api/device/${id}`, {
       method: 'DELETE',

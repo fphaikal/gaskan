@@ -181,6 +181,37 @@ const testFormConnection = async () => {
   }
 };
 
+const settingPushId = ref(null);
+
+const handleSetupPush = async (device) => {
+  const guessedBackend = `${window.location.protocol}//${window.location.hostname}:5000`;
+  const serverUrl = prompt(
+    `Masukkan Alamat IP/Port Server GASKAN (IP Backend) agar perangkat bisa mengirim data presensi secara real-time (Push Mode):`,
+    guessedBackend
+  );
+  
+  if (!serverUrl) return;
+  
+  settingPushId.value = device.id;
+  try {
+    const res = await $fetch(`/api/device/${device.id}`, {
+      method: 'POST',
+      body: { serverUrl }
+    });
+    
+    if (res?.success) {
+      $toast.success(res.message);
+    } else {
+      $toast.error(res.message || 'Gagal konfigurasi push mode');
+    }
+  } catch (e) {
+    console.error('Setup push failed:', e);
+    $toast.error(e.data?.message || 'Gagal terhubung ke mesin untuk setup push');
+  } finally {
+    settingPushId.value = null;
+  }
+};
+
 const toggleDeviceStatus = async (device) => {
   try {
     await $fetch(`/api/device/${device.id}`, {
@@ -287,24 +318,38 @@ const toggleDeviceStatus = async (device) => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="mt-6 pt-4 border-t border-base-200/60 flex items-center justify-between gap-2">
-          <button 
-            @click="testConnection(d)" 
-            :disabled="testingId === d.id"
-            class="btn btn-outline btn-primary btn-sm rounded-xl px-4 flex-1 h-9"
-          >
-            <span v-if="testingId === d.id" class="loading loading-spinner loading-xs mr-1"></span>
-            <Icon v-else name="mingcute:radar-fill" size="14" class="mr-1" />
-            Test Koneksi
-          </button>
+        <div class="mt-6 pt-4 border-t border-base-200/60 space-y-3">
+          <div class="flex gap-2">
+            <button 
+              @click="testConnection(d)" 
+              :disabled="testingId === d.id"
+              class="btn btn-outline btn-primary btn-sm rounded-xl px-3 flex-1 h-9"
+            >
+              <span v-if="testingId === d.id" class="loading loading-spinner loading-xs mr-1"></span>
+              <Icon v-else name="mingcute:radar-fill" size="14" class="mr-1" />
+              Test Koneksi
+            </button>
+            <button 
+              @click="handleSetupPush(d)" 
+              :disabled="settingPushId === d.id"
+              class="btn btn-primary btn-sm rounded-xl px-3 flex-1 h-9 text-xs"
+            >
+              <span v-if="settingPushId === d.id" class="loading loading-spinner loading-xs mr-1"></span>
+              <Icon v-else name="mingcute:upload-2-fill" size="14" class="mr-1" />
+              Setup Push
+            </button>
+          </div>
           
-          <div class="flex items-center gap-1.5">
-            <button @click="openEditModal(d)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-primary/20 hover:text-primary">
-              <Icon name="mingcute:pencil-fill" size="16" />
-            </button>
-            <button @click="handleDelete(d.id)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-error/20 hover:text-error">
-              <Icon name="mingcute:delete-2-fill" size="16" />
-            </button>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-base-content/40 font-medium">Aksi Perangkat:</span>
+            <div class="flex items-center gap-1.5">
+              <button @click="openEditModal(d)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-primary/20 hover:text-primary">
+                <Icon name="mingcute:pencil-fill" size="16" />
+              </button>
+              <button @click="handleDelete(d.id)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-error/20 hover:text-error">
+                <Icon name="mingcute:delete-2-fill" size="16" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
