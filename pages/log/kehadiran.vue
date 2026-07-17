@@ -4,17 +4,16 @@ import { useRequestFetch } from '#app';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
 
-const { nis, role } = storeToRefs(useAuthStore()); // make authenticated state reactive
+const { nis, role } = storeToRefs(useAuthStore());
 const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(role.value));
 const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
 const log = ref([]);
 const logSiswa = ref(null);
-let logInterval = null;
+const isLive = ref(false); // true saat socket terhubung
 
 const refreshLog = async () => {
   if (!isAdminOrDev.value) return;
-
   try {
     log.value = await sessionFetch('/api/log/kehadiran');
   } catch (error) {
@@ -28,15 +27,56 @@ if (isAdminOrDev.value) {
   logSiswa.value = await sessionFetch('/api/log/kehadiran/' + nis.value);
 }
 
+// Format today's date key (same format as API response)
+const todayKey = () => {
+  const d = new Date();
+  return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+let socketCleanup = null;
+
 onMounted(() => {
-  if (isAdminOrDev.value) {
-    logInterval = setInterval(refreshLog, 5000);
-  }
+  if (!isAdminOrDev.value) return;
+
+  // Use Socket.io plugin
+  const nuxtApp = useNuxtApp();
+  const socket = nuxtApp.$socket;
+  if (!socket) return;
+
+  const onConnect = () => { isLive.value = true; };
+  const onDisconnect = () => { isLive.value = false; };
+
+  const onAttendanceNew = (data) => {
+    // Find today's group or create it
+    const key = todayKey();
+    const todayGroup = log.value.find((g) => g.tgal === key);
+    if (todayGroup) {
+      // Prepend new entry so it appears at top
+      todayGroup.a = [data, ...todayGroup.a];
+    } else {
+      // No group for today yet, add one
+      log.value = [{ tgal: key, a: [data] }, ...log.value];
+    }
+  };
+
+  socket.on('connect', onConnect);
+  socket.on('disconnect', onDisconnect);
+  socket.on('attendance:new', onAttendanceNew);
+
+  // Set initial live status
+  if (socket.connected) isLive.value = true;
+
+  socketCleanup = () => {
+    socket.off('connect', onConnect);
+    socket.off('disconnect', onDisconnect);
+    socket.off('attendance:new', onAttendanceNew);
+  };
 });
 
 onUnmounted(() => {
-  if (logInterval) clearInterval(logInterval);
+  if (socketCleanup) socketCleanup();
 });
+
 
 const type = (type) => {
   switch (type) {

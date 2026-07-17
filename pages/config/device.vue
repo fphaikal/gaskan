@@ -12,6 +12,11 @@ const loading = ref(true);
 const saving = ref(false);
 const testingId = ref(null);
 
+// Late setting state
+const lateHour = ref(7);
+const lateMinute = ref(0);
+const savingSettings = ref(false);
+
 // Modal state
 const showModal = ref(false);
 const isEdit = ref(false);
@@ -41,8 +46,21 @@ const fetchDevices = async () => {
   }
 };
 
+const fetchSettings = async () => {
+  try {
+    const res = await $fetch('/api/system/settings');
+    if (res?.success && res.data) {
+      lateHour.value = res.data.lateHour;
+      lateMinute.value = res.data.lateMinute;
+    }
+  } catch (e) {
+    console.error('Failed to fetch settings:', e);
+  }
+};
+
 onMounted(async () => {
   await fetchDevices();
+  await fetchSettings();
 });
 
 const openAddModal = () => {
@@ -232,6 +250,27 @@ const toggleDeviceStatus = async (device) => {
     $toast.error('Gagal mengubah status perangkat');
   }
 };
+
+const saveLateSettings = async () => {
+  savingSettings.value = true;
+  try {
+    const res = await $fetch('/api/system/settings', {
+      method: 'PUT',
+      body: {
+        lateHour: Number(lateHour.value),
+        lateMinute: Number(lateMinute.value)
+      }
+    });
+    if (res?.success) {
+      $toast.success(res.message || 'Pengaturan terlambat berhasil disimpan');
+    }
+  } catch (e) {
+    console.error('Save settings failed:', e);
+    $toast.error(e.data?.message || 'Gagal menyimpan pengaturan');
+  } finally {
+    savingSettings.value = false;
+  }
+};
 </script>
 
 <template>
@@ -364,6 +403,53 @@ const toggleDeviceStatus = async (device) => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Late Threshold Configuration Card -->
+    <div class="mt-12 max-w-xl bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 shadow-md relative overflow-hidden group">
+      <!-- Glow decoration -->
+      <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-colors duration-500"></div>
+
+      <div class="flex items-start gap-4 mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-warning/10 border border-warning/20 flex items-center justify-center text-warning shrink-0">
+          <Icon name="mingcute:time-fill" size="24" />
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-base-content">Batas Jam Terlambat</h2>
+          <p class="text-xs text-base-content/50 mt-1">Konfigurasi jam batas presensi masuk. Siswa yang melakukan tap setelah waktu yang ditentukan akan otomatis ditandai sebagai "TERLAMBAT".</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="form-control">
+          <label class="label"><span class="label-text font-bold text-base-content/80">Jam <span class="text-error">*</span></span></label>
+          <select v-model="lateHour" class="select select-bordered rounded-2xl font-semibold">
+            <option v-for="h in 24" :key="h-1" :value="h-1">
+              {{ String(h-1).padStart(2, '0') }}
+            </option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label"><span class="label-text font-bold text-base-content/80">Menit <span class="text-error">*</span></span></label>
+          <select v-model="lateMinute" class="select select-bordered rounded-2xl font-semibold">
+            <option v-for="m in 60" :key="m-1" :value="m-1">
+              {{ String(m-1).padStart(2, '0') }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-4 border-t border-base-200/60">
+        <button 
+          @click="saveLateSettings" 
+          :disabled="savingSettings" 
+          class="btn btn-primary rounded-2xl px-6 h-12 shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <span v-if="savingSettings" class="loading loading-spinner loading-xs mr-1"></span>
+          <Icon v-else name="mingcute:check-fill" size="18" class="mr-1" />
+          Simpan Pengaturan
+        </button>
       </div>
     </div>
 
