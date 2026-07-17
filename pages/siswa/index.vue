@@ -190,6 +190,8 @@ const handleRegisterToDevice = async () => {
       logs: []
     };
 
+    let completedDevicesCount = 0;
+
     const onProgress = (data) => {
       const deviceIndex = devicesToSync.findIndex(d => d.id === data.deviceId);
       if (deviceIndex > -1) {
@@ -225,13 +227,28 @@ const handleRegisterToDevice = async () => {
       }
     };
 
+    const onFinished = (data) => {
+      completedDevicesCount++;
+      if (completedDevicesCount >= devicesToSync.length) {
+        if (socket) {
+          socket.off('bulk-sync-progress', onProgress);
+          socket.off('bulk-sync-finished', onFinished);
+        }
+        registeringState.value = false;
+        syncFinished.value = true;
+        $toast.success(`Sinkronisasi massal selesai.`);
+        refresh();
+      }
+    };
+
     if (socket) {
       socket.on('bulk-sync-progress', onProgress);
+      socket.on('bulk-sync-finished', onFinished);
     }
 
     for (const device of devicesToSync) {
       try {
-        const res = await $fetch('/api/students/bulk-register-device', {
+        await $fetch('/api/students/bulk-register-device', {
           method: 'POST',
           body: {
             studentIds: selectedStudents.value,
@@ -239,33 +256,25 @@ const handleRegisterToDevice = async () => {
             socketId: socketId
           }
         });
-        if (res?.success) {
-          successCount++;
-          lastMessage = res.message;
-        } else {
-          failCount++;
-        }
       } catch (e) {
-        failCount++;
-        console.error(`Gagal daftarkan massal ke mesin ${device.name}:`, e);
+        console.error(`Gagal memulai sinkronisasi untuk mesin ${device.name}:`, e);
+        completedDevicesCount++;
+        syncProgress.value.logs.push({
+          id: `fail-${device.id}-${Date.now()}`,
+          text: `[GAGAL] Gagal memulai sinkronisasi di mesin ${device.name}`,
+          success: false
+        });
+        if (completedDevicesCount >= devicesToSync.length) {
+          if (socket) {
+            socket.off('bulk-sync-progress', onProgress);
+            socket.off('bulk-sync-finished', onFinished);
+          }
+          registeringState.value = false;
+          syncFinished.value = true;
+          refresh();
+        }
       }
     }
-    
-    if (socket) {
-      socket.off('bulk-sync-progress', onProgress);
-    }
-    
-    registeringState.value = false;
-    syncFinished.value = true;
-    
-    if (failCount === 0) {
-      $toast.success(lastMessage || `Pendaftaran massal sukses di ${successCount} perangkat!`);
-    } else if (successCount > 0) {
-      $toast.warning(`Sukses di ${successCount} perangkat, gagal di ${failCount} perangkat.`);
-    } else {
-      $toast.error('Gagal pendaftaran massal ke mesin absensi.');
-    }
-    refresh();
     return;
   }
   
