@@ -177,7 +177,10 @@ useSeoMeta({
                 <td class="font-mono text-xs text-base-content/30 pl-8">{{ (page - 1) * limit + idx + 1 }}</td>
                 <td>
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <div v-if="item.details?.image" class="w-9 h-9 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative">
+                      <img :src="item.details.image" alt="avatar" class="w-full h-full object-cover"/>
+                    </div>
+                    <div v-else class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       <Icon name="mingcute:user-3-fill" class="text-primary text-lg" />
                     </div>
                     <span class="font-bold text-base-content">{{ item.details?.identifier || 'Unknown' }}</span>

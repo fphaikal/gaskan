@@ -11,6 +11,10 @@ const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 const log = ref([]);
 let logInterval = null;
 
+const activePreviewImage = ref(null);
+const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
+const closeImagePreview = () => { activePreviewImage.value = null; };
+
 const refreshLog = async () => {
   if (!isAdminOrDev.value) return;
 
@@ -110,6 +114,12 @@ useSeoMeta({
                   </time>
                   <span class="ml-2 text-xs font-semibold uppercase opacity-60">WIB</span>
                 </div>
+
+                <!-- Photo Avatar -->
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative flex items-center justify-center">
+                  <img :src="l.Image || 'https://api.tierkun.my.id/file/picture/0000.png'" alt="avatar" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-300" @click="openImagePreview(l.Image || 'https://api.tierkun.my.id/file/picture/0000.png')" />
+                  <div class="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-xl"></div>
+                </div>
                 
                 <!-- User Info -->
                 <div class="flex-1 flex flex-col">
@@ -146,9 +156,20 @@ useSeoMeta({
         <h1 class="text-4xl font-extrabold text-base-content mb-3 tracking-tight">Akses Ditolak</h1>
         <p class="text-base-content/60 text-lg max-w-md mx-auto leading-relaxed">Anda tidak memiliki hak akses (Admin/Developer) untuk melihat log on-site real-time.</p>
       </div>
-      <a href="/home" class="btn btn-primary btn-wide rounded-full shadow-lg shadow-primary/30 mt-6 font-semibold">Kembali Ke Dashboard</a>
     </div>
   </div>
+
+  <!-- ═══ IMAGE PREVIEW MODAL (LIGHTBOX) ═══ -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="activePreviewImage" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4" @click="closeImagePreview">
+        <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors btn btn-ghost btn-circle">
+          <Icon name="mingcute:close-line" size="28" />
+        </button>
+        <img :src="activePreviewImage" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10" @click.stop />
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -176,6 +197,13 @@ useSeoMeta({
   to {
     transform: rotate(360deg);
   }
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
 

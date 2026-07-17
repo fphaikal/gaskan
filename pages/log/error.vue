@@ -8,9 +8,12 @@ const { role } = storeToRefs(useAuthStore());
 const isDeveloper = computed(() => role.value === 'developer');
 const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
-//const { data: err } = useFetch('/api/log/error')
 const err = ref([]);
 let errInterval = null;
+
+const activePreviewImage = ref(null);
+const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
+const closeImagePreview = () => { activePreviewImage.value = null; };
 
 const refreshErrorLog = async () => {
   if (!isDeveloper.value) return;
@@ -110,6 +113,12 @@ useSeoMeta({
                   </div>
                 </div>
 
+                <!-- Captured Scan Photo -->
+                <div v-if="d.image" class="w-full h-32 rounded-2xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative flex items-center justify-center z-10">
+                  <img :src="d.image" alt="Captured face" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-300" @click="openImagePreview(d.image)" />
+                  <div class="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl"></div>
+                </div>
+
                 <div class="flex items-center justify-between border-t border-base-200/60 pt-3 relative z-10">
                   <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border bg-error/10 text-error border-error/20 shadow-[0_0_10px_rgba(var(--error),0.1)]">
                     ERR: {{ d.code || 'UNKNOWN' }}
@@ -139,9 +148,20 @@ useSeoMeta({
           <Icon name="mingcute:home-3-fill" size="20" class="mr-2" />
           Kembali ke Beranda
         </NuxtLink>
-      </div>
     </div>
   </div>
+
+  <!-- ═══ IMAGE PREVIEW MODAL (LIGHTBOX) ═══ -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="activePreviewImage" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4" @click="closeImagePreview">
+        <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors btn btn-ghost btn-circle">
+          <Icon name="mingcute:close-line" size="28" />
+        </button>
+        <img :src="activePreviewImage" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10" @click.stop />
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -157,5 +177,12 @@ useSeoMeta({
 .list-leave-to {
   opacity: 0;
   transform: translateY(-20px) scale(0.95);
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
