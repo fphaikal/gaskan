@@ -30,6 +30,22 @@ const studentSearchResults = ref([]);
 const studentSearchPending = ref(false);
 const selectedStudentToLink = ref(null);
 const linkingState = ref(false);
+const modalClassFilter = ref('');
+const classes = ref([]);
+const correctingClassPending = ref(false);
+
+const fetchClasses = async () => {
+  try {
+    const res = await $fetch('/api/classes');
+    classes.value = res?.data || [];
+  } catch (err) {
+    console.error('Failed to fetch classes:', err);
+  }
+};
+
+onMounted(() => {
+  fetchClasses();
+});
 
 const openManualLink = (failFilename) => {
   const item = selectedFiles.value.find(f => f.file.name === failFilename);
@@ -39,25 +55,57 @@ const openManualLink = (failFilename) => {
   }
   fileToLink.value = item;
   studentSearchQuery.value = '';
+  modalClassFilter.value = '';
   studentSearchResults.value = [];
   selectedStudentToLink.value = null;
   showManualLinkModal.value = true;
 };
 
+const correctStudentClass = async () => {
+  if (!selectedStudentToLink.value) return;
+  correctingClassPending.value = true;
+  try {
+    const res = await $fetch(`/api/students/${selectedStudentToLink.value.id}`, {
+      method: 'PUT',
+      body: {
+        classId: selectedStudentToLink.value.classId
+      }
+    });
+    if (res.success) {
+      $toast.success('Kelas siswa berhasil diperbarui!');
+      const updatedClass = classes.value.find(c => c.id === selectedStudentToLink.value.classId);
+      if (updatedClass) {
+        selectedStudentToLink.value.class = {
+          ...selectedStudentToLink.value.class,
+          className: updatedClass.className
+        };
+      }
+      searchStudentsForLink();
+    }
+  } catch (err) {
+    console.error('Failed to correct student class:', err);
+    $toast.error(err.data?.message || 'Gagal memperbarui kelas');
+  } finally {
+    correctingClassPending.value = false;
+  }
+};
+
 const searchStudentsForLink = async () => {
-  if (!studentSearchQuery.value) {
+  if (!studentSearchQuery.value && !modalClassFilter.value) {
     studentSearchResults.value = [];
     return;
   }
   studentSearchPending.value = true;
   try {
-    const res = await $fetch('/api/students', {
-      query: {
-        search: studentSearchQuery.value,
-        limit: 10,
-        status: 'AKTIF'
-      }
-    });
+    const query = {
+      search: studentSearchQuery.value,
+      limit: 10,
+      status: 'AKTIF'
+    };
+    if (modalClassFilter.value) {
+      query.classId = modalClassFilter.value;
+    }
+    const res = await $fetch('/api/students', { query });
     studentSearchResults.value = res?.data || [];
   } catch (e) {
     console.error('Failed to search students:', e);
@@ -565,18 +613,27 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
             </div>
           </div>
 
-          <!-- Search Input -->
-          <div class="form-control relative">
-            <label class="label"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-40">Cari Nama / NIS / NISN Siswa</span></label>
-            <div class="relative">
-              <Icon name="mingcute:search-line" class="absolute left-4 top-1/2 -translate-y-1/2 opacity-35" size="18" />
-              <input 
-                v-model="studentSearchQuery"
-                type="text" 
-                placeholder="Ketik nama siswa..." 
-                class="input input-bordered w-full pl-11 bg-base-200/30 rounded-2xl font-bold"
-                @input="searchStudentsForLink"
-              />
+          <!-- Search Input & Class Filter -->
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-2 form-control relative">
+              <label class="label"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-40">Cari Nama / NIS Siswa</span></label>
+              <div class="relative">
+                <Icon name="mingcute:search-line" class="absolute left-4 top-1/2 -translate-y-1/2 opacity-35" size="18" />
+                <input 
+                  v-model="studentSearchQuery"
+                  type="text" 
+                  placeholder="Ketik nama siswa..." 
+                  class="input input-bordered w-full pl-11 bg-base-200/30 rounded-2xl font-bold"
+                  @input="searchStudentsForLink"
+                />
+              </div>
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-40">Filter Kelas</span></label>
+              <select v-model="modalClassFilter" @change="searchStudentsForLink" class="select select-bordered w-full bg-base-200/30 rounded-2xl font-bold">
+                <option value="">Semua</option>
+                <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
+              </select>
             </div>
           </div>
 
@@ -589,7 +646,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
                 Mencari siswa...
               </div>
               <div v-else-if="studentSearchResults.length === 0" class="text-center py-8 text-xs text-base-content/30 italic">
-                {{ studentSearchQuery ? 'Siswa tidak ditemukan' : 'Ketik nama siswa di atas untuk mencari' }}
+                {{ studentSearchQuery || modalClassFilter ? 'Siswa tidak ditemukan' : 'Ketik nama atau pilih kelas untuk mencari' }}
               </div>
               <button 
                 v-else
@@ -614,6 +671,41 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
                   size="18" 
                 />
               </button>
+            </div>
+          </div>
+
+          <!-- Selected Student Details & Class Correction -->
+          <div v-if="selectedStudentToLink" class="bg-base-200/40 p-4 rounded-2xl border border-base-200 space-y-3">
+            <div class="flex justify-between items-center">
+              <div class="min-w-0">
+                <p class="text-[10px] font-bold text-base-content/40 uppercase">Siswa Terpilih</p>
+                <p class="font-black text-sm text-primary truncate">{{ selectedStudentToLink.name }}</p>
+              </div>
+              <div class="shrink-0 pl-2">
+                <p class="text-[10px] font-bold text-base-content/40 uppercase text-right">NIS</p>
+                <p class="font-mono text-xs text-base-content/60 text-right">{{ selectedStudentToLink.nis }}</p>
+              </div>
+            </div>
+            
+            <div class="form-control">
+              <label class="label py-0"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Koreksi Kelas Siswa (Jika Salah Kelas)</span></label>
+              <div class="flex gap-2 mt-1.5">
+                <select 
+                  v-model="selectedStudentToLink.classId" 
+                  class="select select-bordered select-sm w-full rounded-xl bg-base-100 font-bold h-9"
+                  :disabled="correctingClassPending"
+                >
+                  <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
+                </select>
+                <button 
+                  @click="correctStudentClass" 
+                  class="btn btn-sm btn-ghost hover:bg-primary/10 text-primary font-bold rounded-xl h-9 px-3 shrink-0"
+                  :disabled="correctingClassPending"
+                >
+                  <span v-if="correctingClassPending" class="loading loading-spinner loading-xs mr-1"></span>
+                  Simpan
+                </button>
+              </div>
             </div>
           </div>
         </div>
