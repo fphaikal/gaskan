@@ -148,6 +148,7 @@ useSeoMeta({
           <Icon name="mingcute:home-3-fill" size="20" class="mr-2" />
           Kembali ke Beranda
         </NuxtLink>
+      </div>
     </div>
   </div>
 
