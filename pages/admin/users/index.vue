@@ -103,11 +103,22 @@ const form = ref({
   role: 'GURU',
   classId: '',
   isActive: true,
+  phone: '',
+  gender: '',
+  religion: '',
+  birthDate: '',
+  birthPlace: '',
+  address: '',
+  vehiclePlate: '',
+  status: 'AKTIF',
 });
 
 const openCreate = () => {
   editMode.value = false;
-  form.value = { id: null, name: '', email: '', nis: '', nisn: '', password: '', role: 'GURU', classId: '', isActive: true };
+  form.value = {
+    id: null, name: '', email: '', nis: '', nisn: '', password: '', role: 'GURU', classId: '', isActive: true,
+    phone: '', gender: '', religion: '', birthDate: '', birthPlace: '', address: '', vehiclePlate: '', status: 'AKTIF'
+  };
   showModal.value = true;
 };
 
@@ -124,6 +135,14 @@ const openEdit = (user) => {
     role: user.role || 'GURU',
     classId: user.classId || '',
     isActive: user.isActive ?? true,
+    phone: user.phone || '',
+    gender: user.gender || '',
+    religion: user.religion || '',
+    birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
+    birthPlace: user.birthPlace || '',
+    address: user.address || '',
+    vehiclePlate: user.vehiclePlate || '',
+    status: user.status || 'AKTIF'
   };
   showModal.value = true;
   activeDropdown.value = null;
@@ -365,50 +384,120 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
 
     <!-- Modals -->
     <dialog :class="['modal modal-bottom sm:modal-middle', showModal ? 'modal-open' : '']">
-      <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 md:p-8 max-w-lg">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 md:p-8 max-w-2xl max-h-[85vh] overflow-y-auto">
         <h3 class="text-xl md:text-2xl font-black text-base-content mb-6">
           {{ editMode ? 'Edit Pengguna' : 'Tambah Pengguna Baru' }}
         </h3>
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="form-control sm:col-span-2">
-              <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Nama Lengkap</span></label>
-              <input v-model="form.name" type="text" autocomplete="off" placeholder="Nama Lengkap" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
-            </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Role</span></label>
-              <select v-model="form.role" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
-                <option value="ADMIN">ADMIN</option>
-                <option value="GURU">GURU</option>
-                <option value="SISWA">SISWA</option>
-              </select>
-            </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Email (Opsional)</span></label>
-              <input v-model="form.email" type="email" autocomplete="off" placeholder="email@example.com" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+        <div class="space-y-6">
+          <!-- Section 1: Akun -->
+          <div>
+            <h4 class="text-[11px] font-black uppercase tracking-widest text-primary mb-3">Informasi Akun Utama</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="form-control sm:col-span-2">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Nama Lengkap</span></label>
+                <input v-model="form.name" type="text" autocomplete="off" placeholder="Nama Lengkap" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Role</span></label>
+                <select v-model="form.role" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="GURU">GURU</option>
+                  <option value="SISWA">SISWA</option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Email (Opsional)</span></label>
+                <input v-model="form.email" type="email" autocomplete="off" placeholder="email@example.com" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+              </div>
+              
+              <!-- Conditional based on role -->
+              <template v-if="form.role === 'SISWA'">
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">NIS</span></label>
+                  <input v-model="form.nis" type="text" autocomplete="off" placeholder="NIS" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">NISN (10 Digit)</span></label>
+                  <input v-model="form.nisn" type="text" autocomplete="off" placeholder="NISN" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Kelas</span></label>
+                  <select v-model="form.classId" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
+                    <option value="">Pilih Kelas</option>
+                    <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
+                  </select>
+                </div>
+                <div class="form-control">
+                  <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Status Siswa</span></label>
+                  <select v-model="form.status" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="ALUMNI">ALUMNI</option>
+                    <option value="KELUAR">KELUAR</option>
+                    <option value="MUTASI">MUTASI</option>
+                  </select>
+                </div>
+              </template>
+              <template v-else>
+                <div class="form-control sm:col-span-2">
+                  <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">NIS (Username Login)</span></label>
+                  <input v-model="form.nis" type="text" autocomplete="off" placeholder="Nomor Induk Staff" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+                </div>
+              </template>
+
+              <div class="form-control sm:col-span-2">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Password {{ editMode ? '(Biarkan kosong jika tidak diubah)' : '' }}</span></label>
+                <input v-model="form.password" type="password" autocomplete="new-password" placeholder="••••••" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+              </div>
             </div>
           </div>
-          <div v-if="form.role === 'SISWA'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">NISN / NIS</span></label>
-              <input v-model="form.nisn" type="text" autocomplete="off" placeholder="NISN/NIS" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+
+          <!-- Section 2: Biodata -->
+          <div class="border-t border-base-200 pt-4">
+            <h4 class="text-[11px] font-black uppercase tracking-widest text-primary mb-3">Biodata & Profil Lengkap</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Nomor Telepon</span></label>
+                <input v-model="form.phone" type="text" placeholder="08xxxxxxxxxx" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Gender</span></label>
+                <select v-model="form.gender" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
+                  <option value="">Pilih Gender</option>
+                  <option value="L">Laki-laki (L)</option>
+                  <option value="P">Perempuan (P)</option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Agama</span></label>
+                <select v-model="form.religion" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
+                  <option value="">Pilih Agama</option>
+                  <option value="ISLAM">ISLAM</option>
+                  <option value="KRISTEN">KRISTEN</option>
+                  <option value="KATOLIK">KATOLIK</option>
+                  <option value="HINDU">HINDU</option>
+                  <option value="BUDHA">BUDHA</option>
+                  <option value="KONGHUCU">KONGHUCU</option>
+                </select>
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Plat Nomor Kendaraan</span></label>
+                <input v-model="form.vehiclePlate" type="text" placeholder="AB 1234 CD" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Tempat Lahir</span></label>
+                <input v-model="form.birthPlace" type="text" placeholder="Tempat Lahir" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Tanggal Lahir</span></label>
+                <input v-model="form.birthDate" type="date" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
+              </div>
+              <div class="form-control sm:col-span-2">
+                <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Alamat Lengkap</span></label>
+                <textarea v-model="form.address" placeholder="Tulis alamat lengkap disini..." class="textarea textarea-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30 h-20 resize-none py-3"></textarea>
+              </div>
             </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Kelas</span></label>
-              <select v-model="form.classId" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
-                <option value="">Pilih Kelas</option>
-                <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
-              </select>
-            </div>
           </div>
-          <div v-else class="form-control">
-             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">NIS (Username)</span></label>
-             <input v-model="form.nis" type="text" autocomplete="off" placeholder="Nomor Induk Staff" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
-          </div>
-          <div class="form-control">
-            <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Password</span></label>
-            <input v-model="form.password" type="password" autocomplete="new-password" placeholder="••••••" class="input input-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30" />
-          </div>
+
           <div class="form-control">
             <label class="label cursor-pointer justify-start gap-3 px-1">
               <input v-model="form.isActive" type="checkbox" class="toggle toggle-primary toggle-sm" />
