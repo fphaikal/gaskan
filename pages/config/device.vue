@@ -84,6 +84,10 @@ const handleSave = async () => {
     $toast.error('Password wajib diisi untuk perangkat baru!');
     return;
   }
+  if (form.value.poolingInterval < 1) {
+    $toast.error('Interval sinkronisasi tidak boleh kurang dari 1 detik!');
+    return;
+  }
 
   saving.value = true;
   try {
@@ -156,6 +160,10 @@ const testConnection = async (device) => {
 const testFormConnection = async () => {
   if (!form.value.url || !form.value.username) {
     $toast.error('Harap isi URL dan Username untuk tes koneksi');
+    return;
+  }
+  if (form.value.poolingInterval < 1) {
+    $toast.error('Interval sinkronisasi tidak boleh kurang dari 1 detik!');
     return;
   }
   
@@ -311,6 +319,10 @@ const toggleDeviceStatus = async (device) => {
               <span>Username: <span class="font-semibold text-base-content">{{ d.username }}</span></span>
             </div>
             <div class="flex items-center gap-2">
+              <Icon name="mingcute:transmission-line" size="16" class="opacity-60" />
+              <span>Mode: <span class="font-semibold text-primary">Push Webhook (Real-time)</span></span>
+            </div>
+            <div class="flex items-center gap-2">
               <Icon name="mingcute:time-line" size="16" class="opacity-60" />
               <span>Interval: <span class="font-semibold text-base-content">{{ d.poolingInterval }} detik</span></span>
             </div>
@@ -401,13 +413,13 @@ const toggleDeviceStatus = async (device) => {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
             <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-base-content/80">Interval Sinkronisasi (Detik)</span></label>
-              <input v-model.number="form.poolingInterval" type="number" min="10" class="input input-bordered w-full rounded-2xl font-semibold" />
+              <label class="label"><span class="label-text font-bold text-base-content/80">Interval Sinkronisasi (Detik) <span class="text-error">*</span></span></label>
+              <input v-model.number="form.poolingInterval" type="number" min="1" class="input input-bordered w-full rounded-2xl font-semibold" />
             </div>
             <div class="form-control flex flex-row items-center justify-between border border-base-200 rounded-2xl p-4 mt-8">
               <div class="flex flex-col">
                 <span class="text-sm font-bold text-base-content">Status Aktif</span>
-                <span class="text-xs text-base-content/50">Sinkronkan data berkala</span>
+                <span class="text-xs text-base-content/50">Aktifkan sinkronisasi wajah dan event</span>
               </div>
               <input type="checkbox" class="toggle toggle-primary toggle-sm" v-model="form.isActive" />
             </div>
