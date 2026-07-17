@@ -34,7 +34,29 @@ const selectedDeviceForRegister = ref('ALL');
 const activeDevices = ref([]);
 const registeringState = ref(false);
 
+const isBulkRegister = ref(false);
+const selectedStudents = ref([]);
+const studentPhotoUploading = ref(false);
+
+const toggleSelectStudent = (id) => {
+  const idx = selectedStudents.value.indexOf(id);
+  if (idx > -1) {
+    selectedStudents.value.splice(idx, 1);
+  } else {
+    selectedStudents.value.push(id);
+  }
+};
+
+const toggleSelectAll = () => {
+  if (selectedStudents.value.length === filteredUsers.value.length) {
+    selectedStudents.value = [];
+  } else {
+    selectedStudents.value = filteredUsers.value.map(u => u.id);
+  }
+};
+
 const openRegisterDeviceModal = async (student) => {
+  isBulkRegister.value = false;
   studentToRegister.value = student;
   selectedDeviceForRegister.value = 'ALL';
   showRegisterDeviceModal.value = true;
@@ -47,9 +69,50 @@ const openRegisterDeviceModal = async (student) => {
   }
 };
 
-const handleRegisterToDevice = async () => {
-  if (!studentToRegister.value) return;
+const openBulkRegisterModal = async () => {
+  isBulkRegister.value = true;
+  studentToRegister.value = null;
+  selectedDeviceForRegister.value = 'ALL';
+  showRegisterDeviceModal.value = true;
   
+  try {
+    const res = await $fetch('/api/device');
+    activeDevices.value = (res?.data || []).filter(d => d.isActive);
+  } catch (e) {
+    console.error('Gagal mengambil daftar perangkat:', e);
+  }
+};
+
+const onStudentPhotoSelected = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    $toast.error('Ukuran file foto maksimal adalah 2MB!');
+    return;
+  }
+  
+  studentPhotoUploading.value = true;
+  const formData = new FormData();
+  formData.append('photo', file);
+  
+  try {
+    const res = await $fetch(`/api/students/${studentToRegister.value.id}/photo`, {
+      method: 'POST',
+      body: formData
+    });
+    if (res.success) {
+      studentToRegister.value.photoUrl = res.photoUrl;
+      $toast.success('Foto profil siswa berhasil diperbarui!');
+    }
+  } catch (err) {
+    console.error('Failed to upload student photo:', err);
+    $toast.error(err.data?.message || 'Gagal mengunggah foto');
+  } finally {
+    studentPhotoUploading.value = false;
+  }
+};
+
+const handleRegisterToDevice = async () => {
   const devicesToSync = selectedDeviceForRegister.value === 'ALL'
     ? activeDevices.value
     : activeDevices.value.filter(d => d.id === selectedDeviceForRegister.value);
@@ -63,7 +126,47 @@ const handleRegisterToDevice = async () => {
   let successCount = 0;
   let failCount = 0;
   let lastMessage = '';
+
+  if (isBulkRegister.value) {
+    for (const device of devicesToSync) {
+      try {
+        const res = await $fetch('/api/students/bulk-register-device', {
+          method: 'POST',
+          body: {
+            studentIds: selectedStudents.value,
+            deviceId: device.id
+          }
+        });
+        if (res?.success) {
+          successCount++;
+          lastMessage = res.message;
+        } else {
+          failCount++;
+        }
+      } catch (e) {
+        failCount++;
+        console.error(`Gagal daftarkan massal ke mesin ${device.name}:`, e);
+      }
+    }
+    
+    registeringState.value = false;
+    showRegisterDeviceModal.value = false;
+    selectedStudents.value = [];
+    isBulkRegister.value = false;
+    
+    if (failCount === 0) {
+      $toast.success(lastMessage || `Pendaftaran massal sukses di ${successCount} perangkat!`);
+    } else if (successCount > 0) {
+      $toast.warning(`Sukses di ${successCount} perangkat, gagal di ${failCount} perangkat.`);
+    } else {
+      $toast.error('Gagal pendaftaran massal ke mesin absensi.');
+    }
+    refresh();
+    return;
+  }
   
+  // Single registration
+  if (!studentToRegister.value) return;
   for (const device of devicesToSync) {
     try {
       const res = await $fetch(`/api/students/${studentToRegister.value.id}/register-device`, {
@@ -402,8 +505,16 @@ useSeoMeta({
       </div>
 
       <!-- List Header (Desktop Only) -->
-      <div class="hidden lg:grid grid-cols-12 px-8 py-5 border-b border-base-200/60 text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40">
-        <div class="col-span-5">Informasi Siswa</div>
+      <div class="hidden lg:grid grid-cols-12 px-8 py-5 border-b border-base-200/60 text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40 items-center">
+        <div class="col-span-5 flex items-center gap-3">
+          <input 
+            type="checkbox" 
+            class="checkbox checkbox-primary rounded-lg checkbox-sm border-base-content/20 shrink-0"
+            :checked="selectedStudents.length === filteredUsers.length && filteredUsers.length > 0"
+            @change="toggleSelectAll"
+          />
+          <span>Informasi Siswa</span>
+        </div>
         <div class="col-span-2">NIS / NISN</div>
         <div class="col-span-3">Kelas / Jurusan</div>
         <div class="col-span-2 text-right">Aksi</div>
@@ -449,6 +560,12 @@ useSeoMeta({
 
             <!-- Col 1-5: Bio -->
             <div class="col-span-5 flex items-center gap-4 w-full">
+              <input 
+                type="checkbox" 
+                class="checkbox checkbox-primary rounded-lg checkbox-sm border-base-content/20 shrink-0"
+                :checked="selectedStudents.includes(user.id)"
+                @change="toggleSelectStudent(user.id)"
+              />
               <div class="relative shrink-0">
                 <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-200 group-hover:border-primary/30 transition-colors">
                   <img 
@@ -652,12 +769,27 @@ useSeoMeta({
     <!-- Register to Device Modal -->
     <dialog :class="['modal sm:modal-middle', showRegisterDeviceModal ? 'modal-open' : '']">
       <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-md overflow-visible">
-        <h3 class="text-2xl font-black text-base-content mb-2">Daftarkan Wajah ke Alat</h3>
+        <h3 class="text-2xl font-black text-base-content mb-2">
+          {{ isBulkRegister ? 'Daftarkan Wajah Siswa (Bulk)' : 'Daftarkan Wajah ke Alat' }}
+        </h3>
         <p class="text-xs text-base-content/50 font-medium mb-6">
           Kirim data kredensial dan foto biometrik wajah siswa ke perangkat absensi Hikvision.
         </p>
 
-        <div v-if="studentToRegister" class="space-y-4">
+        <div v-if="isBulkRegister" class="space-y-4">
+          <!-- Bulk Mini Card -->
+          <div class="flex items-center gap-4 bg-primary/5 p-4 rounded-2xl border border-primary/20">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Icon name="mingcute:fingerprint-fill" size="24" />
+            </div>
+            <div>
+              <h4 class="font-bold text-sm text-base-content">Pendaftaran Massal</h4>
+              <p class="text-xs text-base-content/50 font-medium">Mendaftarkan {{ selectedStudents.length }} siswa terpilih ke mesin absensi.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="studentToRegister" class="space-y-4">
           <!-- Student Mini Card -->
           <div class="flex items-center gap-4 bg-base-200/50 p-4 rounded-2xl border border-base-200/80">
             <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 shrink-0">
@@ -672,6 +804,24 @@ useSeoMeta({
             </div>
           </div>
 
+          <!-- Upload Student Photo if missing -->
+          <div v-if="!studentToRegister.photoUrl" class="form-control bg-base-200/20 p-4 rounded-2xl border border-dashed border-base-300">
+            <label class="label pt-0"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-60">Unggah Foto Wajah Siswa*</span></label>
+            <input 
+              type="file" 
+              accept="image/jpeg,image/png,image/webp" 
+              class="file-input file-input-bordered file-input-sm w-full rounded-xl bg-base-100 font-bold"
+              @change="onStudentPhotoSelected"
+              :disabled="studentPhotoUploading"
+            />
+            <p v-if="studentPhotoUploading" class="text-[10px] text-primary font-bold mt-2 animate-pulse flex items-center gap-1">
+              <span class="loading loading-spinner loading-xs"></span>
+              Mengunggah foto siswa ke server...
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4 mt-4">
           <!-- Device Selector -->
           <div class="form-control">
             <label class="label"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-40">Pilih Mesin Absensi*</span></label>
@@ -683,8 +833,8 @@ useSeoMeta({
             </select>
           </div>
 
-          <!-- Sync Warning if no photoUrl -->
-          <div v-if="!studentToRegister.photoUrl" class="bg-warning/5 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 mt-4">
+          <!-- Sync Warning if no photoUrl and not bulk -->
+          <div v-if="!isBulkRegister && studentToRegister && !studentToRegister.photoUrl" class="bg-warning/5 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 mt-4">
             <Icon name="mingcute:warning-line" class="text-warning shrink-0" size="18" />
             <div class="text-[10px] font-bold text-warning/80 tracking-wider leading-relaxed">
               PERHATIAN: SISWA TIDAK MEMILIKI FOTO PROFIL. SISWA HANYA AKAN TERDAFTAR SECARA DATA USER TANPA BIOMETRIK WAJAH. HARAP UPLOAD FOTO PROFIL TERLEBIH DAHULU UNTUK SYNC WAJAH.
@@ -704,6 +854,22 @@ useSeoMeta({
         <button>close</button>
       </form>
     </dialog>
+
+    <!-- Floating Bulk Action Bar -->
+    <div v-if="selectedStudents.length > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-base-100/90 backdrop-blur-xl border border-primary/20 px-6 py-4 rounded-3xl shadow-[0_10px_30px_rgba(99,102,241,0.2)] flex items-center gap-6">
+      <span class="text-sm font-bold text-base-content">
+        <span class="text-primary font-black">{{ selectedStudents.length }}</span> Siswa Terpilih
+      </span>
+      <div class="flex gap-2">
+        <button @click="openBulkRegisterModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-2">
+          <Icon name="mingcute:fingerprint-fill" />
+          Daftarkan ke Alat (Bulk)
+        </button>
+        <button @click="selectedStudents = []" class="btn btn-ghost btn-sm rounded-xl font-bold">
+          Batal
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
