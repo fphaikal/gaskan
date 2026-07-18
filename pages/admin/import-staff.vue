@@ -156,6 +156,9 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
     <!-- Header -->
     <div class="flex items-center gap-3 mb-4">
+      <NuxtLink to="/admin/users" class="btn btn-ghost btn-circle btn-sm hover:bg-base-200/50">
+        <Icon name="mingcute:left-line" size="18" class="text-base-content/80" />
+      </NuxtLink>
       <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-white shadow-md shadow-violet-600/30 shrink-0">
         <Icon name="mingcute:upload-3-fill" size="18" />
       </div>
