@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const config = useRuntimeConfig();
-  const response = await fetch(`${config.public.apiBase}/file/kehadiran?type=${type}`, {
+  const response = await fetch(`${config.public.apiBase}/api/attendance/export?type=${type}`, {
     headers: getUpstreamAuthHeaders(session),
   });
 
