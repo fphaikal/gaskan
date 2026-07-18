@@ -625,7 +625,7 @@ onUnmounted(() => {
 
     <!-- Device Stats Modal -->
     <div v-if="showStatsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm transition-opacity duration-300">
-      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-3xl shadow-2xl relative animate-scale-in flex flex-col gap-6" @click.stop>
+      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-3xl shadow-2xl relative animate-scale-in flex flex-col gap-6 max-h-[90vh] overflow-y-auto" @click.stop>
         <!-- Close Button -->
         <button @click="closeStatsModal()" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
           <Icon name="mingcute:close-line" size="20" />
@@ -645,9 +645,9 @@ onUnmounted(() => {
           <p class="text-sm font-bold text-base-content/60">Menghubungi mesin absensi di {{ statsDevice?.url }}...</p>
         </div>
 
-        <div v-else-if="statsData" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div v-else-if="statsData" class="grid grid-cols-1 md:grid-cols-12 gap-6">
           <!-- Left Col: Live Preview & Door Control -->
-          <div class="lg:col-span-5 flex flex-col gap-4">
+          <div class="md:col-span-5 flex flex-col gap-4">
             <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider">Live Video Stream</h4>
             
             <div class="relative aspect-video w-full rounded-2xl border border-base-200 overflow-hidden bg-black flex items-center justify-center shadow-inner">
@@ -707,9 +707,9 @@ onUnmounted(() => {
           </div>
 
           <!-- Right Col: Capacity Stats & Hardware Spec -->
-          <div class="lg:col-span-7 space-y-6">
+          <div class="md:col-span-7 space-y-6">
             <!-- Basic Device Info -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200/40 border border-base-200/60 p-4 rounded-2xl">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-base-200/40 border border-base-200/60 p-4 rounded-2xl">
               <div>
                 <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Model</span>
                 <p class="text-xs font-extrabold text-base-content mt-1 flex items-center gap-1">
@@ -759,9 +759,9 @@ onUnmounted(() => {
             <div>
               <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-4">Kapasitas & Penggunaan Biometrik</h4>
               
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Person Capacity -->
-                <div class="space-y-1.5">
+                <div class="space-y-1.5 font-sans">
                   <div class="flex justify-between items-center text-xs">
                     <span class="font-bold text-base-content flex items-center gap-1.5">
                       <Icon name="mingcute:user-3-fill" class="text-primary" size="14" />
