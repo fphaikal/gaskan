@@ -335,8 +335,6 @@ const connectWebRTC = async (device) => {
   try {
     disconnectWebRTC();
 
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const go2rtcHost = isLocal ? 'http://localhost:1984' : 'https://stream-gaskan.smtijogja.my.id';
     const streamIdName = device.id;
     const slugName = slugify(device.name);
 
@@ -361,12 +359,12 @@ const connectWebRTC = async (device) => {
     let res = null;
     let timeoutId = null;
 
-    // Try slugName first (e.g. gerbang_depan)
+    // Try slugName first (e.g. gerbang_depan) via Nuxt same-origin proxy
     try {
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      res = await fetch(`${go2rtcHost}/api/webrtc?src=${slugName}`, {
+      res = await fetch(`/api/device/${device.id}/webrtc?src=${slugName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: offer.sdp,
@@ -377,13 +375,13 @@ const connectWebRTC = async (device) => {
       console.warn(`WebRTC failed with slug '${slugName}', trying ID...`, e);
     }
 
-    // If slug name was not found or failed, try device CUID
+    // If slug name was not found or failed, try device CUID via Nuxt same-origin proxy
     if (!res || !res.ok) {
       activeStreamName = streamIdName;
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      res = await fetch(`${go2rtcHost}/api/webrtc?src=${streamIdName}`, {
+      res = await fetch(`/api/device/${device.id}/webrtc?src=${streamIdName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: offer.sdp,
