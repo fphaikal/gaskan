@@ -319,11 +319,11 @@ const triggerUpload = async () => {
   uploading.value = false;
 };
 
-const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500";
+const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-4 md:p-5 transition-all duration-500";
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto py-4 md:py-8 px-4 space-y-6 md:space-y-8 min-h-[80vh] relative z-10">
+  <div class="max-w-5xl mx-auto py-4 px-4 space-y-4 min-h-[80vh] relative z-10">
     <!-- Background Accents -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
       <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-orange-500/5 blur-[120px]"></div>
@@ -331,44 +331,42 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
     </div>
 
     <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 md:mb-12 bg-base-100/40 border border-white/5 p-6 md:p-8 rounded-[2rem] backdrop-blur-xl shadow-sm">
-      <div class="flex items-center gap-4">
-        <NuxtLink to="/siswa" class="btn btn-ghost btn-circle rounded-xl hover:bg-base-200/50">
-          <Icon name="mingcute:left-line" size="24" class="text-base-content/80" />
-        </NuxtLink>
-        <div>
-          <div class="flex items-center gap-3 mb-1">
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
-              <Icon name="mingcute:pic-fill" size="24" />
-            </div>
-            <h1 class="text-2xl md:text-3xl font-black tracking-tight text-base-content">
-              <span class="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">Bulk Upload</span> Foto Siswa
-            </h1>
-          </div>
-          <p class="text-sm text-base-content/60 font-medium ml-1">Upload foto profil siswa secara masal dengan pencocokan nama file otomatis</p>
-        </div>
+    <div class="flex items-center gap-3 mb-4">
+      <NuxtLink to="/siswa" class="btn btn-ghost btn-circle btn-sm hover:bg-base-200/50">
+        <Icon name="mingcute:left-line" size="18" class="text-base-content/80" />
+      </NuxtLink>
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/30 shrink-0">
+        <Icon name="mingcute:pic-fill" size="18" />
+      </div>
+      <div>
+        <h1 class="text-xl font-black tracking-tight leading-none">
+          <span class="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">Bulk Upload</span> Foto Siswa
+        </h1>
+        <p class="text-xs text-base-content/50 font-medium mt-0.5">Upload foto profil siswa secara masal dengan pencocokan nama file otomatis</p>
       </div>
     </div>
 
-    <div class="flex flex-col lg:grid lg:grid-cols-5 gap-6 md:gap-8">
+    <div class="flex flex-col lg:grid lg:grid-cols-5 gap-4">
       
       <!-- Left Column: Instructions & Setup -->
-      <div class="lg:col-span-2 space-y-6 text-left">
+      <div class="lg:col-span-2 space-y-4 text-left">
         <!-- Instructions Card -->
         <div :class="[bentoCard, 'bg-gradient-to-br from-base-100/80 to-orange-50/10']">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 flex items-center justify-center text-orange-500 mb-4 md:mb-6 shadow-sm border border-orange-500/10">
-            <Icon name="mingcute:book-2-fill" size="24" />
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 border border-orange-500/10">
+              <Icon name="mingcute:book-2-fill" size="14" />
+            </div>
+            <h2 class="text-sm font-black text-base-content tracking-tight">Petunjuk</h2>
           </div>
-          <h2 class="text-xl md:text-2xl font-black text-base-content mb-4 tracking-tight">Petunjuk</h2>
-          <ul class="space-y-3 md:space-y-4">
+          <ul class="space-y-2">
             <li v-for="(item, i) in [
               'Namai file dengan <b>NIS</b> (230104.jpg) atau <b>NISN</b> (009876.png).',
               'Dapat menggunakan <b>Nama Lengkap</b> (Budiman Setiawan.jpg) sebagai nama file.',
               'Sistem mendukung pembersihan prefix otomatis seperti <code>nis_12345.png</code>.',
               'Format gambar wajib <b>JPG/JPEG, PNG, atau WEBP</b>.',
               'Ukuran maksimum file <b>5MB per foto</b>.'
-            ]" :key="i" class="flex gap-3 items-start text-sm text-base-content/70">
-              <div class="mt-1 w-5 h-5 rounded-full bg-orange-500/10 flex items-center justify-center text-[10px] font-black text-orange-500 shrink-0">{{ i+1 }}</div>
+            ]" :key="i" class="flex gap-2 items-start text-xs text-base-content/70">
+              <div class="mt-0.5 w-4 h-4 rounded-full bg-orange-500/10 flex items-center justify-center text-[9px] font-black text-orange-500 shrink-0">{{ i+1 }}</div>
               <span v-html="item"></span>
             </li>
           </ul>
@@ -376,15 +374,15 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
         <!-- Setup Match Type Card -->
         <div :class="bentoCard">
-          <h2 class="text-lg font-extrabold text-base-content mb-4 flex items-center gap-2">
-            <Icon name="mingcute:settings-6-fill" class="text-orange-500" size="20" />
+          <h2 class="text-sm font-extrabold text-base-content mb-3 flex items-center gap-2">
+            <Icon name="mingcute:settings-6-fill" class="text-orange-500" size="16" />
             Pengaturan Pencocokan
           </h2>
           <div class="form-control w-full">
-            <label class="label">
-              <span class="label-text font-bold text-base-content/75">Metode Cocok</span>
+            <label class="label py-1">
+              <span class="label-text text-xs font-bold text-base-content/75">Metode Cocok</span>
             </label>
-            <select v-model="matchBy" class="select select-bordered rounded-2xl bg-base-100 text-base-content focus:border-orange-500 focus:outline-none">
+            <select v-model="matchBy" class="select select-bordered select-sm rounded-xl bg-base-100 text-base-content focus:border-orange-500 focus:outline-none">
               <option value="auto">Auto (NIS / NISN / Email / Nama)</option>
               <option value="nis">NIS (Contoh: 12345.jpg)</option>
               <option value="nisn">NISN (Contoh: 0098765432.png)</option>
@@ -392,24 +390,24 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
               <option value="name">Nama Lengkap/Sebagian (Contoh: Budiman Setiawan.jpg)</option>
             </select>
           </div>
-          <div class="form-control w-full mt-4">
-            <label class="label">
-              <span class="label-text font-bold text-base-content/75">Batasi per Kelas</span>
+          <div class="form-control w-full mt-3">
+            <label class="label py-1">
+              <span class="label-text text-xs font-bold text-base-content/75">Batasi per Kelas</span>
             </label>
-            <select v-model="selectedClassId" class="select select-bordered rounded-2xl bg-base-100 text-base-content focus:border-orange-500 focus:outline-none">
+            <select v-model="selectedClassId" class="select select-bordered select-sm rounded-xl bg-base-100 text-base-content focus:border-orange-500 focus:outline-none">
               <option value="">Semua Kelas</option>
               <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
             </select>
           </div>
-          <div class="flex items-start text-xs text-base-content/60 bg-base-200/40 border border-base-200 p-4 rounded-2xl leading-relaxed mt-5">
-            <Icon name="mingcute:information-line" class="mr-2 text-orange-500 shrink-0 mt-0.5" size="18" />
+          <div class="flex items-start text-xs text-base-content/60 bg-base-200/40 border border-base-200 p-3 rounded-xl leading-relaxed mt-3">
+            <Icon name="mingcute:information-line" class="mr-2 text-orange-500 shrink-0 mt-0.5" size="14" />
             <span>Sistem otomatis membersihkan prefix angka baris (seperti <code>1. </code> atau <code>15 </code>) dan kode kamera (seperti <code>DSC_</code> atau <code>IMG_</code>) pada nama file.</span>
           </div>
         </div>
       </div>
 
       <!-- Right Column: Dropzone & Selection Queue -->
-      <div class="lg:col-span-3 space-y-6">
+      <div class="lg:col-span-3 space-y-4">
         <!-- Dropzone -->
         <div 
           v-if="!uploading && !uploadResult"
@@ -418,22 +416,22 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           @drop.prevent="onDrop"
           :class="[
             bentoCard,
-            'border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[280px] flex flex-col items-center justify-center',
+            'border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[200px] flex flex-col items-center justify-center',
             isDragging ? 'border-orange-500 bg-orange-500/5 scale-[1.01]' : 'border-base-200/60 bg-base-200/20'
           ]"
         >
           <div class="absolute inset-0 opacity-[0.02] pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0); background-size: 24px 24px;"></div>
           <div class="absolute -top-24 -right-24 w-64 h-64 bg-orange-500/5 blur-[80px] rounded-full group-hover:bg-orange-500/10 transition-all duration-500"></div>
 
-          <div class="h-full flex flex-col items-center justify-center py-6 text-center w-full relative z-10">
-            <div class="w-16 h-16 rounded-2xl bg-orange-500/15 text-orange-500 flex items-center justify-center mb-4 shadow-md border border-orange-500/10">
-              <Icon name="mingcute:pic-line" size="28" />
+          <div class="flex flex-col items-center justify-center py-4 text-center w-full relative z-10">
+            <div class="w-12 h-12 rounded-xl bg-orange-500/15 text-orange-500 flex items-center justify-center mb-3 shadow-sm border border-orange-500/10">
+              <Icon name="mingcute:pic-line" size="22" />
             </div>
-            <h3 class="text-base font-extrabold text-base-content mb-1">Pilih atau Tarik File Foto</h3>
-            <p class="text-base-content/50 text-xs mb-4 max-w-sm leading-relaxed">
+            <h3 class="text-sm font-extrabold text-base-content mb-1">Pilih atau Tarik File Foto</h3>
+            <p class="text-base-content/50 text-xs mb-3 max-w-sm leading-relaxed">
               Seret file foto siswa Anda ke sini atau klik tombol di bawah untuk memilih file.
             </p>
-            <button @click="fileInput.click()" class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl px-6 h-10 shadow-md font-bold text-sm transition-all hover:-translate-y-0.5">
+            <button @click="fileInput.click()" class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl px-5 h-9 shadow-sm font-bold text-sm transition-all hover:-translate-y-0.5">
               Pilih File Foto
             </button>
             <input 

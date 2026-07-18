@@ -143,11 +143,11 @@ const downloadTemplate = async () => {
   } catch (e) { $toast.error('Gagal download'); }
 };
 
-const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500";
+const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-4 md:p-5 transition-all duration-500";
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto py-4 md:py-8 px-4 space-y-6 md:space-y-8 min-h-[80vh] relative z-10">
+  <div class="max-w-5xl mx-auto py-4 px-4 space-y-4 min-h-[80vh] relative z-10">
     <!-- Background Accents -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
       <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-violet-600/5 blur-[120px]"></div>
@@ -155,52 +155,30 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
     </div>
 
     <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 md:mb-12 bg-base-100/40 border border-white/5 p-6 md:p-8 rounded-[2rem] backdrop-blur-xl shadow-sm">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-white shadow-md shadow-violet-600/30 shrink-0">
+        <Icon name="mingcute:upload-3-fill" size="18" />
+      </div>
       <div>
-        <div class="flex items-center gap-4 mb-3">
-          <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-white shadow-lg shadow-violet-600/30">
-            <Icon name="mingcute:upload-3-fill" size="28" />
-          </div>
-          <h1 class="text-3xl md:text-4xl font-black tracking-tight">
-            <span class="bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">Import</span> Staff
-          </h1>
-        </div>
-        <p class="text-sm md:text-base text-base-content/60 font-medium max-w-xl">
-          Tambahkan data guru dan administrator secara massal dengan mudah. Unggah file Excel sesuai format yang telah disediakan.
-        </p>
+        <h1 class="text-xl font-black tracking-tight leading-none">
+          <span class="bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">Import</span> Staff
+        </h1>
+        <p class="text-xs text-base-content/50 font-medium mt-0.5">Unggah file Excel sesuai format yang telah disediakan.</p>
       </div>
     </div>
 
     <!-- Step Indicator -->
     <Transition name="fade">
-      <div v-if="step > 0" class="flex justify-center mb-10 w-full">
-        <div class="flex items-center justify-center w-full max-w-2xl relative">
-          <!-- Background Line -->
-          <div class="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1.5 bg-base-200 rounded-full z-0"></div>
-          <!-- Active Line -->
-          <div class="absolute left-8 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full z-0 transition-all duration-700 ease-out" :style="{ width: step === 0 ? '0%' : step === 1 ? '50%' : 'calc(100% - 4rem)' }"></div>
-          
-          <div class="w-full flex justify-between z-10 px-2">
-            <!-- Step 1 -->
-            <div class="flex flex-col items-center gap-2">
-              <div :class="['w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black transition-all duration-500', step >= 0 ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-xl shadow-violet-600/30 scale-110' : 'bg-base-100 border-2 border-base-200 text-base-content/40']">
-                <Icon name="mingcute:upload-2-fill" size="24" />
+      <div v-if="step > 0" class="flex justify-center mb-4 w-full">
+        <div class="flex items-center justify-center w-full max-w-xs relative">
+          <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-0.5 bg-base-200 rounded-full z-0"></div>
+          <div class="absolute left-6 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full z-0 transition-all duration-700 ease-out" :style="{ width: step === 0 ? '0%' : step === 1 ? '50%' : 'calc(100% - 3rem)' }"></div>
+          <div class="w-full flex justify-between z-10">
+            <div v-for="(s, i) in [{ icon: 'mingcute:upload-2-fill', label: 'Upload' }, { icon: 'mingcute:check-2-fill', label: 'Validasi' }, { icon: 'mingcute:flag-4-fill', label: 'Selesai' }]" :key="i" class="flex flex-col items-center gap-1">
+              <div :class="['w-8 h-8 rounded-xl flex items-center justify-center font-black transition-all duration-500', step >= i ? (i === 2 && step >= 2 ? 'bg-gradient-to-br from-success to-emerald-500 text-white shadow-md' : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-md') : 'bg-base-200 text-base-content/40']">
+                <Icon :name="s.icon" size="14" />
               </div>
-              <span :class="['text-xs font-bold transition-colors mt-1', step >= 0 ? 'text-violet-600' : 'text-base-content/40']">Upload</span>
-            </div>
-            <!-- Step 2 -->
-            <div class="flex flex-col items-center gap-2">
-              <div :class="['w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black transition-all duration-500', step >= 1 ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-xl shadow-violet-600/30 scale-110' : 'bg-base-100 border-2 border-base-200 text-base-content/40']">
-                <Icon name="mingcute:check-2-fill" size="24" />
-              </div>
-              <span :class="['text-xs font-bold transition-colors mt-1', step >= 1 ? 'text-violet-600' : 'text-base-content/40']">Validasi</span>
-            </div>
-            <!-- Step 3 -->
-            <div class="flex flex-col items-center gap-2">
-              <div :class="['w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black transition-all duration-500', step >= 2 ? 'bg-gradient-to-br from-success to-emerald-500 text-white shadow-xl shadow-success/30 scale-110' : 'bg-base-100 border-2 border-base-200 text-base-content/40']">
-                <Icon name="mingcute:flag-4-fill" size="24" />
-              </div>
-              <span :class="['text-xs font-bold transition-colors mt-1', step >= 2 ? 'text-success' : 'text-base-content/40']">Selesai</span>
+              <span :class="['text-[10px] font-bold transition-colors', step >= i ? (i === 2 && step >= 2 ? 'text-success' : 'text-violet-600') : 'text-base-content/40']">{{ s.label }}</span>
             </div>
           </div>
         </div>
@@ -209,7 +187,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
     <!-- Step 0: Upload -->
     <Transition name="fade-slide" mode="out-in">
-      <div v-if="step === 0" class="flex flex-col lg:grid lg:grid-cols-5 gap-6 md:gap-8">
+      <div v-if="step === 0" class="flex flex-col lg:grid lg:grid-cols-5 gap-4">
         
         <!-- Upload (with Drag & Drop) -->
         <div 
@@ -218,7 +196,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           @drop.prevent="onDrop"
           :class="[
             bentoCard, 
-            'lg:col-span-3 order-1 lg:order-2 border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[300px] flex flex-col items-center justify-center',
+            'lg:col-span-3 order-1 lg:order-2 border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[200px] flex flex-col items-center justify-center',
             isDragging ? 'border-violet-600 bg-violet-600/5 scale-[1.01]' : 'border-base-200/60 bg-base-200/20'
           ]"
         >
@@ -266,29 +244,31 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
         </div>
 
         <!-- Instructions -->
-        <div class="lg:col-span-2 order-2 lg:order-1 space-y-6 text-left">
+        <div class="lg:col-span-2 order-2 lg:order-1 space-y-4 text-left">
           <div :class="[bentoCard, 'bg-gradient-to-br from-base-100/80 to-violet-50/10']">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600/10 to-fuchsia-600/10 flex items-center justify-center text-violet-600 mb-4 md:mb-6 shadow-sm border border-violet-600/10">
-              <Icon name="mingcute:book-2-fill" size="24" />
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-7 h-7 rounded-lg bg-violet-600/10 flex items-center justify-center text-violet-600 border border-violet-600/10">
+                <Icon name="mingcute:book-2-fill" size="14" />
+              </div>
+              <h2 class="text-sm font-black tracking-tight">Petunjuk Staff</h2>
             </div>
-            <h2 class="text-xl md:text-2xl font-black mb-4">Petunjuk Staff</h2>
-            <ul class="space-y-3 text-sm text-base-content/70 mb-8">
-              <li v-for="(item, i) in ['Gunakan template resmi.', 'Role: Tulis ADMIN atau GURU.', 'Gunakan NIS atau Email sebagai ID.', 'Password default: password123']" :key="i" class="flex gap-3">
-                <div class="w-5 h-5 rounded-full bg-violet-500/10 flex items-center justify-center text-[10px] font-black text-violet-600 shrink-0">{{ i+1 }}</div>
+            <ul class="space-y-2 text-xs text-base-content/70 mb-4">
+              <li v-for="(item, i) in ['Gunakan template resmi.', 'Role: Tulis ADMIN atau GURU.', 'Gunakan NIS atau Email sebagai ID.', 'Password default: password123']" :key="i" class="flex gap-2">
+                <div class="w-4 h-4 rounded-full bg-violet-500/10 flex items-center justify-center text-[9px] font-black text-violet-600 shrink-0 mt-0.5">{{ i+1 }}</div>
                 <span>{{ item }}</span>
               </li>
             </ul>
             
             <!-- Download Template Banner -->
-            <div class="bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-3xl p-5 relative overflow-hidden group cursor-pointer shadow-lg shadow-violet-600/20 hover:shadow-violet-600/40 transition-all hover:-translate-y-1" @click="downloadTemplate">
-               <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors"></div>
+            <div class="bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl p-3 relative overflow-hidden group cursor-pointer shadow-md shadow-violet-600/20 hover:shadow-violet-600/30 transition-all hover:-translate-y-0.5" @click="downloadTemplate">
+               <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-colors"></div>
                <div class="relative z-10 flex items-center justify-between">
                   <div>
-                     <h3 class="text-white font-black text-lg mb-1">Butuh Template?</h3>
-                     <p class="text-violet-50 text-xs font-medium">Download format excel yang valid.</p>
+                     <h3 class="text-white font-black text-sm mb-0.5">Butuh Template?</h3>
+                     <p class="text-violet-50 text-[11px] font-medium">Download format excel yang valid.</p>
                   </div>
-                  <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform shadow-inner">
-                     <Icon name="mingcute:download-2-fill" size="24" />
+                  <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
+                     <Icon name="mingcute:download-2-fill" size="16" />
                   </div>
                </div>
             </div>

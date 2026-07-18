@@ -176,11 +176,11 @@ const downloadTemplate = async () => {
   } catch (e) { $toast.error('Gagal download template'); }
 };
 
-const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500";
+const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-4 md:p-5 transition-all duration-500";
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto py-4 md:py-8 px-4 space-y-6 md:space-y-8 min-h-[80vh] relative z-10">
+  <div class="max-w-5xl mx-auto py-4 px-4 space-y-4 min-h-[80vh] relative z-10">
     <!-- Background Accents -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
       <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-orange-500/5 blur-[120px]"></div>
@@ -188,52 +188,30 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
     </div>
 
     <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 md:mb-12 bg-base-100/40 border border-white/5 p-6 md:p-8 rounded-[2rem] backdrop-blur-xl shadow-sm">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/30 shrink-0">
+        <Icon name="mingcute:upload-3-fill" size="18" />
+      </div>
       <div>
-        <div class="flex items-center gap-4 mb-3">
-          <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
-            <Icon name="mingcute:upload-3-fill" size="28" />
-          </div>
-          <h1 class="text-3xl md:text-4xl font-black tracking-tight">
-            <span class="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">Import</span> Siswa
-          </h1>
-        </div>
-        <p class="text-sm md:text-base text-base-content/60 font-medium max-w-xl">
-          Tambahkan data siswa secara massal dengan mudah. Unggah file Excel sesuai format yang telah disediakan.
-        </p>
+        <h1 class="text-xl font-black tracking-tight leading-none">
+          <span class="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">Import</span> Siswa
+        </h1>
+        <p class="text-xs text-base-content/50 font-medium mt-0.5">Unggah file Excel sesuai format yang telah disediakan.</p>
       </div>
     </div>
 
     <!-- Step Indicator -->
     <Transition name="fade">
-      <div v-if="step > 0" class="flex justify-center mb-10 w-full">
-        <div class="flex items-center justify-center w-full max-w-2xl relative">
-          <!-- Background Line -->
-          <div class="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1.5 bg-base-200 rounded-full z-0"></div>
-          <!-- Active Line -->
-          <div class="absolute left-8 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full z-0 transition-all duration-700 ease-out" :style="{ width: step === 0 ? '0%' : step === 1 ? '50%' : 'calc(100% - 4rem)' }"></div>
-          
-          <div class="w-full flex justify-between z-10 px-2">
-            <!-- Step 1 -->
-            <div class="flex flex-col items-center gap-2">
-              <div :class="['w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black transition-all duration-500', step >= 0 ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-xl shadow-orange-500/30 scale-110' : 'bg-base-100 border-2 border-base-200 text-base-content/40']">
-                <Icon name="mingcute:upload-2-fill" size="24" />
+      <div v-if="step > 0" class="flex justify-center mb-4 w-full">
+        <div class="flex items-center justify-center w-full max-w-xs relative">
+          <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-0.5 bg-base-200 rounded-full z-0"></div>
+          <div class="absolute left-6 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full z-0 transition-all duration-700 ease-out" :style="{ width: step === 0 ? '0%' : step === 1 ? '50%' : 'calc(100% - 3rem)' }"></div>
+          <div class="w-full flex justify-between z-10">
+            <div v-for="(s, i) in [{ icon: 'mingcute:upload-2-fill', label: 'Upload' }, { icon: 'mingcute:check-2-fill', label: 'Validasi' }, { icon: 'mingcute:flag-4-fill', label: 'Selesai' }]" :key="i" class="flex flex-col items-center gap-1">
+              <div :class="['w-8 h-8 rounded-xl flex items-center justify-center font-black transition-all duration-500', step >= i ? (i === 2 && step >= 2 ? 'bg-gradient-to-br from-success to-emerald-500 text-white shadow-md' : 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-md') : 'bg-base-200 text-base-content/40']">
+                <Icon :name="s.icon" size="14" />
               </div>
-              <span :class="['text-xs font-bold transition-colors mt-1', step >= 0 ? 'text-orange-500' : 'text-base-content/40']">Upload</span>
-            </div>
-            <!-- Step 2 -->
-            <div class="flex flex-col items-center gap-2">
-              <div :class="['w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black transition-all duration-500', step >= 1 ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-xl shadow-orange-500/30 scale-110' : 'bg-base-100 border-2 border-base-200 text-base-content/40']">
-                <Icon name="mingcute:check-2-fill" size="24" />
-              </div>
-              <span :class="['text-xs font-bold transition-colors mt-1', step >= 1 ? 'text-orange-500' : 'text-base-content/40']">Validasi</span>
-            </div>
-            <!-- Step 3 -->
-            <div class="flex flex-col items-center gap-2">
-              <div :class="['w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center font-black transition-all duration-500', step >= 2 ? 'bg-gradient-to-br from-success to-emerald-500 text-white shadow-xl shadow-success/30 scale-110' : 'bg-base-100 border-2 border-base-200 text-base-content/40']">
-                <Icon name="mingcute:flag-4-fill" size="24" />
-              </div>
-              <span :class="['text-xs font-bold transition-colors mt-1', step >= 2 ? 'text-success' : 'text-base-content/40']">Selesai</span>
+              <span :class="['text-[10px] font-bold transition-colors', step >= i ? (i === 2 && step >= 2 ? 'text-success' : 'text-orange-500') : 'text-base-content/40']">{{ s.label }}</span>
             </div>
           </div>
         </div>
@@ -242,17 +220,17 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
     <!-- Step 0: Upload & Instructions -->
     <Transition name="fade-slide" mode="out-in">
-      <div v-if="step === 0" class="flex flex-col lg:grid lg:grid-cols-5 gap-6 md:gap-8">
+      <div v-if="step === 0" class="flex flex-col lg:grid lg:grid-cols-5 gap-4">
         
         <!-- Column: Upload & Errors -->
-        <div class="lg:col-span-3 order-1 lg:order-2 space-y-6">
+        <div class="lg:col-span-3 order-1 lg:order-2 space-y-4">
           <div 
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
             @drop.prevent="onDrop"
             :class="[
               bentoCard, 
-              'border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[300px] flex flex-col items-center justify-center',
+              'border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[200px] flex flex-col items-center justify-center',
               isDragging ? 'border-orange-500 bg-orange-500/5 scale-[1.01]' : 'border-base-200/60 bg-base-200/20'
             ]"
           >
@@ -261,47 +239,43 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
             
             <div v-if="!fatalError" class="absolute -top-24 -right-24 w-64 h-64 bg-orange-500/5 blur-[80px] rounded-full group-hover:bg-orange-500/10 transition-all duration-500"></div>
             
-            <div v-if="fatalError" class="relative z-10 w-full max-w-lg px-6 text-center py-6 animate-in zoom-in-95 duration-300">
-              <div class="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto mb-4 shadow-lg shadow-rose-500/10">
-                <Icon name="mingcute:alert-line" size="28" />
+            <div v-if="fatalError" class="relative z-10 w-full max-w-sm px-4 text-center py-4 animate-in zoom-in-95 duration-300">
+              <div class="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto mb-3">
+                <Icon name="mingcute:alert-line" size="20" />
               </div>
-              <h3 class="text-lg font-bold text-base-content mb-2 tracking-tight">Format File Tidak Sesuai</h3>
-              <div class="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-4 mb-6 text-xs text-rose-600 font-bold whitespace-pre-line leading-relaxed">
+              <h3 class="text-sm font-bold text-base-content mb-2">Format File Tidak Sesuai</h3>
+              <div class="bg-rose-500/5 border border-rose-500/20 rounded-xl p-3 mb-4 text-xs text-rose-600 font-medium whitespace-pre-line leading-relaxed">
                 {{ fatalError }}
               </div>
-              <button @click="reset" class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl px-8 h-10 font-bold shadow-md shadow-orange-500/20 transition-all hover:scale-105 active:scale-95 text-sm">
+              <button @click="reset" class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl px-6 h-9 font-bold text-sm">
                 Mulai Lagi
               </button>
             </div>
 
-            <div v-else class="h-full flex flex-col items-center justify-center py-6 relative z-10 text-center w-full">
+            <div v-else class="flex flex-col items-center justify-center py-4 relative z-10 text-center w-full">
               <div 
                 :class="[
-                  'w-16 h-16 rounded-2xl shadow-md border flex items-center justify-center mb-4 transition-all duration-500',
+                  'w-12 h-12 rounded-xl shadow-sm border flex items-center justify-center mb-3 transition-all duration-500',
                   isDragging ? 'bg-orange-500 text-white scale-110 shadow-orange-500/30' : 'bg-base-100 border-base-200 group-hover:scale-110'
                 ]"
               >
-                 <Icon v-if="!validating" name="mingcute:upload-2-fill" size="28" :class="isDragging ? 'text-white' : 'text-orange-500'" />
-                 <span v-else class="loading loading-spinner loading-md text-orange-500"></span>
+                 <Icon v-if="!validating" name="mingcute:upload-2-fill" size="22" :class="isDragging ? 'text-white' : 'text-orange-500'" />
+                 <span v-else class="loading loading-spinner loading-sm text-orange-500"></span>
               </div>
-              
-              <div class="max-w-xs">
-                <h3 class="text-base font-extrabold text-base-content mb-1 tracking-tight">
-                  {{ isDragging ? 'Lepaskan File Sekarang' : 'Pilih File Import' }}
-                </h3>
-                <p class="text-xs text-base-content/40 mb-4 font-medium">
-                  {{ isDragging ? 'Sistem siap memproses file Anda' : 'Seret file template .xlsx Anda ke sini' }}
-                </p>
-                
-                <input ref="fileInput" type="file" accept=".xlsx,.xls" class="hidden" @change="onFileChange" />
-                <button 
-                  @click="fileInput.click()" 
-                  class="btn bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border-0 rounded-xl px-8 h-10 shadow-[0_4px_12px_rgb(249,115,22,0.2)] hover:shadow-[0_6px_16px_rgb(249,115,22,0.3)] transition-all hover:-translate-y-0.5 w-full md:w-auto font-bold text-sm" 
-                  :disabled="validating"
-                >
-                  {{ validating ? 'Memvalidasi...' : 'Pilih File Excel' }}
-                </button>
-              </div>
+              <h3 class="text-sm font-extrabold text-base-content mb-1">
+                {{ isDragging ? 'Lepaskan File Sekarang' : 'Pilih File Import' }}
+              </h3>
+              <p class="text-xs text-base-content/40 mb-3 font-medium">
+                {{ isDragging ? 'Sistem siap memproses' : 'Seret .xlsx ke sini atau pilih file' }}
+              </p>
+              <input ref="fileInput" type="file" accept=".xlsx,.xls" class="hidden" @change="onFileChange" />
+              <button 
+                @click="fileInput.click()" 
+                class="btn bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border-0 rounded-xl px-6 h-9 font-bold text-sm transition-all hover:-translate-y-0.5" 
+                :disabled="validating"
+              >
+                {{ validating ? 'Memvalidasi...' : 'Pilih File Excel' }}
+              </button>
             </div>
           </div>
 
@@ -322,34 +296,36 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
         </div>
 
         <!-- Left: Instructions & Class Reference -->
-        <div class="lg:col-span-2 order-2 lg:order-1 space-y-6 text-left">
+        <div class="lg:col-span-2 order-2 lg:order-1 space-y-4 text-left">
           <div :class="[bentoCard, 'bg-gradient-to-br from-base-100/80 to-orange-50/10']">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 flex items-center justify-center text-orange-500 mb-4 md:mb-6 shadow-sm border border-orange-500/10">
-              <Icon name="mingcute:book-2-fill" size="24" />
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 border border-orange-500/10">
+                <Icon name="mingcute:book-2-fill" size="14" />
+              </div>
+              <h2 class="text-sm font-black text-base-content tracking-tight">Petunjuk</h2>
             </div>
-            <h2 class="text-xl md:text-2xl font-black text-base-content mb-4 tracking-tight">Petunjuk</h2>
-            <ul class="space-y-3 md:space-y-4 mb-8">
+            <ul class="space-y-2 mb-4">
               <li v-for="(item, i) in [
                 'Gunakan template resmi.',
                 'Nama Kelas harus persis (Cek daftar kelas di bawah).',
                 'Update otomatis jika NIS sudah ada.',
                 'Password default: <b>password123</b>'
-              ]" :key="i" class="flex gap-3 items-start text-sm text-base-content/70">
-                <div class="mt-1 w-5 h-5 rounded-full bg-orange-500/10 flex items-center justify-center text-[10px] font-black text-orange-500 shrink-0">{{ i+1 }}</div>
+              ]" :key="i" class="flex gap-2 items-start text-xs text-base-content/70">
+                <div class="mt-0.5 w-4 h-4 rounded-full bg-orange-500/10 flex items-center justify-center text-[9px] font-black text-orange-500 shrink-0">{{ i+1 }}</div>
                 <span v-html="item"></span>
               </li>
             </ul>
             
             <!-- Download Template Banner -->
-            <div class="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-5 relative overflow-hidden group cursor-pointer shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all hover:-translate-y-1" @click="downloadTemplate">
-               <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors"></div>
+            <div class="bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl p-3 relative overflow-hidden group cursor-pointer shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all hover:-translate-y-0.5" @click="downloadTemplate">
+               <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-colors"></div>
                <div class="relative z-10 flex items-center justify-between">
                   <div>
-                     <h3 class="text-white font-black text-lg mb-1">Butuh Template?</h3>
-                     <p class="text-orange-50 text-xs font-medium">Download format excel yang valid.</p>
+                     <h3 class="text-white font-black text-sm mb-0.5">Butuh Template?</h3>
+                     <p class="text-orange-50 text-[11px] font-medium">Download format excel yang valid.</p>
                   </div>
-                  <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform shadow-inner">
-                     <Icon name="mingcute:download-2-fill" size="24" />
+                  <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
+                     <Icon name="mingcute:download-2-fill" size="16" />
                   </div>
                </div>
             </div>
