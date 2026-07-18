@@ -191,7 +191,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
         <h1 class="text-2xl font-black text-base-content">{{ isSiswa ? 'Permohonan Izin Saya' : 'Review Surat Izin' }}</h1>
         <p class="text-sm text-base-content/40 font-medium mt-0.5">{{ isSiswa ? 'Ajukan dan pantau status izin Anda' : 'Kelola permohonan izin dari siswa' }}</p>
       </div>
-      <div class="flex gap-3 items-center">
+      <div class="flex gap-3 items-center flex-wrap">
         <select v-if="isStaff" v-model="filterStatus" @change="fetchLeaves" class="select select-bordered rounded-2xl text-sm font-bold">
           <option value="">Semua Status</option>
           <option value="PENDING">Menunggu</option>
@@ -238,6 +238,12 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
 
     <!-- Leave Cards -->
     <div v-else class="space-y-4">
+      <!-- Section Title -->
+      <div class="flex items-center gap-3 mb-5 pt-2">
+        <div class="w-1 h-5 rounded-full bg-orange-500"></div>
+        <h3 class="text-xs font-black text-base-content uppercase tracking-widest">Daftar Riwayat Izin</h3>
+      </div>
+
       <div v-for="leave in leaves" :key="leave.id"
            class="bg-base-100 rounded-3xl border border-base-200/60 shadow-sm overflow-hidden hover:shadow-md transition-all group">
 

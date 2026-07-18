@@ -150,31 +150,31 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
     <div class="grid grid-cols-4 sm:grid-cols-7 gap-3">
       <div class="bg-base-100 rounded-2xl p-3 border border-base-200/60 text-center col-span-1">
         <p class="text-lg font-black text-base-content">{{ summary.total || 0 }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest text-base-content/30 mt-0.5">Total</p>
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-base-content/30 mt-0.5">Total</p>
       </div>
       <div class="bg-emerald-500 rounded-2xl p-3 text-white text-center">
         <p class="text-lg font-black">{{ summary.hadir || 0 }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest opacity-70 mt-0.5">Hadir</p>
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-70 mt-0.5">Hadir</p>
       </div>
       <div class="bg-amber-400 rounded-2xl p-3 text-white text-center">
         <p class="text-lg font-black">{{ summary.terlambat || 0 }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest opacity-70 mt-0.5">Terlambat</p>
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-70 mt-0.5">Terlambat</p>
       </div>
       <div class="bg-sky-400 rounded-2xl p-3 text-white text-center">
         <p class="text-lg font-black">{{ summary.izin || 0 }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest opacity-70 mt-0.5">Izin</p>
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-70 mt-0.5">Izin</p>
       </div>
       <div class="bg-orange-400 rounded-2xl p-3 text-white text-center">
         <p class="text-lg font-black">{{ summary.sakit || 0 }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest opacity-70 mt-0.5">Sakit</p>
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-70 mt-0.5">Sakit</p>
       </div>
       <div class="bg-rose-500 rounded-2xl p-3 text-white text-center">
         <p class="text-lg font-black">{{ summary.alpha || 0 }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest opacity-70 mt-0.5">Alpha</p>
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-70 mt-0.5">Alpha</p>
       </div>
       <div class="bg-base-200/60 rounded-2xl p-3 text-center">
         <p class="text-lg font-black text-base-content/40">{{ summary.belumAbsen || 0 }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest text-base-content/30 mt-0.5">Belum</p>
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-base-content/30 mt-0.5">Belum</p>
       </div>
     </div>
 
@@ -265,7 +265,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
                 <td class="pr-6 text-right" @click.stop>
                   <div v-if="!student.attendance" class="flex justify-end gap-1">
                     <div class="dropdown dropdown-end">
-                      <label tabindex="0" class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-lg font-black px-3 h-8 gap-1.5 shadow-sm shadow-orange-500/20">
+                      <label tabindex="0" class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl font-black px-3 h-8 gap-1.5 shadow-sm shadow-orange-500/20 cursor-pointer">
                         <Icon v-if="markingId === student.id" name="mingcute:loading-fill" class="animate-spin" size="14" />
                         <Icon v-else name="mingcute:check-2-fill" size="14" />
                         Absen
