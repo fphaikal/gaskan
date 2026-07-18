@@ -138,7 +138,7 @@ useSeoMeta({
                     ERR: {{ d.code || 'UNKNOWN' }}
                   </span>
                   <span class="text-xs font-mono font-bold text-base-content/60 bg-base-200/50 px-2 py-1 border border-base-300/50 rounded-lg">
-                    {{ formatLongDate(d.timestamp).split(' ').slice(1).join(' ') || formatLongDate(d.timestamp) }}
+                    {{ formatLongDate(d.timestamp, false, true) }}
                   </span>
                 </div>
 
