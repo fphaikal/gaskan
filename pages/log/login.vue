@@ -253,7 +253,7 @@ useSeoMeta({
 
     <!-- Detail Modal -->
     <dialog :class="['modal modal-bottom sm:modal-middle', showDetail ? 'modal-open' : '']">
-      <div class="modal-box bg-base-100 border border-base-200 rounded-[2.5rem] p-8 max-w-lg">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-[2.5rem] p-8 max-w-lg max-h-[85vh] overflow-y-auto">
         <div class="flex items-start justify-between mb-8">
           <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">

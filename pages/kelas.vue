@@ -268,8 +268,8 @@ const bentoCard = "bg-base-100 rounded-[2rem] p-6 border border-base-200/60 shad
 
     <Teleport to="body">
       <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showModal }]">
-        <div class="modal-box bg-base-100 p-0 overflow-visible rounded-t-[2.5rem] sm:rounded-[2.5rem] max-w-md border border-base-200">
-          <div class="p-6 border-b border-base-200/40 flex items-center justify-between">
+        <div class="modal-box bg-base-100 p-0 overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] max-w-md border border-base-200 max-h-[90vh] flex flex-col">
+          <div class="p-6 border-b border-base-200/40 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500">
                 <Icon name="mingcute:school-fill" size="22" />
@@ -282,7 +282,7 @@ const bentoCard = "bg-base-100 rounded-[2rem] p-6 border border-base-200/60 shad
             <button @click="showModal = false" class="btn btn-ghost btn-sm btn-circle rounded-xl"><Icon name="mingcute:close-line" size="20" /></button>
           </div>
           
-          <div class="p-6 space-y-5">
+          <div class="p-6 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
             <div class="grid grid-cols-2 gap-4">
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-[10px] font-black uppercase tracking-widest text-base-content/40">Tingkat</span></label>
@@ -326,7 +326,7 @@ const bentoCard = "bg-base-100 rounded-[2rem] p-6 border border-base-200/60 shad
             </div>
           </div>
 
-          <div class="p-6 pt-0 flex gap-3">
+          <div class="p-6 pt-0 flex gap-3 shrink-0">
             <button @click="showModal = false" class="btn btn-ghost flex-1 rounded-2xl font-black uppercase text-xs tracking-widest">Batal</button>
             <button @click="saveClass" :disabled="saving || !form.majorId || !form.section || isDuplicate"
               class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 flex-1 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-orange-500/20">

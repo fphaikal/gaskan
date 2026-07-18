@@ -209,8 +209,8 @@ const bentoCard = "bg-base-100 rounded-[2rem] p-6 border border-base-200/60 shad
       <Transition name="modal">
         <div v-if="showModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="showModal = false">
           <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md z-10">
-            <div class="p-6 border-b border-base-200/40 flex items-center justify-between">
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md z-10 max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-base-200/40 flex items-center justify-between shrink-0">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500">
                   <Icon name="mingcute:school-fill" size="20" />
@@ -219,7 +219,7 @@ const bentoCard = "bg-base-100 rounded-[2rem] p-6 border border-base-200/60 shad
               </div>
               <button @click="showModal = false" class="btn btn-ghost btn-sm btn-circle"><Icon name="mingcute:close-line" size="20" /></button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-xs font-black uppercase tracking-widest text-base-content/40">Nama Jurusan</span></label>
                 <input v-model="form.name" type="text" placeholder="Contoh: Kimia Analisis" :class="['input input-bordered w-full rounded-2xl', isDuplicateName ? 'border-rose-500' : '']" />
@@ -254,12 +254,12 @@ const bentoCard = "bg-base-100 rounded-[2rem] p-6 border border-base-200/60 shad
               </div>
               <p class="text-[10px] text-base-content/30 font-bold italic">*Jika Alias diubah, semua nama kelas terkait akan otomatis diperbarui.</p>
             </div>
-            <div class="p-6 pt-0 flex gap-3">
+            <div class="p-6 pt-0 flex gap-3 shrink-0">
               <button @click="showModal = false" class="btn btn-ghost flex-1 rounded-2xl font-black">Batal</button>
               <button @click="saveMajor" :disabled="saving || !form.name || !form.alias || isDuplicateName || isDuplicateAlias"
                 class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 flex-1 rounded-2xl font-black shadow-lg shadow-orange-500/20">
                 <span v-if="saving" class="loading loading-spinner loading-xs"></span>
-                {{ editMode ? 'Simpan Perubahan' : 'Tambah Jurusan' }}
+                {{ editMode ? 'Simpan' : 'Tambah Jurusan' }}
               </button>
             </div>
           </div>

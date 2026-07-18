@@ -77,7 +77,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 animate-in fade-in duration-700" style="max-height:calc(100vh - 96px)">
+  <div class="flex flex-col gap-4 animate-in fade-in duration-700">
 
     <!-- ROW 1: Hero + Stat Cards -->
     <div class="grid grid-cols-12 gap-4 shrink-0">
@@ -130,10 +130,10 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
     </div>
 
     <!-- ROW 2: Table + Sidebar -->
-    <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
+    <div class="grid grid-cols-12 gap-4">
 
       <!-- Activity Table -->
-      <div class="col-span-12 lg:col-span-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm flex flex-col min-h-0 overflow-hidden">
+      <div class="col-span-12 lg:col-span-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm flex flex-col overflow-hidden">
         <div class="px-6 py-4 border-b border-base-200/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
           <div class="flex items-center gap-6">
             <button 
@@ -161,7 +161,8 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
 
         <template v-if="activeTab === 'attendance'">
           <!-- Col headers -->
-          <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0">
+          <div class="overflow-x-auto">
+          <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0 min-w-[480px]">
             <div class="col-span-4">Siswa</div>
             <div class="col-span-3">Kelas / Jurusan</div>
             <div class="col-span-2">Waktu</div>
@@ -225,11 +226,12 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
               <p class="text-xs font-black uppercase mt-3 tracking-widest">Belum ada absensi</p>
             </div>
           </div>
+          </div>
         </template>
-
         <template v-else-if="activeTab === 'failures'">
           <!-- Col headers for failures -->
-          <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0">
+          <div class="overflow-x-auto">
+          <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0 min-w-[480px]">
             <div class="col-span-2">Foto</div>
             <div class="col-span-3">Identitas / Token</div>
             <div class="col-span-4">Pesan / Lokasi</div>
@@ -282,11 +284,12 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
               <p class="text-xs font-black uppercase mt-3 tracking-widest text-emerald-500">Aman · Tidak ada kegagalan wajah</p>
             </div>
           </div>
+          </div>
         </template>
       </div>
 
       <!-- RIGHT SIDEBAR -->
-      <div class="col-span-12 lg:col-span-4 flex flex-col gap-4 min-h-0">
+      <div class="col-span-12 lg:col-span-4 flex flex-col gap-4">
 
         <!-- Quick Nav -->
         <div class="bg-base-100 rounded-3xl p-5 border border-base-200/60 shadow-sm shrink-0">

@@ -469,7 +469,7 @@ const showDeviceStats = (device) => {
 
     <!-- Frosted Glass CRUD Modal -->
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm transition-opacity duration-300">
-      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-xl shadow-2xl relative animate-scale-in">
+      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-xl shadow-2xl relative animate-scale-in max-h-[90vh] overflow-y-auto">
         <!-- Close Button -->
         <button @click="showModal = false" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
           <Icon name="mingcute:close-line" size="20" />

@@ -346,8 +346,8 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
       <Transition name="modal">
         <div v-if="showModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="showModal = false; selectedFiles = []">
           <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md z-10">
-            <div class="p-6 border-b border-base-200/40 flex items-center justify-between">
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md z-10 max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-base-200/40 flex items-center justify-between shrink-0">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500">
                   <Icon name="mingcute:file-new-fill" size="20" />
@@ -358,12 +358,12 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
                 <Icon name="mingcute:close-line" size="20" />
               </button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-xs font-black uppercase tracking-widest text-base-content/40">Jenis Izin</span></label>
                 <select v-model="form.type" class="select select-bordered w-full rounded-2xl font-bold">
-                  <option value="IZIN">ðŸ“„ Izin</option>
-                  <option value="SAKIT">ðŸ¤’ Sakit</option>
+                  <option value="IZIN">📄 Izin</option>
+                  <option value="SAKIT">🤒 Sakit</option>
                 </select>
               </div>
               <div class="form-control">
@@ -383,7 +383,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-xs font-black uppercase tracking-widest text-base-content/40">Bukti (opsional, maks 5)</span></label>
                 <input type="file" multiple accept="image/*,.pdf" @change="onFilesChange" class="file-input file-input-bordered w-full rounded-2xl" />
-                <p class="text-[10px] text-base-content/30 mt-1 font-bold uppercase tracking-wider">JPG, PNG, PDF Â· Maks 5MB/file</p>
+                <p class="text-[10px] text-base-content/30 mt-1 font-bold uppercase tracking-wider">JPG, PNG, PDF · Maks 5MB/file</p>
               </div>
               <div v-if="selectedFiles.length" class="flex gap-2 flex-wrap">
                 <div v-for="(file, idx) in selectedFiles" :key="idx" class="relative">
@@ -391,11 +391,11 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
                     <img v-if="file.type.startsWith('image/')" :src="URL.createObjectURL(file)" class="w-full h-full object-cover" />
                     <Icon v-else name="mingcute:file-fill" size="24" class="text-base-content/30" />
                   </div>
-                  <button @click="removeFile(idx)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs font-black">âœ•</button>
+                  <button @click="removeFile(idx)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs font-black">✖</button>
                 </div>
               </div>
             </div>
-            <div class="p-6 pt-0 flex gap-3">
+            <div class="p-6 pt-0 flex gap-3 shrink-0">
               <button @click="showModal = false; selectedFiles = []" class="btn btn-ghost flex-1 rounded-2xl font-black">Batal</button>
               <button @click="submitLeave" :disabled="saving || !form.reason || !form.startDate || !form.endDate"
                 class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 flex-1 rounded-2xl font-black shadow-lg shadow-orange-500/20">
@@ -413,8 +413,8 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
       <Transition name="modal">
         <div v-if="showReviewModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="showReviewModal = false">
           <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-sm z-10">
-            <div class="p-6 text-center">
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-sm z-10 max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-6 text-center overflow-y-auto flex-1 custom-scrollbar">
               <div :class="['w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4', reviewForm.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600']">
                 <Icon :name="reviewForm.status === 'APPROVED' ? 'mingcute:check-circle-fill' : 'mingcute:close-circle-fill'" size="32" />
               </div>
@@ -425,7 +425,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
                 <textarea v-model="reviewForm.reviewNote" placeholder="Tambahkan catatan untuk siswa..." class="textarea textarea-bordered w-full rounded-2xl font-medium" rows="2"></textarea>
               </div>
             </div>
-            <div class="p-6 pt-0 flex gap-3">
+            <div class="p-6 pt-0 flex gap-3 shrink-0">
               <button @click="showReviewModal = false" class="btn btn-ghost flex-1 rounded-2xl font-black">Batal</button>
               <button @click="submitReview" :disabled="reviewing"
                 :class="['btn flex-1 rounded-2xl font-black text-white border-0 shadow-lg', reviewForm.status === 'APPROVED' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' : 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20']">

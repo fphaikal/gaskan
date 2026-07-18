@@ -279,7 +279,7 @@ const roleColor = (role) => {
 
     <!-- Modal Form -->
     <dialog :class="['modal modal-bottom sm:modal-middle', showModal ? 'modal-open' : '']">
-      <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 md:p-8 max-w-2xl">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 md:p-8 max-w-2xl max-h-[85vh] overflow-y-auto">
         <h3 class="text-xl md:text-2xl font-black text-base-content mb-6">
           {{ editMode ? 'Edit Anggota Tim' : 'Tambah Anggota Tim' }}
         </h3>

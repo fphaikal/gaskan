@@ -863,7 +863,7 @@ useSeoMeta({
 
     <!-- Add Student Modal -->
     <dialog :class="['modal sm:modal-middle', showAddModal ? 'modal-open' : '']">
-      <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-2xl max-h-[85vh] overflow-y-auto">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-2xl max-h-[80vh] sm:max-h-[85vh] overflow-y-auto">
         <h3 class="text-2xl font-black text-base-content mb-6">{{ isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru' }}</h3>
 
         <div class="space-y-6">
@@ -1070,7 +1070,7 @@ useSeoMeta({
 
     <!-- Register to Device Modal -->
     <dialog :class="['modal sm:modal-middle', showRegisterDeviceModal ? 'modal-open' : '']">
-      <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-md overflow-visible">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-[2rem] p-6 sm:p-8 max-w-md max-h-[80vh] sm:max-h-[85vh] overflow-y-auto">
         
         <!-- Case 1: Currently Syncing (Progress Bar & Logs) -->
         <div v-if="registeringState && isBulkRegister" class="space-y-6">
