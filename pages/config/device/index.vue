@@ -461,7 +461,7 @@ const showDeviceStats = (device) => {
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold text-base-content/80">Batas Jam Auto-Flush On-Site <span class="text-error">*</span></span></label>
-          <select v-slot="opt" v-model.number="onsiteLimitHour" class="select select-bordered w-full rounded-2xl font-bold text-base h-12 focus:outline-none">
+          <select v-model.number="onsiteLimitHour" class="select select-bordered w-full rounded-2xl font-bold text-base h-12 focus:outline-none">
             <option v-for="h in 24" :key="h-1" :value="h-1">
               Jam {{ String(h-1).padStart(2, '0') }}:00 WIB
             </option>
