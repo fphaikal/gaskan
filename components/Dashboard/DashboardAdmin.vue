@@ -160,130 +160,136 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
         </div>
 
         <template v-if="activeTab === 'attendance'">
-          <!-- Col headers -->
-          <div class="overflow-x-auto">
-          <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0 min-w-[480px]">
-            <div class="col-span-4">Siswa</div>
-            <div class="col-span-3">Kelas / Jurusan</div>
-            <div class="col-span-2">Waktu</div>
-            <div class="col-span-2">Metode</div>
-            <div class="col-span-1 text-right">Status</div>
-          </div>
-
-          <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-200/20">
-            <div v-for="a in count?.recentAttendances || []" :key="a.id"
-                 @click="openDetail(a)"
-                 class="grid grid-cols-12 items-center px-6 py-3 hover:bg-orange-500/5 transition-colors group cursor-pointer">
-
-              <!-- Avatar + Name -->
-              <div class="col-span-4 flex items-center gap-3 min-w-0">
-                <div :class="['w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 group-hover:scale-110 transition-transform', avatarColor(a.studentName)]">
-                  {{ a.studentName?.charAt(0) }}
-                </div>
-                <span class="font-semibold text-sm text-base-content truncate group-hover:text-orange-500 transition-colors">{{ a.studentName }}</span>
+          <div class="overflow-x-auto w-full flex-1 flex flex-col min-h-0 custom-scrollbar">
+            <div class="min-w-[680px] flex-1 flex flex-col min-h-0">
+              <!-- Col headers -->
+              <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0">
+                <div class="col-span-4">Siswa</div>
+                <div class="col-span-3">Kelas / Jurusan</div>
+                <div class="col-span-2">Waktu</div>
+                <div class="col-span-2">Metode</div>
+                <div class="col-span-1 text-right">Status</div>
               </div>
 
-              <!-- Class/Major -->
-              <div class="col-span-3 min-w-0">
-                <p class="text-xs font-bold text-base-content/70 truncate">{{ a.className || '—' }}</p>
-                <p class="text-[9px] font-black text-base-content/25 uppercase tracking-wider truncate">{{ a.majorName || 'Belum ada kelas' }}</p>
-              </div>
+              <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-200/20">
+                <div v-for="a in count?.recentAttendances || []" :key="a.id"
+                     @click="openDetail(a)"
+                     class="grid grid-cols-12 items-center px-6 py-3 hover:bg-orange-500/5 transition-colors group cursor-pointer">
 
-              <!-- Time -->
-              <div class="col-span-2 flex flex-col justify-center min-w-0">
-                <div class="flex items-center gap-1">
-                  <span class="text-[8px] font-black uppercase text-emerald-500/80">IN</span>
-                  <span class="text-xs font-bold text-base-content/60">{{ formatTime(a.time) }}</span>
-                </div>
-                <div class="flex items-center gap-1" v-if="a.lastOutTime">
-                  <span class="text-[8px] font-black uppercase text-rose-500/80">OUT</span>
-                  <span class="text-xs font-bold text-base-content/60">{{ formatTime(a.lastOutTime) }}</span>
-                </div>
-                <div class="flex items-center gap-1" v-else>
-                  <span class="text-[8px] font-black uppercase text-base-content/20">OUT</span>
-                  <span class="text-xs font-bold text-base-content/30">-</span>
-                </div>
-              </div>
+                  <!-- Avatar + Name -->
+                  <div class="col-span-4 flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 group-hover:scale-110 transition-transform flex items-center justify-center shadow-inner">
+                      <img v-if="a.photoUrl" :src="a.photoUrl" :alt="a.studentName" class="w-full h-full object-cover" />
+                      <div v-else :class="['w-full h-full flex items-center justify-center text-xs font-black', avatarColor(a.studentName)]">
+                        {{ a.studentName?.charAt(0) }}
+                      </div>
+                    </div>
+                    <span class="font-semibold text-sm text-base-content truncate group-hover:text-orange-500 transition-colors">{{ a.studentName }}</span>
+                  </div>
 
-              <!-- Method -->
-              <div class="col-span-2">
-                <div class="flex items-center gap-1.5">
-                  <Icon :name="methodLabel(a.method).icon" size="13" :class="methodLabel(a.method).color" />
-                  <span :class="['text-[9px] font-black uppercase tracking-tight', methodLabel(a.method).color]">{{ methodLabel(a.method).label }}</span>
-                </div>
-              </div>
+                  <!-- Class/Major -->
+                  <div class="col-span-3 min-w-0">
+                    <p class="text-xs font-bold text-base-content/70 truncate">{{ a.className || '—' }}</p>
+                    <p class="text-[9px] font-black text-base-content/25 uppercase tracking-wider truncate">{{ a.majorName || 'Belum ada kelas' }}</p>
+                  </div>
 
-              <!-- Status -->
-              <div class="col-span-1 flex justify-end">
-                <div :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wide whitespace-nowrap', getStatus(a.status).badge]">
-                  {{ a.status === 'TERLAMBAT' ? 'Lambat' : a.status }}
+                  <!-- Time -->
+                  <div class="col-span-2 flex flex-col justify-center min-w-0">
+                    <div class="flex items-center gap-1">
+                      <span class="text-[8px] font-black uppercase text-emerald-500/80">IN</span>
+                      <span class="text-xs font-bold text-base-content/60">{{ formatTime(a.time) }}</span>
+                    </div>
+                    <div class="flex items-center gap-1" v-if="a.lastOutTime">
+                      <span class="text-[8px] font-black uppercase text-rose-500/80">OUT</span>
+                      <span class="text-xs font-bold text-base-content/60">{{ formatTime(a.lastOutTime) }}</span>
+                    </div>
+                    <div class="flex items-center gap-1" v-else>
+                      <span class="text-[8px] font-black uppercase text-base-content/20">OUT</span>
+                      <span class="text-xs font-bold text-base-content/30">-</span>
+                    </div>
+                  </div>
+
+                  <!-- Method -->
+                  <div class="col-span-2">
+                    <div class="flex items-center gap-1.5">
+                      <Icon :name="methodLabel(a.method).icon" size="13" :class="methodLabel(a.method).color" />
+                      <span :class="['text-[9px] font-black uppercase tracking-tight', methodLabel(a.method).color]">{{ methodLabel(a.method).label }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Status -->
+                  <div class="col-span-1 flex justify-end">
+                    <div :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wide whitespace-nowrap', getStatus(a.status).badge]">
+                      {{ a.status === 'TERLAMBAT' ? 'Lambat' : a.status }}
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="!count?.recentAttendances?.length" class="flex flex-col items-center justify-center py-20 opacity-10">
+                  <Icon name="mingcute:time-line" size="56" />
+                  <p class="text-xs font-black uppercase mt-3 tracking-widest">Belum ada absensi</p>
                 </div>
               </div>
             </div>
-
-            <div v-if="!count?.recentAttendances?.length" class="flex flex-col items-center justify-center py-20 opacity-10">
-              <Icon name="mingcute:time-line" size="56" />
-              <p class="text-xs font-black uppercase mt-3 tracking-widest">Belum ada absensi</p>
-            </div>
-          </div>
           </div>
         </template>
         <template v-else-if="activeTab === 'failures'">
-          <!-- Col headers for failures -->
-          <div class="overflow-x-auto">
-          <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0 min-w-[480px]">
-            <div class="col-span-2">Foto</div>
-            <div class="col-span-3">Identitas / Token</div>
-            <div class="col-span-4">Pesan / Lokasi</div>
-            <div class="col-span-3 text-right">Waktu</div>
-          </div>
+          <div class="overflow-x-auto w-full flex-1 flex flex-col min-h-0 custom-scrollbar">
+            <div class="min-w-[680px] flex-1 flex flex-col min-h-0">
+              <!-- Col headers for failures -->
+              <div class="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-base-content/25 px-6 py-2.5 border-b border-base-200/20 shrink-0">
+                <div class="col-span-2">Foto</div>
+                <div class="col-span-3">Identitas / Token</div>
+                <div class="col-span-4">Pesan / Lokasi</div>
+                <div class="col-span-3 text-right">Waktu</div>
+              </div>
 
-          <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-200/20">
-            <div v-for="f in count?.recentFaceFailures || []" :key="f.id"
-                 class="grid grid-cols-12 items-center px-6 py-3 hover:bg-rose-500/5 transition-colors group cursor-default">
-              
-              <!-- Captured Photo Thumbnail -->
-              <div class="col-span-2 flex items-center">
-                <div class="w-10 h-10 rounded-xl overflow-hidden bg-base-200 border border-base-300 shadow-inner relative group-hover:scale-105 transition-transform duration-300">
-                  <img v-if="f.image" 
-                       :src="f.image" 
-                       alt="Failed capture" 
-                       class="w-full h-full object-cover cursor-zoom-in" 
-                       @click="openImagePreview(f.image)" />
-                  <div v-else class="w-full h-full flex items-center justify-center bg-rose-500/10 text-rose-500">
-                    <Icon name="mingcute:user-close-line" size="18" />
+              <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-200/20">
+                <div v-for="f in count?.recentFaceFailures || []" :key="f.id"
+                     class="grid grid-cols-12 items-center px-6 py-3 hover:bg-rose-500/5 transition-colors group cursor-default">
+                  
+                  <!-- Captured Photo Thumbnail -->
+                  <div class="col-span-2 flex items-center">
+                    <div class="w-10 h-10 rounded-xl overflow-hidden bg-base-200 border border-base-300 shadow-inner relative group-hover:scale-105 transition-transform duration-300">
+                      <img v-if="f.image" 
+                           :src="f.image" 
+                           alt="Failed capture" 
+                           class="w-full h-full object-cover cursor-zoom-in" 
+                           @click="openImagePreview(f.image)" />
+                      <div v-else class="w-full h-full flex items-center justify-center bg-rose-500/10 text-rose-500">
+                        <Icon name="mingcute:user-close-line" size="18" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Identity / Token -->
+                  <div class="col-span-3 min-w-0 pr-2 text-left">
+                    <p class="text-sm font-black text-rose-500 truncate" :title="f.identifier">{{ f.identifier }}</p>
+                    <p class="text-[9px] font-black text-base-content/20 uppercase tracking-wider truncate">Token / NISN</p>
+                  </div>
+
+                  <!-- Message / Gate -->
+                  <div class="col-span-4 min-w-0 pr-2 text-left">
+                    <p class="text-xs font-semibold text-base-content/85 truncate" :title="f.message">{{ f.message }}</p>
+                    <p class="text-[9px] font-bold text-orange-500/80 truncate mt-0.5" v-if="f.gate">
+                      <Icon name="mingcute:location-fill" size="10" class="mr-0.5 inline shrink-0" />
+                      {{ f.gate }}
+                    </p>
+                  </div>
+
+                  <!-- Waktu -->
+                  <div class="col-span-3 text-right">
+                    <p class="text-xs font-black text-base-content/60">{{ formatTime(f.timestamp) }}</p>
+                    <p class="text-[8px] font-bold text-base-content/30 mt-0.5">{{ format(parseISO(f.timestamp), 'dd MMM yyyy') }}</p>
                   </div>
                 </div>
-              </div>
 
-              <!-- Identity / Token -->
-              <div class="col-span-3 min-w-0 pr-2 text-left">
-                <p class="text-sm font-black text-rose-500 truncate" :title="f.identifier">{{ f.identifier }}</p>
-                <p class="text-[9px] font-black text-base-content/20 uppercase tracking-wider truncate">Token / NISN</p>
+                <div v-if="!count?.recentFaceFailures?.length" class="flex flex-col items-center justify-center py-20 opacity-10">
+                  <Icon name="mingcute:shield-check-line" size="56" class="text-emerald-500" />
+                  <p class="text-xs font-black uppercase mt-3 tracking-widest text-emerald-500">Aman · Tidak ada kegagalan wajah</p>
+                </div>
               </div>
-
-              <!-- Message / Gate -->
-              <div class="col-span-4 min-w-0 pr-2 text-left">
-                <p class="text-xs font-semibold text-base-content/85 truncate" :title="f.message">{{ f.message }}</p>
-                <p class="text-[9px] font-bold text-orange-500/80 truncate mt-0.5" v-if="f.gate">
-                  <Icon name="mingcute:location-fill" size="10" class="mr-0.5 inline shrink-0" />
-                  {{ f.gate }}
-                </p>
-              </div>
-
-              <!-- Waktu -->
-              <div class="col-span-3 text-right">
-                <p class="text-xs font-black text-base-content/60">{{ formatTime(f.timestamp) }}</p>
-                <p class="text-[8px] font-bold text-base-content/30 mt-0.5">{{ format(parseISO(f.timestamp), 'dd MMM yyyy') }}</p>
-              </div>
-
             </div>
-
-            <div v-if="!count?.recentFaceFailures?.length" class="flex flex-col items-center justify-center py-20 opacity-10">
-              <Icon name="mingcute:shield-check-line" size="56" class="text-emerald-500" />
-              <p class="text-xs font-black uppercase mt-3 tracking-widest text-emerald-500">Aman · Tidak ada kegagalan wajah</p>
-            </div>
-          </div>
           </div>
         </template>
       </div>
