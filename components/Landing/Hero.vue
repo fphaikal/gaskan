@@ -39,21 +39,33 @@ const formatTime = (ts) => {
   return `${dateStr} · ${timeStr}`
 }
 
-const getStatusLabel = (s) => {
+const getStatusLabel = (s, timestamp) => {
+  if (timestamp) {
+    const hour = new Date(timestamp).getHours()
+    if (hour >= 13) return 'Pulang'
+  }
   if (s === 'TERLAMBAT') return 'Terlambat'
   if (s === 'SAKIT') return 'Sakit'
   if (s === 'IZIN') return 'Izin'
   return 'Hadir'
 }
 
-const getStatusIconColor = (s) => {
+const getStatusIconColor = (s, timestamp) => {
+  if (timestamp) {
+    const hour = new Date(timestamp).getHours()
+    if (hour >= 13) return 'text-blue-500 bg-blue-500/15 border-blue-500/30'
+  }
   if (s === 'TERLAMBAT') return 'text-amber-500 bg-amber-500/15 border-amber-500/30'
   if (s === 'SAKIT') return 'text-orange-400 bg-orange-400/15 border-orange-400/30'
   if (s === 'IZIN') return 'text-sky-500 bg-sky-500/15 border-sky-500/30'
   return 'text-green-500 bg-green-500/15 border-green-500/30'
 }
 
-const getStatusIcon = (s) => {
+const getStatusIcon = (s, timestamp) => {
+  if (timestamp) {
+    const hour = new Date(timestamp).getHours()
+    if (hour >= 13) return 'mingcute:exit-line'
+  }
   if (s === 'TERLAMBAT') return 'mingcute:time-fill'
   if (s === 'SAKIT') return 'mingcute:heart-fill'
   if (s === 'IZIN') return 'mingcute:document-fill'
@@ -164,13 +176,13 @@ onUnmounted(() => {
               :key="activeIndex"
               class="backdrop-blur-md bg-base-100/70 border border-primary/30 rounded-2xl px-6 py-4 flex items-center gap-4 shadow-2xl w-80 max-w-full"
             >
-              <div :class="['w-11 h-11 rounded-full border flex items-center justify-center shrink-0', getStatusIconColor(recentAttendances[activeIndex]?.status)]">
-                <Icon :name="getStatusIcon(recentAttendances[activeIndex]?.status)" class="text-2xl" />
+              <div :class="['w-11 h-11 rounded-full border flex items-center justify-center shrink-0', getStatusIconColor(recentAttendances[activeIndex]?.status, recentAttendances[activeIndex]?.timestamp)]">
+                <Icon :name="getStatusIcon(recentAttendances[activeIndex]?.status, recentAttendances[activeIndex]?.timestamp)" class="text-2xl" />
               </div>
               <div class="flex-1 min-w-0 text-left">
                 <p class="font-bold text-sm truncate">{{ recentAttendances[activeIndex]?.name }}</p>
                 <p class="text-xs opacity-50 mt-0.5">
-                  {{ getStatusLabel(recentAttendances[activeIndex]?.status) }} · {{ formatTime(recentAttendances[activeIndex]?.timestamp) }} WIB
+                  {{ getStatusLabel(recentAttendances[activeIndex]?.status, recentAttendances[activeIndex]?.timestamp) }} · {{ formatTime(recentAttendances[activeIndex]?.timestamp) }} WIB
                 </p>
               </div>
               <div class="text-xs text-primary font-semibold opacity-80 shrink-0">
