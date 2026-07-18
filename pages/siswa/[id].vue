@@ -1,6 +1,8 @@
 <script setup>
 import { useAuthStore } from '~/store/useAuthStore';
 import { storeToRefs } from 'pinia';
+import { Cropper } from 'vue-advanced-cropper';
+import 'vue-advanced-cropper/dist/style.css';
 
 const route = useRoute();
 const nis = route.params.id;
@@ -101,53 +103,123 @@ const runDetection = async (imageSrc, resolve) => {
   }
 };
 
-const onFaceFileChange = async (e) => {
+const showFaceUploadOptions = ref(false);
+const showCameraModal = ref(false);
+const videoStream = ref(null);
+const videoRef = ref(null);
+const showFaceCropper = ref(false);
+const rawFaceImage = ref(null);
+const faceCropperRef = ref(null);
+
+const startCamera = async () => {
+  showFaceUploadOptions.value = false;
+  showCameraModal.value = true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: 640, height: 480 }
+    });
+    videoStream.value = stream;
+    if (videoRef.value) {
+      videoRef.value.srcObject = stream;
+    }
+  } catch (err) {
+    console.error(err);
+    $toast.error('Tidak dapat mengakses kamera!');
+    closeCamera();
+  }
+};
+
+const closeCamera = () => {
+  if (videoStream.value) {
+    videoStream.value.getTracks().forEach(track => track.stop());
+    videoStream.value = null;
+  }
+  showCameraModal.value = false;
+};
+
+const capturePhoto = () => {
+  if (videoRef.value) {
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.value.videoWidth || 640;
+    canvas.height = videoRef.value.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height);
+    
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    rawFaceImage.value = dataUrl;
+    closeCamera();
+    showFaceCropper.value = true;
+  }
+};
+
+const onFaceFileSelect = (e) => {
   const files = e.target.files;
   if (files && files[0]) {
     const file = files[0];
     if (file.size > 5 * 1024 * 1024) {
       $toast.error('Ukuran file foto maksimal adalah 5MB!');
-      if (faceFileInput.value) faceFileInput.value.value = '';
+      return;
+    }
+    showFaceUploadOptions.value = false;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      rawFaceImage.value = event.target.result;
+      showFaceCropper.value = true;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const uploadFacePhoto = async () => {
+  const { canvas } = faceCropperRef.value.getResult();
+  if (!canvas) return;
+
+  isUploadingFace.value = true;
+  try {
+    const fileDataUrl = canvas.toDataURL('image/jpeg');
+    
+    const faceDetected = await detectFaceInBrowser(fileDataUrl);
+    if (!faceDetected) {
+      $toast.error('Wajah tidak terdeteksi pada area potongan! Pastikan wajah masuk ke dalam panduan lingkaran.');
+      isUploadingFace.value = false;
       return;
     }
 
-    isUploadingFace.value = true;
-    try {
-      const reader = new FileReader();
-      const fileDataUrl = await new Promise((resolve, reject) => {
-        reader.onload = (event) => resolve(event.target.result);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
-
-      const faceDetected = await detectFaceInBrowser(fileDataUrl);
-      if (!faceDetected) {
-        $toast.error('Wajah tidak terdeteksi pada foto! Harap pastikan foto menampilkan wajah Anda dengan jelas.');
-        isUploadingFace.value = false;
-        if (faceFileInput.value) faceFileInput.value.value = '';
-        return;
-      }
-
+    canvas.toBlob(async (blob) => {
       const formData = new FormData();
-      formData.append('photo', file);
+      formData.append('photo', blob, 'face.jpg');
 
-      const res = await $fetch(`/api/students/${user.value.id}/photo`, {
-        method: 'POST',
-        body: formData,
-      });
+      try {
+        const res = await $fetch(`/api/students/${user.value.id}/photo`, {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (res.success) {
-        const updated = await $fetch(`/api/user?role=siswa&user=${nis}`);
-        user.value = updated;
-        $toast.success('Foto wajah absensi berhasil diperbarui');
+        if (res.success) {
+          showFaceCropper.value = false;
+          rawFaceImage.value = null;
+          const updated = await $fetch(`/api/user?role=siswa&user=${nis}`);
+          user.value = updated;
+          $toast.success('Foto wajah absensi berhasil diperbarui');
+        }
+      } catch (error) {
+        $toast.error(error.data?.statusMessage || 'Gagal mengunggah foto wajah');
+      } finally {
+        isUploadingFace.value = false;
       }
-    } catch (error) {
-      $toast.error(error.data?.statusMessage || 'Gagal mengunggah foto wajah');
-    } finally {
-      isUploadingFace.value = false;
-      if (faceFileInput.value) faceFileInput.value.value = '';
-    }
+    }, 'image/jpeg');
+  } catch (err) {
+    console.error(err);
+    $toast.error('Gagal memproses gambar');
+    isUploadingFace.value = false;
   }
+};
+
+const cancelFaceCrop = () => {
+  showFaceCropper.value = false;
+  rawFaceImage.value = null;
 };
 
 const gender = (getGender) => {
@@ -309,7 +381,7 @@ useSeoMeta({
             <!-- Upload action (Only Admin or Guru can upload/change it from this view page) -->
             <div v-if="currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'DEVELOPER' || currentUser.role === 'GURU')">
               <button 
-                @click="$refs.faceFileInput.click()" 
+                @click="showFaceUploadOptions = true" 
                 class="btn btn-primary btn-sm w-full rounded-xl font-bold h-10 gap-2"
                 :disabled="isUploadingFace"
               >
@@ -317,13 +389,6 @@ useSeoMeta({
                 <Icon v-else name="mingcute:upload-2-fill" size="16" />
                 {{ user.faceUrl ? 'Ganti Foto Wajah' : 'Unggah Foto Wajah' }}
               </button>
-              <input 
-                ref="faceFileInput"
-                type="file" 
-                class="hidden" 
-                accept="image/*"
-                @change="onFaceFileChange"
-              />
             </div>
           </div>
         </div>
@@ -422,6 +487,128 @@ useSeoMeta({
     <div v-else class="flex items-center justify-center min-h-[50vh]">
       <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
+    <!-- Modal: Opsi Upload Wajah -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showFaceUploadOptions }]">
+      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-6">
+        <h3 class="font-bold text-lg text-base-content mb-6 text-center sm:text-left">Pilih Metode Upload Wajah</h3>
+        <div class="flex flex-col gap-3">
+          <!-- Ambil Selfie -->
+          <button @click="startCamera" class="btn btn-ghost bg-base-200/50 hover:bg-primary/10 hover:text-primary rounded-2xl flex items-center justify-between px-6 h-16 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Icon name="mingcute:camera-fill" size="22" />
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-sm">Ambil Foto (Selfie)</p>
+                 <p class="text-xs text-base-content/50">Gunakan kamera depan HP / laptop</p>
+              </div>
+            </div>
+            <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
+          </button>
+
+          <!-- Dari Galeri -->
+          <button @click="$refs.faceFileInputHelper.click()" class="btn btn-ghost bg-base-200/50 hover:bg-success/10 hover:text-success rounded-2xl flex items-center justify-between px-6 h-16 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success">
+                <Icon name="mingcute:pic-fill" size="22" />
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-sm">Pilih dari Galeri</p>
+                <p class="text-xs text-base-content/50">Unggah berkas gambar yang sudah ada</p>
+              </div>
+            </div>
+            <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
+          </button>
+          <input ref="faceFileInputHelper" type="file" class="hidden" accept="image/*" @change="onFaceFileSelect" />
+        </div>
+        <div class="modal-action sm:mt-6 mt-4">
+          <button @click="showFaceUploadOptions = false" class="btn btn-ghost w-full rounded-2xl">Batal</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="showFaceUploadOptions = false"><button>close</button></form>
+    </dialog>
+
+    <!-- Modal: Kamera Selfie -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showCameraModal }]">
+      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-0 overflow-hidden max-w-lg">
+        <div class="p-6 border-b border-base-200 flex items-center justify-between bg-base-50/50">
+          <h3 class="font-bold text-lg text-base-content">Ambil Foto Wajah</h3>
+          <button @click="closeCamera" class="btn btn-ghost btn-circle btn-sm">
+            <Icon name="mingcute:close-line" size="20" />
+          </button>
+        </div>
+        
+        <div class="relative bg-black aspect-[3/4] max-h-[60vh] w-full flex items-center justify-center overflow-hidden">
+          <video ref="videoRef" autoplay playsinline muted class="h-full w-full object-cover scale-x-[-1]"></video>
+          
+          <!-- Oval Face Placeholder Guidelines -->
+          <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div class="w-48 h-64 border-4 border-dashed border-primary/70 rounded-[50%] bg-transparent flex items-center justify-center">
+              <div class="absolute text-[10px] font-bold text-primary bg-base-100/90 px-3 py-1 rounded-full border border-primary/30 -top-3 shadow-md">
+                Posisikan Wajah Di Sini
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-base-50/50 flex gap-3 justify-center">
+          <button @click="closeCamera" class="btn btn-ghost rounded-xl px-6 flex-1">Batal</button>
+          <button @click="capturePhoto" class="btn btn-primary rounded-xl px-8 flex-1 gap-2 shadow-lg shadow-primary/20">
+            <Icon name="mingcute:camera-fill" size="18" />
+            Ambil Foto
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="closeCamera"><button>close</button></form>
+    </dialog>
+
+    <!-- Modal: Crop Foto Wajah -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showFaceCropper }]">
+      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-0 overflow-hidden max-w-lg">
+        <div class="p-6 border-b border-base-200 flex items-center justify-between bg-base-50/50">
+          <div>
+            <h3 class="font-bold text-lg text-base-content">Sesuaikan Foto Wajah</h3>
+            <p class="text-xs text-base-content/50">Sesuaikan agar wajah masuk ke dalam panduan</p>
+          </div>
+          <button @click="cancelFaceCrop" class="btn btn-ghost btn-circle btn-sm">
+            <Icon name="mingcute:close-line" size="20" />
+          </button>
+        </div>
+        
+        <div class="p-6 bg-neutral/5 flex items-center justify-center">
+          <div class="relative w-72 h-96 overflow-hidden rounded-2xl shadow-inner bg-black">
+            <Cropper
+              ref="faceCropperRef"
+              :src="rawFaceImage"
+              :stencil-props="{ aspectRatio: 3/4 }"
+              class="w-full h-full"
+            />
+            
+            <!-- Oval Face Guideline Overlay inside Cropper -->
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div class="w-44 h-60 border-4 border-dashed border-primary/60 rounded-[50%] bg-transparent flex items-center justify-center">
+                <div class="absolute text-[9px] font-bold text-primary bg-base-100/90 px-2 py-0.5 rounded-full border border-primary/30 -top-3">
+                  Area Wajah
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-base-50/50 flex gap-3">
+          <button @click="cancelFaceCrop" class="btn btn-ghost rounded-xl px-6 flex-1">Batal</button>
+          <button 
+            @click="uploadFacePhoto" 
+            class="btn btn-primary rounded-xl px-8 flex-1 shadow-lg shadow-primary/20"
+            :disabled="isUploadingFace"
+          >
+            <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
+            Simpan Foto Wajah
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="cancelFaceCrop"><button>close</button></form>
+    </dialog>
     <!-- ====== Profile Section End -->
   </div>
 </template>
