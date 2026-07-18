@@ -287,8 +287,10 @@ const saveLateSettings = async () => {
   }
 };
 
+const router = useRouter();
+
 const showDeviceStats = (device) => {
-  navigateTo(`/config/device/${device.id}`);
+  router.push(`/config/device/${device.id}`);
 };
 </script>
 
@@ -413,9 +415,9 @@ const showDeviceStats = (device) => {
           <div class="flex items-center justify-between">
             <span class="text-xs text-base-content/40 font-medium">Aksi Perangkat:</span>
             <div class="flex items-center gap-1.5">
-              <button @click="showDeviceStats(d)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-success/20 hover:text-success" title="Statistik & Kapasitas Alat">
+              <NuxtLink :to="`/config/device/${d.id}`" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-success/20 hover:text-success" title="Statistik & Kapasitas Alat">
                 <Icon name="mingcute:chart-bar-fill" size="16" />
-              </button>
+              </NuxtLink>
               <button @click="openEditModal(d)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-primary/20 hover:text-primary">
                 <Icon name="mingcute:pencil-fill" size="16" />
               </button>
