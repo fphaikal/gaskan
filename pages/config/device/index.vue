@@ -434,7 +434,7 @@ const showDeviceStats = (device) => {
     </div>
 
     <!-- Attendance Parameters Configuration Card -->
-    <div class="mt-12 max-w-2xl bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 shadow-md relative overflow-hidden group">
+    <div class="mt-12 max-w-xl bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 shadow-md relative overflow-hidden group">
       <!-- Glow decoration -->
       <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-colors duration-500"></div>
 
@@ -454,14 +454,14 @@ const showDeviceStats = (device) => {
           <input 
             v-model="lateTime" 
             type="time" 
-            class="input input-bordered w-full rounded-2xl font-bold text-base h-12"
+            class="input input-bordered w-full rounded-xl font-bold text-sm h-10 border-base-300"
           />
           <span class="text-[10px] text-base-content/40 mt-1 pl-1">Masuk setelah jam ini otomatis ditandai "TERLAMBAT"</span>
         </div>
 
         <div class="form-control">
           <label class="label"><span class="label-text font-bold text-base-content/80">Batas Jam Auto-Flush On-Site <span class="text-error">*</span></span></label>
-          <select v-model.number="onsiteLimitHour" class="select select-bordered w-full rounded-2xl font-bold text-base h-12 focus:outline-none">
+          <select v-model.number="onsiteLimitHour" class="select select-bordered w-full rounded-xl font-bold text-sm bg-base-100 border-base-300 h-10 focus:outline-none focus:border-primary">
             <option v-for="h in 24" :key="h-1" :value="h-1">
               Jam {{ String(h-1).padStart(2, '0') }}:00 WIB
             </option>
@@ -474,91 +474,93 @@ const showDeviceStats = (device) => {
         <button 
           @click="saveLateSettings" 
           :disabled="savingSettings" 
-          class="btn btn-primary rounded-2xl px-6 h-12 shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          class="btn btn-primary rounded-xl px-5 h-10 shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm font-bold"
         >
           <span v-if="savingSettings" class="loading loading-spinner loading-xs mr-1"></span>
-          <Icon v-else name="mingcute:check-fill" size="18" class="mr-1" />
+          <Icon v-else name="mingcute:check-fill" size="16" class="mr-1" />
           Simpan Pengaturan
         </button>
       </div>
     </div>
 
     <!-- Frosted Glass CRUD Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm transition-opacity duration-300">
-      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-xl shadow-2xl relative animate-scale-in max-h-[90vh] overflow-y-auto">
-        <!-- Close Button -->
-        <button @click="showModal = false" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
-          <Icon name="mingcute:close-line" size="20" />
-        </button>
-
-        <h3 class="text-2xl font-extrabold text-base-content mb-2 flex items-center gap-2">
-          <Icon :name="isEdit ? 'mingcute:pencil-fill' : 'mingcute:plus-fill'" class="text-primary" />
-          {{ isEdit ? 'Edit Perangkat' : 'Daftarkan Perangkat Baru' }}
-        </h3>
-        <p class="text-sm text-base-content/50 mb-6">Atur rincian mesin absensi Anda untuk diletakkan pada gerbang penyeberangan masuk siswa.</p>
-
-        <!-- Form fields -->
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-base-content/80">Nama Perangkat <span class="text-error">*</span></span></label>
-              <input v-model="form.name" type="text" placeholder="Misal: Gerbang Depan" class="input input-bordered w-full rounded-2xl font-medium" />
-            </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-base-content/80">Lokasi / Gate <span class="text-error">*</span></span></label>
-              <input v-model="form.location" type="text" placeholder="Misal: Lobi Depan" class="input input-bordered w-full rounded-2xl font-medium" />
-            </div>
-          </div>
-
-          <div class="form-control">
-            <label class="label"><span class="label-text font-bold text-base-content/80">Base URL Mesin <span class="text-error">*</span></span></label>
-            <input v-model="form.url" type="text" placeholder="http://192.168.1.64" class="input input-bordered w-full rounded-2xl font-mono text-sm" />
-            <span class="text-[10px] text-base-content/40 mt-1 italic pl-1">Gunakan alamat IP lokal mesin yang statis</span>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-base-content/80">Username <span class="text-error">*</span></span></label>
-              <input v-model="form.username" type="text" placeholder="admin" class="input input-bordered w-full rounded-2xl font-medium" />
-            </div>
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-base-content/80">Password <span v-if="!isEdit" class="text-error">*</span></span></label>
-              <input v-model="form.password" type="password" :placeholder="isEdit ? '•••••••• (Biarkan kosong)' : 'Password mesin'" class="input input-bordered w-full rounded-2xl" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
-            <div class="form-control">
-              <label class="label"><span class="label-text font-bold text-base-content/80">Interval Sinkronisasi (Detik) <span class="text-error">*</span></span></label>
-              <input v-model.number="form.poolingInterval" type="number" min="1" class="input input-bordered w-full rounded-2xl font-semibold" />
-            </div>
-            <div class="form-control flex flex-row items-center justify-between border border-base-200 rounded-2xl p-4 mt-8">
-              <div class="flex flex-col">
-                <span class="text-sm font-bold text-base-content">Status Aktif</span>
-                <span class="text-xs text-base-content/50">Aktifkan sinkronisasi wajah dan event</span>
-              </div>
-              <input type="checkbox" class="toggle toggle-primary toggle-sm" v-model="form.isActive" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Action buttons inside modal -->
-        <div class="flex flex-col sm:flex-row gap-3 pt-6">
-          <button @click="testFormConnection" :disabled="saving" class="btn btn-outline btn-primary rounded-2xl px-6 flex-1 h-12">
-            <Icon name="mingcute:radar-line" size="18" class="mr-1" />
-            Test Koneksi
+    <Teleport to="body">
+      <div v-if="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="bg-base-100 border border-base-200/80 rounded-[2rem] p-6 md:p-8 w-full max-w-lg shadow-2xl relative animate-scale-in max-h-[90vh] overflow-y-auto">
+          <!-- Close Button -->
+          <button @click="showModal = false" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
+            <Icon name="mingcute:close-line" size="20" />
           </button>
-          <div class="flex gap-2 flex-1">
-            <button @click="showModal = false" class="btn btn-ghost rounded-2xl px-5 flex-1 h-12">Batal</button>
-            <button @click="handleSave" :disabled="saving" class="btn btn-primary rounded-2xl px-6 flex-1 h-12 shadow-lg shadow-primary/25">
-              <span v-if="saving" class="loading loading-spinner loading-xs mr-1"></span>
-              <Icon v-else name="mingcute:check-fill" size="18" class="mr-1" />
-              Simpan
+
+          <h3 class="text-xl font-extrabold text-base-content mb-1 flex items-center gap-2">
+            <Icon :name="isEdit ? 'mingcute:pencil-fill' : 'mingcute:plus-fill'" class="text-primary" />
+            {{ isEdit ? 'Edit Perangkat' : 'Daftarkan Perangkat Baru' }}
+          </h3>
+          <p class="text-xs text-base-content/50 mb-6">Atur rincian mesin absensi Anda untuk diletakkan pada gerbang penyeberangan masuk siswa.</p>
+
+          <!-- Form fields -->
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-base-content/80">Nama Perangkat <span class="text-error">*</span></span></label>
+                <input v-model="form.name" type="text" placeholder="Misal: Gerbang Depan" class="input input-bordered w-full rounded-xl font-bold text-sm bg-base-100 border-base-300 h-10" />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-base-content/80">Lokasi / Gate <span class="text-error">*</span></span></label>
+                <input v-model="form.location" type="text" placeholder="Misal: Lobi Depan" class="input input-bordered w-full rounded-xl font-bold text-sm bg-base-100 border-base-300 h-10" />
+              </div>
+            </div>
+
+            <div class="form-control">
+              <label class="label"><span class="label-text font-bold text-base-content/80">Base URL Mesin <span class="text-error">*</span></span></label>
+              <input v-model="form.url" type="text" placeholder="http://192.168.1.64" class="input input-bordered w-full rounded-xl font-mono text-sm bg-base-100 border-base-300 h-10" />
+              <span class="text-[10px] text-base-content/40 mt-1 italic pl-1">Gunakan alamat IP lokal mesin yang statis</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-base-content/80">Username <span class="text-error">*</span></span></label>
+                <input v-model="form.username" type="text" placeholder="admin" class="input input-bordered w-full rounded-xl font-bold text-sm bg-base-100 border-base-300 h-10" />
+              </div>
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-base-content/80">Password <span v-if="!isEdit" class="text-error">*</span></span></label>
+                <input v-model="form.password" type="password" :placeholder="isEdit ? '•••••••• (Biarkan kosong)' : 'Password mesin'" class="input input-bordered w-full rounded-xl font-bold text-sm bg-base-100 border-base-300 h-10" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
+              <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-base-content/80">Interval Sinkronisasi (Detik) <span class="text-error">*</span></span></label>
+                <input v-model.number="form.poolingInterval" type="number" min="1" class="input input-bordered w-full rounded-xl font-bold text-sm bg-base-100 border-base-300 h-10" />
+              </div>
+              <div class="form-control flex flex-row items-center justify-between border border-base-200 rounded-xl px-4 py-2 mt-8">
+                <div class="flex flex-col">
+                  <span class="text-sm font-bold text-base-content">Status Aktif</span>
+                  <span class="text-xs text-base-content/50">Aktifkan sinkronisasi wajah dan event</span>
+                </div>
+                <input type="checkbox" class="toggle toggle-primary toggle-sm" v-model="form.isActive" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Action buttons inside modal -->
+          <div class="flex flex-col sm:flex-row gap-3 pt-6">
+            <button @click="testFormConnection" :disabled="saving" class="btn btn-outline btn-primary rounded-xl px-5 flex-1 h-10 font-bold text-sm">
+              <Icon name="mingcute:radar-line" size="18" class="mr-1" />
+              Test Koneksi
             </button>
+            <div class="flex gap-2 flex-1">
+              <button @click="showModal = false" class="btn btn-ghost rounded-xl px-4 flex-1 h-10 font-bold text-sm">Batal</button>
+              <button @click="handleSave" :disabled="saving" class="btn btn-primary rounded-xl px-5 flex-1 h-10 shadow-lg shadow-primary/25 font-bold text-sm">
+                <span v-if="saving" class="loading loading-spinner loading-xs mr-1"></span>
+                <Icon v-else name="mingcute:check-fill" size="18" class="mr-1" />
+                Simpan
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 

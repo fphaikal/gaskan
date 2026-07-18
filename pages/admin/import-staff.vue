@@ -218,7 +218,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           @drop.prevent="onDrop"
           :class="[
             bentoCard, 
-            'lg:col-span-3 order-1 lg:order-2 border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[400px] flex flex-col items-center justify-center',
+            'lg:col-span-3 order-1 lg:order-2 border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[300px] flex flex-col items-center justify-center',
             isDragging ? 'border-violet-600 bg-violet-600/5 scale-[1.01]' : 'border-base-200/60 bg-base-200/20'
           ]"
         >
@@ -227,38 +227,38 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           
           <div v-if="!fatalError" class="absolute -top-24 -right-24 w-64 h-64 bg-violet-600/5 blur-[80px] rounded-full group-hover:bg-violet-600/10 transition-all duration-500"></div>
 
-          <div v-if="fatalError" class="relative z-10 w-full max-w-lg px-6 text-center py-8 animate-in zoom-in-95 duration-300">
-            <div class="w-20 h-20 rounded-[2rem] bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto mb-6 shadow-lg shadow-rose-500/10">
-              <Icon name="mingcute:alert-line" size="40" />
+          <div v-if="fatalError" class="relative z-10 w-full max-w-lg px-6 text-center py-6 animate-in zoom-in-95 duration-300">
+            <div class="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto mb-4 shadow-lg shadow-rose-500/10">
+              <Icon name="mingcute:alert-line" size="28" />
             </div>
-            <h3 class="text-xl font-black text-base-content mb-4 tracking-tight">Format File Tidak Sesuai</h3>
-            <div class="bg-rose-500/5 border border-rose-500/20 rounded-3xl p-6 mb-8 text-sm text-rose-600 font-bold whitespace-pre-line leading-relaxed">
+            <h3 class="text-lg font-bold text-base-content mb-2 tracking-tight">Format File Tidak Sesuai</h3>
+            <div class="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-4 mb-6 text-xs text-rose-600 font-bold whitespace-pre-line leading-relaxed">
               {{ fatalError }}
             </div>
-            <button @click="reset" class="btn bg-violet-600 hover:bg-violet-700 text-white border-0 rounded-2xl px-12 h-14 font-black shadow-lg shadow-violet-600/20 transition-all hover:scale-105 active:scale-95">
+            <button @click="reset" class="btn bg-violet-600 hover:bg-violet-700 text-white border-0 rounded-xl px-8 h-10 font-bold shadow-md shadow-violet-600/20 transition-all hover:scale-105 active:scale-95 text-sm">
               Mulai Lagi
             </button>
           </div>
 
-          <div v-else class="h-full flex flex-col items-center justify-center py-8 md:py-12 relative z-10 text-center w-full">
+          <div v-else class="h-full flex flex-col items-center justify-center py-6 relative z-10 text-center w-full">
             <div 
               :class="[
-                'w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] md:rounded-[2rem] shadow-xl border flex items-center justify-center mb-6 md:mb-8 transition-all duration-500',
+                'w-16 h-16 rounded-2xl shadow-md border flex items-center justify-center mb-4 transition-all duration-500',
                 isDragging ? 'bg-violet-600 text-white scale-110 shadow-violet-600/30' : 'bg-base-100 border-base-200 group-hover:scale-110'
               ]"
             >
-               <Icon v-if="!validating" name="mingcute:upload-2-fill" size="40" :class="isDragging ? 'text-white' : 'text-violet-600'" />
+               <Icon v-if="!validating" name="mingcute:upload-2-fill" size="28" :class="isDragging ? 'text-white' : 'text-violet-600'" />
                <span v-else class="loading loading-spinner loading-md text-violet-600"></span>
             </div>
             <div class="max-w-xs">
-              <h3 class="text-lg md:text-xl font-black mb-2 tracking-tight">
+              <h3 class="text-base font-extrabold mb-1 tracking-tight">
                 {{ isDragging ? 'Lepaskan File Staff' : 'Pilih File Staff' }}
               </h3>
-              <p class="text-xs md:text-sm text-base-content/40 mb-6 md:mb-8 font-medium">
+              <p class="text-xs text-base-content/40 mb-4 font-medium">
                 {{ isDragging ? 'Siap memproses data staff' : 'Pilih template .xlsx Admin/Guru Anda' }}
               </p>
               <input ref="fileInput" type="file" accept=".xlsx,.xls" class="hidden" @change="onFileChange" />
-              <button @click="fileInput.click()" class="btn bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-2xl px-8 md:px-12 h-12 md:h-14 w-full md:w-auto font-black shadow-[0_8px_20px_rgb(124,58,237,0.3)] hover:shadow-[0_10px_25px_rgb(124,58,237,0.4)] transition-all hover:-translate-y-1" :disabled="validating">
+              <button @click="fileInput.click()" class="btn bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-xl px-6 h-10 w-full md:w-auto font-bold text-sm shadow-[0_4px_12px_rgb(124,58,237,0.2)] hover:shadow-[0_6px_16px_rgb(124,58,237,0.3)] transition-all hover:-translate-y-0.5" :disabled="validating">
                 {{ validating ? 'Memvalidasi...' : 'Mulai Sekarang' }}
               </button>
             </div>
@@ -305,8 +305,8 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
             <p v-else class="text-xs text-base-content/50">Cek data sebelum disimpan</p>
           </div>
           <div class="flex flex-col-reverse md:flex-row gap-2">
-             <button @click="reset" class="btn btn-ghost border-base-200 hover:bg-base-200/50 rounded-2xl h-12 px-6 transition-all">Ganti File</button>
-             <button @click="handleImport" class="btn bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-2xl px-8 h-12 shadow-[0_8px_20px_rgb(124,58,237,0.3)] hover:shadow-[0_10px_25px_rgb(124,58,237,0.4)] transition-all hover:-translate-y-1 font-black" :disabled="importing || errors.length > 0">
+             <button @click="reset" class="btn btn-ghost border-base-200 hover:bg-base-200/50 rounded-xl h-10 px-5 transition-all text-sm font-semibold">Ganti File</button>
+             <button @click="handleImport" class="btn bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-xl px-6 h-10 shadow-[0_4px_12px_rgb(124,58,237,0.2)] hover:shadow-[0_6px_16px_rgb(124,58,237,0.3)] transition-all hover:-translate-y-0.5 font-bold text-sm" :disabled="importing || errors.length > 0">
                <span v-if="importing" class="loading loading-spinner loading-xs"></span> 
                {{ importing ? 'Mengimport...' : 'Simpan Data' }}
              </button>
@@ -358,8 +358,8 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
            <h2 class="text-2xl font-black mb-2">Berhasil!</h2>
            <p class="text-sm text-base-content/50 mb-8 text-center">Data staff telah disimpan.</p>
            <div class="flex flex-col md:flex-row gap-3 w-full">
-             <button @click="reset" class="btn btn-ghost border-base-200 hover:bg-base-200/50 rounded-2xl h-12 w-full transition-all">Import Lagi</button>
-             <NuxtLink to="/admin/users" class="btn bg-gradient-to-r from-success to-emerald-500 hover:from-success hover:to-emerald-600 text-white border-0 rounded-2xl h-12 w-full shadow-[0_8px_20px_rgb(34,197,94,0.3)] hover:shadow-[0_10px_25px_rgb(34,197,94,0.4)] transition-all hover:-translate-y-1 font-black">Selesai</NuxtLink>
+             <button @click="reset" class="btn btn-ghost border-base-200 hover:bg-base-200/50 rounded-xl h-10 w-full transition-all text-sm font-semibold">Import Lagi</button>
+             <NuxtLink to="/admin/users" class="btn bg-gradient-to-r from-success to-emerald-500 hover:from-success hover:to-emerald-600 text-white border-0 rounded-xl h-10 w-full shadow-[0_4px_12px_rgb(34,197,94,0.2)] hover:shadow-[0_6px_16px_rgb(34,197,94,0.3)] transition-all hover:-translate-y-0.5 font-bold text-sm flex items-center justify-center">Selesai</NuxtLink>
            </div>
         </div>
       </div>

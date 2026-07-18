@@ -418,7 +418,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           @drop.prevent="onDrop"
           :class="[
             bentoCard,
-            'border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[350px] flex flex-col items-center justify-center',
+            'border-dashed border-2 relative overflow-hidden group transition-all duration-300 min-h-[280px] flex flex-col items-center justify-center',
             isDragging ? 'border-orange-500 bg-orange-500/5 scale-[1.01]' : 'border-base-200/60 bg-base-200/20'
           ]"
         >
@@ -426,14 +426,14 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           <div class="absolute -top-24 -right-24 w-64 h-64 bg-orange-500/5 blur-[80px] rounded-full group-hover:bg-orange-500/10 transition-all duration-500"></div>
 
           <div class="h-full flex flex-col items-center justify-center py-6 text-center w-full relative z-10">
-            <div class="w-20 h-20 rounded-[2rem] bg-orange-500/15 text-orange-500 flex items-center justify-center mb-6 shadow-md border border-orange-500/10">
-              <Icon name="mingcute:pic-line" size="36" />
+            <div class="w-16 h-16 rounded-2xl bg-orange-500/15 text-orange-500 flex items-center justify-center mb-4 shadow-md border border-orange-500/10">
+              <Icon name="mingcute:pic-line" size="28" />
             </div>
-            <h3 class="text-xl font-black text-base-content mb-2">Pilih atau Tarik File Foto</h3>
-            <p class="text-base-content/50 text-sm mb-6 max-w-sm leading-relaxed">
+            <h3 class="text-base font-extrabold text-base-content mb-1">Pilih atau Tarik File Foto</h3>
+            <p class="text-base-content/50 text-xs mb-4 max-w-sm leading-relaxed">
               Seret file foto siswa Anda ke sini atau klik tombol di bawah untuk memilih file.
             </p>
-            <button @click="fileInput.click()" class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-2xl px-8 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 active:scale-95">
+            <button @click="fileInput.click()" class="btn bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl px-6 h-10 shadow-md font-bold text-sm transition-all hover:-translate-y-0.5">
               Pilih File Foto
             </button>
             <input 
@@ -512,8 +512,8 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           </div>
 
           <div v-if="!uploading" class="mt-8 border-t border-base-200/60 pt-6 flex justify-end gap-3">
-            <button @click="clearSelection" class="btn btn-ghost rounded-2xl px-6">Batal / Reset</button>
-            <button @click="triggerUpload" class="btn bg-orange-500 hover:bg-orange-600 border-0 text-white rounded-2xl px-8 shadow-lg shadow-orange-500/20 transition-all hover:scale-105 active:scale-95">
+            <button @click="clearSelection" class="btn btn-ghost rounded-xl px-5 h-10 text-sm font-semibold">Batal / Reset</button>
+            <button @click="triggerUpload" class="btn bg-orange-500 hover:bg-orange-600 border-0 text-white rounded-xl px-6 h-10 shadow-md font-bold text-sm transition-all hover:-translate-y-0.5 flex items-center gap-1.5">
               <Icon name="mingcute:upload-cloud-line" />
               Upload & Sinkronkan
             </button>

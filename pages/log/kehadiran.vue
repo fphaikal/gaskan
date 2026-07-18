@@ -179,7 +179,7 @@ useSeoMeta({
               Export Data
               <Icon name="mingcute:down-fill" size="16" class="ml-1 opacity-70"/>
             </div>
-            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-xl bg-base-100 rounded-2xl w-52 border border-base-200/80 mt-2 font-medium">
+            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-2xl bg-base-100 rounded-2xl w-52 border border-base-200/80 mt-2 font-semibold !bg-opacity-100" style="background-color: oklch(var(--b1)) !important; opacity: 1 !important;">
               <li><a href="/api/log/kehadiran/export?type=json" target="_blank" class="hover:text-primary"><Icon name="mingcute:braces-fill" size="18" class="opacity-70"/> JSON Format</a></li>
               <li><a href="/api/log/kehadiran/export?type=txt" target="_blank" class="hover:text-primary"><Icon name="mingcute:document-text-fill" size="18" class="opacity-70"/> Text Format</a></li>
               <li><a href="/api/log/kehadiran/export?type=xlsx" target="_blank" class="hover:text-primary"><Icon name="mingcute:table-2-fill" size="18" class="opacity-70"/> Excel Format</a></li>
