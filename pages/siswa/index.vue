@@ -1,4 +1,7 @@
 <script setup>
+import { Cropper } from 'vue-advanced-cropper';
+import 'vue-advanced-cropper/dist/style.css';
+
 const route = useRoute();
 const users = ref([]);
 const selectedClass = ref('');
@@ -313,6 +316,259 @@ const handleRegisterToDevice = async () => {
   }
   refresh();
 };
+
+const handleUnregisterFromDevice = async () => {
+  const devicesToSync = selectedDeviceForRegister.value === 'ALL'
+    ? activeDevices.value
+    : activeDevices.value.filter(d => d.id === selectedDeviceForRegister.value);
+    
+  if (devicesToSync.length === 0) {
+    $toast.error('Tidak ada perangkat aktif yang dipilih');
+    return;
+  }
+  
+  registeringState.value = true;
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const device of devicesToSync) {
+    try {
+      const res = await $fetch(`/api/students/${studentToRegister.value.id}/unregister-device`, {
+        method: 'POST',
+        body: { deviceId: device.id }
+      });
+      if (res.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (err) {
+      console.error(err);
+      failCount++;
+    }
+  }
+
+  registeringState.value = false;
+  if (successCount > 0) {
+    $toast.success(`Sinkronisasi berhasil dihapus dari ${successCount} perangkat`);
+    showRegisterDeviceModal.value = false;
+    refresh();
+  } else {
+    $toast.error('Gagal menghapus sinkronisasi dari perangkat');
+  }
+};
+
+const showFaceUploadOptions = ref(false);
+const showCameraModal = ref(false);
+const videoStream = ref(null);
+const videoRef = ref(null);
+const showFaceCropper = ref(false);
+const rawFaceImage = ref(null);
+const faceCropperRef = ref(null);
+const isUploadingFace = ref(false);
+
+const startCamera = async () => {
+  showFaceUploadOptions.value = false;
+  showCameraModal.value = true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: 640, height: 480 }
+    });
+    videoStream.value = stream;
+    if (videoRef.value) {
+      videoRef.value.srcObject = stream;
+    }
+  } catch (err) {
+    console.error(err);
+    $toast.error('Tidak dapat mengakses kamera!');
+    closeCamera();
+  }
+};
+
+const closeCamera = () => {
+  if (videoStream.value) {
+    videoStream.value.getTracks().forEach(track => track.stop());
+    videoStream.value = null;
+  }
+  showCameraModal.value = false;
+};
+
+const capturePhoto = () => {
+  if (videoRef.value) {
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.value.videoWidth || 640;
+    canvas.height = videoRef.value.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height);
+    
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    rawFaceImage.value = dataUrl;
+    closeCamera();
+    showFaceCropper.value = true;
+  }
+};
+
+const onFaceFileSelect = (e) => {
+  const files = e.target.files;
+  if (files && files[0]) {
+    const file = files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      $toast.error('Ukuran file foto maksimal adalah 5MB!');
+      return;
+    }
+    showFaceUploadOptions.value = false;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      rawFaceImage.value = event.target.result;
+      showFaceCropper.value = true;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const detectFaceInBrowser = (imageSrc) => {
+  return new Promise((resolve) => {
+    if (typeof window.pico === 'undefined') {
+      const script = document.createElement('script');
+      script.src = '/pico.js';
+      script.onload = () => runDetection(imageSrc, resolve);
+      script.onerror = () => {
+        console.error('Failed to load pico.js');
+        resolve(true);
+      };
+      document.head.appendChild(script);
+    } else {
+      runDetection(imageSrc, resolve);
+    }
+  });
+};
+
+const runDetection = async (imageSrc, resolve) => {
+  try {
+    const cascadeResponse = await fetch('/facefinder');
+    const cascadeBuffer = await cascadeResponse.arrayBuffer();
+    const cascadeBytes = new Uint8Array(cascadeBuffer);
+    const classifyRegion = window.pico.unpack_cascade(cascadeBytes);
+
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const maxDim = 360;
+      let w = img.width;
+      let h = img.height;
+      if (w > h) {
+        if (w > maxDim) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        }
+      } else {
+        if (h > maxDim) {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      canvas.width = w;
+      canvas.height = h;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const imgData = ctx.getImageData(0, 0, w, h).data;
+
+      const rgbaToGray = (rgba, nrows, ncols) => {
+        const gray = new Uint8Array(nrows * ncols);
+        for (let r = 0; r < nrows; r++) {
+          for (let c = 0; c < ncols; c++) {
+            const idx = 4 * (r * ncols + c);
+            gray[r * ncols + c] = 0.299 * rgba[idx] + 0.587 * rgba[idx + 1] + 0.114 * rgba[idx + 2];
+          }
+        }
+        return gray;
+      };
+
+      const pixels = rgbaToGray(imgData, h, w);
+      const imageDesc = {
+        pixels: pixels,
+        nrows: h,
+        ncols: w,
+        ldim: w,
+      };
+
+      const params = {
+        shiftfactor: 0.1,
+        minsize: 20,
+        maxsize: 1000,
+        scalefactor: 1.1,
+      };
+
+      let dets = window.pico.run_cascade(imageDesc, classifyRegion, params);
+      dets = window.pico.cluster_detections(dets, 0.2);
+
+      const detected = dets.some((d) => d[3] > 4.5);
+      console.log('Pico.js detection score:', dets.map(d => d[3]));
+      resolve(detected);
+    };
+    img.onerror = () => resolve(true);
+  } catch (error) {
+    console.error('Face detection error:', error);
+    resolve(true);
+  }
+};
+
+const uploadFacePhoto = async () => {
+  const { canvas } = faceCropperRef.value.getResult();
+  if (!canvas) return;
+
+  isUploadingFace.value = true;
+  try {
+    const fileDataUrl = canvas.toDataURL('image/jpeg');
+    
+    const faceDetected = await detectFaceInBrowser(fileDataUrl);
+    if (!faceDetected) {
+      $toast.error('Wajah tidak terdeteksi pada area potongan! Pastikan wajah masuk ke dalam panduan lingkaran.');
+      isUploadingFace.value = false;
+      return;
+    }
+
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('photo', blob, 'face.jpg');
+
+      try {
+        const res = await $fetch(`/api/students/${studentToRegister.value.id}/photo`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.success) {
+          showFaceCropper.value = false;
+          rawFaceImage.value = null;
+          
+          studentToRegister.value.photoUrl = res.photoUrl;
+          
+          refresh();
+          $toast.success('Foto wajah absensi berhasil diperbarui');
+        }
+      } catch (error) {
+        $toast.error(error.data?.statusMessage || 'Gagal mengunggah foto wajah');
+      } finally {
+        isUploadingFace.value = false;
+      }
+    }, 'image/jpeg');
+  } catch (err) {
+    console.error(err);
+    $toast.error('Gagal memproses gambar');
+    isUploadingFace.value = false;
+  }
+};
+
+const cancelFaceCrop = () => {
+  showFaceCropper.value = false;
+  rawFaceImage.value = null;
+};
+
 const classSearch = ref('');
 const showClassDropdown = ref(false);
 
@@ -1204,20 +1460,41 @@ useSeoMeta({
               </div>
             </div>
 
-            <!-- Upload Student Photo if missing -->
-            <div v-if="!studentToRegister.photoUrl" class="form-control bg-base-200/20 p-4 rounded-2xl border border-dashed border-base-300">
-              <label class="label pt-0"><span class="label-text font-bold text-xs uppercase tracking-widest opacity-60">Unggah Foto Wajah Siswa*</span></label>
-              <input 
-                type="file" 
-                accept="image/jpeg,image/png,image/webp" 
-                class="file-input file-input-bordered file-input-sm w-full rounded-xl bg-base-100 font-bold"
-                @change="onStudentPhotoSelected"
-                :disabled="studentPhotoUploading"
-              />
-              <p v-if="studentPhotoUploading" class="text-[10px] text-primary font-bold mt-2 animate-pulse flex items-center gap-1">
-                <span class="loading loading-spinner loading-xs"></span>
-                Mengunggah foto siswa ke server...
-              </p>
+            <!-- Face Photo Section -->
+            <div class="form-control bg-base-200/20 p-4 rounded-2xl border border-dashed border-base-300 space-y-3">
+              <label class="label pt-0 pb-1">
+                <span class="label-text font-bold text-xs uppercase tracking-widest opacity-60">Foto Wajah Absensi (Hikvision)</span>
+              </label>
+              
+              <div v-if="studentToRegister.photoUrl" class="flex items-center gap-4">
+                <div class="w-16 h-20 rounded-xl overflow-hidden bg-base-200 border border-base-300 flex items-center justify-center shrink-0">
+                  <img :src="studentToRegister.photoUrl" class="w-full h-full object-cover object-center" />
+                </div>
+                <div class="flex-1">
+                  <p class="text-xs text-base-content/60 font-semibold mb-2">Wajah siswa sudah terdaftar</p>
+                  <button 
+                    @click="showFaceUploadOptions = true" 
+                    class="btn btn-ghost hover:bg-primary/10 hover:text-primary btn-sm rounded-xl font-bold h-9 gap-1.5 border border-base-300"
+                    :disabled="isUploadingFace"
+                  >
+                    <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
+                    <Icon v-else name="mingcute:upload-2-fill" size="14" />
+                    Ubah Foto Wajah
+                  </button>
+                </div>
+              </div>
+
+              <div v-else class="text-center py-2">
+                <button 
+                  @click="showFaceUploadOptions = true" 
+                  class="btn btn-primary btn-sm rounded-xl font-bold h-10 gap-2 w-full shadow-md shadow-primary/15"
+                  :disabled="isUploadingFace"
+                >
+                  <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
+                  <Icon v-else name="mingcute:upload-2-fill" size="16" />
+                  Unggah Foto Wajah
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1244,9 +1521,18 @@ useSeoMeta({
 
           <div class="modal-action flex justify-between gap-4 mt-8">
             <button @click="showRegisterDeviceModal = false" class="btn btn-ghost rounded-2xl flex-1 font-bold" :disabled="registeringState">Batal</button>
+            <button 
+              v-if="!isBulkRegister && studentToRegister && studentToRegister.faceToken"
+              @click="handleUnregisterFromDevice" 
+              class="btn btn-error text-white rounded-2xl flex-1 font-bold shadow-lg shadow-error/20" 
+              :disabled="registeringState || activeDevices.length === 0"
+            >
+              <span v-if="registeringState" class="loading loading-spinner loading-xs mr-1"></span>
+              Hapus Sinkronisasi
+            </button>
             <button @click="handleRegisterToDevice" class="btn btn-primary rounded-2xl flex-1 font-bold shadow-lg shadow-primary/20" :disabled="registeringState || activeDevices.length === 0">
               <span v-if="registeringState" class="loading loading-spinner loading-xs mr-1"></span>
-              Daftarkan
+              {{ studentToRegister && studentToRegister.faceToken ? 'Sinkron Ulang' : 'Daftarkan' }}
             </button>
           </div>
         </div>
@@ -1275,6 +1561,131 @@ useSeoMeta({
         </button>
       </div>
     </div>
+
+    <!-- Modal: Opsi Upload Wajah -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showFaceUploadOptions }]">
+      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-6 z-[60]">
+        <h3 class="font-bold text-lg text-base-content mb-6 text-center sm:text-left">Pilih Metode Upload Wajah</h3>
+        <div class="flex flex-col gap-3">
+          <!-- Ambil Selfie -->
+          <button @click="startCamera" class="btn btn-ghost bg-base-200/50 hover:bg-primary/10 hover:text-primary rounded-2xl flex items-center justify-between px-6 h-16 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Icon name="mingcute:camera-fill" size="22" />
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-sm">Ambil Foto (Selfie)</p>
+                 <p class="text-xs text-base-content/50">Gunakan kamera depan HP / laptop</p>
+              </div>
+            </div>
+            <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
+          </button>
+
+          <!-- Dari Galeri -->
+          <button @click="$refs.faceFileInputHelper.click()" class="btn btn-ghost bg-base-200/50 hover:bg-success/10 hover:text-success rounded-2xl flex items-center justify-between px-6 h-16 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success">
+                <Icon name="mingcute:pic-fill" size="22" />
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-sm">Pilih dari Galeri</p>
+                <p class="text-xs text-base-content/50">Unggah berkas gambar yang sudah ada</p>
+              </div>
+            </div>
+            <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
+          </button>
+          <input ref="faceFileInputHelper" type="file" class="hidden" accept="image/*" @change="onFaceFileSelect" />
+        </div>
+        <div class="modal-action sm:mt-6 mt-4">
+          <button @click="showFaceUploadOptions = false" class="btn btn-ghost w-full rounded-2xl">Batal</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="showFaceUploadOptions = false"><button>close</button></form>
+    </dialog>
+
+    <!-- Modal: Kamera Selfie -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showCameraModal }]">
+      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-0 overflow-hidden max-w-lg z-[60]">
+        <div class="p-6 border-b border-base-200 flex items-center justify-between bg-base-50/50">
+          <h3 class="font-bold text-lg text-base-content">Ambil Foto Wajah</h3>
+          <button @click="closeCamera" class="btn btn-ghost btn-circle btn-sm">
+            <Icon name="mingcute:close-line" size="20" />
+          </button>
+        </div>
+        
+        <div class="relative bg-black aspect-[3/4] max-h-[60vh] w-full flex items-center justify-center overflow-hidden">
+          <video ref="videoRef" autoplay playsinline muted class="h-full w-full object-cover scale-x-[-1]"></video>
+          
+          <!-- Oval Face Placeholder Guidelines -->
+          <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div class="w-48 h-64 border-4 border-dashed border-primary/70 rounded-[50%] bg-transparent flex items-center justify-center">
+              <div class="absolute text-[10px] font-bold text-primary bg-base-100/90 px-3 py-1 rounded-full border border-primary/30 -top-3 shadow-md">
+                Posisikan Wajah Di Sini
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-base-50/50 flex gap-3 justify-center">
+          <button @click="closeCamera" class="btn btn-ghost rounded-xl px-6 flex-1">Batal</button>
+          <button @click="capturePhoto" class="btn btn-primary rounded-xl px-8 flex-1 gap-2 shadow-lg shadow-primary/20">
+            <Icon name="mingcute:camera-fill" size="18" />
+            Ambil Foto
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="closeCamera"><button>close</button></form>
+    </dialog>
+
+    <!-- Modal: Crop Foto Wajah -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showFaceCropper }]">
+      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-0 overflow-hidden max-w-lg z-[60]">
+        <div class="p-6 border-b border-base-200 flex items-center justify-between bg-base-50/50">
+          <div>
+            <h3 class="font-bold text-lg text-base-content">Sesuaikan Foto Wajah</h3>
+            <p class="text-xs text-base-content/50">Sesuaikan agar wajah masuk ke dalam panduan</p>
+          </div>
+          <button @click="cancelFaceCrop" class="btn btn-ghost btn-circle btn-sm">
+            <Icon name="mingcute:close-line" size="20" />
+          </button>
+        </div>
+        
+        <div class="p-6 bg-neutral/5 flex items-center justify-center">
+          <div class="relative w-72 h-96 overflow-hidden rounded-2xl shadow-inner bg-black">
+            <Cropper
+              v-if="showFaceCropper"
+              ref="faceCropperRef"
+              :src="rawFaceImage"
+              :stencil-props="{ aspectRatio: 3/4 }"
+              :image-restriction="'none'"
+              class="w-full h-full"
+            />
+            
+            <!-- Oval Face Guideline Overlay inside Cropper -->
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div class="w-44 h-60 border-4 border-dashed border-primary/60 rounded-[50%] bg-transparent flex items-center justify-center">
+                <div class="absolute text-[9px] font-bold text-primary bg-base-100/90 px-2 py-0.5 rounded-full border border-primary/30 -top-3">
+                  Area Wajah
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-base-50/50 flex gap-3">
+          <button @click="cancelFaceCrop" class="btn btn-ghost rounded-xl px-6 flex-1">Batal</button>
+          <button 
+            @click="uploadFacePhoto" 
+            class="btn btn-primary rounded-xl px-8 flex-1 shadow-lg shadow-primary/20"
+            :disabled="isUploadingFace"
+          >
+            <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
+            Simpan Foto Wajah
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop" @click="cancelFaceCrop"><button>close</button></form>
+    </dialog>
   </div>
 </template>
 
