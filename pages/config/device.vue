@@ -563,6 +563,7 @@ const showDeviceStats = async (device) => {
             </div>
           </div>
         </div>
+      </div>
     </div>
 
     <!-- Device Stats Modal -->
