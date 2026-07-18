@@ -335,7 +335,8 @@ const connectWebRTC = async (device) => {
   try {
     disconnectWebRTC();
 
-    const go2rtcHost = `${window.location.hostname}:1984`;
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const go2rtcHost = isLocal ? 'http://localhost:1984' : 'https://stream-gaskan.smtijogja.my.id';
     const streamIdName = device.id;
     const slugName = slugify(device.name);
 
@@ -365,7 +366,7 @@ const connectWebRTC = async (device) => {
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 1200);
 
-      res = await fetch(`http://${go2rtcHost}/api/webrtc?src=${slugName}`, {
+      res = await fetch(`${go2rtcHost}/api/webrtc?src=${slugName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: offer.sdp,
@@ -382,7 +383,7 @@ const connectWebRTC = async (device) => {
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 1200);
       
-      res = await fetch(`http://${go2rtcHost}/api/webrtc?src=${streamIdName}`, {
+      res = await fetch(`${go2rtcHost}/api/webrtc?src=${streamIdName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: offer.sdp,
