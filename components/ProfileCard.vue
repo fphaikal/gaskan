@@ -244,6 +244,47 @@ const religionOptions = [
   { value: 'KONGHUCU', label: 'Konghucu' },
 ];
 
+const isUploadingFace = ref(false);
+const faceFileInput = ref(null);
+
+const onFaceFileChange = async (e) => {
+  const files = e.target.files;
+  if (files && files[0]) {
+    const file = files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      $toast.error('Ukuran file foto maksimal adalah 5MB!');
+      if (faceFileInput.value) faceFileInput.value.value = '';
+      return;
+    }
+
+    isUploadingFace.value = true;
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await $fetch('/api/profile/face', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.success) {
+        await refreshUser();
+        $toast.success('Foto wajah absensi berhasil disimpan');
+      }
+    } catch (error) {
+      $toast.error(error.data?.statusMessage || 'Gagal mengunggah foto wajah');
+    } finally {
+      isUploadingFace.value = false;
+      if (faceFileInput.value) faceFileInput.value.value = '';
+    }
+  }
+};
+
+const resolvePhoto = (url) => {
+  if (!url) return null;
+  return url;
+};
+
 const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : 'Belum Diatur';
 </script>
 
@@ -402,6 +443,56 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
             <div class="mt-1 px-3 py-1.5 bg-base-200/80 border border-base-300/50 rounded-lg inline-block">
               <span class="text-md font-mono font-bold tracking-widest text-base-content">{{ user.Plat_Nomor !== '-' ? user.Plat_Nomor : '----' }}</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Foto Absensi (Face Recognition) -->
+      <div class="rounded-3xl bg-base-100 p-6 shadow-sm border border-base-200/60 text-left">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-sm font-bold text-base-content/60 uppercase tracking-wider">Foto Absensi</h4>
+          <span v-if="user.faceUrl" class="badge badge-success text-[10px] font-bold px-2.5 py-2.5 rounded-lg text-white">Terdaftar</span>
+          <span v-else class="badge badge-warning text-[10px] font-bold px-2.5 py-2.5 rounded-lg text-white">Belum Ada</span>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+          <div class="relative h-44 w-full rounded-2xl overflow-hidden bg-base-200 border border-base-300 flex items-center justify-center">
+            <img 
+              v-if="user.faceUrl"
+              :src="resolvePhoto(user.faceUrl)" 
+              alt="Face photo" 
+              class="h-full w-full object-cover object-center" 
+            />
+            <div v-else class="flex flex-col items-center justify-center text-base-content/40 p-4 text-center">
+              <Icon name="mingcute:face-fill" size="44" class="mb-2 opacity-55" />
+              <p class="text-xs font-semibold">Belum ada foto wajah absensi</p>
+            </div>
+          </div>
+
+          <!-- Upload action -->
+          <div v-if="!user.faceUrl || user.role === 'ADMIN'">
+            <button 
+              @click="$refs.faceFileInput.click()" 
+              class="btn btn-primary btn-sm w-full rounded-xl font-bold h-10 gap-2"
+              :disabled="isUploadingFace"
+            >
+              <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
+              <Icon v-else name="mingcute:upload-2-fill" size="16" />
+              {{ user.faceUrl ? 'Ganti Foto Wajah' : 'Unggah Foto Wajah' }}
+            </button>
+            <input 
+              ref="faceFileInput"
+              type="file" 
+              class="hidden" 
+              accept="image/*"
+              @change="onFaceFileChange"
+            />
+          </div>
+          <div v-else class="bg-base-200/50 border border-base-300/40 p-3 rounded-2xl flex items-start gap-2.5">
+            <Icon name="mingcute:information-line" class="text-primary shrink-0 mt-0.5" size="16" />
+            <p class="text-[11px] text-base-content/60 font-semibold leading-relaxed">
+              Foto wajah absensi sudah terdaftar. Hubungi Administrator jika ingin memperbarui foto wajah Anda.
+            </p>
           </div>
         </div>
       </div>
