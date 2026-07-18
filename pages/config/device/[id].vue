@@ -27,7 +27,8 @@ const fetchDeviceDetails = async () => {
   try {
     // 1. Fetch devices list to get current device name/url
     const devicesList = await $fetch('/api/device');
-    const currentDevice = devicesList.find(d => d.id === id);
+    const list = devicesList?.data || devicesList || [];
+    const currentDevice = list.find(d => d.id === id);
     if (!currentDevice) {
       $toast.error('Perangkat tidak ditemukan');
       router.push('/config/device');
