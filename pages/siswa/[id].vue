@@ -1,6 +1,50 @@
 <script setup>
+import { useAuthStore } from '~/store/useAuthStore';
+import { storeToRefs } from 'pinia';
+
 const route = useRoute();
 const nis = route.params.id;
+
+const authStore = useAuthStore();
+const { userData: currentUser } = storeToRefs(authStore);
+
+const isUploadingFace = ref(false);
+const faceFileInput = ref(null);
+const { $toast } = useNuxtApp();
+
+const onFaceFileChange = async (e) => {
+  const files = e.target.files;
+  if (files && files[0]) {
+    const file = files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      $toast.error('Ukuran file foto maksimal adalah 5MB!');
+      if (faceFileInput.value) faceFileInput.value.value = '';
+      return;
+    }
+
+    isUploadingFace.value = true;
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await $fetch(`/api/students/${user.value.id}/photo`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.success) {
+        const updated = await $fetch(`/api/user?role=siswa&user=${nis}`);
+        user.value = updated;
+        $toast.success('Foto wajah absensi berhasil diperbarui');
+      }
+    } catch (error) {
+      $toast.error(error.data?.statusMessage || 'Gagal mengunggah foto wajah');
+    } finally {
+      isUploadingFace.value = false;
+      if (faceFileInput.value) faceFileInput.value.value = '';
+    }
+  }
+};
 
 const gender = (getGender) => {
   if (getGender === 'L') {
@@ -132,6 +176,50 @@ useSeoMeta({
               <div class="mt-1 px-3 py-1.5 bg-base-200/80 border border-base-300/50 rounded-lg inline-block">
                 <span class="text-md font-mono font-bold tracking-widest text-base-content">{{ user.Plat_Nomor || '----' }}</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto Absensi (Face Recognition) -->
+        <div class="rounded-3xl bg-base-100 p-6 shadow-sm border border-base-200/60 relative">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-sm font-bold text-base-content/60 uppercase tracking-wider">Foto Absensi</h4>
+            <span v-if="user.faceUrl" class="badge badge-success text-[10px] font-bold px-2.5 py-2.5 rounded-lg text-white">Terdaftar</span>
+            <span v-else class="badge badge-warning text-[10px] font-bold px-2.5 py-2.5 rounded-lg text-white">Belum Ada</span>
+          </div>
+          
+          <div class="flex flex-col gap-4">
+            <div class="relative h-44 w-full rounded-2xl overflow-hidden bg-base-200 border border-base-300 flex items-center justify-center">
+              <img 
+                v-if="user.faceUrl"
+                :src="user.faceUrl" 
+                alt="Face photo" 
+                class="h-full w-full object-cover object-center" 
+              />
+              <div v-else class="flex flex-col items-center justify-center text-base-content/40 p-4 text-center">
+                <Icon name="mingcute:face-fill" size="44" class="mb-2 opacity-55" />
+                <p class="text-xs font-semibold">Belum ada foto wajah absensi</p>
+              </div>
+            </div>
+
+            <!-- Upload action (Only Admin or Guru can upload/change it from this view page) -->
+            <div v-if="currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'DEVELOPER' || currentUser.role === 'GURU')">
+              <button 
+                @click="$refs.faceFileInput.click()" 
+                class="btn btn-primary btn-sm w-full rounded-xl font-bold h-10 gap-2"
+                :disabled="isUploadingFace"
+              >
+                <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
+                <Icon v-else name="mingcute:upload-2-fill" size="16" />
+                {{ user.faceUrl ? 'Ganti Foto Wajah' : 'Unggah Foto Wajah' }}
+              </button>
+              <input 
+                ref="faceFileInput"
+                type="file" 
+                class="hidden" 
+                accept="image/*"
+                @change="onFaceFileChange"
+              />
             </div>
           </div>
         </div>
