@@ -37,8 +37,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // Role-based Access Control (RBAC)
   const path = to.path;
 
-  // Developer-only: /log/error
-  if (path.startsWith('/log/error') && user.role !== 'developer') {
+  // Admin & Developer: /log/error
+  if (path.startsWith('/log/error') && !['admin', 'developer'].includes(user.role)) {
     return navigateTo('/home');
   }
 
