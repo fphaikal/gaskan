@@ -51,8 +51,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // Staff (Admin, Guru, Developer): /absensi, /siswa, /log/* (except error), /kelas
   const staffPaths = ['/absensi', '/siswa', '/log', '/kelas', '/monitor', '/jurusan'];
   if (staffPaths.some(p => path.startsWith(p)) && !['admin', 'developer', 'guru'].includes(user.role)) {
-    if (path.startsWith('/siswa/')) {
-       // Allow individual student profiles
+    if (path.startsWith('/siswa/') || path === '/log/kehadiran') {
+       // Allow individual student profiles and student log page
     } else {
       return navigateTo('/home');
     }
