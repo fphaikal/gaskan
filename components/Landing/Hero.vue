@@ -1,9 +1,69 @@
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '~/store/useAuthStore'
 import { storeToRefs } from 'pinia'
 
 const authStore = useAuthStore()
 const { authenticated } = storeToRefs(authStore)
+
+const recentAttendances = ref([
+  { name: 'Budi Santoso', timestamp: new Date().toISOString(), status: 'HADIR' },
+  { name: 'Shalwa Andini', timestamp: new Date().toISOString(), status: 'HADIR' },
+  { name: 'Fa\'iq Naufal', timestamp: new Date().toISOString(), status: 'HADIR' },
+  { name: 'Muhammad Tier', timestamp: new Date().toISOString(), status: 'HADIR' },
+  { name: 'Fahreza Pasha', timestamp: new Date().toISOString(), status: 'HADIR' }
+])
+
+const activeIndex = ref(0)
+let cycleInterval = null
+
+const fetchRecentAttendance = async () => {
+  try {
+    const res = await $fetch('/api/attendance/recent')
+    if (res?.success && res.data?.length > 0) {
+      recentAttendances.value = res.data
+    }
+  } catch (e) {
+    console.error('Failed to fetch recent attendance for landing page:', e)
+  }
+}
+
+const formatTime = (ts) => {
+  if (!ts) return ''
+  return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+}
+
+const getStatusLabel = (s) => {
+  if (s === 'TERLAMBAT') return 'Terlambat'
+  if (s === 'SAKIT') return 'Sakit'
+  if (s === 'IZIN') return 'Izin'
+  return 'Hadir'
+}
+
+const getStatusIconColor = (s) => {
+  if (s === 'TERLAMBAT') return 'text-amber-500 bg-amber-500/15 border-amber-500/30'
+  if (s === 'SAKIT') return 'text-orange-400 bg-orange-400/15 border-orange-400/30'
+  if (s === 'IZIN') return 'text-sky-500 bg-sky-500/15 border-sky-500/30'
+  return 'text-green-500 bg-green-500/15 border-green-500/30'
+}
+
+const getStatusIcon = (s) => {
+  if (s === 'TERLAMBAT') return 'mingcute:time-fill'
+  if (s === 'SAKIT') return 'mingcute:heart-fill'
+  if (s === 'IZIN') return 'mingcute:document-fill'
+  return 'mingcute:check-circle-fill'
+}
+
+onMounted(async () => {
+  await fetchRecentAttendance()
+  cycleInterval = setInterval(() => {
+    activeIndex.value = (activeIndex.value + 1) % recentAttendances.value.length
+  }, 4000)
+})
+
+onUnmounted(() => {
+  if (cycleInterval) clearInterval(cycleInterval)
+})
 </script>
 
 <template>
@@ -89,20 +149,44 @@ const { authenticated } = storeToRefs(authStore)
           </div>
         </div>
 
-        <!-- Floating attendance card -->
-        <div class="animate-float backdrop-blur-md bg-base-100/70 border border-primary/30 rounded-2xl px-6 py-4 flex items-center gap-4 shadow-2xl">
-          <div class="w-11 h-11 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center shrink-0">
-            <Icon name="mingcute:check-circle-fill" class="text-green-500 text-2xl" />
-          </div>
-          <div>
-            <p class="font-bold text-sm">Budi Santoso</p>
-            <p class="text-xs opacity-50 mt-0.5">Hadir · 07:32 WIB</p>
-          </div>
-          <div class="ml-3 text-xs text-primary font-semibold opacity-80 shrink-0">
-            ✓ Terverifikasi
-          </div>
+        <!-- Floating attendance card with smooth transition -->
+        <div class="animate-float h-20 flex items-center justify-center">
+          <Transition name="slide-up" mode="out-in">
+            <div 
+              :key="activeIndex"
+              class="backdrop-blur-md bg-base-100/70 border border-primary/30 rounded-2xl px-6 py-4 flex items-center gap-4 shadow-2xl w-80 max-w-full"
+            >
+              <div :class="['w-11 h-11 rounded-full border flex items-center justify-center shrink-0', getStatusIconColor(recentAttendances[activeIndex]?.status)]">
+                <Icon :name="getStatusIcon(recentAttendances[activeIndex]?.status)" class="text-2xl" />
+              </div>
+              <div class="flex-1 min-w-0 text-left">
+                <p class="font-bold text-sm truncate">{{ recentAttendances[activeIndex]?.name }}</p>
+                <p class="text-xs opacity-50 mt-0.5">
+                  {{ getStatusLabel(recentAttendances[activeIndex]?.status) }} · {{ formatTime(recentAttendances[activeIndex]?.timestamp) }} WIB
+                </p>
+              </div>
+              <div class="text-xs text-primary font-semibold opacity-80 shrink-0">
+                ✓ Terverifikasi
+              </div>
+            </div>
+          </Transition>
         </div>
       </div>
     </div>
   </section>
 </template>
+
+<style scoped>
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+}
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-16px) scale(0.97);
+}
+</style>

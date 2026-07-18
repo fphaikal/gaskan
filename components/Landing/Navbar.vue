@@ -72,6 +72,22 @@ onBeforeUnmount(() => {
         >
           {{ authenticated ? 'Dashboard' : 'Masuk' }}
         </NuxtLink>
+
+        <!-- Mobile Nav Hamburger Dropdown -->
+        <div class="dropdown dropdown-end md:hidden">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-circle cursor-pointer">
+            <Icon name="mingcute:menu-fill" class="text-xl" />
+          </div>
+          <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-2xl bg-base-100 rounded-2xl w-44 border border-base-200 mt-2 font-semibold !bg-opacity-100" style="background-color: oklch(var(--b1)) !important; opacity: 1 !important;">
+            <li v-for="link in navLinks" :key="link.href">
+              <a :href="link.href" :class="route.path === link.href ? 'text-primary' : ''" class="flex items-center gap-2">
+                <Icon v-if="link.label === 'Beranda'" name="mingcute:home-5-line" size="18" />
+                <Icon v-else-if="link.label === 'Tim'" name="mingcute:group-line" size="18" />
+                {{ link.label }}
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </nav>
