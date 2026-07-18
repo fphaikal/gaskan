@@ -1,6 +1,11 @@
 <script setup>
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
+import { useAuthStore } from '~/store/useAuthStore';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { userData: currentUser } = storeToRefs(authStore);
 
 const route = useRoute();
 const users = ref([]);
@@ -1517,6 +1522,13 @@ useSeoMeta({
                 PERHATIAN: SISWA TIDAK MEMILIKI FOTO PROFIL. SISWA HANYA AKAN TERDAFTAR SECARA DATA USER TANPA BIOMETRIK WAJAH. HARAP UPLOAD FOTO PROFIL TERLEBIH DAHULU UNTUK SYNC WAJAH.
               </div>
             </div>
+            <!-- Guru Restriction Warning -->
+            <div v-if="!isBulkRegister && studentToRegister && studentToRegister.faceToken && currentUser && currentUser.role === 'GURU'" class="bg-error/5 border border-error/20 rounded-2xl p-4 flex items-start gap-3 mt-4">
+              <Icon name="mingcute:information-line" class="text-error shrink-0" size="18" />
+              <div class="text-[10px] font-bold text-error/80 tracking-wider leading-relaxed uppercase">
+                Hanya administrator yang memiliki wewenang untuk menghapus sinkronisasi wajah dari mesin absensi.
+              </div>
+            </div>
           </div>
 
           <div class="modal-action flex justify-between gap-4 mt-8">
@@ -1525,7 +1537,7 @@ useSeoMeta({
               v-if="!isBulkRegister && studentToRegister && studentToRegister.faceToken"
               @click="handleUnregisterFromDevice" 
               class="btn btn-error text-white rounded-2xl flex-1 font-bold shadow-lg shadow-error/20" 
-              :disabled="registeringState || activeDevices.length === 0"
+              :disabled="registeringState || activeDevices.length === 0 || (currentUser && currentUser.role === 'GURU')"
             >
               <span v-if="registeringState" class="loading loading-spinner loading-xs mr-1"></span>
               Hapus Sinkronisasi

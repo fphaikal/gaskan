@@ -254,118 +254,125 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
 
     <!-- User List / Table -->
     <div v-else class="space-y-3">
-      <!-- Desktop Table -->
-      <div :class="[bentoCard, 'hidden md:block p-0 overflow-hidden']">
-        <div class="overflow-x-auto">
-          <table class="table table-lg w-full border-separate border-spacing-0 min-w-max">
-            <thead class="sticky top-0 z-10 bg-base-100 shadow-sm">
-              <tr class="bg-base-200/50 text-base-content/50 uppercase text-[10px] tracking-widest font-black">
-                <th class="pl-8 py-4">Pengguna</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Email / NIS</th>
-                <th class="text-right pr-8">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-base-200/40">
-              <tr v-for="user in pagedUsers" :key="user.id" class="hover:bg-base-200/30 transition-colors group">
-                <td class="pl-8">
-                  <div class="flex items-center gap-3 py-1">
-                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-primary/5">
-                      <img v-if="getAvatar(user)" :src="getAvatar(user)" class="w-full h-full object-cover" />
-                      <span v-else class="font-black text-xs">{{ getInitials(user?.name) }}</span>
+      <!-- Desktop & Mobile Modern List -->
+      <div class="space-y-3">
+        <TransitionGroup name="list" tag="div" class="space-y-3">
+          <div 
+            v-for="user in pagedUsers" 
+            :key="user.id" 
+            class="group bg-base-100 border border-base-200/60 rounded-[1.5rem] md:rounded-[2rem] hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 relative overflow-hidden"
+          >
+            <!-- MOBILE layout (md-): clean column layout -->
+            <div class="md:hidden p-4 space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-primary/5">
+                    <img v-if="getAvatar(user)" :src="getAvatar(user)" class="w-full h-full object-cover" />
+                    <span v-else class="font-black text-sm">{{ getInitials(user?.name) }}</span>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-base text-base-content truncate max-w-[180px]">{{ user?.name }}</h3>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                      <span v-if="user?.role" :class="['px-2 py-0.5 rounded text-[8px] font-black tracking-wider uppercase border', user.role === 'ADMIN' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : user.role === 'GURU' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20']">
+                        {{ user.role }}
+                      </span>
+                      <span v-if="user?.role === 'SISWA'" class="badge badge-primary badge-outline text-[8px] font-black px-1.5 h-4 rounded border-primary/30">{{ user.class?.className || 'N/A' }}</span>
                     </div>
-                    <div class="min-w-0 max-w-[200px]">
-                      <p class="font-bold text-base-content truncate">{{ user?.name || 'User' }}</p>
-                      <p v-if="user?.role === 'SISWA'" class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest truncate">{{ user.class?.className || 'Tanpa Kelas' }}</p>
-                    </div>
                   </div>
-                </td>
-                <td>
-                  <span v-if="user?.role" :class="['px-3 py-1 rounded-lg text-[10px] font-black tracking-widest border', user.role === 'ADMIN' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : user.role === 'GURU' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20']">
-                    {{ user.role }}
-                  </span>
-                </td>
-                <td>
-                  <div class="flex items-center gap-1.5">
-                    <div :class="['w-2 h-2 rounded-full', user?.isActive ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-base-300']"></div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/50">{{ user?.isActive ? 'Aktif' : 'Nonaktif' }}</span>
-                  </div>
-                </td>
-                <td class="text-sm font-medium text-base-content/60">
-                  {{ user?.email || user?.nis || user?.nisn || '-' }}
-                </td>
-                <td class="text-right pr-8">
-                  <div class="flex items-center justify-end gap-2">
-                    <NuxtLink :to="`/admin/users/detail/${user.id}`" class="btn btn-ghost btn-xs rounded-lg hover:bg-base-200">Detail</NuxtLink>
-                    <button @click="openEdit(user)" class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary transition-all">Edit</button>
-                    <button @click="confirmDelete(user?.id)" class="btn btn-ghost btn-xs rounded-lg hover:bg-error/10 hover:text-error transition-all">Hapus</button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <!-- Pagination -->
-        <UIPagination
-          :currentPage="currentPage"
-          :totalPages="totalPages"
-          :totalItems="totalCount"
-          :itemsPerPage="itemsPerPage"
-          itemLabel="user"
-          @update:currentPage="currentPage = $event"
-          @update:itemsPerPage="itemsPerPage = $event"
-        />
-      </div>
+                </div>
 
-      <!-- Mobile List + Pagination -->
-      <div class="md:hidden space-y-3">
-        <div v-for="user in pagedUsers" :key="user.id" :class="[bentoCard, 'p-4 border-l-4 !overflow-visible', user?.role === 'ADMIN' ? 'border-l-violet-500' : user?.role === 'GURU' ? 'border-l-indigo-500' : 'border-l-emerald-500']">
-          <div v-if="user" class="flex items-start justify-between gap-2">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-base-content/40 shrink-0 overflow-hidden border border-base-300">
-                <img v-if="getAvatar(user)" :src="getAvatar(user)" class="w-full h-full object-cover" />
-                <span v-else class="font-black text-xs">{{ getInitials(user?.name) }}</span>
+                <div class="flex items-center gap-1">
+                  <div :class="['w-2 h-2 rounded-full', user?.isActive ? 'bg-success' : 'bg-base-300']"></div>
+                  <span class="text-[9px] font-black uppercase tracking-wider text-base-content/40">{{ user?.isActive ? 'Aktif' : 'Nonaktif' }}</span>
+                </div>
               </div>
-              <div class="min-w-0 flex-1">
-                <h4 class="font-bold text-base-content truncate">{{ user?.name || 'User' }}</h4>
-                <div class="flex items-center flex-wrap gap-2 mt-1">
-                   <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-base-200 text-base-content/60">{{ user?.role || 'User' }}</span>
-                   <span v-if="user?.role === 'SISWA'" class="text-[9px] font-bold text-primary truncate max-w-[100px]">{{ user.class?.className || 'Tanpa Kelas' }}</span>
+
+              <div class="flex items-center justify-between pt-3 border-t border-base-200/50">
+                <div class="text-[10px] font-semibold text-base-content/50">
+                  {{ user?.email || user?.nis || user?.nisn || '-' }}
+                </div>
+                <div class="flex gap-1.5">
+                  <NuxtLink :to="`/admin/users/detail/${user.id}`" class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary gap-1">
+                    <Icon name="mingcute:eye-2-line" size="14" />
+                    Detail
+                  </NuxtLink>
+                  <button @click="openEdit(user)" class="btn btn-ghost btn-xs rounded-lg hover:bg-info/10 hover:text-info gap-1">
+                    <Icon name="mingcute:edit-4-line" size="14" />
+                    Edit
+                  </button>
+                  <button @click="confirmDelete(user?.id)" class="btn btn-ghost btn-xs rounded-lg hover:bg-error/10 hover:text-error gap-1">
+                    <Icon name="mingcute:delete-2-line" size="14" />
+                    Hapus
+                  </button>
                 </div>
               </div>
             </div>
-            <div class="relative mobile-dropdown shrink-0">
-              <button 
-                @click.stop="toggleDropdown(user.id)"
-                class="btn btn-ghost btn-xs px-1 h-8 w-8 rounded-lg"
-              >
-                <Icon name="mingcute:more-2-fill" />
-              </button>
-              
-              <div v-if="activeDropdown === user.id" class="absolute right-0 top-full z-[50] mt-1 p-2 shadow-2xl bg-base-100 border border-base-200 rounded-2xl w-40 animate-in fade-in zoom-in duration-200">
-                <NuxtLink :to="`/admin/users/detail/${user.id}`" class="w-full flex items-center gap-3 py-3 px-4 font-bold text-xs hover:bg-base-200 rounded-xl transition-colors">
-                  <Icon name="mingcute:eye-2-line" class="text-base-content/60" /> Lihat Detail
+
+            <!-- DESKTOP layout (md+): 12-col grid -->
+            <div class="hidden md:grid md:grid-cols-12 items-center px-8 py-4 gap-0">
+              <!-- Col 1-5: Bio -->
+              <div class="col-span-5 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-primary/5">
+                  <img v-if="getAvatar(user)" :src="getAvatar(user)" class="w-full h-full object-cover" />
+                  <span v-else class="font-black text-sm">{{ getInitials(user?.name) }}</span>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-base text-base-content group-hover:text-primary transition-colors truncate">{{ user?.name || 'User' }}</h3>
+                  <p v-if="user?.role === 'SISWA'" class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest truncate mt-0.5">{{ user.class?.className || 'Tanpa Kelas' }}</p>
+                </div>
+              </div>
+
+              <!-- Col 6-7: Role -->
+              <div class="col-span-2">
+                <span v-if="user?.role" :class="['px-3 py-1 rounded-lg text-[10px] font-black tracking-widest border', user.role === 'ADMIN' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : user.role === 'GURU' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20']">
+                  {{ user.role }}
+                </span>
+              </div>
+
+              <!-- Col 8-9: Status -->
+              <div class="col-span-2">
+                <div class="flex items-center gap-1.5">
+                  <div :class="['w-2 h-2 rounded-full', user?.isActive ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-base-300']"></div>
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/50">{{ user?.isActive ? 'Aktif' : 'Nonaktif' }}</span>
+                </div>
+              </div>
+
+              <!-- Col 10-11: Email / NIS -->
+              <div class="col-span-2 text-sm font-semibold text-base-content/60 truncate max-w-[150px]">
+                {{ user?.email || user?.nis || user?.nisn || '-' }}
+              </div>
+
+              <!-- Col 12: Actions -->
+              <div class="col-span-1 flex justify-end gap-1.5">
+                <NuxtLink 
+                  :to="`/admin/users/detail/${user.id}`" 
+                  class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-primary/10 hover:text-primary text-primary/70"
+                  title="Lihat Detail"
+                >
+                  <Icon name="mingcute:eye-2-line" size="18" />
                 </NuxtLink>
-                <button @click="openEdit(user)" class="w-full flex items-center gap-3 py-3 px-4 font-bold text-xs hover:bg-base-200 rounded-xl transition-colors">
-                  <Icon name="mingcute:edit-2-line" class="text-primary" /> Edit User
+                <button 
+                  @click="openEdit(user)" 
+                  class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-info/10 hover:text-info text-info/70"
+                  title="Edit User"
+                >
+                  <Icon name="mingcute:edit-4-line" size="18" />
                 </button>
-                <button @click="confirmDelete(user.id)" class="w-full flex items-center gap-3 py-3 px-4 font-bold text-xs text-error hover:bg-error/5 rounded-xl transition-colors text-left">
-                  <Icon name="mingcute:delete-2-line" /> Hapus User
+                <button 
+                  @click="confirmDelete(user?.id)" 
+                  class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-error/10 hover:text-error text-error/70"
+                  title="Hapus User"
+                >
+                  <Icon name="mingcute:delete-2-line" size="18" />
                 </button>
               </div>
             </div>
           </div>
-          <div class="mt-4 flex items-center justify-between border-t border-base-200 pt-3">
-             <div class="text-[10px] text-base-content/50 truncate max-w-[150px]">
-               {{ user?.email || user?.nis || '-' }}
-             </div>
-             <div class="flex items-center gap-1.5 shrink-0">
-                <div :class="['w-1.5 h-1.5 rounded-full', user?.isActive ? 'bg-success' : 'bg-base-300']"></div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40">{{ user?.isActive ? 'AKTIF' : 'NONAKTIF' }}</span>
-             </div>
-          </div>
-        </div>
+        </TransitionGroup>
+      </div>
+
+      <!-- Pagination -->
+      <div class="mt-4">
         <UIPagination
           :currentPage="currentPage"
           :totalPages="totalPages"
