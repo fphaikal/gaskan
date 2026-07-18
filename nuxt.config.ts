@@ -49,4 +49,10 @@ export default defineNuxtConfig({
     "@pinia-plugin-persistedstate/nuxt",
     "@nuxtjs/sitemap"
   ],
+
+  icon: {
+    clientBundle: {
+      scan: true,
+    },
+  },
 });

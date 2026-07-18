@@ -21,9 +21,10 @@ const handleSubmit = async () => {
     isSubmitted.value = true
   } catch (err) {
     error.value = true
-    const data = err.data || {}
-    errorMessage.value = data.message || 'Gagal memproses permintaan'
-    if (data.requireAdmin) {
+    const rootData = err.data || {}
+    const innerData = rootData.data || {}
+    errorMessage.value = innerData.message || rootData.message || 'Gagal memproses permintaan'
+    if (innerData.requireAdmin || rootData.requireAdmin) {
       requireAdmin.value = true
     }
   } finally {
