@@ -6,13 +6,7 @@ import { storeToRefs } from 'pinia'
 const authStore = useAuthStore()
 const { authenticated } = storeToRefs(authStore)
 
-const recentAttendances = ref([
-  { name: 'Budi Santoso', timestamp: new Date().toISOString(), status: 'HADIR' },
-  { name: 'Shalwa Andini', timestamp: new Date().toISOString(), status: 'HADIR' },
-  { name: 'Fa\'iq Naufal', timestamp: new Date().toISOString(), status: 'HADIR' },
-  { name: 'Muhammad Tier', timestamp: new Date().toISOString(), status: 'HADIR' },
-  { name: 'Fahreza Pasha', timestamp: new Date().toISOString(), status: 'HADIR' }
-])
+const recentAttendances = ref([])
 
 const activeIndex = ref(0)
 let cycleInterval = null
@@ -30,7 +24,19 @@ const fetchRecentAttendance = async () => {
 
 const formatTime = (ts) => {
   if (!ts) return ''
-  return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+  const dateObj = new Date(ts)
+  const today = new Date()
+  
+  const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+  
+  // If it's today, just show time
+  if (dateObj.toDateString() === today.toDateString()) {
+    return timeStr
+  }
+  
+  // Otherwise show date + time
+  const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+  return `${dateStr} · ${timeStr}`
 }
 
 const getStatusLabel = (s) => {
@@ -56,9 +62,11 @@ const getStatusIcon = (s) => {
 
 onMounted(async () => {
   await fetchRecentAttendance()
-  cycleInterval = setInterval(() => {
-    activeIndex.value = (activeIndex.value + 1) % recentAttendances.value.length
-  }, 4000)
+  if (recentAttendances.value.length > 0) {
+    cycleInterval = setInterval(() => {
+      activeIndex.value = (activeIndex.value + 1) % recentAttendances.value.length
+    }, 4000)
+  }
 })
 
 onUnmounted(() => {
@@ -150,7 +158,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Floating attendance card with smooth transition -->
-        <div class="animate-float h-20 flex items-center justify-center">
+        <div v-if="recentAttendances.length > 0" class="animate-float h-20 flex items-center justify-center">
           <Transition name="slide-up" mode="out-in">
             <div 
               :key="activeIndex"
