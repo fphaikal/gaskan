@@ -156,7 +156,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
             </button>
           </div>
           <NuxtLink v-if="activeTab === 'attendance'" to="/absensi" class="text-[10px] font-black uppercase text-orange-500 hover:underline tracking-widest">Lihat Semua →</NuxtLink>
-          <NuxtLink v-else to="/log" class="text-[10px] font-black uppercase text-orange-500 hover:underline tracking-widest">Lihat Semua Log →</NuxtLink>
+          <NuxtLink v-else to="/log/error" class="text-[10px] font-black uppercase text-orange-500 hover:underline tracking-widest">Lihat Semua Log →</NuxtLink>
         </div>
 
         <template v-if="activeTab === 'attendance'">

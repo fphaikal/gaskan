@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const session = requireRole(event, ['developer']);
+  const session = requireRole(event, ['admin', 'developer']);
   const config = useRuntimeConfig();
   const query = getQuery(event);
   const params = new URLSearchParams(query);

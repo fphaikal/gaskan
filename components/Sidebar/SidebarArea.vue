@@ -158,7 +158,7 @@ const menuGroups = [
       },
       {
         icon: 'ic:outline-error',
-        role: ['developer'],
+        role: ['admin', 'developer'],
         label: 'Log Error',
         route: '/log/error',
       },

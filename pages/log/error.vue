@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
 
 const { role } = storeToRefs(useAuthStore());
-const isDeveloper = computed(() => role.value === 'developer');
+const isAdminOrDev = computed(() => ['admin', 'developer'].includes(role.value));
 const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
 
 const errorResponse = ref(null);
@@ -28,7 +28,7 @@ const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
 const closeImagePreview = () => { activePreviewImage.value = null; };
 
 const refreshErrorLog = async () => {
-  if (!isDeveloper.value) return;
+  if (!isAdminOrDev.value) return;
 
   try {
     errorResponse.value = await sessionFetch(`/api/log/error?page=${currentPage.value}&limit=${itemsPerPage.value}`);
@@ -42,7 +42,7 @@ watch([currentPage, itemsPerPage], refreshErrorLog);
 await refreshErrorLog();
 
 onMounted(() => {
-  if (isDeveloper.value) {
+  if (isAdminOrDev.value) {
     errInterval = setInterval(refreshErrorLog, 5000);
   }
 });
@@ -75,8 +75,8 @@ useSeoMeta({
 
 <template>
   <div class="max-w-7xl mx-auto px-4 md:px-0 py-6">
-    <!-- Developer View -->
-    <div v-if="isDeveloper">
+    <!-- Developer/Admin View -->
+    <div v-if="isAdminOrDev">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 class="text-3xl font-extrabold tracking-tight text-base-content mb-2 flex items-center gap-3">
@@ -168,7 +168,7 @@ useSeoMeta({
       </div>
       <div class="max-w-md">
         <h1 class="text-4xl font-black text-base-content mb-3 tracking-tight">Akses Ditolak</h1>
-        <p class="text-base-content/60 font-medium mb-8">Halaman ini dikhususkan untuk Developer. Anda tidak memiliki izin untuk melihat log error sistem.</p>
+        <p class="text-base-content/60 font-medium mb-8">Halaman ini dikhususkan untuk Admin dan Developer. Anda tidak memiliki izin untuk melihat log error sistem.</p>
         <NuxtLink to="/home" class="btn btn-primary hover:scale-105 transition-transform shadow-lg shadow-primary/30 rounded-2xl px-8">
           <Icon name="mingcute:home-3-fill" size="20" class="mr-2" />
           Kembali ke Beranda
