@@ -320,12 +320,24 @@ const stopStreamTimer = () => {
   }
 };
 
-const connectWebRTC = async (deviceId) => {
+const slugify = (text) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '_');
+};
+
+const connectWebRTC = async (device) => {
   try {
     disconnectWebRTC();
 
     const go2rtcHost = `${window.location.hostname}:1984`;
-    const streamName = deviceId;
+    const streamIdName = device.id;
+    const slugName = slugify(device.name);
 
     peerConnection.value = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -344,22 +356,43 @@ const connectWebRTC = async (deviceId) => {
     const offer = await peerConnection.value.createOffer();
     await peerConnection.value.setLocalDescription(offer);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s connection timeout
+    let activeStreamName = slugName;
+    let res = null;
+    let timeoutId = null;
 
-    const res = await fetch(`http://${go2rtcHost}/api/webrtc?src=${streamName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain'
-      },
-      body: offer.sdp,
-      signal: controller.signal
-    });
+    // Try slugName first (e.g. gerbang_depan)
+    try {
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 1200);
 
-    clearTimeout(timeoutId);
+      res = await fetch(`http://${go2rtcHost}/api/webrtc?src=${slugName}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: offer.sdp,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    } catch (e) {
+      console.warn(`WebRTC failed with slug '${slugName}', trying ID...`, e);
+    }
 
-    if (!res.ok) {
-      throw new Error(`go2rtc returned ${res.status}`);
+    // If slug name was not found or failed, try device CUID
+    if (!res || !res.ok) {
+      activeStreamName = streamIdName;
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 1200);
+      
+      res = await fetch(`http://${go2rtcHost}/api/webrtc?src=${streamIdName}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: offer.sdp,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    }
+
+    if (!res || !res.ok) {
+      throw new Error(`go2rtc returned error status`);
     }
 
     const answerSdp = await res.text();
@@ -377,7 +410,7 @@ const connectWebRTC = async (deviceId) => {
     // Fall back to snapshot stream
     webrtcConnected.value = false;
     streamActive.value = true;
-    streamUrl.value = `/api/device/${deviceId}/capture?t=${Date.now()}`;
+    streamUrl.value = `/api/device/${device.id}/capture?t=${Date.now()}`;
     startStreamTimer();
   }
 };
@@ -397,7 +430,7 @@ const toggleStream = () => {
   streamActive.value = !streamActive.value;
   if (streamActive.value) {
     if (webrtcConnected.value && statsDevice.value) {
-      connectWebRTC(statsDevice.value.id);
+      connectWebRTC(statsDevice.value);
     } else {
       refreshStreamOnce();
     }
@@ -408,7 +441,7 @@ const toggleStream = () => {
 
 const refreshStreamOnce = () => {
   if (webrtcConnected.value && statsDevice.value) {
-    connectWebRTC(statsDevice.value.id);
+    connectWebRTC(statsDevice.value);
   } else if (statsDevice.value) {
     streamUrl.value = `/api/device/${statsDevice.value.id}/capture?t=${Date.now()}`;
   }
@@ -452,7 +485,7 @@ const showDeviceStats = async (device) => {
   statsData.value = null;
   
   // Set up live stream preview
-  connectWebRTC(device.id);
+  connectWebRTC(device);
 
   try {
     const res = await $fetch(`/api/device/${device.id}/stats`);
@@ -853,6 +886,28 @@ onUnmounted(() => {
                   <Icon name="mingcute:package-line" size="14" class="text-primary/70" />
                   {{ statsData.deviceInfo?.firmwareVersion }}
                 </p>
+              </div>
+            </div>
+
+            <!-- go2rtc Stream ID Info Box -->
+            <div class="bg-base-200/30 border border-base-200/50 p-4 rounded-2xl space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-base-200/50 pb-2">
+                <div>
+                  <span class="text-[10px] font-bold text-base-content/45 uppercase tracking-widest leading-none">Nama Stream (Rekomendasi)</span>
+                  <p class="text-sm font-extrabold text-success font-mono mt-0.5 select-all">{{ slugify(statsDevice?.name) }}</p>
+                </div>
+                <span class="text-[10px] text-base-content/50 italic leading-snug sm:text-right">
+                  Lebih mudah diketik di file <code class="font-mono text-primary font-bold">go2rtc.yaml</code>
+                </span>
+              </div>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span class="text-[10px] font-bold text-base-content/45 uppercase tracking-widest leading-none">ID Perangkat (Cadangan)</span>
+                  <p class="text-xs font-semibold text-base-content/70 font-mono mt-0.5 select-all">{{ statsDevice?.id }}</p>
+                </div>
+                <span class="text-[10px] text-base-content/40 italic leading-snug sm:text-right">
+                  ID unik permanen perangkat
+                </span>
               </div>
             </div>
 
