@@ -298,10 +298,16 @@ const streamUrl = ref('');
 const sendingDoorCmd = ref(false);
 let streamTimer = null;
 
+// WebRTC Specific States
+const videoElement = ref(null);
+const peerConnection = ref(null);
+const webrtcConnected = ref(false);
+
 const startStreamTimer = () => {
   stopStreamTimer();
+  if (webrtcConnected.value) return; // No snapshots needed if WebRTC is connected
   streamTimer = setInterval(() => {
-    if (streamActive.value && statsDevice.value) {
+    if (streamActive.value && statsDevice.value && !webrtcConnected.value) {
       streamUrl.value = `/api/device/${statsDevice.value.id}/capture?t=${Date.now()}`;
     }
   }, 1500);
@@ -314,15 +320,96 @@ const stopStreamTimer = () => {
   }
 };
 
+const connectWebRTC = async (deviceId) => {
+  try {
+    disconnectWebRTC();
+
+    const go2rtcHost = `${window.location.hostname}:1984`;
+    const streamName = deviceId;
+
+    peerConnection.value = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+
+    peerConnection.value.ontrack = (event) => {
+      if (videoElement.value) {
+        videoElement.value.srcObject = event.streams[0];
+      }
+    };
+
+    // Add transceivers
+    peerConnection.value.addTransceiver('video', { direction: 'recvonly' });
+    peerConnection.value.addTransceiver('audio', { direction: 'recvonly' });
+
+    const offer = await peerConnection.value.createOffer();
+    await peerConnection.value.setLocalDescription(offer);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s connection timeout
+
+    const res = await fetch(`http://${go2rtcHost}/api/webrtc?src=${streamName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: offer.sdp,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`go2rtc returned ${res.status}`);
+    }
+
+    const answerSdp = await res.text();
+    await peerConnection.value.setRemoteDescription(new RTCSessionDescription({
+      type: 'answer',
+      sdp: answerSdp
+    }));
+
+    webrtcConnected.value = true;
+    streamActive.value = true;
+  } catch (err) {
+    console.warn('WebRTC connection failed, falling back to snapshots:', err);
+    disconnectWebRTC();
+    
+    // Fall back to snapshot stream
+    webrtcConnected.value = false;
+    streamActive.value = true;
+    streamUrl.value = `/api/device/${deviceId}/capture?t=${Date.now()}`;
+    startStreamTimer();
+  }
+};
+
+const disconnectWebRTC = () => {
+  if (peerConnection.value) {
+    peerConnection.value.close();
+    peerConnection.value = null;
+  }
+  webrtcConnected.value = false;
+  if (videoElement.value) {
+    videoElement.value.srcObject = null;
+  }
+};
+
 const toggleStream = () => {
   streamActive.value = !streamActive.value;
   if (streamActive.value) {
-    refreshStreamOnce();
+    if (webrtcConnected.value && statsDevice.value) {
+      connectWebRTC(statsDevice.value.id);
+    } else {
+      refreshStreamOnce();
+    }
+  } else {
+    disconnectWebRTC();
   }
 };
 
 const refreshStreamOnce = () => {
-  if (statsDevice.value) {
+  if (webrtcConnected.value && statsDevice.value) {
+    connectWebRTC(statsDevice.value.id);
+  } else if (statsDevice.value) {
     streamUrl.value = `/api/device/${statsDevice.value.id}/capture?t=${Date.now()}`;
   }
 };
@@ -354,6 +441,7 @@ const sendDoorCommand = async (cmd) => {
 const closeStatsModal = () => {
   showStatsModal.value = false;
   streamActive.value = false;
+  disconnectWebRTC();
   stopStreamTimer();
 };
 
@@ -364,9 +452,7 @@ const showDeviceStats = async (device) => {
   statsData.value = null;
   
   // Set up live stream preview
-  streamActive.value = true;
-  streamUrl.value = `/api/device/${device.id}/capture?t=${Date.now()}`;
-  startStreamTimer();
+  connectWebRTC(device.id);
 
   try {
     const res = await $fetch(`/api/device/${device.id}/stats`);
@@ -386,6 +472,7 @@ const showDeviceStats = async (device) => {
 };
 
 onUnmounted(() => {
+  disconnectWebRTC();
   stopStreamTimer();
 });
 </script>
@@ -668,8 +755,16 @@ onUnmounted(() => {
             <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider">Live Video Stream</h4>
             
             <div class="relative aspect-video w-full rounded-2xl border border-base-200 overflow-hidden bg-black flex items-center justify-center group/cam shadow-inner">
+              <video 
+                v-if="streamActive && webrtcConnected"
+                ref="videoElement"
+                autoplay 
+                playsinline 
+                controls
+                class="w-full h-full object-cover" 
+              ></video>
               <img 
-                v-if="streamActive && streamUrl"
+                v-else-if="streamActive && streamUrl"
                 :src="streamUrl" 
                 @error="handleStreamError"
                 class="w-full h-full object-cover" 
