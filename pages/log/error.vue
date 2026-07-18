@@ -23,9 +23,9 @@ const paginatedErr = computed(() => {
   return errorResponse.value?.data || [];
 });
 
-const activePreviewImage = ref(null);
-const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
-const closeImagePreview = () => { activePreviewImage.value = null; };
+const selectedLog = ref(null);
+const openDetailModal = (log) => { selectedLog.value = log; };
+const closeDetailModal = () => { selectedLog.value = null; };
 
 const refreshErrorLog = async () => {
   if (!isAdminOrDev.value) return;
@@ -111,7 +111,7 @@ useSeoMeta({
             
             <!-- Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              <div v-for="d in l.data" :key="d.timestamp" class="bg-base-100 border border-base-200/80 hover:border-error/30 rounded-3xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-4 group cursor-default relative overflow-hidden">
+              <div v-for="d in l.data" :key="d.timestamp" @click="openDetailModal(d)" class="bg-base-100 border border-base-200/80 hover:border-error/30 rounded-3xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-4 group cursor-pointer relative overflow-hidden">
                 
                 <!-- Background subtle glow -->
                 <div class="absolute -top-10 -right-10 w-32 h-32 bg-error/5 rounded-full blur-2xl group-hover:bg-error/10 transition-colors"></div>
@@ -129,7 +129,7 @@ useSeoMeta({
 
                 <!-- Captured Scan Photo -->
                 <div v-if="d.image" class="w-full h-32 rounded-2xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative flex items-center justify-center z-10">
-                  <img :src="d.image" alt="Captured face" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-300" @click="openImagePreview(d.image)" />
+                  <img :src="d.image" alt="Captured face" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                   <div class="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl"></div>
                 </div>
 
@@ -177,17 +177,81 @@ useSeoMeta({
     </div>
   </div>
 
-  <!-- ═══ IMAGE PREVIEW MODAL (LIGHTBOX) ═══ -->
+  <!-- ═══ DETAILED EVENT MODAL (DETAIL KEJADIAN) ═══ -->
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="activePreviewImage" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4" @click="closeImagePreview">
-        <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors btn btn-ghost btn-circle">
-          <Icon name="mingcute:close-line" size="28" />
-        </button>
-        <img :src="activePreviewImage" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10" @click.stop />
+      <div v-if="selectedLog" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" @click="closeDetailModal">
+        <div class="bg-base-100 border border-base-200/80 max-w-2xl w-full rounded-3xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row" @click.stop>
+          
+          <!-- Image Section (Left / Top) -->
+          <div class="md:w-1/2 bg-base-200 relative flex items-center justify-center p-4 border-b md:border-b-0 md:border-r border-base-200">
+            <img v-if="selectedLog.image" :src="selectedLog.image" alt="Captured Face" class="w-full max-h-[40vh] md:max-h-[50vh] object-contain rounded-2xl shadow-md" />
+            <div v-else class="w-full h-48 md:h-full flex flex-col items-center justify-center text-base-content/30 py-12">
+              <Icon name="mingcute:bug-line" size="48" class="opacity-50 mb-2" />
+              <span class="text-xs font-semibold uppercase tracking-wider">Foto Tidak Tersedia</span>
+            </div>
+          </div>
+
+          <!-- Info Details Section (Right / Bottom) -->
+          <div class="md:w-1/2 p-6 flex flex-col justify-between gap-6">
+            <div class="space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border bg-error/10 text-error border-error/20">
+                  ERR: {{ selectedLog.code || 'UNKNOWN' }}
+                </span>
+                <span :class="['px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border', selectedLog.Kelas === 'Device' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20']">
+                  {{ selectedLog.Kelas || 'Sistem' }}
+                </span>
+              </div>
+
+              <div>
+                <h3 class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest mb-1">Pesan Kejadian</h3>
+                <p class="text-base font-extrabold text-base-content leading-snug">{{ selectedLog.msg }}</p>
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 pt-2">
+                <div v-if="selectedLog.gate" class="flex gap-3 items-center">
+                  <div class="w-8 h-8 rounded-lg bg-base-200 flex items-center justify-center text-base-content/60">
+                    <Icon name="mingcute:door-line" size="18" />
+                  </div>
+                  <div>
+                    <h4 class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider leading-none">Nama Gerbang</h4>
+                    <p class="text-xs font-bold text-base-content mt-1">{{ selectedLog.gate }}</p>
+                  </div>
+                </div>
+
+                <div class="flex gap-3 items-center">
+                  <div class="w-8 h-8 rounded-lg bg-base-200 flex items-center justify-center text-base-content/60">
+                    <Icon name="mingcute:time-line" size="18" />
+                  </div>
+                  <div>
+                    <h4 class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider leading-none">Waktu Scan Asli</h4>
+                    <p class="text-xs font-bold text-base-content mt-1">{{ formatLongDate(selectedLog.timestamp, false, true) }}</p>
+                  </div>
+                </div>
+
+                <div v-if="selectedLog.namafile" class="flex gap-3 items-center">
+                  <div class="w-8 h-8 rounded-lg bg-base-200 flex items-center justify-center text-base-content/60">
+                    <Icon name="mingcute:file-info-line" size="18" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <h4 class="text-[10px] font-bold text-base-content/40 uppercase tracking-wider leading-none">Sumber / File</h4>
+                    <p class="text-xs font-bold text-base-content mt-1 truncate">{{ selectedLog.namafile }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button class="w-full btn btn-ghost border-base-200/80 hover:border-error/20 hover:bg-error/10 hover:text-error rounded-2xl" @click="closeDetailModal">
+              Tutup Detail
+            </button>
+          </div>
+
+        </div>
       </div>
     </Transition>
   </Teleport>
+
 </template>
 
 <style scoped>
