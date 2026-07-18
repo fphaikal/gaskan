@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 const { $toast } = useNuxtApp();
 
 useSeoMeta({
@@ -292,11 +292,81 @@ const loadingStats = ref(false);
 const statsDevice = ref(null);
 const statsData = ref(null);
 
+// Stream & Door Control States
+const streamActive = ref(false);
+const streamUrl = ref('');
+const sendingDoorCmd = ref(false);
+let streamTimer = null;
+
+const startStreamTimer = () => {
+  stopStreamTimer();
+  streamTimer = setInterval(() => {
+    if (streamActive.value && statsDevice.value) {
+      streamUrl.value = `/api/device/${statsDevice.value.id}/capture?t=${Date.now()}`;
+    }
+  }, 1500);
+};
+
+const stopStreamTimer = () => {
+  if (streamTimer) {
+    clearInterval(streamTimer);
+    streamTimer = null;
+  }
+};
+
+const toggleStream = () => {
+  streamActive.value = !streamActive.value;
+  if (streamActive.value) {
+    refreshStreamOnce();
+  }
+};
+
+const refreshStreamOnce = () => {
+  if (statsDevice.value) {
+    streamUrl.value = `/api/device/${statsDevice.value.id}/capture?t=${Date.now()}`;
+  }
+};
+
+const handleStreamError = () => {
+  streamActive.value = false;
+};
+
+const sendDoorCommand = async (cmd) => {
+  if (!statsDevice.value) return;
+  sendingDoorCmd.value = true;
+  try {
+    const res = await $fetch(`/api/device/${statsDevice.value.id}/door-control`, {
+      method: 'POST',
+      body: { cmd }
+    });
+    if (res?.success) {
+      $toast.success(res.message);
+    } else {
+      $toast.error(res?.message || 'Gagal mengirim perintah pintu');
+    }
+  } catch (e) {
+    $toast.error(e.data?.message || 'Gagal terhubung ke mesin untuk mengontrol pintu');
+  } finally {
+    sendingDoorCmd.value = false;
+  }
+};
+
+const closeStatsModal = () => {
+  showStatsModal.value = false;
+  streamActive.value = false;
+  stopStreamTimer();
+};
+
 const showDeviceStats = async (device) => {
   statsDevice.value = device;
   showStatsModal.value = true;
   loadingStats.value = true;
   statsData.value = null;
+  
+  // Set up live stream preview
+  streamActive.value = true;
+  streamUrl.value = `/api/device/${device.id}/capture?t=${Date.now()}`;
+  startStreamTimer();
 
   try {
     const res = await $fetch(`/api/device/${device.id}/stats`);
@@ -304,16 +374,20 @@ const showDeviceStats = async (device) => {
       statsData.value = res;
     } else {
       $toast.error(res?.message || 'Gagal memuat statistik perangkat');
-      showStatsModal.value = false;
+      closeStatsModal();
     }
   } catch (e) {
     console.error('Failed to load device stats:', e);
     $toast.error(e.data?.message || 'Gagal menghubungkan ke perangkat untuk mengambil statistik');
-    showStatsModal.value = false;
+    closeStatsModal();
   } finally {
     loadingStats.value = false;
   }
 };
+
+onUnmounted(() => {
+  stopStreamTimer();
+});
 </script>
 
 <template>
@@ -568,9 +642,9 @@ const showDeviceStats = async (device) => {
 
     <!-- Device Stats Modal -->
     <div v-if="showStatsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm transition-opacity duration-300">
-      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-2xl shadow-2xl relative animate-scale-in flex flex-col gap-6" @click.stop>
+      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-4xl shadow-2xl relative animate-scale-in flex flex-col gap-6" @click.stop>
         <!-- Close Button -->
-        <button @click="showStatsModal = false" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
+        <button @click="closeStatsModal()" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
           <Icon name="mingcute:close-line" size="20" />
         </button>
 
@@ -579,7 +653,7 @@ const showDeviceStats = async (device) => {
             <Icon name="mingcute:chart-bar-fill" class="text-success" />
             Statistik & Kapasitas Alat
           </h3>
-          <p class="text-sm text-base-content/50">Detail kapasitas terpasang pada mesin absensi <strong>{{ statsDevice?.name }}</strong></p>
+          <p class="text-sm text-base-content/50">Detail kapasitas terpasang dan kontrol mesin absensi <strong>{{ statsDevice?.name }}</strong></p>
         </div>
 
         <!-- Loading State -->
@@ -588,106 +662,180 @@ const showDeviceStats = async (device) => {
           <p class="text-sm font-bold text-base-content/60">Menghubungi mesin absensi di {{ statsDevice?.url }}...</p>
         </div>
 
-        <div v-else-if="statsData" class="space-y-6">
-          <!-- Basic Device Info -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200/40 border border-base-200/60 p-5 rounded-2xl">
-            <div>
-              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Model Perangkat</span>
-              <p class="text-sm font-extrabold text-base-content mt-1 flex items-center gap-1.5">
-                <Icon name="mingcute:cpu-line" size="16" class="text-primary/70" />
-                {{ statsData.deviceInfo?.model }}
-              </p>
+        <div v-else-if="statsData" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left Col: Live Preview & Door Control -->
+          <div class="lg:col-span-5 flex flex-col gap-4">
+            <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider">Live Video Stream</h4>
+            
+            <div class="relative aspect-video w-full rounded-2xl border border-base-200 overflow-hidden bg-black flex items-center justify-center group/cam shadow-inner">
+              <img 
+                v-if="streamActive && streamUrl"
+                :src="streamUrl" 
+                @error="handleStreamError"
+                class="w-full h-full object-cover" 
+                alt="Live Camera Stream"
+              />
+              <div v-else class="flex flex-col items-center text-base-content/30 gap-2">
+                <Icon name="mingcute:videocam-off-fill" size="36" />
+                <span class="text-xs font-semibold">Stream Kamera Mati</span>
+              </div>
+
+              <!-- Live Badge -->
+              <div v-if="streamActive" class="absolute top-3 left-3 bg-red-500 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-md">
+                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                LIVE
+              </div>
+
+              <!-- Controls -->
+              <div class="absolute bottom-3 right-3 opacity-0 group-hover/cam:opacity-100 transition-opacity flex gap-1.5">
+                <button @click="toggleStream" class="btn btn-circle btn-xs btn-primary bg-black/60 border-none text-white hover:bg-primary shadow" :title="streamActive ? 'Pause Stream' : 'Play Stream'">
+                  <Icon :name="streamActive ? 'mingcute:pause-fill' : 'mingcute:play-fill'" size="12" />
+                </button>
+                <button @click="refreshStreamOnce" class="btn btn-circle btn-xs btn-primary bg-black/60 border-none text-white hover:bg-primary shadow" title="Refresh Capture">
+                  <Icon name="mingcute:refresh-1-line" size="12" />
+                </button>
+              </div>
             </div>
-            <div>
-              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Nomor Seri (S/N)</span>
-              <p class="text-sm font-extrabold text-base-content mt-1 flex items-center gap-1.5 font-mono">
-                <Icon name="mingcute:key-2-line" size="16" class="text-primary/70" />
-                {{ statsData.deviceInfo?.serialNo }}
-              </p>
-            </div>
-            <div>
-              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Versi Firmware</span>
-              <p class="text-sm font-extrabold text-base-content mt-1 flex items-center gap-1.5">
-                <Icon name="mingcute:package-line" size="16" class="text-primary/70" />
-                {{ statsData.deviceInfo?.firmwareVersion }}
-              </p>
+
+            <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mt-2">Kontrol Pintu Akses</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                @click="sendDoorCommand('open')" 
+                :disabled="sendingDoorCmd"
+                class="btn btn-success btn-sm rounded-xl h-10 font-bold flex items-center justify-center gap-1 text-xs"
+              >
+                <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
+                <Icon v-else name="mingcute:door-open-fill" size="14" />
+                Buka Pintu
+              </button>
+              <button 
+                @click="sendDoorCommand('close')" 
+                :disabled="sendingDoorCmd"
+                class="btn btn-neutral btn-sm rounded-xl h-10 font-bold flex items-center justify-center gap-1 text-xs"
+              >
+                <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
+                <Icon v-else name="mingcute:door-close-fill" size="14" />
+                Kunci Pintu
+              </button>
+              <button 
+                @click="sendDoorCommand('alwaysOpen')" 
+                :disabled="sendingDoorCmd"
+                class="btn btn-outline btn-success btn-sm rounded-xl h-10 font-bold text-xs"
+              >
+                Buka Terus
+              </button>
+              <button 
+                @click="sendDoorCommand('alwaysClose')" 
+                :disabled="sendingDoorCmd"
+                class="btn btn-outline btn-error btn-sm rounded-xl h-10 font-bold text-xs"
+              >
+                Kunci Terus
+              </button>
             </div>
           </div>
 
-          <!-- Capacity Bars -->
-          <div>
-            <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-4">Kapasitas & Penggunaan Biometrik</h4>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Person Capacity -->
-              <div class="space-y-2">
-                <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-base-content flex items-center gap-1.5">
-                    <Icon name="mingcute:user-3-fill" class="text-primary" size="16" />
-                    Person (Pengguna)
-                  </span>
-                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.person }} / {{ statsData.capabilities?.maxPerson }}</span>
-                </div>
-                <progress 
-                  class="progress progress-primary w-full h-2.5 rounded-full" 
-                  :value="statsData.stats?.person" 
-                  :max="statsData.capabilities?.maxPerson"
-                ></progress>
+          <!-- Right Col: Capacity Stats & Hardware Spec -->
+          <div class="lg:col-span-7 space-y-6">
+            <!-- Basic Device Info -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200/40 border border-base-200/60 p-4 rounded-2xl">
+              <div>
+                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Model</span>
+                <p class="text-xs font-extrabold text-base-content mt-1 flex items-center gap-1">
+                  <Icon name="mingcute:cpu-line" size="14" class="text-primary/70" />
+                  {{ statsData.deviceInfo?.model }}
+                </p>
               </div>
-
-              <!-- Face Capacity -->
-              <div class="space-y-2">
-                <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-base-content flex items-center gap-1.5">
-                    <Icon name="mingcute:scan-face-fill" class="text-success" size="16" />
-                    Wajah Terdaftar
-                  </span>
-                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.face }} / {{ statsData.capabilities?.maxFace }}</span>
-                </div>
-                <progress 
-                  class="progress progress-success w-full h-2.5 rounded-full" 
-                  :value="statsData.stats?.face" 
-                  :max="statsData.capabilities?.maxFace"
-                ></progress>
+              <div>
+                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Serial No</span>
+                <p class="text-xs font-extrabold text-base-content mt-1 flex items-center gap-1 font-mono truncate" :title="statsData.deviceInfo?.serialNo">
+                  <Icon name="mingcute:key-2-line" size="14" class="text-primary/70 shrink-0" />
+                  {{ statsData.deviceInfo?.serialNo }}
+                </p>
               </div>
-
-              <!-- Card Capacity -->
-              <div class="space-y-2">
-                <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-base-content flex items-center gap-1.5">
-                    <Icon name="mingcute:card-membership-fill" class="text-info" size="16" />
-                    Kartu RFID
-                  </span>
-                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.card }} / {{ statsData.capabilities?.maxCard }}</span>
-                </div>
-                <progress 
-                  class="progress progress-info w-full h-2.5 rounded-full" 
-                  :value="statsData.stats?.card" 
-                  :max="statsData.capabilities?.maxCard"
-                ></progress>
+              <div>
+                <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Firmware</span>
+                <p class="text-xs font-extrabold text-base-content mt-1 flex items-center gap-1">
+                  <Icon name="mingcute:package-line" size="14" class="text-primary/70" />
+                  {{ statsData.deviceInfo?.firmwareVersion }}
+                </p>
               </div>
+            </div>
 
-              <!-- Fingerprint Capacity -->
-              <div class="space-y-2">
-                <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-base-content flex items-center gap-1.5">
-                    <Icon name="mingcute:fingerprint-fill" class="text-warning" size="16" />
-                    Sidik Jari
-                  </span>
-                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.fingerprint }} / {{ statsData.capabilities?.maxFingerprint }}</span>
+            <!-- Capacity Bars -->
+            <div>
+              <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-4">Kapasitas & Penggunaan Biometrik</h4>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Person Capacity -->
+                <div class="space-y-1.5">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-base-content flex items-center gap-1.5">
+                      <Icon name="mingcute:user-3-fill" class="text-primary" size="14" />
+                      Person (Pengguna)
+                    </span>
+                    <span class="font-semibold text-base-content/60">{{ statsData.stats?.person }} / {{ statsData.capabilities?.maxPerson }}</span>
+                  </div>
+                  <progress 
+                    class="progress progress-primary w-full h-2 rounded-full" 
+                    :value="statsData.stats?.person" 
+                    :max="statsData.capabilities?.maxPerson"
+                  ></progress>
                 </div>
-                <progress 
-                  class="progress progress-warning w-full h-2.5 rounded-full" 
-                  :value="statsData.stats?.fingerprint" 
-                  :max="statsData.capabilities?.maxFingerprint"
-                ></progress>
+
+                <!-- Face Capacity -->
+                <div class="space-y-1.5">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-base-content flex items-center gap-1.5">
+                      <Icon name="mingcute:scan-face-fill" class="text-success" size="14" />
+                      Wajah Terdaftar
+                    </span>
+                    <span class="font-semibold text-base-content/60">{{ statsData.stats?.face }} / {{ statsData.capabilities?.maxFace }}</span>
+                  </div>
+                  <progress 
+                    class="progress progress-success w-full h-2 rounded-full" 
+                    :value="statsData.stats?.face" 
+                    :max="statsData.capabilities?.maxFace"
+                  ></progress>
+                </div>
+
+                <!-- Card Capacity -->
+                <div class="space-y-1.5">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-base-content flex items-center gap-1.5">
+                      <Icon name="mingcute:card-membership-fill" class="text-info" size="14" />
+                      Kartu RFID
+                    </span>
+                    <span class="font-semibold text-base-content/60">{{ statsData.stats?.card }} / {{ statsData.capabilities?.maxCard }}</span>
+                  </div>
+                  <progress 
+                    class="progress progress-info w-full h-2 rounded-full" 
+                    :value="statsData.stats?.card" 
+                    :max="statsData.capabilities?.maxCard"
+                  ></progress>
+                </div>
+
+                <!-- Fingerprint Capacity -->
+                <div class="space-y-1.5">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-base-content flex items-center gap-1.5">
+                      <Icon name="mingcute:fingerprint-fill" class="text-warning" size="14" />
+                      Sidik Jari
+                    </span>
+                    <span class="font-semibold text-base-content/60">{{ statsData.stats?.fingerprint }} / {{ statsData.capabilities?.maxFingerprint }}</span>
+                  </div>
+                  <progress 
+                    class="progress progress-warning w-full h-2 rounded-full" 
+                    :value="statsData.stats?.fingerprint" 
+                    :max="statsData.capabilities?.maxFingerprint"
+                  ></progress>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <div class="flex justify-end mt-4">
-          <button @click="showStatsModal = false" class="btn btn-outline border-base-200 hover:bg-base-200/50 rounded-2xl px-6">
+          <button @click="closeStatsModal()" class="btn btn-outline border-base-200 hover:bg-base-200/50 rounded-2xl px-6">
             Tutup
           </button>
         </div>
