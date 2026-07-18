@@ -257,7 +257,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
       <!-- Desktop Table -->
       <div :class="[bentoCard, 'hidden md:block p-0 overflow-hidden']">
         <div class="overflow-x-auto">
-          <table class="table table-lg w-full border-separate border-spacing-0">
+          <table class="table table-lg w-full border-separate border-spacing-0 min-w-max">
             <thead class="sticky top-0 z-10 bg-base-100 shadow-sm">
               <tr class="bg-base-200/50 text-base-content/50 uppercase text-[10px] tracking-widest font-black">
                 <th class="pl-8 py-4">Pengguna</th>

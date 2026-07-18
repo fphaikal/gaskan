@@ -157,7 +157,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 hover:-translate-y-1 hover:shadow
         <p>Belum ada data kehadiran</p>
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="table table-sm">
+        <table class="table table-sm min-w-max">
           <thead>
             <tr class="text-base-content/50">
               <th>Tanggal</th>

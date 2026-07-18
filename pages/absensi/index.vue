@@ -196,7 +196,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
       <!-- Table -->
       <div v-else>
         <div class="overflow-x-auto">
-          <table class="table table-sm">
+          <table class="table table-sm min-w-max">
             <thead>
               <tr class="bg-base-200/30 text-[10px] font-black uppercase tracking-widest text-base-content/40 border-b border-base-200">
                 <th class="py-4 pl-6 w-12">#</th>

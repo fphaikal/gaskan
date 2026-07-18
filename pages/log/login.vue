@@ -156,7 +156,7 @@ useSeoMeta({
       <!-- Data List (Refined Table) -->
       <div v-else class="space-y-6 mb-12">
         <div class="overflow-x-auto bg-base-100 rounded-[2.5rem] border border-base-200/60 shadow-sm max-h-[600px] overflow-y-auto custom-scrollbar">
-          <table class="table table-lg w-full border-separate border-spacing-0">
+          <table class="table table-lg w-full border-separate border-spacing-0 min-w-max">
             <thead class="sticky top-0 z-20 bg-base-100 shadow-sm">
               <tr class="bg-base-200/50 text-base-content/50 uppercase text-[10px] tracking-[0.2em] font-black">
                 <th class="w-16 pl-8">No</th>

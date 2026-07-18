@@ -69,7 +69,7 @@ useSeoMeta({
     </div>
     <div v-if="user" class="bg-dark shadow-default rounded-md mt-3 p-5">
       <div class="overflow-x-auto">
-        <table class="table">
+        <table class="table min-w-max">
           <tbody>
             <tr>
               <th>NIS</th>

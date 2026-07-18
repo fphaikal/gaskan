@@ -575,7 +575,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
         Foto Siswa Berhasil Diperbarui
       </h2>
       <div class="overflow-x-auto">
-        <table class="table table-md w-full">
+        <table class="table table-md w-full min-w-max">
           <thead>
             <tr class="bg-base-200/50 text-base-content/50 uppercase text-[10px] tracking-wider font-bold">
               <th>No</th>

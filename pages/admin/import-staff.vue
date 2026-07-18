@@ -315,7 +315,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
 
         <div :class="[bentoCard, 'p-0 overflow-hidden rounded-2xl md:rounded-[2.5rem]']">
           <div class="overflow-x-auto max-h-[400px] md:max-h-[500px] custom-scrollbar">
-            <table class="table table-sm md:table-lg w-full border-separate border-spacing-0">
+            <table class="table table-sm md:table-lg w-full border-separate border-spacing-0 min-w-max">
               <thead class="sticky top-0 z-10 bg-base-100 shadow-sm">
                 <tr class="bg-base-200/50 text-base-content/50 uppercase text-[9px] md:text-[10px] tracking-widest font-black">
                   <th class="pl-4 md:pl-8 py-4">Nama Staff</th>
