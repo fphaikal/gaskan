@@ -12,6 +12,95 @@ const isUploadingFace = ref(false);
 const faceFileInput = ref(null);
 const { $toast } = useNuxtApp();
 
+const detectFaceInBrowser = (imageSrc) => {
+  return new Promise((resolve) => {
+    if (typeof window.pico === 'undefined') {
+      const script = document.createElement('script');
+      script.src = '/pico.js';
+      script.onload = () => runDetection(imageSrc, resolve);
+      script.onerror = () => {
+        console.error('Failed to load pico.js');
+        resolve(true); // fallback to true to not block the user if the script fails to load
+      };
+      document.head.appendChild(script);
+    } else {
+      runDetection(imageSrc, resolve);
+    }
+  });
+};
+
+const runDetection = async (imageSrc, resolve) => {
+  try {
+    const cascadeResponse = await fetch('/facefinder');
+    const cascadeBuffer = await cascadeResponse.arrayBuffer();
+    const cascadeBytes = new Uint8Array(cascadeBuffer);
+    const classifyRegion = window.pico.unpack_cascade(cascadeBytes);
+
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const maxDim = 360;
+      let w = img.width;
+      let h = img.height;
+      if (w > h) {
+        if (w > maxDim) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        }
+      } else {
+        if (h > maxDim) {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      canvas.width = w;
+      canvas.height = h;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const imgData = ctx.getImageData(0, 0, w, h).data;
+
+      const rgbaToGray = (rgba, nrows, ncols) => {
+        const gray = new Uint8Array(nrows * ncols);
+        for (let r = 0; r < nrows; r++) {
+          for (let c = 0; c < ncols; c++) {
+            const idx = 4 * (r * ncols + c);
+            gray[r * ncols + c] = 0.299 * rgba[idx] + 0.587 * rgba[idx + 1] + 0.114 * rgba[idx + 2];
+          }
+        }
+        return gray;
+      };
+
+      const pixels = rgbaToGray(imgData, h, w);
+      const imageDesc = {
+        pixels: pixels,
+        nrows: h,
+        ncols: w,
+        ldim: w,
+      };
+
+      const params = {
+        shiftfactor: 0.1,
+        minsize: 20,
+        maxsize: 1000,
+        scalefactor: 1.1,
+      };
+
+      let dets = window.pico.run_cascade(imageDesc, classifyRegion, params);
+      dets = window.pico.cluster_detections(dets, 0.2);
+
+      const detected = dets.some((d) => d[3] > 4.5);
+      console.log('Pico.js detection score:', dets.map(d => d[3]));
+      resolve(detected);
+    };
+    img.onerror = () => resolve(true);
+  } catch (error) {
+    console.error('Face detection error:', error);
+    resolve(true);
+  }
+};
+
 const onFaceFileChange = async (e) => {
   const files = e.target.files;
   if (files && files[0]) {
@@ -24,6 +113,21 @@ const onFaceFileChange = async (e) => {
 
     isUploadingFace.value = true;
     try {
+      const reader = new FileReader();
+      const fileDataUrl = await new Promise((resolve, reject) => {
+        reader.onload = (event) => resolve(event.target.result);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
+
+      const faceDetected = await detectFaceInBrowser(fileDataUrl);
+      if (!faceDetected) {
+        $toast.error('Wajah tidak terdeteksi pada foto! Harap pastikan foto menampilkan wajah Anda dengan jelas.');
+        isUploadingFace.value = false;
+        if (faceFileInput.value) faceFileInput.value.value = '';
+        return;
+      }
+
       const formData = new FormData();
       formData.append('photo', file);
 
@@ -189,7 +293,7 @@ useSeoMeta({
           </div>
           
           <div class="flex flex-col gap-4">
-            <div class="relative h-44 w-full rounded-2xl overflow-hidden bg-base-200 border border-base-300 flex items-center justify-center">
+            <div class="relative w-36 h-48 mx-auto rounded-2xl overflow-hidden bg-base-200 border border-base-300 flex items-center justify-center shadow-inner">
               <img 
                 v-if="user.faceUrl"
                 :src="user.faceUrl" 
@@ -198,7 +302,7 @@ useSeoMeta({
               />
               <div v-else class="flex flex-col items-center justify-center text-base-content/40 p-4 text-center">
                 <Icon name="mingcute:face-fill" size="44" class="mb-2 opacity-55" />
-                <p class="text-xs font-semibold">Belum ada foto wajah absensi</p>
+                <p class="text-xs font-semibold">Belum ada foto</p>
               </div>
             </div>
 
