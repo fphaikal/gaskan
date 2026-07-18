@@ -3,9 +3,8 @@ const route = useRoute();
 const router = useRouter();
 const id = route.params.id;
 
-definePageMeta({
-  middleware: 'auth'
-});
+
+
 
 const device = ref(null);
 const statsData = ref(null);
