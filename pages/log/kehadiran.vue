@@ -268,69 +268,112 @@ useSeoMeta({
         <p class="font-medium text-xl">Belum ada riwayat kehadiran.</p>
       </div>
 
-      <div v-else class="space-y-8 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-gradient-to-b before:from-primary/50 before:to-transparent before:rounded-full">
-        <div v-for="(l, i) in logSiswa.absen" :key="l.tanggal" class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+      <!-- Left-aligned beautiful responsive timeline -->
+      <div v-else class="relative pl-8 md:pl-10 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-0 before:w-1 before:bg-gradient-to-b before:from-primary/50 before:to-transparent before:rounded-full">
+        <div v-for="(l, i) in logSiswa.absen" :key="l.tanggal" class="relative group">
           
-          <!-- Icon Marker -->
-          <div class="flex items-center justify-center w-12 h-12 rounded-full border-[6px] border-base-100 bg-primary text-primary-content shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 transition-transform group-hover:scale-110">
-            <Icon name="mingcute:calendar-month-fill" size="20"/>
+          <!-- Timeline Marker Icon -->
+          <div class="absolute -left-8 md:-left-10 top-6 w-8 h-8 rounded-full border-4 border-base-200 bg-primary text-primary-content shadow-md flex items-center justify-center z-10 transition-transform group-hover:scale-110">
+            <Icon name="mingcute:calendar-month-fill" size="14"/>
           </div>
           
-          <!-- Card -->
-          <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] bg-base-100 hover:bg-base-100/80 border border-base-200/80 rounded-3xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-xl transition-all duration-300 relative overflow-hidden">
-            <!-- Background glow decoration -->
-            <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"></div>
+          <!-- Main Card -->
+          <div class="bg-base-100 hover:bg-base-100/90 border border-base-200/80 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden">
+            <!-- Decorative background blur -->
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
 
-            <div class="flex items-center justify-between mb-5 border-b border-base-200/60 pb-4 relative z-10">
-              <time class="text-xl font-extrabold text-base-content">{{ l.tanggal }}</time>
-              <div class="px-3 py-1 bg-base-200/50 rounded-lg border border-base-300 text-xs font-bold text-base-content/50 uppercase">Hari ke-{{ logSiswa.absen.length - i }}</div>
+            <!-- Card Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-base-200/60 pb-4 gap-2 relative z-10">
+              <time class="text-xl font-extrabold text-base-content flex items-center gap-2">
+                <Icon name="mingcute:time-line" class="text-primary/70" />
+                {{ l.tanggal }}
+              </time>
+              <div class="px-3 py-1 bg-base-200/50 rounded-xl border border-base-300/60 text-xs font-bold text-base-content/50 uppercase w-fit">
+                Hari ke-{{ logSiswa.absen.length - i }}
+              </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4 relative z-10">
-              <!-- Masuk Column -->
-              <div class="bg-success/5 rounded-2xl border border-success/10 overflow-hidden flex flex-col transition-colors hover:bg-success/10">
-                <div class="bg-success/10 px-4 py-2.5 border-b border-success/10 flex items-center gap-2">
-                  <Icon name="mingcute:arrow-right-circle-fill" size="18" class="text-success" />
-                  <span class="text-xs font-black text-success uppercase tracking-widest">Masuk</span>
+            <!-- Grid Content: Stacks on mobile, side-by-side on tablet/desktop -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+              
+              <!-- Masuk (Check-In) Block -->
+              <div class="bg-success/5 rounded-2xl border border-success/10 overflow-hidden flex flex-col hover:bg-success/[0.08] transition-colors">
+                <div class="bg-success/10 px-4 py-2.5 border-b border-success/10 flex items-center justify-between gap-2 shrink-0">
+                  <div class="flex items-center gap-2">
+                    <Icon name="mingcute:arrow-right-circle-fill" size="18" class="text-success" />
+                    <span class="text-xs font-black text-success uppercase tracking-widest">Masuk</span>
+                  </div>
+                  <span v-if="l.enter.time && l.enter.time.length" 
+                        :class="['px-2.5 py-0.5 text-[9px] font-black tracking-widest uppercase rounded-lg border', l.indexTelat === false ? 'bg-success/20 border-success/30 text-success' : 'bg-error/20 border-error/30 text-error']">
+                    {{ l.indexTelat === false ? 'TEPAT WAKTU' : 'TERLAMBAT' }}
+                  </span>
                 </div>
-                <div class="p-4 flex-1 flex flex-col gap-3 justify-center">
-                  <div v-if="!l.enter.time || l.enter.time.length === 0" class="text-sm text-base-content/40 font-medium italic text-center py-2">Tidak ada data</div>
-                  <div v-else v-for="(d, idx) in l.enter.time" :key="d" class="flex flex-col gap-2 items-start w-full">
-                    <div class="flex items-center justify-between w-full gap-2">
-                      <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
-                      <span v-if="l.enter.gate && l.enter.gate[idx]" class="text-[9px] font-bold text-success/80 bg-success/5 px-2 py-0.5 rounded border border-success/10 truncate max-w-[120px]" :title="l.enter.gate[idx]">
-                        {{ l.enter.gate[idx] }}
+                <div class="divide-y divide-success/5">
+                  <div v-if="!l.enter.time || l.enter.time.length === 0" class="p-6 text-sm text-base-content/40 font-medium italic text-center">
+                    Tidak ada data
+                  </div>
+                  <div v-else v-for="(d, idx) in l.enter.time" :key="d" class="p-4 flex items-center gap-4">
+                    <!-- Biometric Photo -->
+                    <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative cursor-zoom-in group/img"
+                         @click="openImagePreview(l.enter.image && l.enter.image[idx] ? l.enter.image[idx] : 'https://api.tierkun.my.id/file/picture/0000.png')">
+                      <img :src="l.enter.image && l.enter.image[idx] ? l.enter.image[idx] : 'https://api.tierkun.my.id/file/picture/0000.png'" 
+                           class="w-full h-full object-cover group-hover/img:scale-115 transition-transform duration-300" />
+                      <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <Icon name="mingcute:zoom-in-line" size="16" />
+                      </div>
+                    </div>
+                    <!-- Details -->
+                    <div class="flex-1 min-w-0">
+                      <span class="text-xl font-mono font-black text-base-content tracking-tight">{{ d }}</span>
+                      <span v-if="l.enter.gate && l.enter.gate[idx]" 
+                            class="text-[10px] font-bold text-base-content/50 flex items-center gap-1 mt-0.5 max-w-full"
+                            :title="l.enter.gate[idx]">
+                        <Icon name="mingcute:location-fill" size="12" class="text-success/70 shrink-0" />
+                        <span class="truncate">{{ l.enter.gate[idx] }}</span>
                       </span>
                     </div>
-                    <span v-if="l.indexTelat === false" class="px-2.5 py-1 text-[10px] font-black text-success bg-success/20 border border-success/30 rounded-lg w-fit tracking-widest uppercase">TEPAT WAKTU</span>
-                    <span v-else class="px-2.5 py-1 text-[10px] font-black text-error bg-error/20 border border-error/30 rounded-lg w-fit tracking-widest uppercase">TERLAMBAT</span>
                   </div>
                 </div>
               </div>
               
-              <!-- Keluar Column -->
-              <div class="bg-error/5 rounded-2xl border border-error/10 overflow-hidden flex flex-col transition-colors hover:bg-error/10">
-                <div class="bg-error/10 px-4 py-2.5 border-b border-error/10 flex items-center gap-2">
+              <!-- Pulang (Check-Out) Block -->
+              <div class="bg-error/5 rounded-2xl border border-error/10 overflow-hidden flex flex-col hover:bg-error/[0.08] transition-colors">
+                <div class="bg-error/10 px-4 py-2.5 border-b border-error/10 flex items-center gap-2 shrink-0">
                   <Icon name="mingcute:arrow-left-circle-fill" size="18" class="text-error" />
                   <span class="text-xs font-black text-error uppercase tracking-widest">Pulang</span>
                 </div>
-                <div class="p-4 flex-1 flex flex-col gap-3 justify-center">
-                   <div v-if="!l.exit.time || l.exit.time.length === 0" class="text-sm text-base-content/40 font-medium flex flex-col items-center justify-center gap-2 py-2 text-center">
-                     <Icon name="mingcute:time-fill" size="24" class="opacity-30"/> 
-                     <span>Belum Pulang</span>
-                   </div>
-                   <div v-else v-for="(d, idx) in l.exit.time" :key="d" class="flex flex-col gap-2 items-start w-full">
-                     <div class="flex items-center justify-between w-full gap-2">
-                       <span class="text-xl font-mono font-bold text-base-content">{{ d }}</span>
-                       <span v-if="l.exit.gate && l.exit.gate[idx]" class="text-[9px] font-bold text-error/80 bg-error/5 px-2 py-0.5 rounded border border-error/10 truncate max-w-[120px]" :title="l.exit.gate[idx]">
-                         {{ l.exit.gate[idx] }}
-                       </span>
-                     </div>
-                   </div>
+                <div class="divide-y divide-error/5 flex-1 flex flex-col justify-center">
+                  <div v-if="!l.exit.time || l.exit.time.length === 0" class="p-8 flex flex-col items-center justify-center gap-2 text-center text-base-content/40 flex-1">
+                    <Icon name="mingcute:time-fill" size="24" class="opacity-40 animate-pulse text-error" /> 
+                    <span class="text-xs font-bold uppercase tracking-wider">Belum Pulang</span>
+                  </div>
+                  <div v-else v-for="(d, idx) in l.exit.time" :key="d" class="p-4 flex items-center gap-4 w-full">
+                    <!-- Biometric Photo -->
+                    <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-inner relative cursor-zoom-in group/img"
+                         @click="openImagePreview(l.exit.image && l.exit.image[idx] ? l.exit.image[idx] : 'https://api.tierkun.my.id/file/picture/0000.png')">
+                      <img :src="l.exit.image && l.exit.image[idx] ? l.exit.image[idx] : 'https://api.tierkun.my.id/file/picture/0000.png'" 
+                           class="w-full h-full object-cover group-hover/img:scale-115 transition-transform duration-300" />
+                      <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <Icon name="mingcute:zoom-in-line" size="16" />
+                      </div>
+                    </div>
+                    <!-- Details -->
+                    <div class="flex-1 min-w-0">
+                      <span class="text-xl font-mono font-black text-base-content tracking-tight">{{ d }}</span>
+                      <span v-if="l.exit.gate && l.exit.gate[idx]" 
+                            class="text-[10px] font-bold text-base-content/50 flex items-center gap-1 mt-0.5 max-w-full"
+                            :title="l.exit.gate[idx]">
+                        <Icon name="mingcute:location-fill" size="12" class="text-error/70 shrink-0" />
+                        <span class="truncate">{{ l.exit.gate[idx] }}</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              
             </div>
           </div>
+          
         </div>
       </div>
     </div>
