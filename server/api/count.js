@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
       pendingLeaves: data.pendingLeaves,
       recentAttendances: data.recentAttendances,
       recentLogs: data.recentLogs,
+      recentFaceFailures: data.recentFaceFailures || [],
       onsite_siswa: (data.today?.present || 0) + (data.today?.late || 0)
     };
   });
