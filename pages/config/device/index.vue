@@ -342,7 +342,7 @@ const showDeviceStats = (device) => {
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-for="d in devices" :key="d.id" class="bg-base-100 border border-base-200/80 hover:border-primary/30 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
         <!-- Decoration light glow -->
-        <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-colors duration-500"></div>
+        <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-colors duration-500 pointer-events-none"></div>
 
         <div>
           <!-- Header Card -->

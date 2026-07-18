@@ -718,91 +718,132 @@ useSeoMeta({
         <TransitionGroup name="list">
           <div 
             v-for="user in paginatedUsers" :key="user.id"
-            class="group flex flex-col lg:grid lg:grid-cols-12 items-start lg:items-center px-6 lg:px-8 py-5 lg:py-4 hover:bg-base-200/30 transition-all gap-4 lg:gap-0 relative"
+            class="group relative hover:bg-base-200/30 transition-all"
           >
             <!-- Left border accent -->
             <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary scale-y-0 group-hover:scale-y-100 transition-transform origin-center duration-300"></div>
 
-            <!-- Col 1-5: Bio -->
-            <div class="col-span-5 flex items-center gap-4 w-full">
+            <!-- MOBILE layout (< lg): compact single row card -->
+            <div class="flex lg:hidden items-center gap-3 px-4 py-3">
+              <!-- Checkbox -->
               <input 
                 type="checkbox" 
                 class="checkbox checkbox-primary rounded-lg checkbox-sm border-base-content/20 shrink-0"
                 :checked="selectedStudents.includes(user.id)"
                 @change="toggleSelectStudent(user.id)"
               />
+              <!-- Avatar -->
               <div class="relative shrink-0">
-                <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-200 group-hover:border-primary/30 transition-colors">
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-base-200 border border-base-200">
                   <img 
                     :src="user.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=ffffff&bold=true`" 
                     class="w-full h-full object-cover"
                   />
                 </div>
-                <div v-if="!user.isActive" class="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-lg flex items-center justify-center border-2 border-base-100 shadow-sm">
-                  <Icon name="mingcute:close-line" size="12" />
+                <div v-if="!user.isActive" class="absolute -top-1 -right-1 w-4 h-4 bg-error text-white rounded flex items-center justify-center border border-base-100">
+                  <Icon name="mingcute:close-line" size="10" />
                 </div>
               </div>
-              <div class="min-w-0">
-                <h3 class="font-bold text-base text-base-content group-hover:text-primary transition-colors truncate">{{ user.name }}</h3>
-                <div class="flex items-center gap-2 mt-0.5">
-                  <span :class="['text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md', user.isActive ? 'bg-success/10 text-success' : 'bg-error/10 text-error']">
-                    {{ user.isActive ? 'Aktif' : 'Nonaktif' }}
+              <!-- Name + meta -->
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-sm text-base-content truncate">{{ user.name }}</h3>
+                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span class="text-[9px] font-black text-base-content/40">#{{ user.nis }}</span>
+                  <span class="text-[9px] text-base-content/30">·</span>
+                  <span class="badge badge-primary badge-outline text-[9px] font-black px-1.5 h-4 rounded border-primary/30">{{ user.class?.className || 'N/A' }}</span>
+                  <span :class="['text-[9px] font-black px-1.5 py-0 rounded h-4 flex items-center', user.faceToken ? 'bg-primary/10 text-primary' : 'bg-base-200 text-base-content/40']">
+                    <Icon :name="user.faceToken ? 'mingcute:face-line' : 'mingcute:face-fill'" size="10" class="mr-0.5" />
+                    {{ user.faceToken ? 'Sinkron' : 'Belum' }}
                   </span>
-                  <span :class="['text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md flex items-center gap-1', user.faceToken ? 'bg-primary/10 text-primary' : 'bg-base-200 text-base-content/40']">
-                    <Icon :name="user.faceToken ? 'mingcute:face-line' : 'mingcute:face-fill'" size="12" />
-                    {{ user.faceToken ? 'Wajah Sinkron' : 'Belum Sinkron' }}
-                  </span>
-                  <span class="lg:hidden text-xs font-black text-base-content/40 tracking-wider">#{{ user.nis }}</span>
                 </div>
+              </div>
+              <!-- Action buttons (compact icon-only) -->
+              <div class="flex items-center gap-1 shrink-0">
+                <button 
+                  @click="openRegisterDeviceModal(user)" 
+                  class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-primary/10 hover:text-primary text-primary/60"
+                  title="Daftarkan ke Perangkat"
+                >
+                  <Icon name="mingcute:fingerprint-fill" size="16" />
+                </button>
+                <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-primary/10 hover:text-primary">
+                  <Icon name="mingcute:eye-2-line" size="16" />
+                </NuxtLink>
+                <button @click="openEditModal(user)" class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-info/10 hover:text-info">
+                  <Icon name="mingcute:edit-4-line" size="16" />
+                </button>
+                <button @click="deleteStudent(user)" class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-error/10 hover:text-error">
+                  <Icon name="mingcute:delete-2-line" size="16" />
+                </button>
               </div>
             </div>
 
-            <!-- Col 6-7: NIS / NISN -->
-            <div class="col-span-2 flex lg:flex-col items-center lg:items-start gap-4 lg:gap-1 w-full lg:w-auto">
-               <div class="flex flex-col">
-                 <span class="text-[10px] font-black text-base-content/30 uppercase lg:hidden mb-1">NIS</span>
-                 <p class="text-sm font-black text-base-content">{{ user.nis }}</p>
-               </div>
-               <div class="flex flex-col">
-                 <span class="text-[10px] font-black text-base-content/30 uppercase lg:hidden mb-1">NISN</span>
-                 <p class="text-xs font-bold text-base-content/40">{{ user.nisn || '-' }}</p>
-               </div>
-            </div>
+            <!-- DESKTOP layout (lg+): 12-col grid -->
+            <div class="hidden lg:grid lg:grid-cols-12 items-center px-8 py-4 gap-0">
+              <!-- Col 1-5: Bio -->
+              <div class="col-span-5 flex items-center gap-4">
+                <input 
+                  type="checkbox" 
+                  class="checkbox checkbox-primary rounded-lg checkbox-sm border-base-content/20 shrink-0"
+                  :checked="selectedStudents.includes(user.id)"
+                  @change="toggleSelectStudent(user.id)"
+                />
+                <div class="relative shrink-0">
+                  <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-200 group-hover:border-primary/30 transition-colors">
+                    <img 
+                      :src="user.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=ffffff&bold=true`" 
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div v-if="!user.isActive" class="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-lg flex items-center justify-center border-2 border-base-100 shadow-sm">
+                    <Icon name="mingcute:close-line" size="12" />
+                  </div>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-base text-base-content group-hover:text-primary transition-colors truncate">{{ user.name }}</h3>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span :class="['text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md', user.isActive ? 'bg-success/10 text-success' : 'bg-error/10 text-error']">
+                      {{ user.isActive ? 'Aktif' : 'Nonaktif' }}
+                    </span>
+                    <span :class="['text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md flex items-center gap-1', user.faceToken ? 'bg-primary/10 text-primary' : 'bg-base-200 text-base-content/40']">
+                      <Icon :name="user.faceToken ? 'mingcute:face-line' : 'mingcute:face-fill'" size="12" />
+                      {{ user.faceToken ? 'Wajah Sinkron' : 'Belum Sinkron' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-            <!-- Col 8-10: Class Info -->
-            <div class="col-span-3 flex lg:flex-col items-center lg:items-start gap-4 lg:gap-1 w-full lg:w-auto">
-               <div class="flex-1 lg:flex-none">
-                 <span class="text-[10px] font-black text-base-content/30 uppercase lg:hidden mb-1">Kelas</span>
-                 <div class="badge badge-primary badge-outline h-7 px-3 rounded-lg font-black text-[10px] border-primary/20">{{ user.class?.className || 'N/A' }}</div>
-               </div>
-               <div class="flex-1 lg:flex-none">
-                 <span class="text-[10px] font-black text-base-content/30 uppercase lg:hidden mb-1">Jurusan</span>
-                 <p class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest truncate max-w-[150px]">{{ user.class?.major?.name || '-' }}</p>
-               </div>
-            </div>
+              <!-- Col 6-7: NIS / NISN -->
+              <div class="col-span-2 flex flex-col gap-1">
+                <p class="text-sm font-black text-base-content">{{ user.nis }}</p>
+                <p class="text-xs font-bold text-base-content/40">{{ user.nisn || '-' }}</p>
+              </div>
 
-            <!-- Col 11-12: Actions -->
-            <div class="col-span-2 flex justify-end gap-1.5 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-none border-base-200/60">
-              <button 
-                @click="openRegisterDeviceModal(user)" 
-                class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary text-primary/70"
-                title="Daftarkan ke Perangkat Absensi"
-              >
-                <Icon name="mingcute:fingerprint-fill" />
-                <span class="lg:hidden">Daftarkan</span>
-              </button>
-              <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary">
-                <Icon name="mingcute:eye-2-line" />
-                <span class="lg:hidden">Lihat</span>
-              </NuxtLink>
-              <button @click="openEditModal(user)" class="btn btn-ghost btn-sm rounded-xl px-4 font-bold gap-2 hover:bg-info/10 hover:text-info">
-                <Icon name="mingcute:edit-4-line" />
-                <span class="lg:hidden">Edit</span>
-              </button>
-              <button @click="deleteStudent(user)" class="btn btn-ghost btn-sm rounded-xl px-4 font-bold gap-2 hover:bg-error/10 hover:text-error">
-                <Icon name="mingcute:delete-2-line" />
-                <span class="lg:hidden">Hapus</span>
-              </button>
+              <!-- Col 8-10: Class Info -->
+              <div class="col-span-3 flex flex-col gap-1">
+                <div class="badge badge-primary badge-outline h-7 px-3 rounded-lg font-black text-[10px] border-primary/20">{{ user.class?.className || 'N/A' }}</div>
+                <p class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest truncate max-w-[150px]">{{ user.class?.major?.name || '-' }}</p>
+              </div>
+
+              <!-- Col 11-12: Actions -->
+              <div class="col-span-2 flex justify-end gap-1.5">
+                <button 
+                  @click="openRegisterDeviceModal(user)" 
+                  class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary text-primary/70"
+                  title="Daftarkan ke Perangkat Absensi"
+                >
+                  <Icon name="mingcute:fingerprint-fill" />
+                </button>
+                <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary">
+                  <Icon name="mingcute:eye-2-line" />
+                </NuxtLink>
+                <button @click="openEditModal(user)" class="btn btn-ghost btn-sm rounded-xl px-4 font-bold gap-2 hover:bg-info/10 hover:text-info">
+                  <Icon name="mingcute:edit-4-line" />
+                </button>
+                <button @click="deleteStudent(user)" class="btn btn-ghost btn-sm rounded-xl px-4 font-bold gap-2 hover:bg-error/10 hover:text-error">
+                  <Icon name="mingcute:delete-2-line" />
+                </button>
+              </div>
             </div>
           </div>
         </TransitionGroup>
