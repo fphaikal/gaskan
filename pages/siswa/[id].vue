@@ -578,9 +578,11 @@ useSeoMeta({
         <div class="p-6 bg-neutral/5 flex items-center justify-center">
           <div class="relative w-72 h-96 overflow-hidden rounded-2xl shadow-inner bg-black">
             <Cropper
+              v-if="showFaceCropper"
               ref="faceCropperRef"
               :src="rawFaceImage"
               :stencil-props="{ aspectRatio: 3/4 }"
+              :image-restriction="'none'"
               class="w-full h-full"
             />
             
