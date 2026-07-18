@@ -181,10 +181,10 @@ const testConnection = async (device) => {
     if (res?.success) {
       $toast.success(`${device.name}: ${res.message}`);
     } else {
-      $toast.error(`${device.name}: Koneksi gagal`);
+      $toast.error(`${device.name}: ${res.message || 'Koneksi gagal'}`);
     }
   } catch (e) {
-    $toast.error(`${device.name}: Gagal terhubung`);
+    $toast.error(`${device.name}: ${e.data?.message || 'Gagal terhubung'}`);
   } finally {
     testingId.value = null;
   }
@@ -213,10 +213,10 @@ const testFormConnection = async () => {
     if (res?.success) {
       $toast.success('Koneksi berhasil!');
     } else {
-      $toast.error('Koneksi gagal');
+      $toast.error(res?.message || 'Koneksi gagal');
     }
   } catch (e) {
-    $toast.error('Gagal menghubungkan perangkat');
+    $toast.error(e.data?.message || 'Gagal menghubungkan perangkat');
   } finally {
     saving.value = false;
   }

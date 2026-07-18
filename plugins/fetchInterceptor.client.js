@@ -11,7 +11,10 @@ export default defineNuxtPlugin((nuxtApp) => {
       return await originalFetch(...args);
     } catch (error) {
       // Tangkap error jika statusnya 401 Unauthorized
-      if (error.response && error.response.status === 401) {
+      const requestUrl = typeof args[0] === 'string' ? args[0] : '';
+      const isTestConnection = requestUrl.includes('test-connection');
+
+      if (error.response && error.response.status === 401 && !isTestConnection) {
         const router = useRouter();
         
         // Pastikan kita tidak mencegat 401 di halaman login (misal saat salah password)
