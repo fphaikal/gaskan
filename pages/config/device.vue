@@ -286,6 +286,34 @@ const saveLateSettings = async () => {
     savingSettings.value = false;
   }
 };
+
+const showStatsModal = ref(false);
+const loadingStats = ref(false);
+const statsDevice = ref(null);
+const statsData = ref(null);
+
+const showDeviceStats = async (device) => {
+  statsDevice.value = device;
+  showStatsModal.value = true;
+  loadingStats.value = true;
+  statsData.value = null;
+
+  try {
+    const res = await $fetch(`/api/device/${device.id}/stats`);
+    if (res?.success) {
+      statsData.value = res;
+    } else {
+      $toast.error(res?.message || 'Gagal memuat statistik perangkat');
+      showStatsModal.value = false;
+    }
+  } catch (e) {
+    console.error('Failed to load device stats:', e);
+    $toast.error(e.data?.message || 'Gagal menghubungkan ke perangkat untuk mengambil statistik');
+    showStatsModal.value = false;
+  } finally {
+    loadingStats.value = false;
+  }
+};
 </script>
 
 <template>
@@ -409,6 +437,9 @@ const saveLateSettings = async () => {
           <div class="flex items-center justify-between">
             <span class="text-xs text-base-content/40 font-medium">Aksi Perangkat:</span>
             <div class="flex items-center gap-1.5">
+              <button @click="showDeviceStats(d)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-success/20 hover:text-success" title="Statistik & Kapasitas Alat">
+                <Icon name="mingcute:chart-bar-fill" size="16" />
+              </button>
               <button @click="openEditModal(d)" class="btn btn-square btn-ghost btn-sm rounded-xl border border-base-200 hover:border-primary/20 hover:text-primary">
                 <Icon name="mingcute:pencil-fill" size="16" />
               </button>
@@ -531,6 +562,133 @@ const saveLateSettings = async () => {
               </button>
             </div>
           </div>
+        </div>
+    </div>
+
+    <!-- Device Stats Modal -->
+    <div v-if="showStatsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm transition-opacity duration-300">
+      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-2xl shadow-2xl relative animate-scale-in flex flex-col gap-6" @click.stop>
+        <!-- Close Button -->
+        <button @click="showStatsModal = false" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
+          <Icon name="mingcute:close-line" size="20" />
+        </button>
+
+        <div>
+          <h3 class="text-2xl font-extrabold text-base-content mb-1 flex items-center gap-2">
+            <Icon name="mingcute:chart-bar-fill" class="text-success" />
+            Statistik & Kapasitas Alat
+          </h3>
+          <p class="text-sm text-base-content/50">Detail kapasitas terpasang pada mesin absensi <strong>{{ statsDevice?.name }}</strong></p>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="loadingStats" class="flex flex-col items-center justify-center py-16 gap-3">
+          <span class="loading loading-spinner loading-lg text-success"></span>
+          <p class="text-sm font-bold text-base-content/60">Menghubungi mesin absensi di {{ statsDevice?.url }}...</p>
+        </div>
+
+        <div v-else-if="statsData" class="space-y-6">
+          <!-- Basic Device Info -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-base-200/40 border border-base-200/60 p-5 rounded-2xl">
+            <div>
+              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Model Perangkat</span>
+              <p class="text-sm font-extrabold text-base-content mt-1 flex items-center gap-1.5">
+                <Icon name="mingcute:cpu-line" size="16" class="text-primary/70" />
+                {{ statsData.deviceInfo?.model }}
+              </p>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Nomor Seri (S/N)</span>
+              <p class="text-sm font-extrabold text-base-content mt-1 flex items-center gap-1.5 font-mono">
+                <Icon name="mingcute:key-2-line" size="16" class="text-primary/70" />
+                {{ statsData.deviceInfo?.serialNo }}
+              </p>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Versi Firmware</span>
+              <p class="text-sm font-extrabold text-base-content mt-1 flex items-center gap-1.5">
+                <Icon name="mingcute:package-line" size="16" class="text-primary/70" />
+                {{ statsData.deviceInfo?.firmwareVersion }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Capacity Bars -->
+          <div>
+            <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-4">Kapasitas & Penggunaan Biometrik</h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Person Capacity -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-base-content flex items-center gap-1.5">
+                    <Icon name="mingcute:user-3-fill" class="text-primary" size="16" />
+                    Person (Pengguna)
+                  </span>
+                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.person }} / {{ statsData.capabilities?.maxPerson }}</span>
+                </div>
+                <progress 
+                  class="progress progress-primary w-full h-2.5 rounded-full" 
+                  :value="statsData.stats?.person" 
+                  :max="statsData.capabilities?.maxPerson"
+                ></progress>
+              </div>
+
+              <!-- Face Capacity -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-base-content flex items-center gap-1.5">
+                    <Icon name="mingcute:scan-face-fill" class="text-success" size="16" />
+                    Wajah Terdaftar
+                  </span>
+                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.face }} / {{ statsData.capabilities?.maxFace }}</span>
+                </div>
+                <progress 
+                  class="progress progress-success w-full h-2.5 rounded-full" 
+                  :value="statsData.stats?.face" 
+                  :max="statsData.capabilities?.maxFace"
+                ></progress>
+              </div>
+
+              <!-- Card Capacity -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-base-content flex items-center gap-1.5">
+                    <Icon name="mingcute:card-membership-fill" class="text-info" size="16" />
+                    Kartu RFID
+                  </span>
+                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.card }} / {{ statsData.capabilities?.maxCard }}</span>
+                </div>
+                <progress 
+                  class="progress progress-info w-full h-2.5 rounded-full" 
+                  :value="statsData.stats?.card" 
+                  :max="statsData.capabilities?.maxCard"
+                ></progress>
+              </div>
+
+              <!-- Fingerprint Capacity -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-base-content flex items-center gap-1.5">
+                    <Icon name="mingcute:fingerprint-fill" class="text-warning" size="16" />
+                    Sidik Jari
+                  </span>
+                  <span class="font-semibold text-base-content/60">{{ statsData.stats?.fingerprint }} / {{ statsData.capabilities?.maxFingerprint }}</span>
+                </div>
+                <progress 
+                  class="progress progress-warning w-full h-2.5 rounded-full" 
+                  :value="statsData.stats?.fingerprint" 
+                  :max="statsData.capabilities?.maxFingerprint"
+                ></progress>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-4">
+          <button @click="showStatsModal = false" class="btn btn-outline border-base-200 hover:bg-base-200/50 rounded-2xl px-6">
+            Tutup
+          </button>
         </div>
       </div>
     </div>
