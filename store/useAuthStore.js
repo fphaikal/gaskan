@@ -88,13 +88,18 @@ export const useAuthStore = defineStore("auth", {
 
     async logUserOut() {
       try {
+        // Panggil endpoint logout secara synchronous (ditunggu) agar cookie terhapus sebelum redirect
+        await $fetch("/api/auth/logout", { method: "POST" }).catch((err) => {
+          console.error("Logout API error:", err);
+        });
+      } finally {
+        // Bersihkan state di Pinia
         this.clearSessionUser();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+        
+        // Redirect ke halaman login
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
         }
-        $fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-      } catch (error) {
-        console.error("Logout error:", error);
       }
     },
   }
