@@ -294,31 +294,8 @@ const statsData = ref(null);
 
 // Stream & Door Control States
 const streamActive = ref(false);
-const streamUrl = ref('');
+const streamIframeUrl = ref('');
 const sendingDoorCmd = ref(false);
-let streamTimer = null;
-
-// WebRTC Specific States
-const videoElement = ref(null);
-const peerConnection = ref(null);
-const webrtcConnected = ref(false);
-
-const startStreamTimer = () => {
-  stopStreamTimer();
-  if (webrtcConnected.value) return; // No snapshots needed if WebRTC is connected
-  streamTimer = setInterval(() => {
-    if (streamActive.value && statsDevice.value && !webrtcConnected.value) {
-      streamUrl.value = `/api/device/${statsDevice.value.id}/capture?t=${Date.now()}`;
-    }
-  }, 1500);
-};
-
-const stopStreamTimer = () => {
-  if (streamTimer) {
-    clearInterval(streamTimer);
-    streamTimer = null;
-  }
-};
 
 const slugify = (text) => {
   if (!text) return '';
@@ -331,124 +308,7 @@ const slugify = (text) => {
     .replace(/\-\-+/g, '_');
 };
 
-const connectWebRTC = async (device) => {
-  try {
-    disconnectWebRTC();
 
-    const streamIdName = device.id;
-    const slugName = slugify(device.name);
-
-    peerConnection.value = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-
-    peerConnection.value.ontrack = (event) => {
-      if (videoElement.value) {
-        videoElement.value.srcObject = event.streams[0];
-      }
-    };
-
-    // Add transceivers
-    peerConnection.value.addTransceiver('video', { direction: 'recvonly' });
-    peerConnection.value.addTransceiver('audio', { direction: 'recvonly' });
-
-    const offer = await peerConnection.value.createOffer();
-    await peerConnection.value.setLocalDescription(offer);
-
-    let activeStreamName = slugName;
-    let res = null;
-    let timeoutId = null;
-
-    // Try slugName first (e.g. gerbang_depan) via Nuxt same-origin proxy
-    try {
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      res = await fetch(`/api/device/${device.id}/webrtc?src=${slugName}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: offer.sdp,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-    } catch (e) {
-      console.warn(`WebRTC failed with slug '${slugName}', trying ID...`, e);
-    }
-
-    // If slug name was not found or failed, try device CUID via Nuxt same-origin proxy
-    if (!res || !res.ok) {
-      activeStreamName = streamIdName;
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      res = await fetch(`/api/device/${device.id}/webrtc?src=${streamIdName}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: offer.sdp,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-    }
-
-    if (!res || !res.ok) {
-      throw new Error(`go2rtc returned error status`);
-    }
-
-    const answerSdp = await res.text();
-    await peerConnection.value.setRemoteDescription(new RTCSessionDescription({
-      type: 'answer',
-      sdp: answerSdp
-    }));
-
-    webrtcConnected.value = true;
-    streamActive.value = true;
-  } catch (err) {
-    console.warn('WebRTC connection failed, falling back to snapshots:', err);
-    disconnectWebRTC();
-    
-    // Fall back to snapshot stream
-    webrtcConnected.value = false;
-    streamActive.value = true;
-    streamUrl.value = `/api/device/${device.id}/capture?t=${Date.now()}`;
-    startStreamTimer();
-  }
-};
-
-const disconnectWebRTC = () => {
-  if (peerConnection.value) {
-    peerConnection.value.close();
-    peerConnection.value = null;
-  }
-  webrtcConnected.value = false;
-  if (videoElement.value) {
-    videoElement.value.srcObject = null;
-  }
-};
-
-const toggleStream = () => {
-  streamActive.value = !streamActive.value;
-  if (streamActive.value) {
-    if (webrtcConnected.value && statsDevice.value) {
-      connectWebRTC(statsDevice.value);
-    } else {
-      refreshStreamOnce();
-    }
-  } else {
-    disconnectWebRTC();
-  }
-};
-
-const refreshStreamOnce = () => {
-  if (webrtcConnected.value && statsDevice.value) {
-    connectWebRTC(statsDevice.value);
-  } else if (statsDevice.value) {
-    streamUrl.value = `/api/device/${statsDevice.value.id}/capture?t=${Date.now()}`;
-  }
-};
-
-const handleStreamError = () => {
-  streamActive.value = false;
-};
 
 const sendDoorCommand = async (cmd) => {
   if (!statsDevice.value) return;
@@ -473,8 +333,7 @@ const sendDoorCommand = async (cmd) => {
 const closeStatsModal = () => {
   showStatsModal.value = false;
   streamActive.value = false;
-  disconnectWebRTC();
-  stopStreamTimer();
+  streamIframeUrl.value = '';
 };
 
 const showDeviceStats = async (device) => {
@@ -483,8 +342,14 @@ const showDeviceStats = async (device) => {
   loadingStats.value = true;
   statsData.value = null;
   
-  // Set up live stream preview
-  connectWebRTC(device);
+  // Set up iframe player URL
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const go2rtcHost = isLocal ? 'http://localhost:1984' : 'https://stream-gaskan.smtijogja.my.id';
+  const streamName = slugify(device.name);
+  
+  // Use go2rtc stream.html player (will automatically negotiate best mode like WebRTC/MSE/HLS)
+  streamIframeUrl.value = `${go2rtcHost}/stream.html?src=${streamName}&mode=webrtc,mse,hls`;
+  streamActive.value = true;
 
   try {
     const res = await $fetch(`/api/device/${device.id}/stats`);
@@ -504,8 +369,7 @@ const showDeviceStats = async (device) => {
 };
 
 onUnmounted(() => {
-  disconnectWebRTC();
-  stopStreamTimer();
+  closeStatsModal();
 });
 </script>
 
@@ -786,42 +650,16 @@ onUnmounted(() => {
           <div class="lg:col-span-5 flex flex-col gap-4">
             <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider">Live Video Stream</h4>
             
-            <div class="relative aspect-video w-full rounded-2xl border border-base-200 overflow-hidden bg-black flex items-center justify-center group/cam shadow-inner">
-              <video 
-                v-if="streamActive && webrtcConnected"
-                ref="videoElement"
-                autoplay 
-                playsinline 
-                muted
-                controls
-                class="w-full h-full object-cover" 
-              ></video>
-              <img 
-                v-else-if="streamActive && streamUrl"
-                :src="streamUrl" 
-                @error="handleStreamError"
-                class="w-full h-full object-cover" 
-                alt="Live Camera Stream"
-              />
+            <div class="relative aspect-video w-full rounded-2xl border border-base-200 overflow-hidden bg-black flex items-center justify-center shadow-inner">
+              <iframe 
+                v-if="streamActive && streamIframeUrl"
+                :src="streamIframeUrl" 
+                class="w-full h-full border-none"
+                allow="autoplay; fullscreen"
+              ></iframe>
               <div v-else class="flex flex-col items-center text-base-content/30 gap-2">
                 <Icon name="mingcute:videocam-off-fill" size="36" />
                 <span class="text-xs font-semibold">Stream Kamera Mati</span>
-              </div>
-
-              <!-- Live Badge -->
-              <div v-if="streamActive" class="absolute top-3 left-3 bg-red-500 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-md">
-                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                LIVE
-              </div>
-
-              <!-- Controls -->
-              <div class="absolute bottom-3 right-3 opacity-0 group-hover/cam:opacity-100 transition-opacity flex gap-1.5">
-                <button @click="toggleStream" class="btn btn-circle btn-xs btn-primary bg-black/60 border-none text-white hover:bg-primary shadow" :title="streamActive ? 'Pause Stream' : 'Play Stream'">
-                  <Icon :name="streamActive ? 'mingcute:pause-fill' : 'mingcute:play-fill'" size="12" />
-                </button>
-                <button @click="refreshStreamOnce" class="btn btn-circle btn-xs btn-primary bg-black/60 border-none text-white hover:bg-primary shadow" title="Refresh Capture">
-                  <Icon name="mingcute:refresh-1-line" size="12" />
-                </button>
               </div>
             </div>
 
