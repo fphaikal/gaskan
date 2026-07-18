@@ -364,7 +364,7 @@ const connectWebRTC = async (device) => {
     // Try slugName first (e.g. gerbang_depan)
     try {
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 1200);
+      timeoutId = setTimeout(() => controller.abort(), 5000);
 
       res = await fetch(`${go2rtcHost}/api/webrtc?src=${slugName}`, {
         method: 'POST',
@@ -381,7 +381,7 @@ const connectWebRTC = async (device) => {
     if (!res || !res.ok) {
       activeStreamName = streamIdName;
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 1200);
+      timeoutId = setTimeout(() => controller.abort(), 5000);
       
       res = await fetch(`${go2rtcHost}/api/webrtc?src=${streamIdName}`, {
         method: 'POST',
