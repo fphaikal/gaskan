@@ -291,100 +291,184 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 hover:-translate-y-1 hover:shadow
         <span class="loading loading-spinner loading-lg text-primary"></span>
       </div>
       
-      <div v-else class="overflow-x-auto w-full custom-scrollbar flex-1">
-        <table class="table table-sm min-w-[720px] w-full">
-          <thead>
-            <tr class="text-base-content/30 text-[10px] font-black uppercase tracking-wider border-b border-base-200">
-              <th class="w-32">Tanggal</th>
-              <th class="w-36 text-center">Status</th>
-              <th class="w-44 text-center">Jam IN / Masuk (Foto)</th>
-              <th class="w-44 text-center">Jam OUT / Pulang (Foto)</th>
-              <th class="text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-base-200/50">
-            <tr v-for="day in calendarDays" :key="day.dayNum" 
-                :class="[
-                  'hover:bg-base-200/30 transition-colors', 
-                  day.isWeekend ? 'bg-base-200/10' : '',
-                  day.isFuture ? 'opacity-30 pointer-events-none' : ''
-                ]">
-              <!-- Tanggal -->
-              <td class="font-bold text-xs">
-                {{ formatDate(day.dateObject) }}
-              </td>
+      <div v-else class="flex-1 flex flex-col min-h-0">
+        <!-- Desktop View (table) -->
+        <div class="hidden md:block overflow-x-auto w-full custom-scrollbar flex-1">
+          <table class="table table-sm min-w-[720px] w-full">
+            <thead>
+              <tr class="text-base-content/30 text-[10px] font-black uppercase tracking-wider border-b border-base-200">
+                <th class="w-32">Tanggal</th>
+                <th class="w-36 text-center">Status</th>
+                <th class="w-44 text-center">Jam IN / Masuk (Foto)</th>
+                <th class="w-44 text-center">Jam OUT / Pulang (Foto)</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-base-200/50">
+              <tr v-for="day in calendarDays" :key="day.dayNum" 
+                  :class="[
+                    'hover:bg-base-200/30 transition-colors', 
+                    day.isWeekend ? 'bg-base-200/10' : '',
+                    day.isFuture ? 'opacity-30 pointer-events-none' : ''
+                  ]">
+                <!-- Tanggal -->
+                <td class="font-bold text-xs">
+                  {{ formatDate(day.dateObject) }}
+                </td>
 
-              <!-- Status -->
-              <td class="text-center">
-                <!-- If has record -->
-                <span v-if="day.record"
-                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider"
-                  :class="[getStatus(day.record.status).color, getStatus(day.record.status).bg]"
-                >
-                  <Icon :name="getStatus(day.record.status).icon" class="text-xs" />
-                  {{ getStatus(day.record.status).label }}
-                </span>
-                <!-- If weekend & no record -->
-                <span v-else-if="day.isWeekend" class="text-[9px] font-black uppercase text-base-content/30 tracking-widest">
-                  Akhir Pekan
-                </span>
-                <!-- If future & no record -->
-                <span v-else-if="day.isFuture" class="text-[9px] font-black uppercase text-base-content/20 tracking-widest">
-                  Mendatang
-                </span>
-                <!-- If past/today weekday & no record -->
-                <span v-else
-                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider"
-                  :class="[getStatus('ALPHA').color, getStatus('ALPHA').bg]"
-                >
-                  <Icon :name="getStatus('ALPHA').icon" class="text-xs" />
-                  Tanpa Absen
-                </span>
-              </td>
+                <!-- Status -->
+                <td class="text-center">
+                  <!-- If has record -->
+                  <span v-if="day.record"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider"
+                    :class="[getStatus(day.record.status).color, getStatus(day.record.status).bg]"
+                  >
+                    <Icon :name="getStatus(day.record.status).icon" class="text-xs" />
+                    {{ getStatus(day.record.status).label }}
+                  </span>
+                  <!-- If weekend & no record -->
+                  <span v-else-if="day.isWeekend" class="text-[9px] font-black uppercase text-base-content/30 tracking-widest">
+                    Akhir Pekan
+                  </span>
+                  <!-- If future & no record -->
+                  <span v-else-if="day.isFuture" class="text-[9px] font-black uppercase text-base-content/20 tracking-widest">
+                    Mendatang
+                  </span>
+                  <!-- If past/today weekday & no record -->
+                  <span v-else
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider"
+                    :class="[getStatus('ALPHA').color, getStatus('ALPHA').bg]"
+                  >
+                    <Icon :name="getStatus('ALPHA').icon" class="text-xs" />
+                    Tanpa Absen
+                  </span>
+                </td>
 
-              <!-- Jam IN (Foto) -->
-              <td class="text-center">
-                <div v-if="day.record" class="flex items-center justify-center gap-2">
-                  <span class="text-xs font-mono font-bold text-base-content/80">{{ formatTime(day.record.checkInTime) }}</span>
-                  <div class="w-8 h-8 rounded-lg overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-sm cursor-zoom-in group" @click="openImagePreview(day.record.photoUrl || props.user?.url_picture)">
-                    <img v-if="day.record.photoUrl" :src="day.record.photoUrl" class="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                    <img v-else-if="props.user?.url_picture" :src="props.user.url_picture" class="w-full h-full object-cover group-hover:scale-110 transition-transform opacity-30" />
-                    <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
-                      <Icon name="mingcute:pic-line" size="14" />
+                <!-- Jam IN (Foto) -->
+                <td class="text-center">
+                  <div v-if="day.record" class="flex items-center justify-center gap-2">
+                    <span class="text-xs font-mono font-bold text-base-content/80">{{ formatTime(day.record.checkInTime) }}</span>
+                    <div class="w-8 h-8 rounded-lg overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-sm cursor-zoom-in group" @click="openImagePreview(day.record.photoUrl || props.user?.url_picture)">
+                      <img v-if="day.record.photoUrl" :src="day.record.photoUrl" class="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                      <img v-else-if="props.user?.url_picture" :src="props.user.url_picture" class="w-full h-full object-cover group-hover:scale-110 transition-transform opacity-30" />
+                      <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
+                        <Icon name="mingcute:pic-line" size="14" />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span v-else class="text-base-content/20">-</span>
-              </td>
+                  <span v-else class="text-base-content/20">-</span>
+                </td>
 
-              <!-- Jam OUT (Foto) -->
-              <td class="text-center">
-                <div v-if="day.record && day.record.checkOutTime" class="flex items-center justify-center gap-2">
-                  <span class="text-xs font-mono font-bold text-base-content/80">{{ formatTime(day.record.checkOutTime) }}</span>
-                  <div class="w-8 h-8 rounded-lg overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-sm cursor-zoom-in group" @click="openImagePreview(day.record.checkOutPhotoUrl || props.user?.url_picture)">
-                    <img v-if="day.record.checkOutPhotoUrl" :src="day.record.checkOutPhotoUrl" class="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                    <img v-else-if="props.user?.url_picture" :src="props.user.url_picture" class="w-full h-full object-cover group-hover:scale-110 transition-transform opacity-30" />
-                    <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
-                      <Icon name="mingcute:pic-line" size="14" />
+                <!-- Jam OUT (Foto) -->
+                <td class="text-center">
+                  <div v-if="day.record && day.record.checkOutTime" class="flex items-center justify-center gap-2">
+                    <span class="text-xs font-mono font-bold text-base-content/80">{{ formatTime(day.record.checkOutTime) }}</span>
+                    <div class="w-8 h-8 rounded-lg overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-sm cursor-zoom-in group" @click="openImagePreview(day.record.checkOutPhotoUrl || props.user?.url_picture)">
+                      <img v-if="day.record.checkOutPhotoUrl" :src="day.record.checkOutPhotoUrl" class="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                      <img v-else-if="props.user?.url_picture" :src="props.user.url_picture" class="w-full h-full object-cover group-hover:scale-110 transition-transform opacity-30" />
+                      <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
+                        <Icon name="mingcute:pic-line" size="14" />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span v-else class="text-base-content/20">-</span>
-              </td>
+                  <span v-else class="text-base-content/20">-</span>
+                </td>
 
-              <!-- Aksi / Detail logs -->
-              <td class="text-right">
-                <button v-if="day.record" @click="openDayDetail(day)" 
-                        class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary font-bold">
-                  {{ day.record.logs.length }} Log Tap
-                </button>
-                <span v-else class="text-base-content/20">-</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <!-- Aksi / Detail logs -->
+                <td class="text-right">
+                  <button v-if="day.record" @click="openDayDetail(day)" 
+                          class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary font-bold">
+                    {{ day.record.logs.length }} Log Tap
+                  </button>
+                  <span v-else class="text-base-content/20">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile View (cards) -->
+        <div class="block md:hidden space-y-3">
+          <div v-for="day in calendarDays" :key="day.dayNum" 
+               :class="[
+                 'p-4 rounded-[1.5rem] border transition-all flex flex-col gap-3', 
+                 day.isWeekend ? 'bg-base-200/20 border-base-200/40' : 'bg-base-100 border-base-200/60',
+                 day.isFuture ? 'opacity-30 pointer-events-none' : ''
+               ]">
+            <!-- Top Row: Date & Status -->
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-sm text-base-content">{{ formatDate(day.dateObject) }}</span>
+              
+              <!-- Status Badge -->
+              <span v-if="day.record"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider"
+                :class="[getStatus(day.record.status).color, getStatus(day.record.status).bg]"
+              >
+                <Icon :name="getStatus(day.record.status).icon" class="text-xs" />
+                {{ getStatus(day.record.status).label }}
+              </span>
+              <span v-else-if="day.isWeekend" class="text-[9px] font-black uppercase text-base-content/30 tracking-widest">
+                Akhir Pekan
+              </span>
+              <span v-else-if="day.isFuture" class="text-[9px] font-black uppercase text-base-content/20 tracking-widest">
+                Mendatang
+              </span>
+              <span v-else
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider"
+                :class="[getStatus('ALPHA').color, getStatus('ALPHA').bg]"
+              >
+                <Icon :name="getStatus('ALPHA').icon" class="text-xs" />
+                Tanpa Absen
+              </span>
+            </div>
+
+            <!-- Middle Row: IN/OUT details (only if has record) -->
+            <div v-if="day.record" class="grid grid-cols-2 gap-3 pt-2.5 border-t border-base-200/50">
+              <!-- Check IN -->
+              <div class="flex items-center gap-2 bg-base-200/30 p-2 rounded-xl border border-base-200/40">
+                <div class="w-8 h-8 rounded-lg overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-sm cursor-zoom-in" 
+                     @click="openImagePreview(day.record.photoUrl || props.user?.url_picture)">
+                  <img v-if="day.record.photoUrl" :src="day.record.photoUrl" class="w-full h-full object-cover" />
+                  <img v-else-if="props.user?.url_picture" :src="props.user.url_picture" class="w-full h-full object-cover opacity-30" />
+                  <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
+                    <Icon name="mingcute:pic-line" size="14" />
+                  </div>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[8px] font-black uppercase tracking-wider text-base-content/30 block leading-none mb-0.5">IN</span>
+                  <span class="text-xs font-mono font-bold text-base-content/80 leading-none">{{ formatTime(day.record.checkInTime) }}</span>
+                </div>
+              </div>
+
+              <!-- Check OUT -->
+              <div class="flex items-center gap-2 bg-base-200/30 p-2 rounded-xl border border-base-200/40">
+                <div class="w-8 h-8 rounded-lg overflow-hidden bg-base-200 border border-base-200 shrink-0 shadow-sm" 
+                     :class="day.record.checkOutTime ? 'cursor-zoom-in' : ''"
+                     @click="day.record.checkOutTime && openImagePreview(day.record.checkOutPhotoUrl || props.user?.url_picture)">
+                  <img v-if="day.record.checkOutTime && day.record.checkOutPhotoUrl" :src="day.record.checkOutPhotoUrl" class="w-full h-full object-cover" />
+                  <img v-else-if="day.record.checkOutTime && props.user?.url_picture" :src="props.user.url_picture" class="w-full h-full object-cover opacity-30" />
+                  <div v-else class="w-full h-full flex items-center justify-center text-base-content/20">
+                    <Icon name="mingcute:pic-line" size="14" />
+                  </div>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[8px] font-black uppercase tracking-wider text-base-content/30 block leading-none mb-0.5">OUT</span>
+                  <span class="text-xs font-mono font-bold text-base-content/80 leading-none">{{ day.record.checkOutTime ? formatTime(day.record.checkOutTime) : '-' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Row: Log Tap Button (only if has record) -->
+            <div v-if="day.record" class="flex justify-end pt-1">
+              <button @click="openDayDetail(day)" 
+                      class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary font-bold text-[10px] px-2 h-7 min-h-0">
+                {{ day.record.logs.length }} Log Tap <Icon name="mingcute:right-line" size="12" class="ml-0.5 inline" />
+              </button>
+            </div>
+        </div>
       </div>
     </div>
+  </div>
 
     <!-- ═══ DETAIL LOG TAP MODAL ═══ -->
     <Teleport to="body">
