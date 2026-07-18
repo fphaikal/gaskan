@@ -30,10 +30,66 @@ const form = ref({
   linkedin: '',
   instagram: '',
   email: '',
-  year: '2024',
+  year: '',
   order: 0,
   isActive: true,
 });
+
+// Year Picker Helpers
+const startYear = ref(new Date().getFullYear());
+const endYear = ref(new Date().getFullYear());
+const isUntilNow = ref(false);
+
+const yearOptions = computed(() => {
+  const current = new Date().getFullYear();
+  const list = [];
+  for (let y = current - 6; y <= current + 6; y++) {
+    list.push(y);
+  }
+  return list;
+});
+
+const parseYearFromForm = (yearStr) => {
+  if (!yearStr) {
+    startYear.value = new Date().getFullYear();
+    endYear.value = new Date().getFullYear();
+    isUntilNow.value = false;
+    return;
+  }
+
+  const parts = yearStr.split('-').map(s => s.trim());
+  if (parts.length === 2) {
+    const start = parseInt(parts[0]);
+    startYear.value = isNaN(start) ? new Date().getFullYear() : start;
+    
+    if (parts[1].toLowerCase() === 'sekarang') {
+      isUntilNow.value = true;
+      endYear.value = new Date().getFullYear();
+    } else {
+      isUntilNow.value = false;
+      const end = parseInt(parts[1]);
+      endYear.value = isNaN(end) ? new Date().getFullYear() : end;
+    }
+  } else {
+    const val = parseInt(parts[0]);
+    const yr = isNaN(val) ? new Date().getFullYear() : val;
+    startYear.value = yr;
+    endYear.value = yr;
+    isUntilNow.value = false;
+  }
+};
+
+const syncYearToForm = () => {
+  if (isUntilNow.value) {
+    form.value.year = `${startYear.value} - Sekarang`;
+  } else {
+    if (startYear.value === endYear.value) {
+      form.value.year = `${startYear.value}`;
+    } else {
+      form.value.year = `${startYear.value} - ${endYear.value}`;
+    }
+  }
+};
 
 // Helper for Photo
 const resolvePhoto = (url) => {
@@ -94,10 +150,14 @@ const openCreate = () => {
     linkedin: '',
     instagram: '',
     email: '',
-    year: '2024',
+    year: '',
     order: members.value.length,
     isActive: true,
   };
+  startYear.value = new Date().getFullYear();
+  endYear.value = new Date().getFullYear();
+  isUntilNow.value = false;
+  syncYearToForm();
   showModal.value = true;
 };
 
@@ -106,10 +166,12 @@ const openEdit = (member) => {
   photoFile.value = null;
   photoPreview.value = member.photoUrl;
   form.value = { ...member };
+  parseYearFromForm(member.year);
   showModal.value = true;
 };
 
 const saveMember = async () => {
+  syncYearToForm();
   saving.value = true;
   try {
     const formData = new FormData();
@@ -322,8 +384,28 @@ const roleColor = (role) => {
             <input v-model="form.email" type="email" placeholder="email@example.com" class="input input-bordered w-full rounded-2xl bg-base-200/30" />
           </div>
           <div class="form-control">
-            <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Tahun / Periode</span></label>
-            <input v-model="form.year" type="text" placeholder="Contoh: 2025 - 2026 atau 2026 - sekarang" class="input input-bordered w-full rounded-2xl bg-base-200/30" />
+            <label class="label">
+              <span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Tahun / Periode</span>
+            </label>
+            <div class="flex flex-col gap-2 bg-base-200/20 p-3 rounded-2xl border border-base-200/60">
+              <div class="flex items-center gap-2">
+                <select v-model="startYear" class="select select-bordered select-sm rounded-xl bg-base-100 flex-1 font-semibold">
+                  <option v-for="yr in yearOptions" :key="yr" :value="yr">{{ yr }}</option>
+                </select>
+                <span class="text-xs opacity-50 font-bold">s/d</span>
+                <select 
+                  v-model="endYear" 
+                  :disabled="isUntilNow" 
+                  class="select select-bordered select-sm rounded-xl bg-base-100 flex-1 font-semibold disabled:bg-base-200/50 disabled:opacity-50"
+                >
+                  <option v-for="yr in yearOptions" :key="yr" :value="yr">{{ yr }}</option>
+                </select>
+              </div>
+              <label class="label cursor-pointer justify-start gap-2.5 py-1 px-1">
+                <input v-model="isUntilNow" type="checkbox" class="checkbox checkbox-primary checkbox-xs rounded-md" />
+                <span class="label-text text-[11px] font-bold opacity-60">Masih Aktif Sampai Sekarang</span>
+              </label>
+            </div>
           </div>
           <div class="form-control">
             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Urutan Tampil</span></label>
