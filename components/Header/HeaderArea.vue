@@ -94,7 +94,7 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-[997] flex h-16 w-full flex-shrink-0 items-center backdrop-blur-md bg-base-100/80 border-b border-base-300 transition-colors duration-300">
+  <header class="sticky top-0 z-[997] flex h-16 w-full flex-shrink-0 items-center backdrop-blur-md border-b border-base-300 transition-colors duration-300" style="background-color: oklch(var(--b1) / 0.8)">
     <div class="flex w-full items-center justify-between px-4 md:px-6">
 
       <!-- Left: Mobile hamburger + Page title -->

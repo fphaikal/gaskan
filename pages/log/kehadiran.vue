@@ -199,7 +199,7 @@ useSeoMeta({
         <TransitionGroup name="list" tag="div" class="space-y-10">
           <div v-for="l in paginatedLog" :key="l.tanggal" class="relative">
             <!-- Date Header -->
-            <div class="sticky top-[64px] z-10 bg-base-100/95 backdrop-blur-md py-4 mb-4 flex items-center gap-4 border-b border-base-200/50">
+            <div class="sticky top-[64px] z-10 backdrop-blur-md py-4 mb-4 flex items-center gap-4 border-b border-base-200/50" style="background-color: oklch(var(--b1) / 0.95)">
               <div class="h-8 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]"></div>
               <h2 class="text-2xl font-extrabold text-base-content tracking-tight">{{ l.tanggal }}</h2>
             </div>

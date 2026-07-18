@@ -22,22 +22,38 @@ const fetchTeam = async () => {
 onMounted(fetchTeam)
 
 const groupedTeam = computed(() => {
-  const groups = {}
+  const pembimbing = []
+  const pengembang = []
+  
   team.value.forEach(m => {
-    const yr = m.year || '2024'
-    if (!groups[yr]) {
-      groups[yr] = []
+    const isPembimbing = m.role?.toLowerCase().includes('pembimbing')
+    if (isPembimbing) {
+      pembimbing.push(m)
+    } else {
+      pengembang.push(m)
     }
-    groups[yr].push(m)
   })
 
-  // Sort chronologically (oldest to newest)
-  const sortedYears = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+  // Sort each group by 'order'
+  pembimbing.sort((a, b) => (a.order || 0) - (b.order || 0))
+  pengembang.sort((a, b) => (a.order || 0) - (b.order || 0))
 
-  return sortedYears.map(yr => ({
-    year: yr,
-    members: groups[yr].sort((a, b) => (a.order || 0) - (b.order || 0))
-  }))
+  const result = []
+  if (pembimbing.length > 0) {
+    result.push({
+      title: 'Pembimbing',
+      icon: 'mingcute:academic-cap-fill',
+      members: pembimbing
+    })
+  }
+  if (pengembang.length > 0) {
+    result.push({
+      title: 'Tim Pengembang',
+      icon: 'mingcute:code-fill',
+      members: pengembang
+    })
+  }
+  return result
 })
 
 const resolvePhoto = (url) => {
@@ -108,42 +124,49 @@ useSeoMeta({
         <span class="loading loading-spinner loading-lg text-primary opacity-40"></span>
       </div>
 
-      <!-- Grouped Team Timeline -->
-      <div v-else class="relative border-l-2 border-dashed border-base-300 pl-8 ml-4 sm:ml-8 space-y-16 py-4">
+      <!-- Grouped Team Sections (by Role Category) -->
+      <div v-else class="space-y-16 py-4">
         <div
           v-for="group in groupedTeam"
-          :key="group.year"
-          class="relative group/timeline"
+          :key="group.title"
+          class="space-y-6"
         >
-          <!-- Timeline Indicator Dot -->
-          <div class="absolute -left-[45px] top-2 w-6 h-6 rounded-full bg-base-100 border-2 border-primary flex items-center justify-center shadow-lg transition-transform duration-300 group-hover/timeline:scale-110">
-            <div class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></div>
-          </div>
-
-          <!-- Section Year Title -->
-          <div class="mb-8 text-left">
+          <!-- Section Header -->
+          <div class="border-b border-base-200/80 pb-4 text-left">
             <div class="flex items-center gap-3">
-              <h2 class="text-2xl md:text-3xl font-black tracking-tight text-base-content">
-                Periode <span class="text-primary">{{ group.year }}</span>
-              </h2>
-              <span class="badge badge-primary badge-outline font-semibold px-2 py-3 text-xs">
-                {{ group.members.length }} Anggota
+              <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                <Icon :name="group.icon" size="20" />
+              </div>
+              <div>
+                <h2 class="text-2xl font-black tracking-tight text-base-content">
+                  {{ group.title }}
+                </h2>
+                <p class="text-xs opacity-50 mt-0.5">
+                  {{ group.title === 'Pembimbing' ? 'Pembimbing dan penanggung jawab proyek GASKAN.' : 'Anggota tim pengembang dan pembuat sistem GASKAN.' }}
+                </p>
+              </div>
+              <span class="badge badge-primary badge-outline font-semibold px-2 py-3 text-xs ml-auto">
+                {{ group.members.length }} Orang
               </span>
             </div>
-            <p class="text-xs opacity-50 mt-1">Tim pengembang yang aktif pada periode {{ group.year }}.</p>
           </div>
 
-          <!-- Team grid for this year -->
+          <!-- Team grid for this category -->
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             <div
               v-for="t in group.members"
               :key="t.id"
               class="group bg-base-200 border border-base-300 hover:border-primary/40 rounded-2xl p-5 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
             >
-              <!-- Avatar -->
-              <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
-                <img v-if="t.photoUrl && !t.photoUrl.includes('0000')" :src="resolvePhoto(t.photoUrl)" :alt="t.name" class="w-full h-full object-cover" />
-                <Icon v-else name="mingcute:user-4-fill" class="text-2xl text-primary/60" />
+              <!-- Avatar + Period Badge -->
+              <div class="flex items-start justify-between gap-2">
+                <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                  <img v-if="t.photoUrl && !t.photoUrl.includes('0000')" :src="resolvePhoto(t.photoUrl)" :alt="t.name" class="w-full h-full object-cover" />
+                  <Icon v-else name="mingcute:user-4-fill" class="text-2xl text-primary/60" />
+                </div>
+                <span v-if="t.year" class="badge badge-sm bg-base-300/60 border border-base-300/60 text-[9px] font-black py-2 rounded-lg text-base-content/60">
+                  {{ t.year }}
+                </span>
               </div>
 
               <!-- Info -->
