@@ -761,7 +761,7 @@ onUnmounted(() => {
 
     <!-- Device Stats Modal -->
     <div v-if="showStatsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm transition-opacity duration-300">
-      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-4xl shadow-2xl relative animate-scale-in flex flex-col gap-6" @click.stop>
+      <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 w-full max-w-3xl shadow-2xl relative animate-scale-in flex flex-col gap-6" @click.stop>
         <!-- Close Button -->
         <button @click="closeStatsModal()" class="btn btn-square btn-ghost btn-sm rounded-xl absolute top-6 right-6">
           <Icon name="mingcute:close-line" size="20" />
@@ -792,6 +792,7 @@ onUnmounted(() => {
                 ref="videoElement"
                 autoplay 
                 playsinline 
+                muted
                 controls
                 class="w-full h-full object-cover" 
               ></video>
@@ -825,39 +826,45 @@ onUnmounted(() => {
             </div>
 
             <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mt-2">Kontrol Pintu Akses</h4>
-            <div class="grid grid-cols-2 gap-2">
-              <button 
-                @click="sendDoorCommand('open')" 
-                :disabled="sendingDoorCmd"
-                class="btn btn-success btn-sm rounded-xl h-10 font-bold flex items-center justify-center gap-1 text-xs"
-              >
-                <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
-                <Icon v-else name="mingcute:door-open-fill" size="14" />
-                Buka Pintu
-              </button>
-              <button 
-                @click="sendDoorCommand('close')" 
-                :disabled="sendingDoorCmd"
-                class="btn btn-neutral btn-sm rounded-xl h-10 font-bold flex items-center justify-center gap-1 text-xs"
-              >
-                <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
-                <Icon v-else name="mingcute:door-close-fill" size="14" />
-                Kunci Pintu
-              </button>
-              <button 
-                @click="sendDoorCommand('alwaysOpen')" 
-                :disabled="sendingDoorCmd"
-                class="btn btn-outline btn-success btn-sm rounded-xl h-10 font-bold text-xs"
-              >
-                Buka Terus
-              </button>
-              <button 
-                @click="sendDoorCommand('alwaysClose')" 
-                :disabled="sendingDoorCmd"
-                class="btn btn-outline btn-error btn-sm rounded-xl h-10 font-bold text-xs"
-              >
-                Kunci Terus
-              </button>
+            <div class="flex flex-col gap-2">
+              <!-- Buka / Kunci Row -->
+              <div class="flex gap-2">
+                <button 
+                  @click="sendDoorCommand('open')" 
+                  :disabled="sendingDoorCmd"
+                  class="btn btn-success btn-sm flex-1 rounded-xl h-10 font-bold flex items-center justify-center gap-1 text-xs text-white"
+                >
+                  <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
+                  <Icon v-else name="mingcute:door-open-fill" size="14" />
+                  Buka Pintu
+                </button>
+                <button 
+                  @click="sendDoorCommand('close')" 
+                  :disabled="sendingDoorCmd"
+                  class="btn btn-neutral btn-sm flex-1 rounded-xl h-10 font-bold flex items-center justify-center gap-1 text-xs"
+                >
+                  <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
+                  <Icon v-else name="mingcute:door-close-fill" size="14" />
+                  Kunci Pintu
+                </button>
+              </div>
+              <!-- Always Open / Always Close Row -->
+              <div class="flex gap-2">
+                <button 
+                  @click="sendDoorCommand('alwaysOpen')" 
+                  :disabled="sendingDoorCmd"
+                  class="btn btn-outline btn-success btn-sm flex-1 rounded-xl h-10 font-bold text-xs"
+                >
+                  Buka Terus
+                </button>
+                <button 
+                  @click="sendDoorCommand('alwaysClose')" 
+                  :disabled="sendingDoorCmd"
+                  class="btn btn-outline btn-error btn-sm flex-1 rounded-xl h-10 font-bold text-xs"
+                >
+                  Kunci Terus
+                </button>
+              </div>
             </div>
           </div>
 
