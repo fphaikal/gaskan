@@ -15,6 +15,7 @@ const testingId = ref(null);
 // Late setting state
 const lateHour = ref(7);
 const lateMinute = ref(0);
+const onsiteLimitHour = ref(21);
 const savingSettings = ref(false);
 
 const lateTime = computed({
@@ -67,6 +68,7 @@ const fetchSettings = async () => {
     if (res?.success && res.data) {
       lateHour.value = res.data.lateHour;
       lateMinute.value = res.data.lateMinute;
+      onsiteLimitHour.value = res.data.onsiteLimitHour !== undefined ? res.data.onsiteLimitHour : 21;
     }
   } catch (e) {
     console.error('Failed to fetch settings:', e);
@@ -273,11 +275,12 @@ const saveLateSettings = async () => {
       method: 'PUT',
       body: {
         lateHour: Number(lateHour.value),
-        lateMinute: Number(lateMinute.value)
+        lateMinute: Number(lateMinute.value),
+        onsiteLimitHour: Number(onsiteLimitHour.value)
       }
     });
     if (res?.success) {
-      $toast.success(res.message || 'Pengaturan terlambat berhasil disimpan');
+      $toast.success('Pengaturan parameter kehadiran berhasil disimpan');
     }
   } catch (e) {
     console.error('Save settings failed:', e);
@@ -430,8 +433,8 @@ const showDeviceStats = (device) => {
       </div>
     </div>
 
-    <!-- Late Threshold Configuration Card -->
-    <div class="mt-12 max-w-xl bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 shadow-md relative overflow-hidden group">
+    <!-- Attendance Parameters Configuration Card -->
+    <div class="mt-12 max-w-2xl bg-base-100 border border-base-200/80 rounded-3xl p-6 md:p-8 shadow-md relative overflow-hidden group">
       <!-- Glow decoration -->
       <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-colors duration-500"></div>
 
@@ -440,18 +443,31 @@ const showDeviceStats = (device) => {
           <Icon name="mingcute:time-fill" size="24" />
         </div>
         <div>
-          <h2 class="text-xl font-bold text-base-content">Batas Jam Terlambat</h2>
-          <p class="text-xs text-base-content/50 mt-1">Konfigurasi jam batas presensi masuk. Siswa yang melakukan tap setelah waktu yang ditentukan akan otomatis ditandai sebagai "TERLAMBAT".</p>
+          <h2 class="text-xl font-bold text-base-content">Parameter Kehadiran & On-Site</h2>
+          <p class="text-xs text-base-content/50 mt-1">Konfigurasi batas waktu keterlambatan presensi masuk dan jam batas pembersihan otomatis daftar siswa aktif di area (On-Site).</p>
         </div>
       </div>
 
-      <div class="form-control mb-6 max-w-xs">
-        <label class="label"><span class="label-text font-bold text-base-content/80">Batas Waktu Masuk <span class="text-error">*</span></span></label>
-        <input 
-          v-model="lateTime" 
-          type="time" 
-          class="input input-bordered w-full rounded-2xl font-bold text-base h-12"
-        />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="form-control">
+          <label class="label"><span class="label-text font-bold text-base-content/80">Batas Waktu Masuk <span class="text-error">*</span></span></label>
+          <input 
+            v-model="lateTime" 
+            type="time" 
+            class="input input-bordered w-full rounded-2xl font-bold text-base h-12"
+          />
+          <span class="text-[10px] text-base-content/40 mt-1 pl-1">Masuk setelah jam ini otomatis ditandai "TERLAMBAT"</span>
+        </div>
+
+        <div class="form-control">
+          <label class="label"><span class="label-text font-bold text-base-content/80">Batas Jam Auto-Flush On-Site <span class="text-error">*</span></span></label>
+          <select v-slot="opt" v-model.number="onsiteLimitHour" class="select select-bordered w-full rounded-2xl font-bold text-base h-12 focus:outline-none">
+            <option v-for="h in 24" :key="h-1" :value="h-1">
+              Jam {{ String(h-1).padStart(2, '0') }}:00 WIB
+            </option>
+          </select>
+          <span class="text-[10px] text-base-content/40 mt-1 pl-1">Siswa otomatis dihapus dari On-Site setelah jam ini</span>
+        </div>
       </div>
 
       <div class="flex justify-end pt-4 border-t border-base-200/60">
