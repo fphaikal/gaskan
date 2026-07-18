@@ -12,6 +12,7 @@ useSeoMeta({
 const fileInput = ref(null);
 const selectedFiles = ref([]); // item: { id, file, previewUrl, status: 'pending'|'uploading'|'success'|'error', errorMsg: '' }
 const matchBy = ref('auto'); // auto, nis, nisn, email, name
+const selectedClassId = ref('');
 const uploading = ref(false);
 const isDragging = ref(false);
 const uploadResult = ref(null);
@@ -254,6 +255,9 @@ const triggerUpload = async () => {
     try {
       const formData = new FormData();
       formData.append('matchBy', matchBy.value);
+      if (selectedClassId.value) {
+        formData.append('classId', selectedClassId.value);
+      }
       formData.append('photos', item.file);
 
       const res = await $fetch('/api/students/bulk-photos', {
@@ -386,6 +390,15 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
               <option value="nisn">NISN (Contoh: 0098765432.png)</option>
               <option value="email">Email (Contoh: siswa@sekolah.sch.id.webp)</option>
               <option value="name">Nama Lengkap/Sebagian (Contoh: Budiman Setiawan.jpg)</option>
+            </select>
+          </div>
+          <div class="form-control w-full mt-4">
+            <label class="label">
+              <span class="label-text font-bold text-base-content/75">Batasi per Kelas</span>
+            </label>
+            <select v-model="selectedClassId" class="select select-bordered rounded-2xl bg-base-100 text-base-content focus:border-orange-500 focus:outline-none">
+              <option value="">Semua Kelas</option>
+              <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
             </select>
           </div>
           <div class="flex items-start text-xs text-base-content/60 bg-base-200/40 border border-base-200 p-4 rounded-2xl leading-relaxed mt-5">
