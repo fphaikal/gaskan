@@ -57,8 +57,11 @@ const backupConfig = ref({
 });
 const backupProgress = ref(null);
 const gdriveCount = ref(0);
+const gdriveSizeFormatted = ref('0 B');
 const hfCount = ref(0);
+const hfSizeFormatted = ref('0 B');
 const totalBackedUpCount = ref(0);
+const totalBackedUpSizeFormatted = ref('0 B');
 const savingBackupConfig = ref(false);
 const startingBackupProvider = ref(null);
 const purgingLocalFiles = ref(false);
@@ -71,8 +74,11 @@ const fetchBackupStatus = async () => {
       backupConfig.value = res.data.config || backupConfig.value;
       backupProgress.value = res.data.progress || null;
       gdriveCount.value = res.data.gdriveCount || 0;
+      gdriveSizeFormatted.value = res.data.gdriveSizeFormatted || '0 B';
       hfCount.value = res.data.hfCount || 0;
+      hfSizeFormatted.value = res.data.hfSizeFormatted || '0 B';
       totalBackedUpCount.value = res.data.totalCount || 0;
+      totalBackedUpSizeFormatted.value = res.data.totalSizeFormatted || '0 B';
     }
   } catch (err) {
     console.error('Failed to fetch backup status:', err);
@@ -161,8 +167,11 @@ onMounted(() => {
         backupConfig.value = data.config || backupConfig.value;
         backupProgress.value = data.progress || null;
         gdriveCount.value = data.gdriveCount || 0;
+        gdriveSizeFormatted.value = data.gdriveSizeFormatted || '0 B';
         hfCount.value = data.hfCount || 0;
+        hfSizeFormatted.value = data.hfSizeFormatted || '0 B';
         totalBackedUpCount.value = data.totalCount || 0;
+        totalBackedUpSizeFormatted.value = data.totalSizeFormatted || '0 B';
       }
     });
 
@@ -529,7 +538,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                 {{ backupProgress?.active ? `Backup ${backupProgress.pipeline}...` : 'Status: Ready' }}
               </span>
               <span class="px-3 py-1 rounded-full bg-base-200 text-xs font-bold border border-base-300">
-                Total {{ totalBackedUpCount }} File Ter-backup
+                Total {{ totalBackedUpCount }} File ({{ totalBackedUpSizeFormatted }}) Ter-backup
               </span>
             </div>
           </div>
@@ -564,7 +573,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                     <Icon name="mingcute:drive-fill" class="text-emerald-500" size="18" />
                     1. Google Drive (Semua Berkas Baru)
                   </h3>
-                  <span class="badge badge-emerald badge-xs font-mono font-bold">{{ gdriveCount }} File</span>
+                  <span class="badge badge-emerald badge-xs font-mono font-bold">{{ gdriveCount }} File ({{ gdriveSizeFormatted }})</span>
                 </div>
 
                 <p class="text-[11px] opacity-60 leading-relaxed">
@@ -631,7 +640,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
               >
                 <span v-if="startingBackupProvider === 'GOOGLE_DRIVE'" class="loading loading-spinner loading-xs mr-1"></span>
                 <Icon v-else name="mingcute:drive-fill" class="mr-1" />
-                Jalankan Backup Google Drive Sekarang
+                Upload Manual ke Google Drive Sekarang
               </button>
             </div>
 
@@ -643,7 +652,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                     <Icon name="mingcute:upload-3-fill" class="text-sky-500" size="18" />
                     2. Hugging Face CDN (Khusus Foto / Low Storage)
                   </h3>
-                  <span class="badge badge-sky badge-xs font-mono font-bold">{{ hfCount }} Foto</span>
+                  <span class="badge badge-sky badge-xs font-mono font-bold">{{ hfCount }} Foto ({{ hfSizeFormatted }})</span>
                 </div>
 
                 <p class="text-[11px] opacity-60 leading-relaxed">
@@ -718,7 +727,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
               >
                 <span v-if="startingBackupProvider === 'HUGGINGFACE'" class="loading loading-spinner loading-xs mr-1"></span>
                 <Icon v-else name="mingcute:upload-3-fill" class="mr-1" />
-                Jalankan Backup Hugging Face (Khusus Foto)
+                Upload Manual ke Hugging Face Sekarang
               </button>
             </div>
           </div>
