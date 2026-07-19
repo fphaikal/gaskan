@@ -66,6 +66,46 @@ const savingBackupConfig = ref(false);
 const startingBackupProvider = ref(null);
 const purgingLocalFiles = ref(false);
 const showHfToken = ref(false);
+const connectingGoogle = ref(false);
+const unlinkingGoogle = ref(false);
+
+const connectGoogleAccount = async () => {
+  if (!backupConfig.value.gdClientId || !backupConfig.value.gdClientSecret) {
+    $toast.error('Harap isi dan simpan Client ID & Client Secret Google terlebih dahulu!');
+    return;
+  }
+
+  connectingGoogle.value = true;
+  try {
+    await saveBackupConfigSettings();
+    const res = await $fetch('/api/system/backup/google/auth-url');
+    if (res?.success && res.authUrl) {
+      window.location.href = res.authUrl;
+    } else {
+      $toast.error(res?.message || 'Gagal membuat URL Otentikasi Google');
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || err.message || 'Gagal koneksi Google');
+  } finally {
+    connectingGoogle.value = false;
+  }
+};
+
+const unlinkGoogleAccountNow = async () => {
+  unlinkingGoogle.value = true;
+  try {
+    const res = await $fetch('/api/system/backup/google/unlink', { method: 'POST' });
+    if (res?.success) {
+      $toast.success(res.message);
+      backupConfig.value.gdRefreshToken = '';
+      fetchBackupStatus();
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || 'Gagal memutuskan koneksi Google');
+  } finally {
+    unlinkingGoogle.value = false;
+  }
+};
 
 const fetchBackupStatus = async () => {
   try {
@@ -142,6 +182,13 @@ const purgeLocalFilesNow = async () => {
 onMounted(() => {
   fetchMetrics();
   fetchBackupStatus();
+
+  const route = useRoute();
+  if (route.query.gd_auth === 'success') {
+    $toast.success('Akun Google Drive Berhasil Terhubung!');
+  } else if (route.query.gd_auth === 'error') {
+    $toast.error(route.query.message || 'Gagal menghubungkan Akun Google Drive.');
+  }
 
   try {
     const wsUrl = config.public.wsBase || (process.client ? window.location.origin : '');
@@ -611,14 +658,38 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                     />
                   </div>
 
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-black uppercase tracking-widest opacity-50">Google Drive Refresh Token</label>
-                    <input 
-                      v-model="backupConfig.gdRefreshToken" 
-                      type="password" 
-                      placeholder="1//0xxxx-xxxxxxxxxxxxxxxxxxxxxxxx" 
-                      class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
-                    />
+                  <!-- Google Account OAuth Connect Status & Button -->
+                  <div class="p-3 rounded-xl bg-base-100 border border-base-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold">Status Otentikasi Google:</span>
+                      <span :class="['px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider', backupConfig.gdRefreshToken ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30']">
+                        {{ backupConfig.gdRefreshToken ? '✓ Terhubung' : 'Belum Terhubung' }}
+                      </span>
+                    </div>
+
+                    <button 
+                      v-if="!backupConfig.gdRefreshToken"
+                      type="button" 
+                      @click="connectGoogleAccount" 
+                      :disabled="connectingGoogle || !backupConfig.gdClientId || !backupConfig.gdClientSecret" 
+                      class="btn btn-primary btn-xs w-full rounded-lg font-bold flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <span v-if="connectingGoogle" class="loading loading-spinner loading-xs"></span>
+                      <Icon v-else name="mingcute:google-fill" size="14" />
+                      Hubungkan Akun Google (Google OAuth)
+                    </button>
+
+                    <button 
+                      v-else
+                      type="button" 
+                      @click="unlinkGoogleAccountNow" 
+                      :disabled="unlinkingGoogle" 
+                      class="btn btn-outline btn-error btn-xs w-full rounded-lg font-bold flex items-center justify-center gap-1.5"
+                    >
+                      <span v-if="unlinkingGoogle" class="loading loading-spinner loading-xs"></span>
+                      <Icon v-else name="mingcute:close-circle-fill" size="14" />
+                      Putuskan Koneksi Akun Google
+                    </button>
                   </div>
 
                   <div class="space-y-1">
