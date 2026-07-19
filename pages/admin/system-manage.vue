@@ -107,6 +107,16 @@ const unlinkGoogleAccountNow = async () => {
   }
 };
 const detailedStats = ref(null);
+const googleRedirectUri = ref('');
+
+const copyToClipboard = (text) => {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+    $toast.success('Disalin ke clipboard!');
+  } else {
+    $toast.error('Gagal menyalin (navigator.clipboard tidak tersedia)');
+  }
+};
 
 const fetchBackupStatus = async () => {
   try {
@@ -121,6 +131,7 @@ const fetchBackupStatus = async () => {
       totalBackedUpCount.value = res.data.totalCount || 0;
       totalBackedUpSizeFormatted.value = res.data.totalSizeFormatted || '0 B';
       detailedStats.value = res.data.detailed || null;
+      googleRedirectUri.value = res.data.redirectUri || '';
     }
   } catch (err) {
     console.error('Failed to fetch backup status:', err);
@@ -852,6 +863,23 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                       <Icon v-else name="mingcute:close-circle-fill" size="14" />
                       Putuskan Koneksi Akun Google
                     </button>
+
+                    <div class="mt-2 pt-2 border-t border-base-200/80 text-[10px] space-y-1">
+                      <p class="font-bold opacity-50 uppercase tracking-wider text-left">Authorized Redirect URI</p>
+                      <div class="flex items-center gap-1.5 p-2 bg-base-200 rounded-xl border border-base-300">
+                        <span class="font-mono opacity-80 break-all select-all flex-1 text-left">{{ googleRedirectUri || 'Memuat...' }}</span>
+                        <button 
+                          type="button" 
+                          class="btn btn-xs btn-ghost btn-circle text-primary"
+                          @click="googleRedirectUri && copyToClipboard(googleRedirectUri)"
+                        >
+                          <Icon name="mingcute:copy-2-fill" size="13" />
+                        </button>
+                      </div>
+                      <p class="text-[9px] opacity-40 leading-snug text-left">
+                        *Salin URL di atas dan tambahkan ke bagian <strong>Authorized redirect URIs</strong> di Google Cloud Console Credentials Anda untuk menghindari error <code>redirect_url_mismatch</code>.
+                      </p>
+                    </div>
                   </div>
 
                   <div class="space-y-1">
