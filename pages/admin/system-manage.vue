@@ -1,18 +1,21 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { io } from 'socket.io-client';
 
 useSeoMeta({
   title: 'Kelola Sistem | GASKAN',
-  description: 'Statistik Penyimpanan Server dan Metrik Performa Hardware',
+  description: 'Statistik Penyimpanan Server dan Metrik Performa Hardware Real-Time',
 });
 
 const { $toast } = useNuxtApp();
+const config = useRuntimeConfig();
 
 const loading = ref(true);
 const refreshing = ref(false);
 const autoRefresh = ref(true);
+const isWsConnected = ref(false);
 const metrics = ref(null);
-let refreshTimer = null;
+let socket = null;
 
 const fetchMetrics = async (isManual = false) => {
   if (isManual) refreshing.value = true;
@@ -22,7 +25,7 @@ const fetchMetrics = async (isManual = false) => {
       metrics.value = res.data;
     }
   } catch (err) {
-    console.error('Failed to fetch system metrics:', err);
+    console.error('Failed to fetch system metrics via HTTP:', err);
     if (isManual) $toast.error('Gagal memperbarui metrik sistem');
   } finally {
     loading.value = false;
@@ -32,15 +35,38 @@ const fetchMetrics = async (isManual = false) => {
 
 onMounted(() => {
   fetchMetrics();
-  refreshTimer = setInterval(() => {
-    if (autoRefresh.value) {
-      fetchMetrics();
-    }
-  }, 10000); // refresh every 10 seconds
+
+  try {
+    const wsUrl = config.public.wsBase || (process.client ? window.location.origin : '');
+    socket = io(wsUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+    });
+
+    socket.on('connect', () => {
+      isWsConnected.value = true;
+      socket.emit('system:subscribe');
+    });
+
+    socket.on('system:metrics', (data) => {
+      if (autoRefresh.value && data) {
+        metrics.value = data;
+        loading.value = false;
+      }
+    });
+
+    socket.on('disconnect', () => {
+      isWsConnected.value = false;
+    });
+  } catch (err) {
+    console.warn('WebSocket init failed, fallback to HTTP:', err);
+  }
 });
 
 onUnmounted(() => {
-  if (refreshTimer) clearInterval(refreshTimer);
+  if (socket) {
+    socket.disconnect();
+  }
 });
 
 const formatBytes = (bytes) => {
@@ -62,6 +88,12 @@ const getUsageColor = (percent) => {
   if (percent < 50) return 'bg-success';
   if (percent < 80) return 'bg-warning';
   return 'bg-error';
+};
+
+const getDiskStatusColor = (percent) => {
+  if (percent < 70) return { bg: 'bg-success', badge: 'bg-success/15 text-success border-success/30', label: 'Aman' };
+  if (percent < 85) return { bg: 'bg-warning', badge: 'bg-warning/15 text-warning border-warning/30', label: 'Waspada' };
+  return { bg: 'bg-error', badge: 'bg-error/15 text-error border-error/30', label: 'Hampir Penuh' };
 };
 
 const storageBreakdownWithPercentage = computed(() => {
@@ -87,14 +119,20 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
         </div>
         <h1 class="text-2xl md:text-3xl font-black text-base-content tracking-tight">Kelola Sistem & Metrik Server</h1>
         <p class="text-sm text-base-content/60 mt-1">
-          Pantau penggunaan memori storage (foto & file) serta performa hardware server secara real-time.
+          Pantau penggunaan memori storage (foto & file) serta performa hardware server secara real-time via WebSocket.
         </p>
       </div>
 
       <div class="flex items-center gap-3">
+        <!-- WebSocket Badge Indicator -->
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-base-200/50 border-base-300">
+          <span :class="['w-2 h-2 rounded-full animate-pulse', isWsConnected ? 'bg-success' : 'bg-warning']"></span>
+          <span class="opacity-80">{{ isWsConnected ? 'WebSocket Live' : 'HTTP Mode' }}</span>
+        </div>
+
         <label class="label cursor-pointer gap-2 bg-base-200/50 px-3 py-2 rounded-xl border border-base-300">
           <input v-model="autoRefresh" type="checkbox" class="toggle toggle-primary toggle-xs" />
-          <span class="label-text text-xs font-bold opacity-70">Auto Refresh</span>
+          <span class="label-text text-xs font-bold opacity-70">Auto Sync</span>
         </label>
 
         <button 
@@ -115,13 +153,13 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
 
     <div v-else-if="metrics" class="space-y-6 animate-in fade-in duration-500">
       
-      <!-- Top Metrik Highlight Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Top Metrik Highlight Grid (5 Cards) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <!-- Card 1: Total Storage -->
         <div :class="bentoCard" class="relative overflow-hidden group">
           <div class="flex items-start justify-between">
             <div class="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <Icon name="mingcute:hard-drive-fill" size="24" />
+              <Icon name="mingcute:drive-fill" size="24" />
             </div>
             <span class="badge badge-primary badge-outline text-[10px] font-black">
               {{ metrics.storage.total.fileCount }} Berkas
@@ -129,18 +167,46 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
           </div>
           <div class="mt-4">
             <p class="text-xs font-bold uppercase tracking-wider text-base-content/40">Total Storage File</p>
-            <h3 class="text-2xl md:text-3xl font-black text-base-content mt-1">
+            <h3 class="text-xl md:text-2xl font-black text-base-content mt-1">
               {{ metrics.storage.total.sizeFormatted }}
             </h3>
             <p class="text-[11px] text-base-content/50 mt-1">Direktori /uploads</p>
           </div>
         </div>
 
-        <!-- Card 2: CPU Temperature -->
+        <!-- Card 2: Free Disk Space Server -->
+        <div :class="bentoCard" class="relative overflow-hidden group">
+          <div class="flex items-start justify-between">
+            <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+              <Icon name="mingcute:sd-card-fill" size="24" />
+            </div>
+            <span v-if="metrics.disk" :class="['px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border', getDiskStatusColor(metrics.disk.usagePercent).badge]">
+              {{ getDiskStatusColor(metrics.disk.usagePercent).label }}
+            </span>
+          </div>
+          <div class="mt-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-base-content/40">Free Storage Server</p>
+            <h3 class="text-xl md:text-2xl font-black text-base-content mt-1">
+              {{ metrics.disk ? metrics.disk.freeGB : 'N/A' }} GB Free
+            </h3>
+            <div v-if="metrics.disk" class="w-full bg-base-300 rounded-full h-1.5 mt-2 overflow-hidden">
+              <div 
+                class="h-full transition-all duration-500"
+                :class="getDiskStatusColor(metrics.disk.usagePercent).bg"
+                :style="{ width: `${metrics.disk.usagePercent}%` }"
+              />
+            </div>
+            <p v-if="metrics.disk" class="text-[10px] text-base-content/50 mt-1">
+              Total Disk: {{ metrics.disk.totalGB }} GB ({{ metrics.disk.usagePercent }}% Terpakai)
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 3: CPU Temperature -->
         <div :class="bentoCard" class="relative overflow-hidden group">
           <div class="flex items-start justify-between">
             <div class="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
-              <Icon name="mingcute:fire-fill" size="24" />
+              <Icon name="mingcute:flash-fill" size="24" />
             </div>
             <span :class="['px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border', getCpuTempColor(metrics.hardware.cpu.tempCelsius).bg, getCpuTempColor(metrics.hardware.cpu.tempCelsius).text]">
               {{ getCpuTempColor(metrics.hardware.cpu.tempCelsius).label }}
@@ -148,7 +214,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
           </div>
           <div class="mt-4">
             <p class="text-xs font-bold uppercase tracking-wider text-base-content/40">Suhu CPU Server</p>
-            <h3 class="text-2xl md:text-3xl font-black text-base-content mt-1 flex items-baseline gap-1">
+            <h3 class="text-xl md:text-2xl font-black text-base-content mt-1 flex items-baseline gap-1">
               <span>{{ metrics.hardware.cpu.tempCelsius }}</span>
               <span class="text-lg font-bold opacity-60">°C</span>
             </h3>
@@ -156,17 +222,17 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
           </div>
         </div>
 
-        <!-- Card 3: RAM Memory -->
+        <!-- Card 4: RAM Memory -->
         <div :class="bentoCard" class="relative overflow-hidden group">
           <div class="flex items-start justify-between">
             <div class="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <Icon name="mingcute:cpu-fill" size="24" />
+              <Icon name="mingcute:cpu-line" size="24" />
             </div>
             <span class="text-xs font-bold opacity-60">{{ metrics.hardware.memory.usagePercent }}%</span>
           </div>
           <div class="mt-4">
             <p class="text-xs font-bold uppercase tracking-wider text-base-content/40">RAM Digunakan</p>
-            <h3 class="text-2xl md:text-3xl font-black text-base-content mt-1">
+            <h3 class="text-xl md:text-2xl font-black text-base-content mt-1">
               {{ (metrics.hardware.memory.usedMB / 1024).toFixed(2) }} GB
             </h3>
             <div class="w-full bg-base-300 rounded-full h-1.5 mt-2 overflow-hidden">
@@ -179,7 +245,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
           </div>
         </div>
 
-        <!-- Card 4: Server Uptime -->
+        <!-- Card 5: Server Uptime -->
         <div :class="bentoCard" class="relative overflow-hidden group">
           <div class="flex items-start justify-between">
             <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -189,7 +255,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
           </div>
           <div class="mt-4">
             <p class="text-xs font-bold uppercase tracking-wider text-base-content/40">Uptime Server OS</p>
-            <h3 class="text-xl md:text-2xl font-black text-base-content mt-1 truncate">
+            <h3 class="text-lg md:text-xl font-black text-base-content mt-1 truncate">
               {{ metrics.hardware.os.uptimeFormatted }}
             </h3>
             <p class="text-[11px] text-base-content/50 mt-1">OS: {{ metrics.hardware.os.platform }} ({{ metrics.hardware.os.arch }})</p>
@@ -203,10 +269,10 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
           <div>
             <h2 class="text-xl font-black text-base-content flex items-center gap-2">
               <Icon name="mingcute:folder-3-fill" class="text-primary" />
-              <span>Rincian Penggunaan Storage File (/uploads)</span>
+              <span>Rincian Auto Sync Storage File (/uploads)</span>
             </h2>
             <p class="text-xs opacity-50 mt-1">
-              Detail kapasitas penyimpanan yang digunakan oleh foto profil, foto wajah ISAPI, surat izin, dan foto tim.
+              Pemindaian otomatis seluruh subdirektori di folder uploads untuk sinkronisasi persentase kapasitas yang terpakai.
             </p>
           </div>
           <div class="text-right">
@@ -223,10 +289,11 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <Icon v-if="item.key === 'photos'" name="mingcute:user-4-fill" class="text-base" />
-                  <Icon v-else-if="item.key === 'faces'" name="mingcute:scan-fill" class="text-base" />
-                  <Icon v-else-if="item.key === 'team'" name="mingcute:group-fill" class="text-base" />
-                  <Icon v-else-if="item.key === 'proofs'" name="mingcute:document-2-fill" class="text-base" />
+                  <Icon v-if="item.key.includes('photo') || item.key.includes('profile')" name="mingcute:user-4-fill" class="text-base" />
+                  <Icon v-else-if="item.key.includes('face') || item.key.includes('log')" name="mingcute:scan-face-fill" class="text-base" />
+                  <Icon v-else-if="item.key.includes('team')" name="mingcute:group-fill" class="text-base" />
+                  <Icon v-else-if="item.key.includes('proof') || item.key.includes('surat') || item.key.includes('leave')" name="mingcute:document-2-fill" class="text-base" />
+                  <Icon v-else-if="item.key.includes('import') || item.key.includes('temp')" name="mingcute:folder-3-fill" class="text-base" />
                   <Icon v-else name="mingcute:folder-fill" class="text-base" />
                 </div>
                 <span class="font-bold text-sm text-base-content">{{ item.category }}</span>

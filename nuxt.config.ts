@@ -54,5 +54,8 @@ export default defineNuxtConfig({
     clientBundle: {
       scan: true,
     },
+    serverBundle: {
+      collections: ['mingcute', 'ic', 'mdi', 'mage', 'entypo-social'],
+    },
   },
 });
