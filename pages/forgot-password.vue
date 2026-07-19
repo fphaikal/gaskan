@@ -74,7 +74,7 @@ useSeoMeta({
 
         <!-- Security Badge -->
         <div class="flex items-center gap-3 justify-center py-4 px-6 rounded-2xl bg-base-200/50 border border-base-300 w-fit mx-auto">
-          <Icon name="mingcute:shield-check-fill" class="text-success text-xl" />
+          <Icon name="mingcute:safe-shield-fill" class="text-success text-xl" />
           <span class="text-xs font-bold opacity-60">Enkripsi End-to-End Aktif</span>
         </div>
       </div>
@@ -109,7 +109,7 @@ useSeoMeta({
           <Transition name="fade">
             <div v-if="requireAdmin" class="p-6 rounded-[2rem] bg-error/5 border border-error/10 flex gap-5 animate-in slide-in-from-top-4 duration-500">
               <div class="w-12 h-12 rounded-2xl bg-error/20 flex items-center justify-center flex-shrink-0">
-                <Icon name="mingcute:mail-forbid-line" class="text-2xl text-error" />
+                <Icon name="mingcute:mail-send-fill" class="text-2xl text-error" />
               </div>
               <div class="text-left">
                 <p class="text-sm font-black text-error mb-1 uppercase tracking-tight">Email Belum Terdaftar</p>

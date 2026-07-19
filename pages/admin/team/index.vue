@@ -510,7 +510,7 @@ const roleColor = (role) => {
       <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 max-w-3xl w-full">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg md:text-xl font-black text-base-content flex items-center gap-2">
-            <Icon name="mingcute:crop-line" class="text-primary text-2xl" />
+            <Icon name="mingcute:scissors-line" class="text-primary text-2xl" />
             <span>Edit & Potong Foto Anggota Tim</span>
           </h3>
           <button @click="cancelCrop" class="btn btn-sm btn-circle btn-ghost">
@@ -547,7 +547,7 @@ const roleColor = (role) => {
             <div class="divider divider-horizontal mx-0 h-5 my-auto" />
 
             <button @click="rotateLeft" class="btn btn-xs sm:btn-sm btn-base-100 rounded-xl border border-base-300 hover:border-primary" title="Putar Kiri 90°">
-              <Icon name="mingcute:counterclockwise-line" class="text-base" />
+              <Icon name="mingcute:refresh-3-line" class="text-base" />
             </button>
             <button @click="rotateRight" class="btn btn-xs sm:btn-sm btn-base-100 rounded-xl border border-base-300 hover:border-primary" title="Putar Kanan 90°">
               <Icon name="mingcute:clockwise-line" class="text-base" />

@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const session = requireRole(event, ['admin']);
+  const session = requireRole(event, ['admin', 'developer']);
   const id = event.context.params.id;
   
   const body = await readRawBody(event, 'utf-8');

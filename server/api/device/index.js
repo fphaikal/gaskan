@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const session = requireRole(event, ['admin']);
+  const session = requireRole(event, ['admin', 'developer']);
   const config = useRuntimeConfig();
   const method = event.method;
 

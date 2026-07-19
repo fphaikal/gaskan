@@ -333,7 +333,7 @@ const showDeviceStats = (device) => {
     <!-- Empty State -->
     <div v-else-if="devices.length === 0" class="bg-base-100/60 border border-base-200/80 backdrop-blur-md rounded-3xl p-16 text-center max-w-lg mx-auto shadow-sm">
       <div class="w-16 h-16 rounded-2xl bg-base-200/50 border border-base-300 flex items-center justify-center mx-auto mb-5">
-        <Icon name="mingcute:cpu-line" size="32" class="text-base-content/40" />
+        <Icon name="mingcute:chip-line" size="32" class="text-base-content/40" />
       </div>
       <h3 class="text-xl font-bold text-base-content mb-2">Belum ada perangkat terdaftar</h3>
       <p class="text-base-content/50 text-sm mb-6">Tambahkan mesin sidik jari/wajah Hikvision pertama Anda untuk mulai sinkronisasi data kehadiran siswa secara otomatis.</p>
@@ -382,7 +382,7 @@ const showDeviceStats = (device) => {
               <span>Username: <span class="font-semibold text-base-content">{{ d.username }}</span></span>
             </div>
             <div class="flex items-center gap-2">
-              <Icon name="mingcute:transmission-line" size="16" class="opacity-60" />
+              <Icon name="mingcute:signal-fill" size="16" class="opacity-60" />
               <span>Mode: <span class="font-semibold text-primary">Push Webhook (Real-time)</span></span>
             </div>
             <div class="flex items-center gap-2">

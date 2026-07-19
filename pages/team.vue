@@ -55,7 +55,7 @@ const groupedTeam = computed(() => {
   if (pembimbing.length > 0) {
     result.push({
       title: 'Pembimbing',
-      icon: 'mingcute:academic-2-fill',
+      icon: 'mingcute:school-fill',
       members: pembimbing
     })
   }

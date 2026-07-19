@@ -512,7 +512,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
           <div v-if="!uploading" class="mt-8 border-t border-base-200/60 pt-6 flex justify-end gap-3">
             <button @click="clearSelection" class="btn btn-ghost rounded-xl px-5 h-10 text-sm font-semibold">Batal / Reset</button>
             <button @click="triggerUpload" class="btn bg-orange-500 hover:bg-orange-600 border-0 text-white rounded-xl px-6 h-10 shadow-md font-bold text-sm transition-all hover:-translate-y-0.5 flex items-center gap-1.5">
-              <Icon name="mingcute:upload-cloud-line" />
+              <Icon name="mingcute:upload-3-line" />
               Upload & Sinkronkan
             </button>
           </div>
@@ -554,7 +554,7 @@ const bentoCard = "bg-base-100/60 backdrop-blur-2xl border border-white/10 shado
                   @click="openManualLink(fail.filename)"
                   class="btn btn-ghost btn-xs text-primary font-bold shrink-0 hover:bg-primary/10 rounded-lg h-7 px-2.5"
                 >
-                  <Icon name="mingcute:user-link-line" class="mr-1" />
+                  <Icon name="mingcute:user-follow-line" class="mr-1" />
                   Hubungkan
                 </button>
               </div>

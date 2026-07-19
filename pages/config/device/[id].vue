@@ -101,7 +101,7 @@ onMounted(() => {
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
       <div>
         <h1 class="text-3xl font-extrabold text-base-content flex items-center gap-2.5 tracking-tight">
-          <Icon name="mingcute:cpu-fill" class="text-primary animate-pulse" size="32" />
+          <Icon name="mingcute:chip-fill" class="text-primary animate-pulse" size="32" />
           {{ device?.name || 'Loading Perangkat...' }}
         </h1>
         <p class="text-sm text-base-content/50 mt-1">Detail statistik, kapasitas hardware, dan live control mesin absensi.</p>
@@ -130,7 +130,7 @@ onMounted(() => {
         <!-- Live Video Stream -->
         <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
           <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-widest flex items-center gap-1.5">
-            <Icon name="mingcute:videocam-fill" class="text-red-500" size="14" />
+            <Icon name="mingcute:video-camera-fill" class="text-red-500" size="14" />
             Live Preview Camera
           </h3>
 
@@ -142,7 +142,7 @@ onMounted(() => {
               allow="autoplay; fullscreen"
             ></iframe>
             <div v-else class="flex flex-col items-center text-base-content/30 gap-2">
-              <Icon name="mingcute:videocam-off-fill" size="36" />
+              <Icon name="mingcute:computer-camera-off-fill" size="36" />
               <span class="text-xs font-semibold">Live Preview Tidak Aktif</span>
             </div>
           </div>
@@ -151,7 +151,7 @@ onMounted(() => {
         <!-- Door controls -->
         <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
           <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-widest flex items-center gap-1.5">
-            <Icon name="mingcute:key-fill" class="text-success" size="14" />
+            <Icon name="mingcute:key-2-fill" class="text-success" size="14" />
             Kontrol Pintu Akses
           </h3>
           
@@ -164,7 +164,7 @@ onMounted(() => {
                 class="btn btn-success btn-sm flex-1 rounded-xl h-11 font-bold flex items-center justify-center gap-1.5 text-xs text-white"
               >
                 <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
-                <Icon v-else name="mingcute:door-open-fill" size="16" />
+                <Icon v-else name="mingcute:exit-fill" size="16" />
                 Buka Pintu
               </button>
               <button 
@@ -173,7 +173,7 @@ onMounted(() => {
                 class="btn btn-neutral btn-sm flex-1 rounded-xl h-11 font-bold flex items-center justify-center gap-1.5 text-xs"
               >
                 <span v-if="sendingDoorCmd" class="loading loading-spinner loading-xs"></span>
-                <Icon v-else name="mingcute:door-close-fill" size="16" />
+                <Icon v-else name="mingcute:lock-fill" size="16" />
                 Kunci Pintu
               </button>
             </div>
@@ -211,7 +211,7 @@ onMounted(() => {
             <div>
               <span class="text-[10px] font-bold text-base-content/40 uppercase tracking-widest leading-none">Model</span>
               <p class="text-sm font-extrabold text-base-content mt-1 flex items-center gap-1.5">
-                <Icon name="mingcute:cpu-line" size="14" class="text-primary/70" />
+                <Icon name="mingcute:chip-line" size="14" class="text-primary/70" />
                 {{ statsData?.deviceInfo?.model || '-' }}
               </p>
             </div>
@@ -246,7 +246,7 @@ onMounted(() => {
               <span>Interval Pooling: <span class="font-bold text-base-content">{{ device?.poolingInterval }} detik</span></span>
             </div>
             <div class="flex items-center gap-2">
-              <Icon name="mingcute:shield-check-line" size="18" class="opacity-60" />
+              <Icon name="mingcute:safe-shield-line" size="18" class="opacity-60" />
               <span>Status Perangkat: <span :class="['font-bold', device?.isActive ? 'text-success' : 'text-error']">{{ device?.isActive ? 'Aktif' : 'Non-Aktif' }}</span></span>
             </div>
           </div>
@@ -255,7 +255,7 @@ onMounted(() => {
         <!-- go2rtc Stream ID configuration box -->
         <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
           <h3 class="text-xs font-bold text-base-content/40 uppercase tracking-widest flex items-center gap-1.5">
-            <Icon name="mingcute:code-box-fill" class="text-warning" size="14" />
+            <Icon name="mingcute:code-fill" class="text-warning" size="14" />
             Konfigurasi Stream go2rtc
           </h3>
           
@@ -309,7 +309,7 @@ onMounted(() => {
             <div class="space-y-1.5">
               <div class="flex justify-between items-center text-xs">
                 <span class="font-bold text-base-content flex items-center gap-1.5">
-                  <Icon name="mingcute:scan-face-fill" class="text-success" size="14" />
+                  <Icon name="mingcute:face-fill" class="text-success" size="14" />
                   Wajah Terdaftar
                 </span>
                 <span class="font-semibold text-base-content/60">{{ statsData.stats?.face }} / {{ statsData.capabilities?.maxFace }}</span>
@@ -325,7 +325,7 @@ onMounted(() => {
             <div class="space-y-1.5">
               <div class="flex justify-between items-center text-xs">
                 <span class="font-bold text-base-content flex items-center gap-1.5">
-                  <Icon name="mingcute:card-membership-fill" class="text-info" size="14" />
+                  <Icon name="mingcute:idcard-fill" class="text-info" size="14" />
                   Kartu RFID
                 </span>
                 <span class="font-semibold text-base-content/60">{{ statsData.stats?.card }} / {{ statsData.capabilities?.maxCard }}</span>

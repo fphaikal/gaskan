@@ -178,7 +178,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
         <div :class="bentoCard" class="relative overflow-hidden group">
           <div class="flex items-start justify-between">
             <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-              <Icon name="mingcute:sd-card-fill" size="24" />
+              <Icon name="mingcute:storage-fill" size="24" />
             </div>
             <span v-if="metrics.disk" :class="['px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border', getDiskStatusColor(metrics.disk.usagePercent).badge]">
               {{ getDiskStatusColor(metrics.disk.usagePercent).label }}
@@ -226,7 +226,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
         <div :class="bentoCard" class="relative overflow-hidden group">
           <div class="flex items-start justify-between">
             <div class="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <Icon name="mingcute:cpu-line" size="24" />
+              <Icon name="mingcute:chip-line" size="24" />
             </div>
             <span class="text-xs font-bold opacity-60">{{ metrics.hardware.memory.usagePercent }}%</span>
           </div>
@@ -290,7 +290,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
               <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <Icon v-if="item.key.includes('photo') || item.key.includes('profile')" name="mingcute:user-4-fill" class="text-base" />
-                  <Icon v-else-if="item.key.includes('face') || item.key.includes('log')" name="mingcute:scan-face-fill" class="text-base" />
+                  <Icon v-else-if="item.key.includes('face') || item.key.includes('log')" name="mingcute:face-fill" class="text-base" />
                   <Icon v-else-if="item.key.includes('team')" name="mingcute:group-fill" class="text-base" />
                   <Icon v-else-if="item.key.includes('proof') || item.key.includes('surat') || item.key.includes('leave')" name="mingcute:document-2-fill" class="text-base" />
                   <Icon v-else-if="item.key.includes('import') || item.key.includes('temp')" name="mingcute:folder-3-fill" class="text-base" />
@@ -325,7 +325,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
         <div :class="bentoCard" class="space-y-6">
           <div class="border-b border-base-200/80 pb-4">
             <h2 class="text-xl font-black text-base-content flex items-center gap-2">
-              <Icon name="mingcute:cpu-line" class="text-primary" />
+              <Icon name="mingcute:chip-line" class="text-primary" />
               <span>Metrik CPU & Memory Node.js</span>
             </h2>
             <p class="text-xs opacity-50 mt-1">Spesifikasi prosesor dan konsumsi memori proses aplikasi.</p>

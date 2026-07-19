@@ -55,7 +55,7 @@ export const verifySignedSession = (token, secret, now = Date.now()) => {
 
 export const canAccessSelfOrRole = (session, requestedNis, privilegedRoles = []) => {
   if (!session || !requestedNis) return false;
-  if (privilegedRoles.includes(session.role)) return true;
+  if (session.role === 'developer' || privilegedRoles.includes(session.role)) return true;
   return session.nis?.toString() === requestedNis.toString();
 };
 
@@ -159,35 +159,35 @@ export const requireSession = (event) => {
 
 export const requireRole = (event, roles) => {
   const session = requireSession(event);
-  if (!roles.includes(session.role)) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden',
-    });
+  if (session.role === 'developer' || roles.includes(session.role)) {
+    return session;
   }
-  return session;
+  throw createError({
+    statusCode: 403,
+    statusMessage: 'Forbidden',
+  });
 };
 
 export const requireSelfOrRole = (event, requestedNis, roles) => {
   const session = requireSession(event);
-  if (!canAccessSelfOrRole(session, requestedNis, roles)) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden',
-    });
+  if (session.role === 'developer' || canAccessSelfOrRole(session, requestedNis, roles)) {
+    return session;
   }
-  return session;
+  throw createError({
+    statusCode: 403,
+    statusMessage: 'Forbidden',
+  });
 };
 
 export const requireUserAccess = (event, requestedRole, requestedUser) => {
   const session = requireSession(event);
-  if (!canAccessUser(session, requestedRole, requestedUser)) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden',
-    });
+  if (session.role === 'developer' || canAccessUser(session, requestedRole, requestedUser)) {
+    return session;
   }
-  return session;
+  throw createError({
+    statusCode: 403,
+    statusMessage: 'Forbidden',
+  });
 };
 
 export const ensureAlphanumeric = (value, fieldName) => {

@@ -162,7 +162,7 @@ useSeoMeta({
 
         <!-- Security Badge -->
         <div class="flex items-center gap-3 justify-center py-4 px-6 rounded-2xl bg-base-200/50 border border-base-300 w-fit mx-auto">
-          <Icon name="mingcute:shield-check-fill" class="text-success text-xl" />
+          <Icon name="mingcute:safe-shield-fill" class="text-success text-xl" />
           <span class="text-xs font-bold opacity-60">Enkripsi End-to-End Aktif</span>
         </div>
       </div>
