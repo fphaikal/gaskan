@@ -181,6 +181,54 @@ const purgeLocalFilesNow = async () => {
   }
 };
 
+const togglingPause = ref(false);
+const cancelling = ref(false);
+
+const pauseBackup = async () => {
+  togglingPause.value = true;
+  try {
+    const res = await $fetch('/api/system/backup/pause', { method: 'POST' });
+    if (res?.success) {
+      $toast.success(res.message);
+      fetchBackupStatus();
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || 'Gagal menangguhkan proses backup');
+  } finally {
+    togglingPause.value = false;
+  }
+};
+
+const resumeBackup = async () => {
+  togglingPause.value = true;
+  try {
+    const res = await $fetch('/api/system/backup/resume', { method: 'POST' });
+    if (res?.success) {
+      $toast.success(res.message);
+      fetchBackupStatus();
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || 'Gagal melanjutkan proses backup');
+  } finally {
+    togglingPause.value = false;
+  }
+};
+
+const cancelBackup = async () => {
+  cancelling.value = true;
+  try {
+    const res = await $fetch('/api/system/backup/cancel', { method: 'POST' });
+    if (res?.success) {
+      $toast.success(res.message);
+      fetchBackupStatus();
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || 'Gagal membatalkan proses backup');
+  } finally {
+    cancelling.value = false;
+  }
+};
+
 onMounted(() => {
   fetchMetrics();
   fetchBackupStatus();
@@ -674,9 +722,10 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
 
           <!-- Progress Bar (When Active) -->
           <div v-if="backupProgress?.active" class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
-            <div class="flex justify-between items-center text-xs font-bold">
+            <div class="flex flex-wrap justify-between items-center text-xs font-bold gap-2">
               <span class="text-amber-400 flex items-center gap-1.5">
-                <span class="loading loading-spinner loading-xs"></span>
+                <span v-if="!backupProgress.paused" class="loading loading-spinner loading-xs"></span>
+                <span v-else class="w-2 h-2 rounded-full bg-warning animate-pulse shrink-0"></span>
                 {{ backupProgress.statusMessage }}
               </span>
               <span class="text-amber-300 font-mono">{{ backupProgress.processedFiles }} / {{ backupProgress.totalFiles }} File</span>
@@ -686,8 +735,39 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
               :value="backupProgress.processedFiles" 
               :max="backupProgress.totalFiles || 1"
             ></progress>
-            <div v-if="backupProgress.currentFile" class="text-[10px] font-mono opacity-60 truncate text-left">
-              File saat ini: {{ backupProgress.currentFile }}
+            <div class="flex flex-wrap items-center justify-between gap-3 text-[10px]">
+              <div v-if="backupProgress.currentFile" class="font-mono opacity-60 truncate max-w-xs md:max-w-md text-left">
+                File saat ini: {{ backupProgress.currentFile }}
+              </div>
+              <div class="flex items-center gap-2 ml-auto">
+                <button
+                  v-if="!backupProgress.paused"
+                  @click="pauseBackup"
+                  class="btn btn-xs btn-warning rounded-full px-3 gap-1 shadow-md font-bold"
+                  :disabled="togglingPause"
+                >
+                  <Icon name="mingcute:pause-fill" size="12" />
+                  <span>Pause</span>
+                </button>
+                <button
+                  v-else
+                  @click="resumeBackup"
+                  class="btn btn-xs btn-success rounded-full px-3 gap-1 text-white shadow-md font-bold"
+                  :disabled="togglingPause"
+                >
+                  <Icon name="mingcute:play-fill" size="12" />
+                  <span>Resume</span>
+                </button>
+
+                <button
+                  @click="cancelBackup"
+                  class="btn btn-xs btn-error rounded-full px-3 gap-1 text-white shadow-md font-bold"
+                  :disabled="cancelling"
+                >
+                  <Icon name="mingcute:close-circle-fill" size="12" />
+                  <span>Batal</span>
+                </button>
+              </div>
             </div>
           </div>
 
