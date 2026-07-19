@@ -2,6 +2,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '~/store/useAuthStore';
 import { storeToRefs } from 'pinia';
+import { Cropper } from 'vue-advanced-cropper';
+import 'vue-advanced-cropper/dist/style.css';
 
 const { $toast } = useNuxtApp();
 const { role } = storeToRefs(useAuthStore());
@@ -128,13 +130,48 @@ const filteredMembers = computed(() => {
 
 const photoFile = ref(null);
 const photoPreview = ref(null);
+const showCropper = ref(false);
+const cropperRef = ref(null);
+const rawImage = ref(null);
+const fileInputRef = ref(null);
 
 const handleFileChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    photoFile.value = file;
-    photoPreview.value = URL.createObjectURL(file);
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    $toast.error('Ukuran file foto maksimal adalah 5MB!');
+    if (fileInputRef.value) fileInputRef.value.value = '';
+    return;
   }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    rawImage.value = event.target.result;
+    showCropper.value = true;
+  };
+  reader.readAsDataURL(file);
+};
+
+const applyCrop = () => {
+  if (!cropperRef.value) return;
+  const { canvas } = cropperRef.value.getResult();
+  if (!canvas) return;
+
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const file = new File([blob], 'team-photo.jpg', { type: 'image/jpeg' });
+    photoFile.value = file;
+    photoPreview.value = URL.createObjectURL(blob);
+    showCropper.value = false;
+    rawImage.value = null;
+  }, 'image/jpeg', 0.9);
+};
+
+const cancelCrop = () => {
+  showCropper.value = false;
+  rawImage.value = null;
+  if (fileInputRef.value) fileInputRef.value.value = '';
 };
 
 const openCreate = () => {
@@ -362,8 +399,8 @@ const roleColor = (role) => {
                 <Icon v-else name="mingcute:photo-album-line" size="24" class="opacity-20" />
               </div>
               <div class="flex-1">
-                <input type="file" accept="image/*" @change="handleFileChange" class="file-input file-input-bordered file-input-primary file-input-sm w-full rounded-xl" />
-                <p class="text-[9px] mt-2 opacity-40">Rekomendasi: Persegi (1:1), Max 2MB (JPG, PNG, WebP)</p>
+                <input ref="fileInputRef" type="file" accept="image/*" @change="handleFileChange" class="file-input file-input-bordered file-input-primary file-input-sm w-full rounded-xl" />
+                <p class="text-[9px] mt-2 opacity-40">Rekomendasi: Persegi (1:1), Max 5MB (JPG, PNG, WebP)</p>
               </div>
             </div>
           </div>
@@ -438,6 +475,32 @@ const roleColor = (role) => {
         <div class="flex gap-2 justify-center mt-2 w-full">
           <button @click="showDeleteModal = false" class="btn btn-ghost rounded-2xl flex-1">Batal</button>
           <button @click="deleteMember" class="btn btn-error rounded-2xl flex-1">Hapus</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Cropper Modal -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', showCropper ? 'modal-open' : '']">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 max-w-xl">
+        <h3 class="text-lg md:text-xl font-black text-base-content mb-4 flex items-center gap-2">
+          <Icon name="mingcute:crop-line" class="text-primary" />
+          <span>Potong Foto Anggota Tim</span>
+        </h3>
+        <div class="bg-base-200 rounded-2xl overflow-hidden max-h-[50vh] flex items-center justify-center p-2">
+          <Cropper
+            v-if="showCropper"
+            ref="cropperRef"
+            class="max-h-[45vh] w-full"
+            :src="rawImage"
+            :stencil-props="{ aspectRatio: 1 }"
+          />
+        </div>
+        <div class="modal-action mt-6 gap-2">
+          <button @click="cancelCrop" class="btn btn-ghost rounded-2xl px-6">Batal</button>
+          <button @click="applyCrop" class="btn btn-primary rounded-2xl px-6 shadow-lg shadow-primary/20 flex items-center gap-2">
+            <Icon name="mingcute:check-fill" />
+            <span>Potong & Gunakan Foto</span>
+          </button>
         </div>
       </div>
     </dialog>
