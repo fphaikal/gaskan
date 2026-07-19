@@ -12,9 +12,11 @@ const loading = ref(true);
 const saving = ref(false);
 const testingId = ref(null);
 
-// Late setting state
+// Late & Minimal Out setting state
 const lateHour = ref(7);
 const lateMinute = ref(0);
+const minOutHour = ref(12);
+const minOutMinute = ref(0);
 const onsiteLimitHour = ref(21);
 const savingSettings = ref(false);
 
@@ -29,6 +31,21 @@ const lateTime = computed({
       const [h, m] = val.split(':');
       lateHour.value = Number(h);
       lateMinute.value = Number(m);
+    }
+  }
+});
+
+const minOutTime = computed({
+  get() {
+    const h = String(minOutHour.value).padStart(2, '0');
+    const m = String(minOutMinute.value).padStart(2, '0');
+    return `${h}:${m}`;
+  },
+  set(val) {
+    if (val) {
+      const [h, m] = val.split(':');
+      minOutHour.value = Number(h);
+      minOutMinute.value = Number(m);
     }
   }
 });
@@ -68,6 +85,8 @@ const fetchSettings = async () => {
     if (res?.success && res.data) {
       lateHour.value = res.data.lateHour;
       lateMinute.value = res.data.lateMinute;
+      minOutHour.value = res.data.minOutHour !== undefined ? res.data.minOutHour : 12;
+      minOutMinute.value = res.data.minOutMinute !== undefined ? res.data.minOutMinute : 0;
       onsiteLimitHour.value = res.data.onsiteLimitHour !== undefined ? res.data.onsiteLimitHour : 21;
     }
   } catch (e) {
@@ -276,6 +295,8 @@ const saveLateSettings = async () => {
       body: {
         lateHour: Number(lateHour.value),
         lateMinute: Number(lateMinute.value),
+        minOutHour: Number(minOutHour.value),
+        minOutMinute: Number(minOutMinute.value),
         onsiteLimitHour: Number(onsiteLimitHour.value)
       }
     });
@@ -448,7 +469,7 @@ const showDeviceStats = (device) => {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="form-control">
           <label class="label"><span class="label-text font-bold text-base-content/80">Batas Waktu Masuk <span class="text-error">*</span></span></label>
           <input 
@@ -456,7 +477,17 @@ const showDeviceStats = (device) => {
             type="time" 
             class="input input-bordered w-full rounded-xl font-bold text-sm h-10 border-base-300"
           />
-          <span class="text-[10px] text-base-content/40 mt-1 pl-1">Masuk setelah jam ini otomatis ditandai "TERLAMBAT"</span>
+          <span class="text-[10px] text-base-content/40 mt-1 pl-1">Masuk setelah jam ini otomatis "TERLAMBAT"</span>
+        </div>
+
+        <div class="form-control">
+          <label class="label"><span class="label-text font-bold text-base-content/80">Batas Minimal Jam Pulang <span class="text-error">*</span></span></label>
+          <input 
+            v-model="minOutTime" 
+            type="time" 
+            class="input input-bordered w-full rounded-xl font-bold text-sm h-10 border-base-300"
+          />
+          <span class="text-[10px] text-base-content/40 mt-1 pl-1">Scan sebelum jam ini tidak dianggap pulang (lastOut)</span>
         </div>
 
         <div class="form-control">
