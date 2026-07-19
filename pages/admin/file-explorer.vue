@@ -230,7 +230,7 @@ onMounted(() => {
         <!-- Filter Bar -->
         <div class="max-w-screen-2xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-2">
           <!-- Search -->
-          <div class="relative flex-1 min-w-[200px] max-w-sm">
+          <div class="relative w-full md:flex-1 md:max-w-sm">
             <Icon name="mingcute:search-2-fill" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size="16" />
             <input
               v-model="search"
@@ -242,7 +242,7 @@ onMounted(() => {
           </div>
 
           <!-- Type Filter -->
-          <select v-model="typeFilter" class="select select-sm select-bordered bg-base-200/60 text-sm">
+          <select v-model="typeFilter" class="select select-sm select-bordered bg-base-200/60 text-sm flex-1 md:flex-none">
             <option value="all">Semua Tipe</option>
             <option value="image">🖼️ Gambar</option>
             <option value="doc">📄 Dokumen</option>
@@ -250,7 +250,7 @@ onMounted(() => {
           </select>
 
           <!-- Directory Filter -->
-          <select v-model="dirFilter" class="select select-sm select-bordered bg-base-200/60 text-sm">
+          <select v-model="dirFilter" class="select select-sm select-bordered bg-base-200/60 text-sm flex-1 md:flex-none">
             <option value="all">Semua Direktori</option>
             <option value="profiles">📁 /profiles</option>
             <option value="faces">👤 /faces</option>
@@ -259,7 +259,7 @@ onMounted(() => {
           </select>
 
           <!-- Backup Status Filter -->
-          <select v-model="backupStatusFilter" class="select select-sm select-bordered bg-base-200/60 text-sm">
+          <select v-model="backupStatusFilter" class="select select-sm select-bordered bg-base-200/60 text-sm w-full md:w-auto">
             <option value="all">Semua Status Backup</option>
             <option value="local_only">⚠️ Lokal Saja</option>
             <option value="gd">🟢 Ada di Google Drive</option>
@@ -269,7 +269,7 @@ onMounted(() => {
           </select>
 
           <!-- Limit -->
-          <select v-model.number="limit" class="select select-sm select-bordered bg-base-200/60 text-sm w-24" @change="applyFilter">
+          <select v-model.number="limit" class="select select-sm select-bordered bg-base-200/60 text-sm w-20 md:w-24 ml-auto md:ml-0" @change="applyFilter">
             <option :value="25">25</option>
             <option :value="50">50</option>
             <option :value="100">100</option>
@@ -293,154 +293,242 @@ onMounted(() => {
           <p class="text-base-content/30 text-sm">Coba ubah filter atau pencarian</p>
         </div>
 
-        <!-- File Table -->
-        <div v-else class="rounded-2xl border border-base-200/50 overflow-hidden bg-base-200/20">
-          <div class="overflow-x-auto">
-            <table class="table table-zebra table-sm w-full">
-              <thead>
-                <tr class="bg-base-200/80 text-xs font-black uppercase tracking-widest opacity-70">
-                  <th class="w-10"></th>
-                  <th>File</th>
-                  <th>Direktori</th>
-                  <th>Pemilik (Issuer)</th>
-                  <th>Ukuran</th>
-                  <th>Status Backup</th>
-                  <th>CDN URLs</th>
-                  <th>Diubah</th>
-                  <th class="w-12"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="file in files"
-                  :key="file.relativePath"
-                  class="hover:bg-violet-500/5 cursor-pointer transition-colors duration-100 group"
-                  :class="{ 'opacity-60': file.backupStatus === 'PURGED' }"
-                  @click="openDetailPanel(file)"
-                >
-                  <!-- File Icon / Thumbnail -->
-                  <td class="text-center">
-                    <div class="w-9 h-9 rounded-lg overflow-hidden bg-base-200 flex items-center justify-center flex-shrink-0">
-                      <img
-                        v-if="file.isImage && file.existsLocally"
-                        :src="`${backendBase()}${file.localUrl}`"
-                        class="w-full h-full object-cover"
-                        loading="lazy"
-                        @error="(e) => e.target.style.display='none'"
-                      />
-                      <Icon
-                        v-else
-                        :name="fileIconName(file.ext, file.isImage)"
-                        :class="fileIconColor(file.ext, file.isImage)"
-                        size="18"
-                      />
-                    </div>
-                  </td>
+        <!-- File Directory Container -->
+        <div v-else>
+          <!-- Mobile Layout: Card Grid (visible on mobile only) -->
+          <div class="md:hidden space-y-3">
+            <div
+              v-for="file in files"
+              :key="file.relativePath"
+              class="p-4 rounded-2xl border border-base-200 bg-base-200/20 active:bg-violet-500/5 cursor-pointer transition-colors space-y-3"
+              :class="{ 'opacity-60': file.backupStatus === 'PURGED' }"
+              @click="openDetailPanel(file)"
+            >
+              <!-- Card Header -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl overflow-hidden bg-base-300 flex items-center justify-center flex-shrink-0">
+                    <img
+                      v-if="file.isImage && file.existsLocally"
+                      :src="`${backendBase()}${file.localUrl}`"
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                      @error="(e) => e.target.style.display='none'"
+                    />
+                    <Icon
+                      v-else
+                      :name="fileIconName(file.ext, file.isImage)"
+                      :class="fileIconColor(file.ext, file.isImage)"
+                      size="20"
+                    />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-black font-mono truncate text-base-content leading-snug">
+                      {{ file.fileName }}
+                    </p>
+                    <p class="text-[10px] opacity-40 font-mono truncate mt-0.5">{{ file.relativePath }}</p>
+                  </div>
+                </div>
+                <span :class="['badge badge-xs font-bold shrink-0 py-2', backupStatusLabel(file.backupStatus).color]">
+                  {{ backupStatusLabel(file.backupStatus).label }}
+                </span>
+              </div>
 
-                  <!-- File Name -->
-                  <td>
-                    <div class="max-w-[200px]">
-                      <p class="text-xs font-bold font-mono truncate text-base-content/90 group-hover:text-violet-400 transition-colors">
-                        {{ file.fileName }}
-                      </p>
-                      <p class="text-[10px] opacity-40 font-mono truncate">{{ file.relativePath }}</p>
-                    </div>
-                  </td>
+              <!-- Card Body: Issuer & Directory -->
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] pt-2.5 border-t border-base-200/60">
+                <div class="flex items-center gap-1.5 font-mono">
+                  <span class="text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    /{{ file.directory }}
+                  </span>
+                  <span class="opacity-30">•</span>
+                  <span class="opacity-70">{{ file.sizeFormatted }}</span>
+                </div>
+                <div v-if="file.issuer.type !== 'unknown'" class="flex items-center gap-1 bg-base-300/40 px-2 py-0.5 rounded-full border border-base-200">
+                  <span class="font-bold text-base-content/85 truncate max-w-[80px]">{{ file.issuer.userName }}</span>
+                  <span class="opacity-40">({{ issuerLabel(file.issuer.type) }})</span>
+                </div>
+                <div v-else class="text-[9px] opacity-35 italic">Tanpa Issuer</div>
+              </div>
 
-                  <!-- Directory -->
-                  <td>
-                    <span class="font-mono text-[11px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                      /{{ file.directory }}
-                    </span>
-                  </td>
+              <!-- Card Footer: Time & Action buttons -->
+              <div class="flex items-center justify-between pt-1.5 text-[9px] opacity-60">
+                <span class="font-mono">{{ formatDate(file.mtime) }}</span>
+                <div class="flex items-center gap-1">
+                  <button
+                    v-if="file.gdUrl"
+                    class="btn btn-xs btn-circle btn-ghost text-emerald-400"
+                    @click.stop="openFile(file.gdUrl)"
+                  >
+                    <Icon name="mingcute:drive-fill" size="13" />
+                  </button>
+                  <button
+                    v-if="file.hfUrl"
+                    class="btn btn-xs btn-circle btn-ghost text-sky-400"
+                    @click.stop="openFile(file.hfUrl)"
+                  >
+                    <Icon name="mingcute:upload-3-fill" size="13" />
+                  </button>
+                  <button
+                    v-if="file.existsLocally"
+                    class="btn btn-xs btn-circle btn-ghost text-amber-400"
+                    @click.stop="openFile(`${backendBase()}${file.localUrl}`)"
+                  >
+                    <Icon name="mingcute:folder-fill" size="13" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                  <!-- Issuer -->
-                  <td>
-                    <div v-if="file.issuer.type !== 'unknown'" class="flex items-center gap-2 min-w-[160px]">
-                      <div class="avatar">
-                        <div class="w-7 h-7 rounded-full bg-base-200 overflow-hidden flex-shrink-0">
-                          <img
-                            v-if="file.issuer.userPhotoUrl"
-                            :src="`${backendBase()}${file.issuer.userPhotoUrl}`"
-                            class="w-full h-full object-cover"
-                            @error="(e) => e.target.style.display='none'"
-                          />
-                          <div v-else class="w-full h-full flex items-center justify-center">
-                            <Icon name="mingcute:user-fill" class="text-base-content/40" size="14" />
+          <!-- Desktop Layout: Table (hidden on mobile) -->
+          <div class="hidden md:block rounded-2xl border border-base-200/50 overflow-hidden bg-base-200/20">
+            <div class="overflow-x-auto">
+              <table class="table table-zebra table-sm w-full">
+                <thead>
+                  <tr class="bg-base-200/80 text-xs font-black uppercase tracking-widest opacity-70">
+                    <th class="w-10"></th>
+                    <th>File</th>
+                    <th>Direktori</th>
+                    <th>Pemilik (Issuer)</th>
+                    <th>Ukuran</th>
+                    <th>Status Backup</th>
+                    <th>CDN URLs</th>
+                    <th>Diubah</th>
+                    <th class="w-12"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="file in files"
+                    :key="file.relativePath"
+                    class="hover:bg-violet-500/5 cursor-pointer transition-colors duration-100 group"
+                    :class="{ 'opacity-60': file.backupStatus === 'PURGED' }"
+                    @click="openDetailPanel(file)"
+                  >
+                    <!-- File Icon / Thumbnail -->
+                    <td class="text-center">
+                      <div class="w-9 h-9 rounded-lg overflow-hidden bg-base-200 flex items-center justify-center flex-shrink-0">
+                        <img
+                          v-if="file.isImage && file.existsLocally"
+                          :src="`${backendBase()}${file.localUrl}`"
+                          class="w-full h-full object-cover"
+                          loading="lazy"
+                          @error="(e) => e.target.style.display='none'"
+                        />
+                        <Icon
+                          v-else
+                          :name="fileIconName(file.ext, file.isImage)"
+                          :class="fileIconColor(file.ext, file.isImage)"
+                          size="18"
+                        />
+                      </div>
+                    </td>
+
+                    <!-- File Name -->
+                    <td>
+                      <div class="max-w-[200px]">
+                        <p class="text-xs font-bold font-mono truncate text-base-content/90 group-hover:text-violet-400 transition-colors">
+                          {{ file.fileName }}
+                        </p>
+                        <p class="text-[10px] opacity-40 font-mono truncate">{{ file.relativePath }}</p>
+                      </div>
+                    </td>
+
+                    <!-- Directory -->
+                    <td>
+                      <span class="font-mono text-[11px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                        /{{ file.directory }}
+                      </span>
+                    </td>
+
+                    <!-- Issuer -->
+                    <td>
+                      <div v-if="file.issuer.type !== 'unknown'" class="flex items-center gap-2 min-w-[160px]">
+                        <div class="avatar">
+                          <div class="w-7 h-7 rounded-full bg-base-200 overflow-hidden flex-shrink-0">
+                            <img
+                              v-if="file.issuer.userPhotoUrl"
+                              :src="`${backendBase()}${file.issuer.userPhotoUrl}`"
+                              class="w-full h-full object-cover"
+                              @error="(e) => e.target.style.display='none'"
+                            />
+                            <div v-else class="w-full h-full flex items-center justify-center">
+                              <Icon name="mingcute:user-fill" class="text-base-content/40" size="14" />
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <p class="text-xs font-semibold leading-tight max-w-[120px] truncate">{{ file.issuer.userName || '—' }}</p>
+                          <div class="flex items-center gap-1 mt-0.5">
+                            <span :class="['badge badge-xs font-mono', issuerBadgeColor(file.issuer.type)]">
+                              {{ issuerLabel(file.issuer.type) }}
+                            </span>
+                            <span v-if="file.issuer.userNis" class="text-[9px] opacity-40 font-mono">{{ file.issuer.userNis }}</span>
                           </div>
                         </div>
                       </div>
-                      <div>
-                        <p class="text-xs font-semibold leading-tight max-w-[120px] truncate">{{ file.issuer.userName || '—' }}</p>
-                        <div class="flex items-center gap-1 mt-0.5">
-                          <span :class="['badge badge-xs font-mono', issuerBadgeColor(file.issuer.type)]">
-                            {{ issuerLabel(file.issuer.type) }}
-                          </span>
-                          <span v-if="file.issuer.userNis" class="text-[9px] opacity-40 font-mono">{{ file.issuer.userNis }}</span>
-                        </div>
+                      <span v-else class="text-[11px] opacity-30 italic">Tidak diketahui</span>
+                    </td>
+
+                    <!-- Size -->
+                    <td>
+                      <span class="text-xs font-mono text-base-content/70">{{ file.sizeFormatted }}</span>
+                    </td>
+
+                    <!-- Backup Status -->
+                    <td>
+                      <span :class="['badge badge-sm font-bold gap-1', backupStatusLabel(file.backupStatus).color]">
+                        <Icon :name="backupStatusLabel(file.backupStatus).icon" size="11" />
+                        {{ backupStatusLabel(file.backupStatus).label }}
+                      </span>
+                    </td>
+
+                    <!-- CDN URLs Quick Buttons -->
+                    <td>
+                      <div class="flex items-center gap-1.5">
+                        <button
+                          v-if="file.gdUrl"
+                          class="btn btn-xs btn-circle btn-ghost text-emerald-400 hover:bg-emerald-500/20"
+                          title="Buka Google Drive"
+                          @click.stop="openFile(file.gdUrl)"
+                        >
+                          <Icon name="mingcute:drive-fill" size="13" />
+                        </button>
+                        <button
+                          v-if="file.hfUrl"
+                          class="btn btn-xs btn-circle btn-ghost text-sky-400 hover:bg-sky-500/20"
+                          title="Buka Hugging Face"
+                          @click.stop="openFile(file.hfUrl)"
+                        >
+                          <Icon name="mingcute:upload-3-fill" size="13" />
+                        </button>
+                        <button
+                          v-if="file.existsLocally"
+                          class="btn btn-xs btn-circle btn-ghost text-amber-400 hover:bg-amber-500/20"
+                          title="Buka File Lokal"
+                          @click.stop="openFile(`${backendBase()}${file.localUrl}`)"
+                        >
+                          <Icon name="mingcute:folder-fill" size="13" />
+                        </button>
+                        <span v-if="!file.gdUrl && !file.hfUrl && !file.existsLocally" class="text-[10px] opacity-30">—</span>
                       </div>
-                    </div>
-                    <span v-else class="text-[11px] opacity-30 italic">Tidak diketahui</span>
-                  </td>
+                    </td>
 
-                  <!-- Size -->
-                  <td>
-                    <span class="text-xs font-mono text-base-content/70">{{ file.sizeFormatted }}</span>
-                  </td>
+                    <!-- Modified Date -->
+                    <td>
+                      <span class="text-[10px] font-mono opacity-50 whitespace-nowrap">{{ formatDate(file.mtime) }}</span>
+                    </td>
 
-                  <!-- Backup Status -->
-                  <td>
-                    <span :class="['badge badge-sm font-bold gap-1', backupStatusLabel(file.backupStatus).color]">
-                      <Icon :name="backupStatusLabel(file.backupStatus).icon" size="11" />
-                      {{ backupStatusLabel(file.backupStatus).label }}
-                    </span>
-                  </td>
-
-                  <!-- CDN URLs Quick Buttons -->
-                  <td>
-                    <div class="flex items-center gap-1.5">
-                      <button
-                        v-if="file.gdUrl"
-                        class="btn btn-xs btn-circle btn-ghost text-emerald-400 hover:bg-emerald-500/20"
-                        title="Buka Google Drive"
-                        @click.stop="openFile(file.gdUrl)"
-                      >
-                        <Icon name="mingcute:drive-fill" size="13" />
+                    <!-- Detail Button -->
+                    <td>
+                      <button class="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity" @click.stop="openDetailPanel(file)">
+                        <Icon name="mingcute:right-fill" size="14" />
                       </button>
-                      <button
-                        v-if="file.hfUrl"
-                        class="btn btn-xs btn-circle btn-ghost text-sky-400 hover:bg-sky-500/20"
-                        title="Buka Hugging Face"
-                        @click.stop="openFile(file.hfUrl)"
-                      >
-                        <Icon name="mingcute:upload-3-fill" size="13" />
-                      </button>
-                      <button
-                        v-if="file.existsLocally"
-                        class="btn btn-xs btn-circle btn-ghost text-amber-400 hover:bg-amber-500/20"
-                        title="Buka File Lokal"
-                        @click.stop="openFile(`${backendBase()}${file.localUrl}`)"
-                      >
-                        <Icon name="mingcute:folder-fill" size="13" />
-                      </button>
-                      <span v-if="!file.gdUrl && !file.hfUrl && !file.existsLocally" class="text-[10px] opacity-30">—</span>
-                    </div>
-                  </td>
-
-                  <!-- Modified Date -->
-                  <td>
-                    <span class="text-[10px] font-mono opacity-50 whitespace-nowrap">{{ formatDate(file.mtime) }}</span>
-                  </td>
-
-                  <!-- Detail Button -->
-                  <td>
-                    <button class="btn btn-xs btn-circle btn-ghost opacity-0 group-hover:opacity-100 transition-opacity" @click.stop="openDetailPanel(file)">
-                      <Icon name="mingcute:right-fill" size="14" />
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
