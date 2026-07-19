@@ -107,6 +107,11 @@ const unlinkGoogleAccountNow = async () => {
   }
 };
 
+const totalBackedUpCount = ref(0);
+const totalBackedUpSizeFormatted = ref('0 B');
+const detailedStats = ref(null);
+const savingBackupConfig = ref(false);
+
 const fetchBackupStatus = async () => {
   try {
     const res = await $fetch('/api/system/backup/status');
@@ -119,6 +124,7 @@ const fetchBackupStatus = async () => {
       hfSizeFormatted.value = res.data.hfSizeFormatted || '0 B';
       totalBackedUpCount.value = res.data.totalCount || 0;
       totalBackedUpSizeFormatted.value = res.data.totalSizeFormatted || '0 B';
+      detailedStats.value = res.data.detailed || null;
     }
   } catch (err) {
     console.error('Failed to fetch backup status:', err);
@@ -219,6 +225,7 @@ onMounted(() => {
         hfSizeFormatted.value = data.hfSizeFormatted || '0 B';
         totalBackedUpCount.value = data.totalCount || 0;
         totalBackedUpSizeFormatted.value = data.totalSizeFormatted || '0 B';
+        detailedStats.value = data.detailed || null;
       }
     });
 
@@ -587,6 +594,81 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
               <span class="px-3 py-1 rounded-full bg-base-200 text-xs font-bold border border-base-300">
                 Total {{ totalBackedUpCount }} File ({{ totalBackedUpSizeFormatted }}) Ter-backup
               </span>
+            </div>
+          </div>
+
+          <!-- DETAILED STORAGE METRICS BENTO CARDS -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Card 1: Local /uploads Disk Stats -->
+            <div class="p-4 rounded-2xl bg-base-200/40 border border-base-200 space-y-2 text-left">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold opacity-60 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icon name="mingcute:folder-fill" class="text-amber-500" size="16" />
+                  Disk Lokal /uploads
+                </span>
+                <span class="badge badge-warning badge-xs font-mono font-bold">{{ detailedStats?.local?.totalFiles || 0 }} File</span>
+              </div>
+              <div class="text-2xl font-black text-base-content font-mono">
+                {{ detailedStats?.local?.totalSizeFormatted || '0 B' }}
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-medium pt-1 border-t border-base-200/60 opacity-70">
+                <span>Foto: {{ detailedStats?.local?.imagesCount || 0 }} ({{ detailedStats?.local?.imagesSizeFormatted || '0 B' }})</span>
+                <span>Dokumen: {{ detailedStats?.local?.docsCount || 0 }}</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Google Drive Cloud Stats -->
+            <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2 text-left">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icon name="mingcute:drive-fill" class="text-emerald-500" size="16" />
+                  Google Drive Backup
+                </span>
+                <span class="badge badge-emerald badge-xs font-mono font-bold">{{ detailedStats?.gdrive?.coveragePct || 0 }}% Coverage</span>
+              </div>
+              <div class="text-2xl font-black text-emerald-400 font-mono">
+                {{ detailedStats?.gdrive?.sizeFormatted || '0 B' }}
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-medium pt-1 border-t border-emerald-500/20 text-emerald-300/80">
+                <span>Ter-backup: {{ detailedStats?.gdrive?.count || 0 }} File</span>
+                <span>Foto: {{ detailedStats?.gdrive?.imagesCount || 0 }}</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Hugging Face CDN Stats -->
+            <div class="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 space-y-2 text-left">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icon name="mingcute:upload-3-fill" class="text-sky-500" size="16" />
+                  Hugging Face CDN
+                </span>
+                <span class="badge badge-sky badge-xs font-mono font-bold">{{ detailedStats?.huggingface?.coveragePct || 0 }}% Foto</span>
+              </div>
+              <div class="text-2xl font-black text-sky-400 font-mono">
+                {{ detailedStats?.huggingface?.sizeFormatted || '0 B' }}
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-medium pt-1 border-t border-sky-500/20 text-sky-300/80">
+                <span>Ter-backup: {{ detailedStats?.huggingface?.count || 0 }} Foto</span>
+                <span>Repo CDN Active</span>
+              </div>
+            </div>
+
+            <!-- Card 4: Memory Storage Freed (Purged) -->
+            <div class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2 text-left">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Icon name="mingcute:safe-shield-fill" class="text-purple-500" size="16" />
+                  Disk Terhemat (Freed)
+                </span>
+                <span class="badge badge-purple badge-xs font-mono font-bold">Storage Saver</span>
+              </div>
+              <div class="text-2xl font-black text-purple-400 font-mono">
+                {{ detailedStats?.huggingface?.freedSpaceFormatted || '0 B' }}
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-medium pt-1 border-t border-purple-500/20 text-purple-300/80">
+                <span>Bebas dari Disk Lokal</span>
+                <span>Redireksi CDN 302</span>
+              </div>
             </div>
           </div>
 
