@@ -254,11 +254,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-base-300">
+  <div class="space-y-6 max-w-7xl mx-auto px-4 pb-16 text-left">
 
     <!-- Access Denied -->
-    <div v-if="!isDeveloper" class="flex items-center justify-center min-h-screen">
-      <div class="text-center space-y-4 p-8">
+    <div v-if="!isDeveloper" class="flex items-center justify-center py-24">
+      <div class="text-center space-y-4 p-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm max-w-md">
         <Icon name="mingcute:lock-fill" class="text-error mx-auto" size="64" />
         <h1 class="text-2xl font-black text-error">Akses Ditolak</h1>
         <p class="text-base-content/60">Halaman ini hanya dapat diakses oleh Developer.</p>
@@ -267,101 +267,98 @@ onMounted(() => {
 
     <template v-else>
       <!-- Header -->
-      <div class="bg-base-300 border-b border-base-200/50">
-        <div class="max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <Icon name="mingcute:folder-open-fill" class="text-white" size="22" />
-            </div>
-            <div>
-              <h1 class="text-lg font-black text-base-content leading-tight">Developer File Explorer</h1>
-              <p class="text-[11px] opacity-50">
-                <span class="font-mono">{{ total }}</span> file terindeks di <span class="font-mono">/uploads</span>
-              </p>
-            </div>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-bold mb-2">
+            <Icon name="mingcute:shield-fill" class="text-sm" />
+            <span>Developer File Explorer (Developer Only)</span>
           </div>
-
-          <div class="flex items-center gap-2">
-            <span class="badge badge-outline badge-sm font-mono text-violet-400 border-violet-500/30 bg-violet-500/10">
-              <Icon name="mingcute:shield-fill" size="10" class="mr-1" />
-              DEVELOPER ONLY
-            </span>
-            <button
-              class="btn btn-sm btn-ghost gap-1.5"
-              :disabled="loading"
-              @click="fetchFiles"
-            >
-              <span v-if="loading" class="loading loading-spinner loading-xs"></span>
-              <Icon v-else name="mingcute:refresh-2-fill" size="16" />
-              Refresh
-            </button>
-          </div>
+          <h1 class="text-2xl md:text-3xl font-black text-base-content tracking-tight">Eksplorasi & Manajemen File</h1>
+          <p class="text-sm text-base-content/60 mt-1">
+            Pantau dan kelola seluruh file yang tersimpan di server lokal maupun cadangan cloud CDN.
+          </p>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="max-w-screen-2xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-2">
-          <!-- Search -->
-          <div class="relative w-full md:flex-1 md:max-w-sm">
-            <Icon name="mingcute:search-2-fill" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size="16" />
-            <input
-              v-model="search"
-              type="text"
-              placeholder="Cari nama file atau path..."
-              class="input input-sm input-bordered w-full pl-9 bg-base-200/60 text-sm"
-              @input="onSearchInput"
-            />
+        <div class="flex items-center gap-3">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-base-200/50 border-base-300">
+            <span class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+            <span class="opacity-80 font-mono">{{ total }} Files</span>
           </div>
-
-          <!-- Type Filter -->
-          <select v-model="typeFilter" class="select select-sm select-bordered bg-base-200/60 text-sm flex-1 md:flex-none">
-            <option value="all">Semua Tipe</option>
-            <option value="image">🖼️ Gambar</option>
-            <option value="doc">📄 Dokumen</option>
-            <option value="other">📦 Lainnya</option>
-          </select>
-
-          <!-- Directory Filter -->
-          <select v-model="dirFilter" class="select select-sm select-bordered bg-base-200/60 text-sm flex-1 md:flex-none">
-            <option value="all">Semua Direktori</option>
-            <option
-              v-for="d in directories"
-              :key="d"
-              :value="d"
-            >
-              📁 /{{ d }}
-            </option>
-          </select>
-
-          <!-- Backup Status Filter -->
-          <select v-model="backupStatusFilter" class="select select-sm select-bordered bg-base-200/60 text-sm w-full md:w-auto">
-            <option value="all">Semua Status Backup</option>
-            <option value="local_only">⚠️ Lokal Saja</option>
-            <option value="gd">🟢 Ada di Google Drive</option>
-            <option value="hf">🔵 Ada di HuggingFace</option>
-            <option value="gd_and_hf">✅ GD + HF</option>
-            <option value="purged">🗑️ Purged (CDN Only)</option>
-          </select>
-
-          <!-- Limit -->
-          <select v-model.number="limit" class="select select-sm select-bordered bg-base-200/60 text-sm w-20 md:w-24 ml-auto md:ml-0" @change="applyFilter">
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-            <option :value="200">200</option>
-          </select>
+          <button
+            class="btn btn-primary rounded-xl md:rounded-2xl gap-2 shadow-lg shadow-primary/20"
+            :disabled="loading"
+            @click="fetchFiles"
+          >
+            <span v-if="loading" class="loading loading-spinner loading-xs"></span>
+            <Icon v-else name="mingcute:refresh-2-fill" size="16" />
+            Refresh
+          </button>
         </div>
       </div>
 
+      <!-- Filter Bar -->
+      <div class="bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 border border-base-200/60 shadow-sm flex flex-wrap items-center gap-3">
+        <!-- Search -->
+        <div class="relative w-full md:flex-1 md:max-w-sm">
+          <Icon name="mingcute:search-2-fill" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size="16" />
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Cari nama file atau path..."
+            class="input input-sm input-bordered w-full pl-9 bg-base-200/60 text-sm"
+            @input="onSearchInput"
+          />
+        </div>
+
+        <!-- Type Filter -->
+        <select v-model="typeFilter" class="select select-sm select-bordered bg-base-200/60 text-sm flex-1 md:flex-none">
+          <option value="all">Semua Tipe</option>
+          <option value="image">🖼️ Gambar</option>
+          <option value="doc">📄 Dokumen</option>
+          <option value="other">📦 Lainnya</option>
+        </select>
+
+        <!-- Directory Filter -->
+        <select v-model="dirFilter" class="select select-sm select-bordered bg-base-200/60 text-sm flex-1 md:flex-none">
+          <option value="all">Semua Direktori</option>
+          <option
+            v-for="d in directories"
+            :key="d"
+            :value="d"
+          >
+            📁 /{{ d }}
+          </option>
+        </select>
+
+        <!-- Backup Status Filter -->
+        <select v-model="backupStatusFilter" class="select select-sm select-bordered bg-base-200/60 text-sm w-full md:w-auto">
+          <option value="all">Semua Status Backup</option>
+          <option value="local_only">⚠️ Lokal Saja</option>
+          <option value="gd">🟢 Ada di Google Drive</option>
+          <option value="hf">🔵 Ada di HuggingFace</option>
+          <option value="gd_and_hf">✅ GD + HF</option>
+          <option value="purged">🗑️ Purged (CDN Only)</option>
+        </select>
+
+        <!-- Limit -->
+        <select v-model.number="limit" class="select select-sm select-bordered bg-base-200/60 text-sm w-20 md:w-24 ml-auto md:ml-0" @change="applyFilter">
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+          <option :value="100">100</option>
+          <option :value="200">200</option>
+        </select>
+      </div>
+
       <!-- Main Content -->
-      <div class="max-w-screen-2xl mx-auto px-4 py-6">
+      <div class="space-y-4">
 
         <!-- Loading Skeleton -->
         <div v-if="loading" class="space-y-3">
-          <div v-for="i in 8" :key="i" class="h-16 rounded-2xl bg-base-200/50 animate-pulse"></div>
+          <div v-for="i in 8" :key="i" class="h-16 rounded-[1.5rem] bg-base-200/50 animate-pulse"></div>
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="files.length === 0" class="flex flex-col items-center justify-center py-24 gap-4 text-center">
+        <div v-else-if="files.length === 0" class="flex flex-col items-center justify-center py-24 gap-4 text-center bg-base-100 rounded-[1.5rem] md:rounded-[2rem] border border-base-200/60 shadow-sm">
           <Icon name="mingcute:folder-open-fill" class="text-base-content/20" size="80" />
           <p class="text-base-content/50 font-semibold text-lg">Tidak ada file ditemukan</p>
           <p class="text-base-content/30 text-sm">Coba ubah filter atau pencarian</p>
@@ -370,11 +367,12 @@ onMounted(() => {
         <!-- File Directory Container -->
         <div v-else>
           <!-- Mobile Layout: Card Grid (visible on mobile only) -->
+          <!-- Mobile Layout: Card Grid (visible on mobile only) -->
           <div class="md:hidden space-y-3">
             <div
               v-for="file in files"
               :key="file.relativePath"
-              class="p-4 rounded-2xl border border-base-200 bg-base-200/20 active:bg-violet-500/5 cursor-pointer transition-colors space-y-3"
+              class="p-4 rounded-2xl border border-base-200/60 bg-base-100 shadow-sm active:bg-violet-500/5 cursor-pointer transition-colors space-y-3"
               :class="{ 'opacity-60': file.backupStatus === 'PURGED' }"
               @click="openDetailPanel(file)"
             >
@@ -455,7 +453,7 @@ onMounted(() => {
           </div>
 
           <!-- Desktop Layout: Table (hidden on mobile) -->
-          <div class="hidden md:block rounded-2xl border border-base-200/50 overflow-hidden bg-base-200/20">
+          <div class="hidden md:block bg-base-100 rounded-[1.5rem] md:rounded-[2rem] border border-base-200/60 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
               <table class="table table-zebra table-sm w-full">
                 <thead>
