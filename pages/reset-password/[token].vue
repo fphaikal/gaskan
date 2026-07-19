@@ -5,6 +5,10 @@ const route = useRoute()
 const router = useRouter()
 const token = route.params.token
 
+const isVerifying = ref(true)
+const isTokenValid = ref(false)
+const tokenErrorMessage = ref('')
+
 const password = ref('')
 const confirmPassword = ref('')
 const showPassword = ref(false)
@@ -12,6 +16,32 @@ const isLoading = ref(false)
 const isSuccess = ref(false)
 const error = ref(false)
 const errorMessage = ref('')
+
+const verifyToken = async () => {
+  if (!token) {
+    isTokenValid.value = false
+    tokenErrorMessage.value = 'Token tidak ditemukan pada tautan.'
+    isVerifying.value = false
+    return
+  }
+
+  isVerifying.value = true
+  try {
+    await $fetch(`/api/auth/verify-reset-token?token=${encodeURIComponent(token)}`)
+    isTokenValid.value = true
+  } catch (err) {
+    isTokenValid.value = false
+    const rootData = err.data || {}
+    const innerData = rootData.data || {}
+    tokenErrorMessage.value = innerData.message || rootData.message || err.statusMessage || 'Tautan ini tidak valid atau sudah kedaluwarsa.'
+  } finally {
+    isVerifying.value = false
+  }
+}
+
+onMounted(() => {
+  verifyToken()
+})
 
 // Password validation criteria
 const checks = computed(() => {
@@ -155,7 +185,45 @@ useSeoMeta({
           <span class="text-2xl font-black italic tracking-tighter uppercase">GASKAN</span>
         </div>
 
-        <div v-if="!isSuccess" class="space-y-8">
+        <!-- Loading State -->
+        <div v-if="isVerifying" class="text-center py-16 space-y-4 animate-in fade-in duration-500">
+          <Icon name="mingcute:loading-3-line" class="animate-spin text-5xl text-primary mx-auto" />
+          <p class="font-bold text-sm opacity-60">Memverifikasi tautan reset password...</p>
+        </div>
+
+        <!-- Invalid / Expired Token State -->
+        <div v-else-if="!isTokenValid" class="text-center space-y-8 py-6 animate-in zoom-in-95 duration-500">
+          <div class="w-20 h-20 rounded-3xl bg-error/15 text-error flex items-center justify-center mx-auto border border-error/20 shadow-xl shadow-error/10">
+            <Icon name="mingcute:close-circle-fill" class="text-4xl" />
+          </div>
+
+          <div class="space-y-3">
+            <h2 class="text-2xl lg:text-3xl font-black tracking-tight text-error">Tautan Tidak Valid</h2>
+            <p class="opacity-60 text-sm leading-relaxed max-w-sm mx-auto">
+              {{ tokenErrorMessage }}
+            </p>
+          </div>
+
+          <div class="pt-4 space-y-3">
+            <NuxtLink
+              to="/forgot-password"
+              class="btn btn-primary w-full h-14 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
+            >
+              <Icon name="mingcute:mail-send-line" class="text-xl" />
+              <span>Minta Link Reset Password Baru</span>
+            </NuxtLink>
+
+            <NuxtLink
+              to="/login"
+              class="btn btn-ghost w-full text-xs font-bold opacity-50 hover:opacity-100"
+            >
+              Kembali ke Halaman Login
+            </NuxtLink>
+          </div>
+        </div>
+
+        <!-- Valid Token Form State -->
+        <div v-else-if="!isSuccess" class="space-y-8">
           <div class="space-y-3">
             <h1 class="text-3xl lg:text-4xl font-black tracking-tight">Buat Password Baru</h1>
             <p class="opacity-50 text-sm lg:text-base leading-relaxed">
