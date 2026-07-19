@@ -195,10 +195,13 @@ const purgeLocalFilesNow = async () => {
 const togglingPause = ref(false);
 const cancelling = ref(false);
 
-const pauseBackup = async () => {
+const pauseBackup = async (provider) => {
   togglingPause.value = true;
   try {
-    const res = await $fetch('/api/system/backup/pause', { method: 'POST' });
+    const res = await $fetch('/api/system/backup/pause', {
+      method: 'POST',
+      body: { provider }
+    });
     if (res?.success) {
       $toast.success(res.message);
       fetchBackupStatus();
@@ -210,10 +213,13 @@ const pauseBackup = async () => {
   }
 };
 
-const resumeBackup = async () => {
+const resumeBackup = async (provider) => {
   togglingPause.value = true;
   try {
-    const res = await $fetch('/api/system/backup/resume', { method: 'POST' });
+    const res = await $fetch('/api/system/backup/resume', {
+      method: 'POST',
+      body: { provider }
+    });
     if (res?.success) {
       $toast.success(res.message);
       fetchBackupStatus();
@@ -225,10 +231,13 @@ const resumeBackup = async () => {
   }
 };
 
-const cancelBackup = async () => {
+const cancelBackup = async (provider) => {
   cancelling.value = true;
   try {
-    const res = await $fetch('/api/system/backup/cancel', { method: 'POST' });
+    const res = await $fetch('/api/system/backup/cancel', {
+      method: 'POST',
+      body: { provider }
+    });
     if (res?.success) {
       $toast.success(res.message);
       fetchBackupStatus();
@@ -647,8 +656,8 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                 <Icon name="mingcute:folder-open-fill" size="13" />
                 Buka File Explorer
               </NuxtLink>
-              <span :class="['px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider', backupProgress?.active ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30']">
-                {{ backupProgress?.active ? `Backup ${backupProgress.pipeline}...` : 'Status: Ready' }}
+              <span :class="['px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider', (backupProgress?.gdrive?.active || backupProgress?.huggingface?.active) ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30']">
+                {{ (backupProgress?.gdrive?.active && backupProgress?.huggingface?.active) ? 'Backup GDrive & HF...' : backupProgress?.gdrive?.active ? 'Backup GDrive...' : backupProgress?.huggingface?.active ? 'Backup HuggingFace...' : 'Status: Ready' }}
               </span>
               <span class="px-3 py-1 rounded-full bg-base-200 text-xs font-bold border border-base-300">
                 Total {{ totalBackedUpCount }} File ({{ totalBackedUpSizeFormatted }}) Ter-backup
@@ -731,56 +740,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
             </div>
           </div>
 
-          <!-- Progress Bar (When Active) -->
-          <div v-if="backupProgress?.active" class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
-            <div class="flex flex-wrap justify-between items-center text-xs font-bold gap-2">
-              <span class="text-amber-400 flex items-center gap-1.5">
-                <span v-if="!backupProgress.paused" class="loading loading-spinner loading-xs"></span>
-                <span v-else class="w-2 h-2 rounded-full bg-warning animate-pulse shrink-0"></span>
-                {{ backupProgress.statusMessage }}
-              </span>
-              <span class="text-amber-300 font-mono">{{ backupProgress.processedFiles }} / {{ backupProgress.totalFiles }} File</span>
-            </div>
-            <progress 
-              class="progress progress-warning w-full h-2.5 rounded-full" 
-              :value="backupProgress.processedFiles" 
-              :max="backupProgress.totalFiles || 1"
-            ></progress>
-            <div class="flex flex-wrap items-center justify-between gap-3 text-[10px]">
-              <div v-if="backupProgress.currentFile" class="font-mono opacity-60 truncate max-w-xs md:max-w-md text-left">
-                File saat ini: {{ backupProgress.currentFile }}
-              </div>
-              <div class="flex items-center gap-2 ml-auto">
-                <button
-                  v-if="!backupProgress.paused"
-                  @click="pauseBackup"
-                  class="btn btn-xs btn-warning rounded-full px-3 gap-1 shadow-md font-bold"
-                  :disabled="togglingPause"
-                >
-                  <Icon name="mingcute:pause-fill" size="12" />
-                  <span>Pause</span>
-                </button>
-                <button
-                  v-else
-                  @click="resumeBackup"
-                  class="btn btn-xs btn-success rounded-full px-3 gap-1 text-white shadow-md font-bold"
-                  :disabled="togglingPause"
-                >
-                  <Icon name="mingcute:play-fill" size="12" />
-                  <span>Resume</span>
-                </button>
 
-                <button
-                  @click="cancelBackup"
-                  class="btn btn-xs btn-error rounded-full px-3 gap-1 text-white shadow-md font-bold"
-                  :disabled="cancelling"
-                >
-                  <Icon name="mingcute:close-circle-fill" size="12" />
-                  <span>Batal</span>
-                </button>
-              </div>
-            </div>
-          </div>
 
           <!-- 2 Distinct Pipelines Grid -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-left">
@@ -891,12 +851,61 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                       class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
                     />
                   </div>
+                  <!-- Google Drive Progress Bar (When Active) -->
+                  <div v-if="backupProgress?.gdrive?.active" class="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5">
+                    <div class="flex flex-wrap justify-between items-center text-[11px] font-bold gap-2">
+                      <span class="text-amber-400 flex items-center gap-1">
+                        <span v-if="!backupProgress.gdrive.paused" class="loading loading-spinner loading-xs scale-90"></span>
+                        <span v-else class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse shrink-0"></span>
+                        {{ backupProgress.gdrive.statusMessage }}
+                      </span>
+                      <span class="text-amber-300 font-mono">{{ backupProgress.gdrive.processedFiles }} / {{ backupProgress.gdrive.totalFiles }} File</span>
+                    </div>
+                    <progress 
+                      class="progress progress-warning w-full h-2 rounded-full" 
+                      :value="backupProgress.gdrive.processedFiles" 
+                      :max="backupProgress.gdrive.totalFiles || 1"
+                    ></progress>
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-[9px]">
+                      <div v-if="backupProgress.gdrive.currentFile" class="font-mono opacity-60 truncate max-w-[150px] text-left">
+                        File: {{ backupProgress.gdrive.currentFile }}
+                      </div>
+                      <div class="flex items-center gap-1.5 ml-auto">
+                        <button
+                          v-if="!backupProgress.gdrive.paused"
+                          @click="pauseBackup('GOOGLE_DRIVE')"
+                          class="btn btn-[8px] h-6 min-h-6 btn-warning rounded-lg px-2 gap-1 font-bold"
+                          :disabled="togglingPause"
+                        >
+                          <Icon name="mingcute:pause-fill" size="10" />
+                          <span>Pause</span>
+                        </button>
+                        <button
+                          v-else
+                          @click="resumeBackup('GOOGLE_DRIVE')"
+                          class="btn btn-[8px] h-6 min-h-6 btn-success rounded-lg px-2 gap-1 text-white font-bold"
+                          :disabled="togglingPause"
+                        >
+                          <Icon name="mingcute:play-fill" size="10" />
+                          <span>Resume</span>
+                        </button>
+                        <button
+                          @click="cancelBackup('GOOGLE_DRIVE')"
+                          class="btn btn-[8px] h-6 min-h-6 btn-error rounded-lg px-2 gap-1 text-white font-bold"
+                          :disabled="cancelling"
+                        >
+                          <Icon name="mingcute:close-circle-fill" size="10" />
+                          <span>Batal</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <button 
                 @click="triggerBackupNow('GOOGLE_DRIVE')" 
-                :disabled="startingBackupProvider === 'GOOGLE_DRIVE' || backupProgress?.active" 
+                :disabled="startingBackupProvider === 'GOOGLE_DRIVE' || backupProgress?.gdrive?.active" 
                 class="btn btn-emerald btn-sm rounded-xl font-bold w-full mt-4 bg-emerald-500 hover:bg-emerald-600 text-white border-0 shadow-md shadow-emerald-500/20"
               >
                 <span v-if="startingBackupProvider === 'GOOGLE_DRIVE'" class="loading loading-spinner loading-xs mr-1"></span>
@@ -978,12 +987,61 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                       </button>
                     </div>
                   </div>
+                  <!-- Hugging Face Progress Bar (When Active) -->
+                  <div v-if="backupProgress?.huggingface?.active" class="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5">
+                    <div class="flex flex-wrap justify-between items-center text-[11px] font-bold gap-2">
+                      <span class="text-amber-400 flex items-center gap-1">
+                        <span v-if="!backupProgress.huggingface.paused" class="loading loading-spinner loading-xs scale-90"></span>
+                        <span v-else class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse shrink-0"></span>
+                        {{ backupProgress.huggingface.statusMessage }}
+                      </span>
+                      <span class="text-amber-300 font-mono">{{ backupProgress.huggingface.processedFiles }} / {{ backupProgress.huggingface.totalFiles }} File</span>
+                    </div>
+                    <progress 
+                      class="progress progress-warning w-full h-2 rounded-full" 
+                      :value="backupProgress.huggingface.processedFiles" 
+                      :max="backupProgress.huggingface.totalFiles || 1"
+                    ></progress>
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-[9px]">
+                      <div v-if="backupProgress.huggingface.currentFile" class="font-mono opacity-60 truncate max-w-[150px] text-left">
+                        File: {{ backupProgress.huggingface.currentFile }}
+                      </div>
+                      <div class="flex items-center gap-1.5 ml-auto">
+                        <button
+                          v-if="!backupProgress.huggingface.paused"
+                          @click="pauseBackup('HUGGINGFACE')"
+                          class="btn btn-[8px] h-6 min-h-6 btn-warning rounded-lg px-2 gap-1 font-bold"
+                          :disabled="togglingPause"
+                        >
+                          <Icon name="mingcute:pause-fill" size="10" />
+                          <span>Pause</span>
+                        </button>
+                        <button
+                          v-else
+                          @click="resumeBackup('HUGGINGFACE')"
+                          class="btn btn-[8px] h-6 min-h-6 btn-success rounded-lg px-2 gap-1 text-white font-bold"
+                          :disabled="togglingPause"
+                        >
+                          <Icon name="mingcute:play-fill" size="10" />
+                          <span>Resume</span>
+                        </button>
+                        <button
+                          @click="cancelBackup('HUGGINGFACE')"
+                          class="btn btn-[8px] h-6 min-h-6 btn-error rounded-lg px-2 gap-1 text-white font-bold"
+                          :disabled="cancelling"
+                        >
+                          <Icon name="mingcute:close-circle-fill" size="10" />
+                          <span>Batal</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <button 
                 @click="triggerBackupNow('HUGGINGFACE')" 
-                :disabled="startingBackupProvider === 'HUGGINGFACE' || backupProgress?.active" 
+                :disabled="startingBackupProvider === 'HUGGINGFACE' || backupProgress?.huggingface?.active" 
                 class="btn bg-sky-500 hover:bg-sky-600 text-white border-0 btn-sm rounded-xl font-bold w-full mt-4 shadow-md shadow-sky-500/20"
               >
                 <span v-if="startingBackupProvider === 'HUGGINGFACE'" class="loading loading-spinner loading-xs mr-1"></span>
@@ -1007,7 +1065,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
 
             <button 
               @click="purgeLocalFilesNow" 
-              :disabled="purgingLocalFiles || backupProgress?.active" 
+              :disabled="purgingLocalFiles || backupProgress?.gdrive?.active || backupProgress?.huggingface?.active" 
               class="btn btn-outline btn-error btn-sm rounded-xl font-bold px-5"
             >
               <span v-if="purgingLocalFiles" class="loading loading-spinner loading-xs mr-1"></span>
