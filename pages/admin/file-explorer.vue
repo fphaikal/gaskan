@@ -30,6 +30,7 @@ const search = ref('');
 const typeFilter = ref('all');
 const dirFilter = ref('all');
 const backupStatusFilter = ref('all');
+const directories = ref([]);
 let searchTimer = null;
 
 // Detail Panel
@@ -53,6 +54,9 @@ const fetchFiles = async () => {
       files.value = res.data.files;
       total.value = res.data.total;
       totalPages.value = res.data.totalPages;
+      if (res.data.directories) {
+        directories.value = res.data.directories;
+      }
     }
   } catch (err) {
     $toast.error(err?.data?.message || 'Gagal memuat data file explorer');
@@ -89,14 +93,59 @@ const openFile = (url) => {
   window.open(url, '_blank');
 };
 
+const deletingFile = ref(false);
+const showDeleteConfirm = ref(false);
+const deleteTargets = ref({
+  local: false,
+  gdrive: false,
+  hf: false,
+});
+
 const openDetailPanel = (file) => {
   selectedFile.value = file;
   showDetail.value = true;
+  deleteTargets.value = {
+    local: !!file.existsLocally,
+    gdrive: !!file.gdUrl,
+    hf: !!file.hfUrl,
+  };
 };
 
 const closeDetailPanel = () => {
   showDetail.value = false;
+  showDeleteConfirm.value = false;
   setTimeout(() => { selectedFile.value = null; }, 300);
+};
+
+const deleteSelectedFile = async () => {
+  if (!selectedFile.value) return;
+  const targets = deleteTargets.value;
+
+  if (!targets.local && !targets.gdrive && !targets.hf) {
+    $toast.error('Harap pilih setidaknya satu target penghapusan.');
+    return;
+  }
+
+  deletingFile.value = true;
+  try {
+    const res = await $fetch('/api/system/files', {
+      method: 'DELETE',
+      body: {
+        relativePath: selectedFile.value.relativePath,
+        targets,
+      },
+    });
+    if (res?.success) {
+      $toast.success(res.message || 'Berkas berhasil dihapus.');
+      showDeleteConfirm.value = false;
+      closeDetailPanel();
+      fetchFiles();
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || 'Gagal menghapus berkas.');
+  } finally {
+    deletingFile.value = false;
+  }
 };
 
 // Watchers
@@ -273,10 +322,13 @@ onMounted(() => {
           <!-- Directory Filter -->
           <select v-model="dirFilter" class="select select-sm select-bordered bg-base-200/60 text-sm flex-1 md:flex-none">
             <option value="all">Semua Direktori</option>
-            <option value="profiles">📁 /profiles</option>
-            <option value="faces">👤 /faces</option>
-            <option value="proofs">📋 /proofs</option>
-            <option value="team">👥 /team</option>
+            <option
+              v-for="d in directories"
+              :key="d"
+              :value="d"
+            >
+              📁 /{{ d }}
+            </option>
           </select>
 
           <!-- Backup Status Filter -->
@@ -807,11 +859,108 @@ onMounted(() => {
                 <p class="text-[10px] opacity-30">Belum ter-backup ke Hugging Face</p>
               </div>
             </div>
+
+            <!-- Danger Zone -->
+            <div class="mt-6 p-4 rounded-2xl border border-error/20 bg-error/5 space-y-3.5">
+              <p class="text-[10px] font-black text-error uppercase tracking-wider flex items-center gap-1">
+                <Icon name="mingcute:delete-fill" size="12" />
+                Zona Bahaya (Hapus File)
+              </p>
+              
+              <div class="space-y-2 text-xs">
+                <!-- Checkbox Local -->
+                <label class="flex items-center gap-2 cursor-pointer select-none" :class="{ 'opacity-40 cursor-not-allowed': !selectedFile.existsLocally }">
+                  <input
+                    v-model="deleteTargets.local"
+                    type="checkbox"
+                    class="checkbox checkbox-xs checkbox-error"
+                    :disabled="!selectedFile.existsLocally"
+                  />
+                  <span>Hapus dari Penyimpanan Lokal Server</span>
+                </label>
+
+                <!-- Checkbox Google Drive -->
+                <label class="flex items-center gap-2 cursor-pointer select-none" :class="{ 'opacity-40 cursor-not-allowed': !selectedFile.gdUrl }">
+                  <input
+                    v-model="deleteTargets.gdrive"
+                    type="checkbox"
+                    class="checkbox checkbox-xs checkbox-error"
+                    :disabled="!selectedFile.gdUrl"
+                  />
+                  <span>Hapus dari Google Drive CDN</span>
+                </label>
+
+                <!-- Checkbox Hugging Face -->
+                <label class="flex items-center gap-2 cursor-pointer select-none" :class="{ 'opacity-40 cursor-not-allowed': !selectedFile.hfUrl }">
+                  <input
+                    v-model="deleteTargets.hf"
+                    type="checkbox"
+                    class="checkbox checkbox-xs checkbox-error"
+                    :disabled="!selectedFile.hfUrl"
+                  />
+                  <span>Hapus dari Hugging Face CDN</span>
+                </label>
+              </div>
+
+              <div class="flex gap-2 pt-1 flex-wrap">
+                <button
+                  class="btn btn-xs btn-error text-white font-bold flex-1 min-w-[120px]"
+                  @click="showDeleteConfirm = true"
+                >
+                  <Icon name="mingcute:delete-fill" size="13" />
+                  Hapus Pilihan
+                </button>
+                <button
+                  class="btn btn-xs btn-outline btn-error font-bold flex-1 min-w-[120px]"
+                  @click="deleteTargets.local = !!selectedFile.existsLocally; deleteTargets.gdrive = !!selectedFile.gdUrl; deleteTargets.hf = !!selectedFile.hfUrl; showDeleteConfirm = true;"
+                >
+                  Hapus dari Semua
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
       </div>
     </Transition>
+
+    <!-- Deletion Confirmation Dialog Modal -->
+    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showDeleteConfirm }]">
+      <div class="modal-box bg-base-100 border border-base-300 shadow-2xl rounded-3xl" v-if="selectedFile">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-12 h-12 rounded-full bg-error/10 text-error flex items-center justify-center shrink-0">
+            <Icon name="mingcute:delete-fill" class="text-2xl" />
+          </div>
+          <div>
+            <h3 class="font-bold text-lg text-error">Konfirmasi Hapus</h3>
+            <p class="text-sm text-base-content/60">Apakah Anda yakin ingin menghapus berkas <span class="font-bold font-mono text-[11px] text-base-content">{{ selectedFile.fileName }}</span>?</p>
+          </div>
+        </div>
+
+        <div class="p-3 bg-base-200 rounded-2xl mb-4 text-xs space-y-1">
+          <p class="font-bold opacity-60">Aksi yang akan dilakukan:</p>
+          <ul class="list-disc list-inside space-y-0.5 opacity-80">
+            <li v-if="deleteTargets.local" class="text-error">Hapus dari penyimpanan lokal server</li>
+            <li v-if="deleteTargets.gdrive" class="text-error">Hapus berkas Google Drive & hapus DB record</li>
+            <li v-if="deleteTargets.hf" class="text-error">Hapus berkas Hugging Face Dataset & hapus DB record</li>
+          </ul>
+        </div>
+
+        <div class="modal-action gap-3">
+          <button class="btn btn-ghost rounded-xl flex-1" @click="showDeleteConfirm = false">Batal</button>
+          <button
+            class="btn btn-error rounded-xl flex-1 text-white shadow-lg shadow-error/20"
+            :class="{ 'loading': deletingFile }"
+            @click="deleteSelectedFile"
+          >
+            Ya, Hapus
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm" @click="showDeleteConfirm = false">
+        <button>close</button>
+      </form>
+    </dialog>
 
   </div>
 </template>
