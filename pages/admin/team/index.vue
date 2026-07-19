@@ -134,6 +134,31 @@ const showCropper = ref(false);
 const cropperRef = ref(null);
 const rawImage = ref(null);
 const fileInputRef = ref(null);
+const currentAspectRatio = ref(1);
+
+const zoomIn = () => {
+  if (cropperRef.value) cropperRef.value.zoom(1.2);
+};
+
+const zoomOut = () => {
+  if (cropperRef.value) cropperRef.value.zoom(0.8);
+};
+
+const rotateLeft = () => {
+  if (cropperRef.value) cropperRef.value.rotate(-90);
+};
+
+const rotateRight = () => {
+  if (cropperRef.value) cropperRef.value.rotate(90);
+};
+
+const flipHorizontal = () => {
+  if (cropperRef.value) cropperRef.value.flip(true, false);
+};
+
+const resetCrop = () => {
+  if (cropperRef.value) cropperRef.value.reset();
+};
 
 const handleFileChange = (e) => {
   const file = e.target.files?.[0];
@@ -148,6 +173,7 @@ const handleFileChange = (e) => {
   const reader = new FileReader();
   reader.onload = (event) => {
     rawImage.value = event.target.result;
+    currentAspectRatio.value = 1;
     showCropper.value = true;
   };
   reader.readAsDataURL(file);
@@ -481,24 +507,92 @@ const roleColor = (role) => {
 
     <!-- Cropper Modal -->
     <dialog :class="['modal modal-bottom sm:modal-middle', showCropper ? 'modal-open' : '']">
-      <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 max-w-xl">
-        <h3 class="text-lg md:text-xl font-black text-base-content mb-4 flex items-center gap-2">
-          <Icon name="mingcute:crop-line" class="text-primary" />
-          <span>Potong Foto Anggota Tim</span>
-        </h3>
-        <div class="bg-base-200 rounded-2xl overflow-hidden max-h-[50vh] flex items-center justify-center p-2">
+      <div class="modal-box bg-base-100 border border-base-200 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 max-w-3xl w-full">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg md:text-xl font-black text-base-content flex items-center gap-2">
+            <Icon name="mingcute:crop-line" class="text-primary text-2xl" />
+            <span>Edit & Potong Foto Anggota Tim</span>
+          </h3>
+          <button @click="cancelCrop" class="btn btn-sm btn-circle btn-ghost">
+            <Icon name="mingcute:close-line" class="text-xl" />
+          </button>
+        </div>
+
+        <!-- Main Cropper Viewport Container -->
+        <div class="bg-base-300/60 rounded-2xl overflow-hidden p-2 relative shadow-inner">
           <Cropper
             v-if="showCropper"
             ref="cropperRef"
-            class="max-h-[45vh] w-full"
+            class="h-[380px] sm:h-[450px] w-full"
             :src="rawImage"
-            :stencil-props="{ aspectRatio: 1 }"
+            :stencil-props="{ aspectRatio: currentAspectRatio }"
+            :image-restriction="'none'"
+            :resize-image="{ touch: true, mouseWheel: true }"
           />
         </div>
+
+        <!-- Interactive Control Bar -->
+        <div class="mt-4 p-3 bg-base-200/60 border border-base-300 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+          <!-- Zoom & Transform Controls -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-[10px] font-bold uppercase tracking-widest opacity-40 mr-1">Kontrol:</span>
+            
+            <button @click="zoomIn" class="btn btn-xs sm:btn-sm btn-base-100 rounded-xl border border-base-300 hover:border-primary" title="Perbesar">
+              <Icon name="mingcute:zoom-in-line" class="text-base" />
+            </button>
+            <button @click="zoomOut" class="btn btn-xs sm:btn-sm btn-base-100 rounded-xl border border-base-300 hover:border-primary" title="Perkecil">
+              <Icon name="mingcute:zoom-out-line" class="text-base" />
+            </button>
+
+            <div class="divider divider-horizontal mx-0 h-5 my-auto" />
+
+            <button @click="rotateLeft" class="btn btn-xs sm:btn-sm btn-base-100 rounded-xl border border-base-300 hover:border-primary" title="Putar Kiri 90°">
+              <Icon name="mingcute:counterclockwise-line" class="text-base" />
+            </button>
+            <button @click="rotateRight" class="btn btn-xs sm:btn-sm btn-base-100 rounded-xl border border-base-300 hover:border-primary" title="Putar Kanan 90°">
+              <Icon name="mingcute:clockwise-line" class="text-base" />
+            </button>
+
+            <div class="divider divider-horizontal mx-0 h-5 my-auto" />
+
+            <button @click="flipHorizontal" class="btn btn-xs sm:btn-sm btn-base-100 rounded-xl border border-base-300 hover:border-primary" title="Balik Horizontal">
+              <Icon name="mingcute:transfer-4-line" class="text-base" />
+            </button>
+            <button @click="resetCrop" class="btn btn-xs sm:btn-sm btn-ghost rounded-xl text-error" title="Reset Pemotongan">
+              <Icon name="mingcute:refresh-1-line" class="text-base mr-1" />
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <!-- Aspect Ratio Options -->
+          <div class="flex items-center gap-1.5 ml-auto">
+            <span class="text-[10px] font-bold uppercase tracking-widest opacity-40 mr-1">Rasio:</span>
+            <button
+              @click="currentAspectRatio = 1"
+              :class="['btn btn-xs sm:btn-sm rounded-xl font-bold', currentAspectRatio === 1 ? 'btn-primary' : 'btn-base-100 border border-base-300']"
+            >
+              1:1
+            </button>
+            <button
+              @click="currentAspectRatio = null"
+              :class="['btn btn-xs sm:btn-sm rounded-xl font-bold', currentAspectRatio === null ? 'btn-primary' : 'btn-base-100 border border-base-300']"
+            >
+              Bebas
+            </button>
+            <button
+              @click="currentAspectRatio = 0.75"
+              :class="['btn btn-xs sm:btn-sm rounded-xl font-bold', currentAspectRatio === 0.75 ? 'btn-primary' : 'btn-base-100 border border-base-300']"
+            >
+              3:4
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Actions -->
         <div class="modal-action mt-6 gap-2">
           <button @click="cancelCrop" class="btn btn-ghost rounded-2xl px-6">Batal</button>
-          <button @click="applyCrop" class="btn btn-primary rounded-2xl px-6 shadow-lg shadow-primary/20 flex items-center gap-2">
-            <Icon name="mingcute:check-fill" />
+          <button @click="applyCrop" class="btn btn-primary rounded-2xl px-8 shadow-lg shadow-primary/20 flex items-center gap-2 font-bold">
+            <Icon name="mingcute:check-fill" class="text-lg" />
             <span>Potong & Gunakan Foto</span>
           </button>
         </div>
