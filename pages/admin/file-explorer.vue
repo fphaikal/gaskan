@@ -173,6 +173,27 @@ const formatDate = (iso) => {
   });
 };
 
+const visiblePages = computed(() => {
+  const current = page.value;
+  const total = totalPages.value;
+  const range = 2; // number of pages to show before/after current
+  const pages = [];
+
+  for (let i = 1; i <= total; i++) {
+    if (
+      i === 1 ||
+      i === total ||
+      (i >= current - range && i <= current + range)
+    ) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...');
+    }
+  }
+
+  return pages;
+});
+
 const backendBase = () => {
   const config = useRuntimeConfig();
   return config.public.apiBase || 'http://localhost:5001';
@@ -533,19 +554,25 @@ onMounted(() => {
         </div>
 
         <!-- Pagination -->
-        <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-6">
+        <div v-if="totalPages > 1" class="flex items-center justify-center gap-1.5 mt-6 flex-wrap">
           <button class="btn btn-sm btn-ghost" :disabled="page <= 1" @click="page--; fetchFiles()">
             <Icon name="mingcute:left-fill" size="16" />
           </button>
-          <div class="flex items-center gap-1">
-            <button
-              v-for="p in totalPages"
-              :key="p"
-              class="btn btn-sm btn-circle"
-              :class="p === page ? 'btn-primary' : 'btn-ghost'"
-              @click="page = p; fetchFiles()"
-            >{{ p }}</button>
+          
+          <div class="flex items-center gap-1 flex-wrap">
+            <template v-for="(p, idx) in visiblePages" :key="idx">
+              <span v-if="p === '...'" class="px-2 opacity-50 select-none">...</span>
+              <button
+                v-else
+                class="btn btn-sm btn-circle min-w-[32px] h-[32px]"
+                :class="p === page ? 'btn-primary' : 'btn-ghost'"
+                @click="page = p; fetchFiles()"
+              >
+                {{ p }}
+              </button>
+            </template>
           </div>
+
           <button class="btn btn-sm btn-ghost" :disabled="page >= totalPages" @click="page++; fetchFiles()">
             <Icon name="mingcute:right-fill" size="16" />
           </button>
