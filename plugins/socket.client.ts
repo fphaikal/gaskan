@@ -1,4 +1,4 @@
-// plugins/socket.client.ts — Socket.io client plugin for Nuxt 3
+// plugins/socket.client.ts - Socket.io client plugin for Nuxt 3
 import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
