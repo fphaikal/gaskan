@@ -288,10 +288,11 @@ onMounted(() => {
             </span>
             <button
               class="btn btn-sm btn-ghost gap-1.5"
-              :class="{ 'loading': loading }"
+              :disabled="loading"
               @click="fetchFiles"
             >
-              <Icon v-if="!loading" name="mingcute:refresh-2-fill" size="16" />
+              <span v-if="loading" class="loading loading-spinner loading-xs"></span>
+              <Icon v-else name="mingcute:refresh-2-fill" size="16" />
               Refresh
             </button>
           </div>
@@ -992,10 +993,11 @@ onMounted(() => {
           <button class="btn btn-ghost rounded-xl flex-1" @click="showDeleteConfirm = false">Batal</button>
           <button
             class="btn btn-error rounded-xl flex-1 text-white shadow-lg shadow-error/20"
-            :class="{ 'loading': deletingFile }"
+            :disabled="deletingFile"
             @click="deleteSelectedFile"
           >
-            Ya, Hapus
+            <span v-if="deletingFile" class="loading loading-spinner loading-xs"></span>
+            <span v-else>Ya, Hapus</span>
           </button>
         </div>
       </div>
