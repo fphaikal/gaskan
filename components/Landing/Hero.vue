@@ -14,8 +14,16 @@ let cycleInterval = null
 const fetchRecentAttendance = async () => {
   try {
     const res = await $fetch('/api/attendance/recent')
-    if (res?.success && res.data?.length > 0) {
-      recentAttendances.value = res.data
+    if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
+      const seenNames = new Set()
+      const uniqueList = []
+      for (const item of res.data) {
+        if (item.name && !seenNames.has(item.name)) {
+          seenNames.add(item.name)
+          uniqueList.push(item)
+        }
+      }
+      recentAttendances.value = uniqueList.slice(0, 5)
     }
   } catch (e) {
     console.error('Failed to fetch recent attendance for landing page:', e)
