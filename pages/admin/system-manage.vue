@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { io } from 'socket.io-client';
+import { useAuthStore } from '~/store/useAuthStore';
+import { storeToRefs } from 'pinia';
 
 useSeoMeta({
   title: 'Kelola Sistem | GASKAN',
@@ -9,6 +11,13 @@ useSeoMeta({
 
 const { $toast } = useNuxtApp();
 const config = useRuntimeConfig();
+const authStore = useAuthStore();
+const { role: userRole } = storeToRefs(authStore);
+
+const isDeveloper = computed(() => {
+  const r = (userRole.value || '').toLowerCase();
+  return r === 'developer';
+});
 
 const loading = ref(true);
 const refreshing = ref(false);
@@ -32,11 +41,6 @@ const fetchMetrics = async (isManual = false) => {
     refreshing.value = false;
   }
 };
-
-const authUser = useCookie('user');
-const isDeveloper = computed(() => {
-  return authUser.value?.role?.toLowerCase() === 'developer';
-});
 
 // Backup CDN & Cloud Storage State
 const backupConfig = ref({
