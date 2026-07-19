@@ -197,7 +197,7 @@ onMounted(() => {
 
     <template v-else>
       <!-- Header -->
-      <div class="sticky top-0 z-30 bg-base-300/90 backdrop-blur-xl border-b border-base-200/50">
+      <div class="bg-base-300 border-b border-base-200/50">
         <div class="max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
@@ -558,7 +558,7 @@ onMounted(() => {
     <Transition name="slide-panel">
       <div
         v-if="showDetail && selectedFile"
-        class="fixed inset-0 z-50 flex items-stretch justify-end"
+        class="fixed inset-0 z-[1050] flex items-stretch justify-end"
         @click.self="closeDetailPanel"
       >
         <!-- Backdrop -->
