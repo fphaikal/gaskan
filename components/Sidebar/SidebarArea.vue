@@ -151,6 +151,12 @@ const menuGroups = [
         route: '/admin/system-manage',
       },
       {
+        icon: 'mingcute:folder-open-fill',
+        role: ['developer'],
+        label: 'Explorer File',
+        route: '/admin/file-explorer',
+      },
+      {
         icon: 'mingcute:settings-6-fill',
         role: ['admin', 'developer'],
         label: 'Konfigurasi Mesin',

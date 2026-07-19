@@ -584,6 +584,10 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
               <p class="text-xs opacity-50 mt-1">Dua jalur backup independen: Google Drive untuk semua berkas baru & Hugging Face CDN untuk penghemat memori saat disk penuh.</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
+              <NuxtLink to="/admin/file-explorer" class="btn btn-xs btn-outline btn-primary rounded-full px-3 gap-1">
+                <Icon name="mingcute:folder-open-fill" size="13" />
+                Buka File Explorer
+              </NuxtLink>
               <span :class="['px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider', backupProgress?.active ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30']">
                 {{ backupProgress?.active ? `Backup ${backupProgress.pipeline}...` : 'Status: Ready' }}
               </span>
