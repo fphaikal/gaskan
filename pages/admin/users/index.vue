@@ -7,6 +7,8 @@ const { role } = storeToRefs(useAuthStore());
 const { $toast } = useNuxtApp();
 const config = useRuntimeConfig();
 
+const isCurrentDeveloper = computed(() => role.value?.toUpperCase() === 'DEVELOPER');
+
 useSeoMeta({
   title: 'Manajemen User | GASKAN',
   description: 'Kelola semua pengguna sistem (Admin, Guru, Siswa)',
@@ -124,6 +126,10 @@ const openCreate = () => {
 
 const openEdit = (user) => {
   if (!user) return;
+  if (user.role === 'DEVELOPER' && !isCurrentDeveloper.value) {
+    $toast.error('Akun Developer dilindungi dan tidak dapat diubah oleh Administrator');
+    return;
+  }
   editMode.value = true;
   form.value = {
     id: user.id,
@@ -188,6 +194,11 @@ const deleteUser = async () => {
 };
 
 const confirmDelete = (id) => {
+  const targetUser = pagedUsers.value.find(u => u.id === id);
+  if (targetUser?.role === 'DEVELOPER' && !isCurrentDeveloper.value) {
+    $toast.error('Akun Developer dilindungi dan tidak dapat dihapus oleh Administrator');
+    return;
+  }
   deleteId.value = id;
   showDeleteModal.value = true;
   activeDropdown.value = null;
@@ -237,6 +248,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
       <div>
         <select v-model="filterRole" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
           <option value="">Semua Role</option>
+          <option v-if="isCurrentDeveloper" value="DEVELOPER">DEVELOPER</option>
           <option value="ADMIN">ADMIN</option>
           <option value="GURU">GURU</option>
           <option value="SISWA">SISWA</option>
@@ -273,7 +285,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
                   <div>
                     <h3 class="font-bold text-base text-base-content truncate max-w-[180px]">{{ user?.name }}</h3>
                     <div class="flex items-center gap-1.5 mt-0.5">
-                      <span v-if="user?.role" :class="['px-2 py-0.5 rounded text-[8px] font-black tracking-wider uppercase border', user.role === 'ADMIN' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : user.role === 'GURU' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20']">
+                      <span v-if="user?.role" :class="['px-2 py-0.5 rounded text-[8px] font-black tracking-wider uppercase border', user.role === 'DEVELOPER' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : user.role === 'ADMIN' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : user.role === 'GURU' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20']">
                         {{ user.role }}
                       </span>
                       <span v-if="user?.role === 'SISWA'" class="badge badge-primary badge-outline text-[8px] font-black px-1.5 h-4 rounded border-primary/30">{{ user.class?.className || 'N/A' }}</span>
@@ -291,19 +303,24 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
                 <div class="text-[10px] font-semibold text-base-content/50">
                   {{ user?.email || user?.nis || user?.nisn || '-' }}
                 </div>
-                <div class="flex gap-1.5">
+                <div class="flex items-center gap-1.5">
                   <NuxtLink :to="`/admin/users/detail/${user.id}`" class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary gap-1">
                     <Icon name="mingcute:eye-2-line" size="14" />
                     Detail
                   </NuxtLink>
-                  <button @click="openEdit(user)" class="btn btn-ghost btn-xs rounded-lg hover:bg-info/10 hover:text-info gap-1">
-                    <Icon name="mingcute:edit-4-line" size="14" />
-                    Edit
-                  </button>
-                  <button @click="confirmDelete(user?.id)" class="btn btn-ghost btn-xs rounded-lg hover:bg-error/10 hover:text-error gap-1">
-                    <Icon name="mingcute:delete-2-line" size="14" />
-                    Hapus
-                  </button>
+                  <template v-if="user.role !== 'DEVELOPER' || isCurrentDeveloper">
+                    <button @click="openEdit(user)" class="btn btn-ghost btn-xs rounded-lg hover:bg-info/10 hover:text-info gap-1">
+                      <Icon name="mingcute:edit-4-line" size="14" />
+                      Edit
+                    </button>
+                    <button @click="confirmDelete(user?.id)" class="btn btn-ghost btn-xs rounded-lg hover:bg-error/10 hover:text-error gap-1">
+                      <Icon name="mingcute:delete-2-line" size="14" />
+                      Hapus
+                    </button>
+                  </template>
+                  <span v-else class="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1" title="Akun Developer Dilindungi">
+                    <Icon name="mingcute:lock-fill" size="12" /> Dilindungi
+                  </span>
                 </div>
               </div>
             </div>
@@ -324,7 +341,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
 
               <!-- Col 6-7: Role -->
               <div class="col-span-2">
-                <span v-if="user?.role" :class="['px-3 py-1 rounded-lg text-[10px] font-black tracking-widest border', user.role === 'ADMIN' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : user.role === 'GURU' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20']">
+                <span v-if="user?.role" :class="['px-3 py-1 rounded-lg text-[10px] font-black tracking-widest border', user.role === 'DEVELOPER' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : user.role === 'ADMIN' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : user.role === 'GURU' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20']">
                   {{ user.role }}
                 </span>
               </div>
@@ -343,7 +360,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
               </div>
 
               <!-- Col 12: Actions -->
-              <div class="col-span-1 flex justify-end gap-1.5">
+              <div class="col-span-1 flex justify-end gap-1.5 items-center">
                 <NuxtLink 
                   :to="`/admin/users/detail/${user.id}`" 
                   class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-primary/10 hover:text-primary text-primary/70"
@@ -351,20 +368,25 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
                 >
                   <Icon name="mingcute:eye-2-line" size="18" />
                 </NuxtLink>
-                <button 
-                  @click="openEdit(user)" 
-                  class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-info/10 hover:text-info text-info/70"
-                  title="Edit User"
-                >
-                  <Icon name="mingcute:edit-4-line" size="18" />
-                </button>
-                <button 
-                  @click="confirmDelete(user?.id)" 
-                  class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-error/10 hover:text-error text-error/70"
-                  title="Hapus User"
-                >
-                  <Icon name="mingcute:delete-2-line" size="18" />
-                </button>
+                <template v-if="user.role !== 'DEVELOPER' || isCurrentDeveloper">
+                  <button 
+                    @click="openEdit(user)" 
+                    class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-info/10 hover:text-info text-info/70"
+                    title="Edit User"
+                  >
+                    <Icon name="mingcute:edit-4-line" size="18" />
+                  </button>
+                  <button 
+                    @click="confirmDelete(user?.id)" 
+                    class="btn btn-ghost btn-sm btn-square rounded-xl hover:bg-error/10 hover:text-error text-error/70"
+                    title="Hapus User"
+                  >
+                    <Icon name="mingcute:delete-2-line" size="18" />
+                  </button>
+                </template>
+                <div v-else title="Akun Developer Dilindungi" class="text-amber-400 p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <Icon name="mingcute:lock-fill" size="16" />
+                </div>
               </div>
             </div>
           </div>
@@ -407,6 +429,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
               <div class="form-control">
                 <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Role</span></label>
                 <select v-model="form.role" class="select select-bordered w-full rounded-xl md:rounded-2xl bg-base-200/30">
+                  <option v-if="isCurrentDeveloper" value="DEVELOPER">DEVELOPER</option>
                   <option value="ADMIN">ADMIN</option>
                   <option value="GURU">GURU</option>
                   <option value="SISWA">SISWA</option>

@@ -88,7 +88,7 @@ const menuGroups = [
       },
       {
         icon: 'mingcute:calendar-2-fill',
-        role: ['admin'],
+        role: ['admin', 'developer'],
         label: 'Semester',
         route: '/semester',
       },
@@ -145,8 +145,14 @@ const menuGroups = [
     name: 'SISTEM & LOG',
     menuItems: [
       {
+        icon: 'mingcute:server-2-fill',
+        role: ['developer', 'admin'],
+        label: 'Kelola Sistem',
+        route: '/admin/system-manage',
+      },
+      {
         icon: 'mingcute:settings-6-fill',
-        role: ['admin'],
+        role: ['admin', 'developer'],
         label: 'Konfigurasi Mesin',
         route: '/config/device',
       },
