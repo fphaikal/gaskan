@@ -3,15 +3,17 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
 
-  const params = new URLSearchParams();
-  if (query.page) params.set('page', String(query.page));
-  if (query.limit) params.set('limit', String(query.limit));
-  if (query.search) params.set('search', String(query.search));
-  if (query.type) params.set('type', String(query.type));
-  if (query.dir) params.set('dir', String(query.dir));
-  if (query.backupStatus) params.set('backupStatus', String(query.backupStatus));
+  const parts = [];
+  if (query.page) parts.push(`page=${encodeURIComponent(String(query.page))}`);
+  if (query.limit) parts.push(`limit=${encodeURIComponent(String(query.limit))}`);
+  if (query.search) parts.push(`search=${encodeURIComponent(String(query.search))}`);
+  if (query.type) parts.push(`type=${encodeURIComponent(String(query.type))}`);
+  if (query.dir) parts.push(`dir=${encodeURIComponent(String(query.dir))}`);
+  if (query.backupStatus) parts.push(`backupStatus=${encodeURIComponent(String(query.backupStatus))}`);
 
-  const res = await fetch(`${config.public.apiBase}/api/system/files?${params.toString()}`, {
+  const queryString = parts.length > 0 ? `?${parts.join('&')}` : '';
+
+  const res = await fetch(`${config.public.apiBase}/api/system/files${queryString}`, {
     headers: getUpstreamAuthHeaders(session),
   });
   return readUpstreamJson(res);
