@@ -49,11 +49,13 @@ const backupConfig = ref({
   gdClientSecret: '',
   gdRefreshToken: '',
   gdFolderId: '',
+  gdConcurrency: 12,
   hfEnabled: false,
   hfAutoDeleteLocal: false,
   hfThresholdGB: 40,
   hfRepoId: '',
   hfToken: '',
+  hfBatchSize: 100,
 });
 const backupProgress = ref(null);
 const gdriveCount = ref(0);
@@ -851,6 +853,20 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                       class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
                     />
                   </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest opacity-50">Koneksi Upload Simultan (Concurrency 1-50)</label>
+                    <div class="flex items-center gap-2">
+                      <input 
+                        v-model.number="backupConfig.gdConcurrency" 
+                        type="number" 
+                        min="1" 
+                        max="50" 
+                        class="input input-sm input-bordered w-full rounded-xl font-bold text-xs"
+                      />
+                      <span class="text-xs font-black opacity-60">Parallel</span>
+                    </div>
+                  </div>
                   <!-- Google Drive Progress Bar (When Active) -->
                   <div v-if="backupProgress?.gdrive?.active" class="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5">
                     <div class="flex flex-wrap justify-between items-center text-[11px] font-bold gap-2">
@@ -985,6 +1001,20 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                       <button type="button" @click="showHfToken = !showHfToken" class="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content">
                         <Icon :name="showHfToken ? 'mingcute:eye-close-line' : 'mingcute:eye-line'" size="16" />
                       </button>
+                    </div>
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest opacity-50">Batch Size Upload Foto (10 - 500 Foto / Batch)</label>
+                    <div class="flex items-center gap-2">
+                      <input 
+                        v-model.number="backupConfig.hfBatchSize" 
+                        type="number" 
+                        min="10" 
+                        max="500" 
+                        class="input input-sm input-bordered w-full rounded-xl font-bold text-xs"
+                      />
+                      <span class="text-xs font-black opacity-60">Foto/Commit</span>
                     </div>
                   </div>
                   <!-- Hugging Face Progress Bar (When Active) -->
