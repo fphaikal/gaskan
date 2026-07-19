@@ -860,58 +860,100 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Danger Zone -->
+             <!-- Danger Zone -->
             <div class="mt-6 p-4 rounded-2xl border border-error/20 bg-error/5 space-y-3.5">
               <p class="text-[10px] font-black text-error uppercase tracking-wider flex items-center gap-1">
                 <Icon name="mingcute:delete-fill" size="12" />
                 Zona Bahaya (Hapus File)
               </p>
               
-              <div class="space-y-2 text-xs">
-                <!-- Checkbox Local -->
-                <label class="flex items-center gap-2 cursor-pointer select-none" :class="{ 'opacity-40 cursor-not-allowed': !selectedFile.existsLocally }">
+              <div class="space-y-2">
+                <!-- Card Local -->
+                <div
+                  :class="[
+                    'flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 select-none cursor-pointer',
+                    selectedFile.existsLocally 
+                      ? (deleteTargets.local ? 'border-error/40 bg-error/10 text-error' : 'border-base-300 bg-base-300/20 opacity-80 hover:bg-base-300/40 text-base-content')
+                      : 'opacity-40 cursor-not-allowed bg-base-300/10 border-base-200 text-base-content'
+                  ]"
+                  @click="selectedFile.existsLocally && (deleteTargets.local = !deleteTargets.local)"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <Icon name="mingcute:folder-fill" :class="selectedFile.existsLocally && deleteTargets.local ? 'text-error' : 'text-amber-400'" size="16" />
+                    <div class="text-left">
+                      <p class="text-xs font-bold leading-tight">Penyimpanan Lokal</p>
+                      <p class="text-[9px] opacity-60 mt-0.5">File di folder /uploads server</p>
+                    </div>
+                  </div>
                   <input
-                    v-model="deleteTargets.local"
                     type="checkbox"
-                    class="checkbox checkbox-xs checkbox-error"
+                    :checked="deleteTargets.local"
                     :disabled="!selectedFile.existsLocally"
+                    class="checkbox checkbox-xs checkbox-error rounded pointer-events-none"
                   />
-                  <span>Hapus dari Penyimpanan Lokal Server</span>
-                </label>
+                </div>
 
-                <!-- Checkbox Google Drive -->
-                <label class="flex items-center gap-2 cursor-pointer select-none" :class="{ 'opacity-40 cursor-not-allowed': !selectedFile.gdUrl }">
+                <!-- Card Google Drive -->
+                <div
+                  :class="[
+                    'flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 select-none cursor-pointer',
+                    selectedFile.gdUrl 
+                      ? (deleteTargets.gdrive ? 'border-error/40 bg-error/10 text-error' : 'border-base-300 bg-base-300/20 opacity-80 hover:bg-base-300/40 text-base-content')
+                      : 'opacity-40 cursor-not-allowed bg-base-300/10 border-base-200 text-base-content'
+                  ]"
+                  @click="selectedFile.gdUrl && (deleteTargets.gdrive = !deleteTargets.gdrive)"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <Icon name="mingcute:drive-fill" :class="selectedFile.gdUrl && deleteTargets.gdrive ? 'text-error' : 'text-emerald-400'" size="16" />
+                    <div class="text-left">
+                      <p class="text-xs font-bold leading-tight">Google Drive Cloud</p>
+                      <p class="text-[9px] opacity-60 mt-0.5">Backup & record Google Drive</p>
+                    </div>
+                  </div>
                   <input
-                    v-model="deleteTargets.gdrive"
                     type="checkbox"
-                    class="checkbox checkbox-xs checkbox-error"
+                    :checked="deleteTargets.gdrive"
                     :disabled="!selectedFile.gdUrl"
+                    class="checkbox checkbox-xs checkbox-error rounded pointer-events-none"
                   />
-                  <span>Hapus dari Google Drive CDN</span>
-                </label>
+                </div>
 
-                <!-- Checkbox Hugging Face -->
-                <label class="flex items-center gap-2 cursor-pointer select-none" :class="{ 'opacity-40 cursor-not-allowed': !selectedFile.hfUrl }">
+                <!-- Card Hugging Face -->
+                <div
+                  :class="[
+                    'flex items-center justify-between p-3 rounded-2xl border transition-all duration-200 select-none cursor-pointer',
+                    selectedFile.hfUrl 
+                      ? (deleteTargets.hf ? 'border-error/40 bg-error/10 text-error' : 'border-base-300 bg-base-300/20 opacity-80 hover:bg-base-300/40 text-base-content')
+                      : 'opacity-40 cursor-not-allowed bg-base-300/10 border-base-200 text-base-content'
+                  ]"
+                  @click="selectedFile.hfUrl && (deleteTargets.hf = !deleteTargets.hf)"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <Icon name="mingcute:upload-3-fill" :class="selectedFile.hfUrl && deleteTargets.hf ? 'text-error' : 'text-sky-400'" size="16" />
+                    <div class="text-left">
+                      <p class="text-xs font-bold leading-tight">Hugging Face CDN</p>
+                      <p class="text-[9px] opacity-60 mt-0.5">File dataset & record HF</p>
+                    </div>
+                  </div>
                   <input
-                    v-model="deleteTargets.hf"
                     type="checkbox"
-                    class="checkbox checkbox-xs checkbox-error"
+                    :checked="deleteTargets.hf"
                     :disabled="!selectedFile.hfUrl"
+                    class="checkbox checkbox-xs checkbox-error rounded pointer-events-none"
                   />
-                  <span>Hapus dari Hugging Face CDN</span>
-                </label>
+                </div>
               </div>
 
-              <div class="flex gap-2 pt-1 flex-wrap">
+              <div class="flex gap-2 pt-1.5 flex-wrap">
                 <button
-                  class="btn btn-xs btn-error text-white font-bold flex-1 min-w-[120px]"
+                  class="btn btn-xs btn-error text-white font-bold flex-1 min-w-[110px]"
                   @click="showDeleteConfirm = true"
                 >
                   <Icon name="mingcute:delete-fill" size="13" />
                   Hapus Pilihan
                 </button>
                 <button
-                  class="btn btn-xs btn-outline btn-error font-bold flex-1 min-w-[120px]"
+                  class="btn btn-xs btn-outline btn-error font-bold flex-1 min-w-[110px]"
                   @click="deleteTargets.local = !!selectedFile.existsLocally; deleteTargets.gdrive = !!selectedFile.gdUrl; deleteTargets.hf = !!selectedFile.hfUrl; showDeleteConfirm = true;"
                 >
                   Hapus dari Semua
@@ -925,7 +967,7 @@ onMounted(() => {
     </Transition>
 
     <!-- Deletion Confirmation Dialog Modal -->
-    <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showDeleteConfirm }]">
+    <dialog :class="['modal modal-bottom sm:modal-middle z-[1100]', { 'modal-open': showDeleteConfirm }]">
       <div class="modal-box bg-base-100 border border-base-300 shadow-2xl rounded-3xl" v-if="selectedFile">
         <div class="flex items-center gap-4 mb-4">
           <div class="w-12 h-12 rounded-full bg-error/10 text-error flex items-center justify-center shrink-0">
