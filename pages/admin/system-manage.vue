@@ -106,11 +106,7 @@ const unlinkGoogleAccountNow = async () => {
     unlinkingGoogle.value = false;
   }
 };
-
-const totalBackedUpCount = ref(0);
-const totalBackedUpSizeFormatted = ref('0 B');
 const detailedStats = ref(null);
-const savingBackupConfig = ref(false);
 
 const fetchBackupStatus = async () => {
   try {
