@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export function Header() {
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
@@ -58,8 +58,8 @@ export function Header() {
           variant="ghost"
           size="icon"
           className="lg:hidden"
-          onClick={toggleSidebar}
-          aria-label="Toggle sidebar"
+          onClick={toggleMobileSidebar}
+          aria-label="Toggle mobile sidebar"
         >
           <Menu className="h-5 w-5" />
         </Button>

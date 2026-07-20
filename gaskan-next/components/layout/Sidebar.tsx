@@ -82,7 +82,7 @@ const navGroups: NavGroup[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isCollapsed, setIsCollapsed } = useSidebar();
+  const { isCollapsed, isMobileOpen, setIsMobileOpen } = useSidebar();
   const { user, logout } = useAuth();
 
   const isLinkActive = (href: string) => {
@@ -92,7 +92,7 @@ export function Sidebar() {
     return pathname === href || pathname.startsWith(href + '/');
   };
 
-  const displayName = user?.nama || user?.username || 'User';
+  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
   const displayRole = user?.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Siswa';
   const initial = displayName.charAt(0).toUpperCase();
 
@@ -204,7 +204,7 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile Drawer (Sheet) */}
-      <Sheet open={isCollapsed} onOpenChange={(open) => setIsCollapsed(open)}>
+      <Sheet open={isMobileOpen} onOpenChange={(open) => setIsMobileOpen(open)}>
         <SheetContent side="left" className="w-72 p-0 flex flex-col h-full lg:hidden">
           <SheetHeader className="h-16 border-b border-border px-4 flex flex-row items-center gap-3 space-y-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
@@ -214,7 +214,7 @@ export function Sidebar() {
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto">
-            {renderNavItems(false, () => setIsCollapsed(false))}
+            {renderNavItems(false, () => setIsMobileOpen(false))}
           </div>
 
           <div className="border-t border-border p-4 shrink-0">
