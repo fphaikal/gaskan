@@ -146,6 +146,36 @@ const closeImagePreview = () => { activePreviewImage.value = null; };
 
 const useRouter = () => useNuxtApp().$router;
 const navigateTo = useNuxtApp().$router?.push ?? (() => {});
+
+const systemMetricsFormatted = computed(() => {
+  const sys = props.system;
+  if (!sys) return null;
+
+  const hw = sys.hardware || {};
+  const osData = hw.os || {};
+  const mem = hw.memory || {};
+  const diskData = sys.disk || {};
+
+  const host = osData.hostname || sys.osInfo?.hostname || 'Server Host';
+  const platform = osData.platform ? osData.platform.toUpperCase() : (sys.osInfo?.distro || 'Linux');
+  const arch = osData.arch ? ` (${osData.arch})` : '';
+  const osName = `${platform}${arch}`;
+  
+  const ramUsedGB = mem.usedMB ? (mem.usedMB / 1024).toFixed(1) : '-';
+  const ramTotalGB = mem.totalMB ? (mem.totalMB / 1024).toFixed(1) : '-';
+  const ramStr = mem.usedMB ? `${ramUsedGB} GB / ${ramTotalGB} GB` : '-';
+
+  const diskUsedGB = (diskData.totalGB && diskData.freeGB) ? (diskData.totalGB - diskData.freeGB).toFixed(1) : '-';
+  const diskTotalGB = diskData.totalGB ? diskData.totalGB.toFixed(1) : '-';
+  const diskStr = diskData.totalGB ? `${diskUsedGB} GB / ${diskTotalGB} GB (${diskData.usagePercent || 0}%)` : '-';
+
+  return {
+    HOST: host,
+    OS: osName,
+    RAM: ramStr,
+    DISK: diskStr,
+  };
+});
 </script>
 
 <template>
@@ -490,26 +520,21 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
       </div>
     </div>
 
-    <!-- Dev strip -->
+    <!-- System Status Strip -->
     <div v-if="isAdmin" class="shrink-0 flex flex-wrap items-center justify-between gap-4 bg-base-200/30 border border-base-200/40 rounded-2xl px-6 py-2.5">
-      <div v-for="(v, l) in { HOST: system?.osInfo?.hostname, OS: system?.osInfo?.distro, RAM: system?.memory?.used + ' ' + system?.memory?.unit, DISK: system?.disk?.used + '/' + system?.disk?.total }" :key="l" class="flex items-center gap-2">
-        <span class="text-[8px] font-black text-orange-500 uppercase tracking-widest">{{ l }}</span>
-        <span class="text-[10px] font-bold text-base-content/50">{{ v }}</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <!-- Proxy Toggle Button -->
-        <button @click="toggleProxyMode" 
-                :title="useProxy ? 'Proxy aktif (lewat Nitro Server)' : 'Tembak Real API langsung (Super Cepat)'"
-                class="btn btn-xs rounded-xl font-black text-[9px] uppercase tracking-wider transition-all border"
-                :class="useProxy ? 'bg-amber-500/10 text-amber-500 border-amber-500/30 hover:bg-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/20'">
-          <Icon :name="useProxy ? 'mingcute:server-line' : 'mingcute:flash-fill'" size="12" />
-          API: {{ useProxy ? 'Nitro Proxy (ON)' : 'Direct Real API ⚡ (OFF)' }}
-        </button>
-
-        <div class="flex items-center gap-1.5">
-          <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span class="text-[9px] font-black uppercase tracking-widest text-emerald-500">Online</span>
+      <div v-if="systemMetricsFormatted" class="flex flex-wrap items-center gap-6">
+        <div v-for="(v, l) in systemMetricsFormatted" :key="l" class="flex items-center gap-2">
+          <span class="text-[8px] font-black text-orange-500 uppercase tracking-widest">{{ l }}</span>
+          <span class="text-[10px] font-bold text-base-content/70">{{ v }}</span>
         </div>
+      </div>
+      <div v-else class="flex items-center gap-2 text-[10px] text-base-content/40 font-bold">
+        <span>Memuat status sistem server...</span>
+      </div>
+
+      <div class="flex items-center gap-1.5 ml-auto">
+        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+        <span class="text-[9px] font-black uppercase tracking-widest text-emerald-500">Online</span>
       </div>
     </div>
 

@@ -402,37 +402,6 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
     </div>
 
     <div v-else-if="metrics" class="space-y-6 animate-in fade-in duration-500">
-
-      <!-- Developer Settings: Global API Proxy Toggle -->
-      <div v-if="isDeveloper" :class="bentoCard" class="bg-gradient-to-r from-base-100 via-base-100 to-primary/5 border-primary/20 shadow-md">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="flex items-start gap-4">
-            <div :class="['w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md transition-all', useProxy ? 'bg-amber-500 shadow-amber-500/20' : 'bg-emerald-500 shadow-emerald-500/20']">
-              <Icon :name="useProxy ? 'mingcute:refresh-line' : 'mingcute:lightning-fill'" size="24" />
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-black uppercase tracking-widest text-primary">Developer Control</span>
-                <span :class="['px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider', useProxy ? 'bg-amber-500/15 text-amber-600 border border-amber-500/30' : 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30']">
-                  {{ useProxy ? 'Nitro Proxy Server (ON)' : 'Direct Real API (OFF ⚡)' }}
-                </span>
-              </div>
-              <h3 class="text-base font-black text-base-content mt-1">Pengaturan Mode Jalur API Global (Sistem)</h3>
-              <p class="text-xs text-base-content/60 mt-0.5 max-w-2xl leading-relaxed">
-                Mengatur rute pemanggilan API di seluruh aplikasi untuk semua pengguna. 
-                <strong>Direct Real API (OFF)</strong> disarankan untuk performa & kecepatan maksimal tanpa latensi proxy server Vercel.
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3 shrink-0">
-            <button @click="toggleProxyMode" :class="['btn btn-sm rounded-xl font-black gap-2 text-xs border-0 shadow-md transition-all', useProxy ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20']">
-              <Icon :name="useProxy ? 'mingcute:lightning-fill' : 'mingcute:refresh-line'" size="16" />
-              <span>{{ useProxy ? 'Ubah ke Direct Real API ⚡' : 'Ubah ke Nitro Proxy 🔄' }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
       
       <!-- Top Metrik Highlight Grid (5 Cards) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

@@ -40,19 +40,20 @@ const system = ref(null);
 let systemInterval = null;
 
 const refreshSystem = async () => {
-  if (!isDeveloper.value) return;
+  if (!isAdminOrDev.value) return;
 
   try {
-    system.value = await sessionFetch('/api/dev/system');
+    const res = await sessionFetch('/api/system/metrics');
+    system.value = res?.data || res;
   } catch (error) {
     console.error('Error fetching system data:', error);
   }
 };
 
 onMounted(async () => {
-  if (isDeveloper.value) {
+  if (isAdminOrDev.value) {
     await refreshSystem();
-    systemInterval = setInterval(refreshSystem, 5000);
+    systemInterval = setInterval(refreshSystem, 10000);
   }
 });
 
