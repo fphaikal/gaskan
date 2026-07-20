@@ -121,6 +121,8 @@ const filteredAttendances = computed(() => {
   if (statusFilter.value !== 'ALL') {
     if (statusFilter.value === 'IZIN_SAKIT') {
       list = list.filter(a => a.status === 'IZIN' || a.status === 'SAKIT');
+    } else if (statusFilter.value === 'ALPHA' || statusFilter.value === 'BELUM_ABSEN') {
+      list = list.filter(a => a.status === 'ALPHA' || a.status === 'BELUM_ABSEN');
     } else {
       list = list.filter(a => a.status === statusFilter.value);
     }
