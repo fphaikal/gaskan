@@ -1,24 +1,60 @@
-﻿<script setup>
-import { ref, computed, onMounted } from 'vue';
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
 
 useHead({ title: 'Riwayat Audit Log Reshuffle | GASKAN' });
 
 const { $toast } = useNuxtApp();
 
-const logs = ref([]);
-const loading = ref(true);
-const searchQuery = ref('');
-const filterType = ref('');
+// ─── Data ────────────────────────────────────────────────────────────────────
+const logs        = ref([]);
+const loading     = ref(true);
 const expandedLogId = ref(null);
 
-const page = ref(1);
-const perPage = 10;
+// ─── Filters & Pagination (server-side) ──────────────────────────────────────
+const searchQuery = ref('');
+const filterType  = ref('');
+const page        = ref(1);
+const limit       = 20;
 
+// Server pagination meta
+const pagination  = ref({ total: 0, totalPages: 1, hasNext: false, hasPrev: false });
+
+// Stats (from server totals — updated on first load / type-filter only)
+const stats = ref({ total: 0, excel: 0, website: 0, totalStudents: 0 });
+
+// ─── Debounce helper ─────────────────────────────────────────────────────────
+let debounceTimer = null;
+const debounce = (fn, ms = 350) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(fn, ms);
+};
+
+// ─── Fetch ───────────────────────────────────────────────────────────────────
 const fetchLogs = async () => {
   loading.value = true;
   try {
-    const res = await $fetch('/api/system/reshuffle/history').catch(() => null);
-    logs.value = res?.data || [];
+    const params = new URLSearchParams({
+      page:  String(page.value),
+      limit: String(limit),
+    });
+    if (searchQuery.value.trim()) params.set('search', searchQuery.value.trim());
+    if (filterType.value)         params.set('type',   filterType.value);
+
+    const res = await $fetch(`/api/system/reshuffle/history?${params.toString()}`).catch(() => null);
+
+    logs.value       = res?.data || [];
+    pagination.value = res?.pagination || { total: 0, totalPages: 1, hasNext: false, hasPrev: false };
+
+    // Recompute overview stats when not filtering
+    if (!searchQuery.value && !filterType.value) {
+      stats.value.total         = res?.pagination?.total ?? logs.value.length;
+      stats.value.totalStudents = logs.value.reduce((s, l) => s + (l.successCount || 0), 0);
+      // We need overall breakdown — fetch a quick count-only pass if first load
+      // For now derive from current page as best-effort; update on type filter
+    }
+    if (filterType.value === 'EXCEL')   stats.value.excel   = res?.pagination?.total ?? 0;
+    if (filterType.value === 'WEBSITE') stats.value.website = res?.pagination?.total ?? 0;
+
   } catch (e) {
     $toast.error('Gagal memuat riwayat audit log');
   } finally {
@@ -26,40 +62,73 @@ const fetchLogs = async () => {
   }
 };
 
-onMounted(fetchLogs);
+// Fetch stats overview (total, excel count, website count, total students)
+const fetchStats = async () => {
+  try {
+    // Fetch totals per type without affecting the main list
+    const [allRes, excelRes, webRes] = await Promise.all([
+      $fetch(`/api/system/reshuffle/history?page=1&limit=1`).catch(() => null),
+      $fetch(`/api/system/reshuffle/history?page=1&limit=1&type=EXCEL`).catch(() => null),
+      $fetch(`/api/system/reshuffle/history?page=1&limit=1&type=WEBSITE`).catch(() => null),
+    ]);
+    stats.value = {
+      total:         allRes?.pagination?.total   ?? 0,
+      excel:         excelRes?.pagination?.total ?? 0,
+      website:       webRes?.pagination?.total   ?? 0,
+      totalStudents: stats.value.totalStudents,   // keep from main fetch
+    };
+  } catch (_) {}
+};
 
-const filteredLogs = computed(() => {
-  let result = logs.value;
-  if (filterType.value) result = result.filter(l => l.actionType === filterType.value);
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase();
-    result = result.filter(l =>
-      l.operatorName?.toLowerCase().includes(q) ||
-      l.operatorNis?.toLowerCase().includes(q) ||
-      l.targetClassName?.toLowerCase().includes(q)
-    );
+onMounted(async () => {
+  await fetchLogs();
+  fetchStats(); // async, don't await — stats load in background
+});
+
+// ─── Watchers ─────────────────────────────────────────────────────────────────
+// Debounce search — reset to page 1 on change
+watch(searchQuery, () => {
+  page.value = 1;
+  debounce(fetchLogs);
+});
+
+// Instant filter change
+watch(filterType, () => {
+  page.value = 1;
+  fetchLogs();
+});
+
+// ─── Pagination helpers ───────────────────────────────────────────────────────
+const goToPage = (p) => {
+  if (p < 1 || p > pagination.value.totalPages) return;
+  page.value = p;
+  fetchLogs();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Generate page numbers with ellipsis
+const pageNumbers = computed(() => {
+  const total = pagination.value.totalPages;
+  const cur   = page.value;
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages = new Set([1, total, cur - 1, cur, cur + 1].filter(p => p >= 1 && p <= total));
+  const sorted = [...pages].sort((a, b) => a - b);
+
+  const result = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push('...');
+    result.push(sorted[i]);
   }
   return result;
 });
 
-const paginatedLogs = computed(() => {
-  const start = (page.value - 1) * perPage;
-  return filteredLogs.value.slice(start, start + perPage);
-});
-
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredLogs.value.length / perPage)));
-
-const stats = computed(() => ({
-  total: logs.value.length,
-  excel: logs.value.filter(l => l.actionType === 'EXCEL').length,
-  website: logs.value.filter(l => l.actionType !== 'EXCEL').length,
-  totalStudents: logs.value.reduce((sum, l) => sum + (l.successCount || 0), 0),
-}));
-
+// ─── UI helpers ───────────────────────────────────────────────────────────────
 const toggleDetail = (id) => { expandedLogId.value = expandedLogId.value === id ? null : id; };
 
 const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
 </script>
+
 
 <template>
   <div class="space-y-6 pb-10 animate-in fade-in duration-500">
@@ -141,7 +210,8 @@ const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 
 
     <div v-if="!loading" class="flex items-center gap-2 text-xs text-base-content/50 font-bold px-1">
       <Icon name="mingcute:filter-line" size="14" />
-      Menampilkan <strong class="text-base-content mx-1">{{ filteredLogs.length }}</strong> dari <strong class="text-base-content mx-1">{{ logs.length }}</strong> log
+      Menampilkan <strong class="text-base-content mx-1">{{ logs.length }}</strong> dari total <strong class="text-base-content mx-1">{{ pagination.total }}</strong> log
+      <span v-if="pagination.totalPages > 1" class="text-base-content/30">· Halaman {{ page }}/{{ pagination.totalPages }}</span>
     </div>
 
     <!-- Log Cards -->
@@ -156,7 +226,7 @@ const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 
         </div>
       </template>
 
-      <div v-else-if="filteredLogs.length === 0" class="bg-base-100 p-16 rounded-3xl border border-base-200 shadow-sm text-center space-y-4">
+      <div v-else-if="logs.length === 0" class="bg-base-100 p-16 rounded-3xl border border-base-200 shadow-sm text-center space-y-4">
         <div class="w-20 h-20 rounded-3xl bg-base-200 flex items-center justify-center mx-auto">
           <Icon name="mingcute:inbox-line" size="40" class="text-base-content/30" />
         </div>
@@ -170,7 +240,7 @@ const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 
       </div>
 
       <template v-else>
-        <div v-for="log in paginatedLogs" :key="log.id" class="bg-base-100 rounded-3xl border shadow-sm overflow-hidden transition-all duration-200" :class="expandedLogId === log.id ? 'border-sky-500/30 shadow-sky-500/5' : 'border-base-200 hover:border-base-300'">
+        <div v-for="log in logs" :key="log.id" class="bg-base-100 rounded-3xl border shadow-sm overflow-hidden transition-all duration-200" :class="expandedLogId === log.id ? 'border-sky-500/30 shadow-sky-500/5' : 'border-base-200 hover:border-base-300'">
 
           <!-- Top Row -->
           <div class="p-5 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -260,15 +330,47 @@ const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 
     </div>
 
     <!-- Pagination -->
-    <div v-if="!loading && totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between bg-base-100 p-4 rounded-3xl border border-base-200 shadow-sm gap-3">
-      <p class="text-xs font-bold text-base-content/60">Halaman <strong class="text-base-content">{{ page }}</strong> dari <strong class="text-base-content">{{ totalPages }}</strong> · {{ filteredLogs.length }} total log</p>
+    <div v-if="!loading && pagination.totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between bg-base-100 p-4 sm:p-5 rounded-3xl border border-base-200 shadow-sm gap-4">
+      <!-- Info -->
+      <div class="text-xs font-bold text-base-content/60 text-center sm:text-left">
+        Halaman <strong class="text-base-content">{{ page }}</strong> dari <strong class="text-base-content">{{ pagination.totalPages }}</strong>
+        &nbsp;·&nbsp; Total <strong class="text-base-content">{{ pagination.total }}</strong> log
+      </div>
+
+      <!-- Page Buttons -->
       <div class="flex items-center gap-1.5">
-        <button @click="page--" :disabled="page <= 1" class="btn btn-ghost btn-sm rounded-xl font-black disabled:opacity-30"><Icon name="mingcute:arrow-left-line" size="16" /></button>
-        <template v-for="p in totalPages" :key="p">
-          <button v-if="p === 1 || p === totalPages || Math.abs(p - page) <= 1" @click="page = p" :class="['btn btn-sm rounded-xl font-black min-w-[36px]', p === page ? 'btn-primary shadow-lg shadow-primary/20' : 'btn-ghost']">{{ p }}</button>
-          <span v-else-if="Math.abs(p - page) === 2" class="text-base-content/30 font-black px-1">...</span>
+        <!-- First + Prev -->
+        <button @click="goToPage(1)" :disabled="!pagination.hasPrev" class="btn btn-ghost btn-xs rounded-xl font-black disabled:opacity-30 hidden sm:flex" title="Pertama">
+          <Icon name="mingcute:skip-previous-line" size="14" />
+        </button>
+        <button @click="goToPage(page - 1)" :disabled="!pagination.hasPrev" class="btn btn-ghost btn-sm rounded-xl font-black disabled:opacity-30 gap-1">
+          <Icon name="mingcute:arrow-left-line" size="16" />
+          <span class="hidden sm:inline text-xs">Prev</span>
+        </button>
+
+        <!-- Page numbers with smart ellipsis -->
+        <template v-for="p in pageNumbers" :key="p">
+          <span v-if="p === '...'" class="text-base-content/30 font-black px-1 text-sm select-none">…</span>
+          <button
+            v-else
+            @click="goToPage(p)"
+            :class="[
+              'btn btn-sm rounded-xl font-black min-w-[36px] transition-all',
+              p === page
+                ? 'btn-primary shadow-lg shadow-primary/20 scale-105'
+                : 'btn-ghost hover:btn-primary/20'
+            ]"
+          >{{ p }}</button>
         </template>
-        <button @click="page++" :disabled="page >= totalPages" class="btn btn-ghost btn-sm rounded-xl font-black disabled:opacity-30"><Icon name="mingcute:arrow-right-line" size="16" /></button>
+
+        <!-- Next + Last -->
+        <button @click="goToPage(page + 1)" :disabled="!pagination.hasNext" class="btn btn-ghost btn-sm rounded-xl font-black disabled:opacity-30 gap-1">
+          <span class="hidden sm:inline text-xs">Next</span>
+          <Icon name="mingcute:arrow-right-line" size="16" />
+        </button>
+        <button @click="goToPage(pagination.totalPages)" :disabled="!pagination.hasNext" class="btn btn-ghost btn-xs rounded-xl font-black disabled:opacity-30 hidden sm:flex" title="Terakhir">
+          <Icon name="mingcute:skip-forward-line" size="14" />
+        </button>
       </div>
     </div>
 
