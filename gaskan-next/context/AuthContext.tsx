@@ -25,6 +25,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (storedToken) {
         setToken(storedToken);
+        if (typeof document !== 'undefined' && !document.cookie.includes('auth_token=')) {
+          document.cookie = `auth_token=${storedToken}; path=/; max-age=86400; SameSite=Lax`;
+        }
       }
       if (storedUser) {
         setUser(JSON.parse(storedUser));
@@ -41,6 +44,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(userData);
     localStorage.setItem('auth_token', newToken);
     localStorage.setItem('auth_user', JSON.stringify(userData));
+    if (typeof document !== 'undefined') {
+      document.cookie = `auth_token=${newToken}; path=/; max-age=86400; SameSite=Lax`;
+    }
   };
 
   const logout = () => {
@@ -48,6 +54,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    if (typeof document !== 'undefined') {
+      document.cookie = `auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    }
   };
 
   return (
