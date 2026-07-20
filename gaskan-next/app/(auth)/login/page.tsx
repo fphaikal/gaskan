@@ -30,9 +30,8 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorData(null);
 
+    // Strictly and only { NIS, Password, force } payload as requested
     const loginPayload = {
-      identifier: identifier.trim(),
-      password: password,
       NIS: identifier.trim(),
       Password: password,
       force: force,
@@ -42,7 +41,7 @@ export default function LoginPage() {
       let resData: any = null;
 
       try {
-        const response = await api.post('/auth/login', loginPayload);
+        const response = await api.post('/api/auth/login', loginPayload);
         resData = response.data;
       } catch (err1: any) {
         if (err1?.response?.status === 404) {
@@ -99,8 +98,6 @@ export default function LoginPage() {
         apiMessage = errResponseData.message;
       } else if (errResponseData?.error) {
         apiMessage = errResponseData.error;
-      } else if (errResponseData?.errors?.identifier) {
-        apiMessage = errResponseData.errors.identifier[0];
       }
 
       const canForceLogin = statusCode === 400 || errResponseData?.code === 400 || errResponseData?.forceAvailable;
