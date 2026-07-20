@@ -140,21 +140,6 @@ watch([searchQuery, selectedClassFilter, statusFilter, itemsPerPage], () => {
   currentPage.value = 1;
 });
 
-const useProxy = computed(() => authStore.useProxy);
-const toggleProxyMode = async () => {
-  const isNowProxy = await authStore.toggleProxy();
-  console.log(`[SYSTEM GLOBAL API MODE TOGGLED] Mode is now: ${isNowProxy ? 'Nitro Proxy (ON)' : 'Direct Real API (OFF)'}`);
-};
-
-watch(() => props.count?.useProxy, (newVal) => {
-  if (newVal !== undefined && newVal !== authStore.useProxy) {
-    authStore.useProxy = newVal;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('gaskan_use_proxy', String(newVal));
-    }
-  }
-}, { immediate: true });
-
 const activePreviewImage = ref(null);
 const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
 const closeImagePreview = () => { activePreviewImage.value = null; };
