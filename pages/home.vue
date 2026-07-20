@@ -37,7 +37,6 @@ if (isAdminOrDev.value) {
 }
 
 const system = ref(null);
-let systemInterval = null;
 
 const refreshSystem = async () => {
   if (!isAdminOrDev.value) return;
@@ -53,12 +52,7 @@ const refreshSystem = async () => {
 onMounted(async () => {
   if (isAdminOrDev.value) {
     await refreshSystem();
-    systemInterval = setInterval(refreshSystem, 10000);
   }
-});
-
-onBeforeUnmount(() => {
-  if (systemInterval) clearInterval(systemInterval);
 });
 
 useSeoMeta({
