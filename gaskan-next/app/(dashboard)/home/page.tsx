@@ -10,7 +10,6 @@ import { id as localeId } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function HomePage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -99,12 +98,12 @@ export default function HomePage() {
   const firstWord = displayName.split(' ')[0];
 
   const today = countData?.today || {
-    present: 120,
-    late: 8,
-    absent: 4,
-    izin: 6,
-    sakit: 2,
-    attendancePercentage: 94,
+    present: 0,
+    late: 0,
+    absent: 0,
+    izin: 0,
+    sakit: 0,
+    attendancePercentage: 0,
   };
 
   const formatTime = (ts?: string) => (ts ? format(parseISO(ts), 'HH:mm') : '-');
@@ -141,20 +140,9 @@ export default function HomePage() {
   ];
   const avatarColor = (name?: string) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
-  const recentAttendances = countData?.recentAttendances && countData.recentAttendances.length > 0
-    ? countData.recentAttendances
-    : [
-        { id: '1', studentName: 'Ahmad Fauzi', className: 'XII RPL 1', majorName: 'RPL', time: new Date().toISOString(), method: 'FACE_RECOGNITION', status: 'HADIR' },
-        { id: '2', studentName: 'Siti Nurhaliza', className: 'XI TKJ 2', majorName: 'TKJ', time: new Date(Date.now() - 600000).toISOString(), method: 'QR_CODE', status: 'HADIR' },
-        { id: '3', studentName: 'Budi Santoso', className: 'X TMI 1', majorName: 'TMI', time: new Date(Date.now() - 1200000).toISOString(), method: 'FACE_RECOGNITION', status: 'TERLAMBAT' },
-        { id: '4', studentName: 'Dewi Lestari', className: 'XII Kimia 3', majorName: 'Kimia', time: new Date(Date.now() - 3600000).toISOString(), method: 'MANUAL', status: 'IZIN' },
-      ];
-
-  const recentFaceFailures = countData?.recentFaceFailures && countData.recentFaceFailures.length > 0
-    ? countData.recentFaceFailures
-    : [
-        { id: 'f1', identifier: 'UNKNOWN_USER', message: 'Wajah tidak terdeteksi di database', timestamp: new Date(Date.now() - 1800000).toISOString(), gate: 'Gerbang Utama SMTI' },
-      ];
+  // Strictly real data from API response
+  const recentAttendances: any[] = countData?.recentAttendances || [];
+  const recentFaceFailures: any[] = countData?.recentFaceFailures || [];
 
   if (authLoading) {
     return (
@@ -183,8 +171,8 @@ export default function HomePage() {
               </p>
               <h1 className="text-3xl font-extrabold text-white leading-tight">{firstWord}</h1>
               <p className="text-xs text-white/80 font-semibold mt-2">
-                {countData?.klasifikasi?.siswa || 520} siswa · {countData?.pendingLeaves || 3} izin pending ·{' '}
-                {today.attendancePercentage || 94}% hadir
+                {countData?.klasifikasi?.siswa || 0} siswa · {countData?.pendingLeaves || 0} izin pending ·{' '}
+                {today.attendancePercentage || 0}% hadir
               </p>
             </div>
             <div className="absolute right-5 top-1/2 -translate-y-1/2 grid grid-cols-4 gap-1.5 opacity-15 group-hover:opacity-25 transition-opacity">
@@ -301,9 +289,9 @@ export default function HomePage() {
                   </div>
 
                   {recentAttendances.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/50 space-y-2">
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40 space-y-2">
                       <Icon icon="mingcute:time-line" className="text-5xl" />
-                      <p className="text-xs font-black uppercase tracking-widest">Belum ada aktivitas absensi hari ini</p>
+                      <p className="text-xs font-black uppercase tracking-widest">Belum ada absensi</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-border">
@@ -364,7 +352,7 @@ export default function HomePage() {
               <div className="overflow-x-auto w-full flex-1">
                 <div className="min-w-[650px]">
                   {recentFaceFailures.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-emerald-500/70 space-y-2">
+                    <div className="flex flex-col items-center justify-center py-20 text-emerald-500/60 space-y-2">
                       <Icon icon="mingcute:shield-check-line" className="text-5xl" />
                       <p className="text-xs font-black uppercase tracking-widest">Aman · Tidak ada kegagalan wajah</p>
                     </div>
@@ -450,11 +438,17 @@ export default function HomePage() {
                       <Icon icon="mingcute:key-2-fill" className="text-base" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate">{log.user?.name || log.identifier || 'System User'}</p>
+                      <p className="text-xs font-bold truncate">{log.user?.name || log.identifier || log.details?.identifier || 'System User'}</p>
                       <p className="text-[9px] font-bold text-muted-foreground uppercase">{log.action || 'LOGIN_SUCCESS'}</p>
                     </div>
                   </div>
                 ))}
+                {loginLogs.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-8 opacity-30 text-center">
+                    <Icon icon="mingcute:key-2-fill" className="text-3xl mb-1" />
+                    <p className="text-[10px] font-black uppercase tracking-widest">Belum ada log login</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -466,8 +460,8 @@ export default function HomePage() {
             {[
               { label: 'HOST', val: systemStats?.osInfo?.hostname || 'smti-server' },
               { label: 'OS', val: systemStats?.osInfo?.distro || 'Ubuntu Linux' },
-              { label: 'RAM', val: systemStats?.memory?.used || '4.2 GB' },
-              { label: 'DISK', val: systemStats?.disk?.used || '45%' },
+              { label: 'RAM', val: systemStats?.memory?.used || '0 GB' },
+              { label: 'DISK', val: systemStats?.disk?.used || '0%' },
             ].map((st) => (
               <div key={st.label} className="flex items-center gap-2">
                 <span className="text-[9px] font-black text-primary uppercase tracking-widest">{st.label}</span>
@@ -525,8 +519,8 @@ export default function HomePage() {
   // ----------------------------------------------------
   // SISWA DASHBOARD VIEW
   // ----------------------------------------------------
-  const studentSummary = studentAttendance?.summary || { hadir: 18, terlambat: 2, izin: 1, sakit: 0, alpha: 0, total: 21 };
-  const studentRate = studentSummary.total ? Math.round(((studentSummary.hadir + studentSummary.terlambat) / studentSummary.total) * 100) : 95;
+  const studentSummary = studentAttendance?.summary || { hadir: 0, terlambat: 0, izin: 0, sakit: 0, alpha: 0, total: 0 };
+  const studentRate = studentSummary.total ? Math.round(((studentSummary.hadir + studentSummary.terlambat) / studentSummary.total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -539,7 +533,7 @@ export default function HomePage() {
           <div>
             <h2 className="text-2xl font-extrabold">Halo, {firstWord}!</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Siswa Active · NIS: {user?.id || '12345678'}
+              Siswa Active · NIS: {user?.id || '—'}
             </p>
           </div>
         </div>
@@ -547,11 +541,10 @@ export default function HomePage() {
         {/* Today Status (1x1) */}
         <div className="bg-card border border-border rounded-3xl p-6 flex flex-col justify-between shadow-sm">
           <p className="text-xs font-semibold text-muted-foreground">Status Hari Ini</p>
-          <div className="flex items-center gap-3 text-emerald-500">
-            <Icon icon="mingcute:check-circle-fill" className="text-4xl" />
+          <div className="flex items-center gap-3 text-muted-foreground/50">
+            <Icon icon="mingcute:time-line" className="text-4xl" />
             <div>
-              <span className="text-2xl font-black">Hadir</span>
-              <p className="text-xs opacity-70">07:05 WIB</p>
+              <span className="text-xl font-bold">Belum Absen</span>
             </div>
           </div>
         </div>
