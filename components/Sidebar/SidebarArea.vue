@@ -93,6 +93,12 @@ const menuGroups = [
         route: '/semester',
       },
       {
+        icon: 'mingcute:transfer-4-line',
+        role: ['admin', 'developer'],
+        label: 'Reshuffle Kelas',
+        route: '/kelas/reshuffle',
+      },
+      {
         icon: 'mingcute:user-setting-fill',
         role: ['admin', 'developer'],
         label: 'Manajemen User',

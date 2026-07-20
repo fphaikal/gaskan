@@ -145,10 +145,10 @@ const bentoCard = "bg-base-100 rounded-[2rem] p-6 border border-base-200/60 shad
           <p class="text-xs sm:text-base text-base-content/60 mt-1">Kelola daftar kelas dan rombel</p>
         </div>
         <div class="flex items-center gap-2">
-          <NuxtLink to="/kelas/reshuffle" class="btn btn-sm sm:btn-md bg-amber-500 hover:bg-amber-600 text-black border-0 rounded-xl sm:rounded-2xl gap-2 font-black shadow-lg shadow-amber-500/20 shrink-0">
+          <button @click="navigateTo('/kelas/reshuffle')" class="btn btn-sm sm:btn-md bg-amber-500 hover:bg-amber-600 text-black border-0 rounded-xl sm:rounded-2xl gap-2 font-black shadow-lg shadow-amber-500/20 shrink-0">
             <Icon name="mingcute:transfer-4-line" size="18" />
             <span>Reshuffle Kelas</span>
-          </NuxtLink>
+          </button>
           <button @click="openCreate" class="btn btn-sm sm:btn-md bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl sm:rounded-2xl gap-2 font-black shadow-lg shadow-orange-500/20 shrink-0">
             <Icon name="mingcute:add-circle-fill" size="18" class="sm:text-[20px]" />
             <span class="hidden xsm:inline">Tambah</span>
