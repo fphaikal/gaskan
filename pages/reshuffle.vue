@@ -714,275 +714,278 @@ const handleExcelReshuffle = async () => {
 
     </div>
 
-    <!-- MODAL KONFIRMASI RESHUFFLE -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showConfirmModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="showConfirmModal = false">
-          <div class="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
-          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-md z-10 p-6 sm:p-8 space-y-6 border border-primary/20 animate-in zoom-in-95 duration-200">
-            
-            <div class="text-center space-y-3">
-              <div class="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
-                <Icon name="mingcute:transfer-4-line" size="36" />
+    <!-- CLIENT-ONLY MODALS -->
+    <ClientOnly>
+      <!-- MODAL KONFIRMASI RESHUFFLE -->
+      <Teleport to="body">
+        <Transition name="modal">
+          <div v-if="showConfirmModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4" @click.self="showConfirmModal = false">
+            <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
+            <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-md z-10 p-6 sm:p-8 space-y-6 border border-primary/20 animate-in zoom-in-95 duration-200">
+              
+              <div class="text-center space-y-3">
+                <div class="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+                  <Icon name="mingcute:transfer-4-line" size="36" />
+                </div>
+                <h3 class="text-xl font-black text-base-content tracking-tight">Konfirmasi Reshuffle</h3>
+                <p class="text-xs text-base-content/70 font-medium leading-relaxed">
+                  {{ confirmMessage }}
+                </p>
               </div>
-              <h3 class="text-xl font-black text-base-content tracking-tight">Konfirmasi Reshuffle</h3>
-              <p class="text-xs text-base-content/70 font-medium leading-relaxed">
-                {{ confirmMessage }}
-              </p>
-            </div>
 
-            <div v-if="confirmDetails" class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50 space-y-2 text-xs">
-              <div class="flex justify-between items-center text-base-content/70 font-bold">
-                <span>Jumlah Siswa:</span>
-                <span class="text-amber-400 font-black text-sm">{{ confirmDetails.count }} Siswa</span>
+              <div v-if="confirmDetails" class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50 space-y-2 text-xs">
+                <div class="flex justify-between items-center text-base-content/70 font-bold">
+                  <span>Jumlah Siswa:</span>
+                  <span class="text-amber-400 font-black text-sm">{{ confirmDetails.count }} Siswa</span>
+                </div>
+                <div class="flex justify-between items-center text-base-content/70 font-bold">
+                  <span>Kelas Tujuan:</span>
+                  <span class="text-emerald-400 font-black text-sm">{{ confirmDetails.targetClass }}</span>
+                </div>
+                <div v-if="confirmDetails.rombel" class="flex justify-between items-center text-base-content/70 font-bold">
+                  <span>Rombel Baru:</span>
+                  <span class="text-sky-400 font-black text-sm">{{ confirmDetails.rombel }}</span>
+                </div>
               </div>
-              <div class="flex justify-between items-center text-base-content/70 font-bold">
-                <span>Kelas Tujuan:</span>
-                <span class="text-emerald-400 font-black text-sm">{{ confirmDetails.targetClass }}</span>
-              </div>
-              <div v-if="confirmDetails.rombel" class="flex justify-between items-center text-base-content/70 font-bold">
-                <span>Rombel Baru:</span>
-                <span class="text-sky-400 font-black text-sm">{{ confirmDetails.rombel }}</span>
-              </div>
-            </div>
 
-            <div class="flex gap-3 pt-2">
-              <button @click="showConfirmModal = false" :disabled="submitting" class="btn btn-ghost flex-1 rounded-2xl font-black text-xs">
-                Batal
-              </button>
-              <button @click="executeConfirmAction" :disabled="submitting" class="btn bg-emerald-500 hover:bg-emerald-600 text-black border-0 flex-1 rounded-2xl font-black shadow-lg shadow-emerald-500/20 gap-2 text-xs">
-                <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
-                <Icon v-else name="mingcute:check-circle-line" size="18" />
-                Ya, Terapkan
-              </button>
-            </div>
+              <div class="flex gap-3 pt-2">
+                <button @click="showConfirmModal = false" :disabled="submitting" class="btn btn-ghost flex-1 rounded-2xl font-black text-xs">
+                  Batal
+                </button>
+                <button @click="executeConfirmAction" :disabled="submitting" class="btn bg-emerald-500 hover:bg-emerald-600 text-black border-0 flex-1 rounded-2xl font-black shadow-lg shadow-emerald-500/20 gap-2 text-xs">
+                  <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+                  <Icon v-else name="mingcute:check-circle-line" size="18" />
+                  Ya, Terapkan
+                </button>
+              </div>
 
+            </div>
           </div>
-        </div>
-      </Transition>
-    </Teleport>
+        </Transition>
+      </Teleport>
 
-    <!-- REALTIME PROGRESS MODAL -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showProgressModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
-          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-md z-10 p-6 sm:p-8 space-y-6 border border-emerald-500/30 animate-in zoom-in-95 duration-200">
-            
-            <div class="text-center space-y-3">
-              <div class="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10 animate-pulse">
-                <Icon name="mingcute:transfer-4-line" size="36" />
-              </div>
-              <h3 class="text-xl font-black text-base-content tracking-tight">{{ progressTitle }}</h3>
-              <p class="text-xs text-base-content/60 font-medium leading-relaxed">
-                {{ progressSubtitle }}
-              </p>
-            </div>
-
-            <!-- Progress Bar Indicator -->
-            <div class="space-y-3 bg-base-200/40 p-4 rounded-2xl border border-base-300/40">
-              <div class="flex justify-between items-center text-xs font-black">
-                <span class="text-emerald-400 font-mono">{{ progressCurrent }} / {{ progressTotal }} Siswa</span>
-                <span class="text-base-content/90 font-mono text-sm font-black">{{ progressPercent }}%</span>
+      <!-- REALTIME PROGRESS MODAL -->
+      <Teleport to="body">
+        <Transition name="modal">
+          <div v-if="showProgressModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
+            <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-md z-10 p-6 sm:p-8 space-y-6 border border-emerald-500/30 animate-in zoom-in-95 duration-200">
+              
+              <div class="text-center space-y-3">
+                <div class="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10 animate-pulse">
+                  <Icon name="mingcute:transfer-4-line" size="36" />
+                </div>
+                <h3 class="text-xl font-black text-base-content tracking-tight">{{ progressTitle }}</h3>
+                <p class="text-xs text-base-content/60 font-medium leading-relaxed">
+                  {{ progressSubtitle }}
+                </p>
               </div>
 
-              <div class="w-full bg-base-200 rounded-full h-4 p-1 border border-base-300/60 overflow-hidden shadow-inner">
-                <div 
-                  class="bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400 h-full rounded-full transition-all duration-300 ease-out shadow-lg shadow-emerald-500/30"
-                  :style="{ width: progressPercent + '%' }"
-                ></div>
+              <!-- Progress Bar Indicator -->
+              <div class="space-y-3 bg-base-200/40 p-4 rounded-2xl border border-base-300/40">
+                <div class="flex justify-between items-center text-xs font-black">
+                  <span class="text-emerald-400 font-mono">{{ progressCurrent }} / {{ progressTotal }} Siswa</span>
+                  <span class="text-base-content/90 font-mono text-sm font-black">{{ progressPercent }}%</span>
+                </div>
+
+                <div class="w-full bg-base-200 rounded-full h-4 p-1 border border-base-300/60 overflow-hidden shadow-inner">
+                  <div 
+                    class="bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400 h-full rounded-full transition-all duration-300 ease-out shadow-lg shadow-emerald-500/30"
+                    :style="{ width: progressPercent + '%' }"
+                  ></div>
+                </div>
               </div>
-            </div>
 
-            <div class="text-center">
-              <p class="text-[11px] text-base-content/50 font-bold flex items-center justify-center gap-2">
-                <span class="loading loading-spinner loading-xs text-emerald-400"></span>
-                Mohon tunggu, jangan menutup halaman...
-              </p>
-            </div>
+              <div class="text-center">
+                <p class="text-[11px] text-base-content/50 font-bold flex items-center justify-center gap-2">
+                  <span class="loading loading-spinner loading-xs text-emerald-400"></span>
+                  Mohon tunggu, jangan menutup halaman...
+                </p>
+              </div>
 
+            </div>
           </div>
-        </div>
-      </Transition>
-    </Teleport>
+        </Transition>
+      </Teleport>
 
-    <!-- SUMMARY MODAL AFTER RESHUFFLE -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showSummaryModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="resetAndContinue">
-          <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
-          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-2xl z-10 p-6 sm:p-8 space-y-6 border border-emerald-500/30 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            
-            <div class="text-center space-y-2 shrink-0">
-              <div class="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
-                <Icon name="mingcute:check-circle-fill" size="36" />
+      <!-- SUMMARY MODAL AFTER RESHUFFLE -->
+      <Teleport to="body">
+        <Transition name="modal">
+          <div v-if="showSummaryModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4" @click.self="resetAndContinue">
+            <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
+            <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-2xl z-10 p-6 sm:p-8 space-y-6 border border-emerald-500/30 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+              
+              <div class="text-center space-y-2 shrink-0">
+                <div class="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+                  <Icon name="mingcute:check-circle-fill" size="36" />
+                </div>
+                <h3 class="text-xl font-black text-base-content tracking-tight">{{ summaryTitle }}</h3>
+                <p class="text-xs text-base-content/60 font-medium">
+                  Ringkasan rincian data siswa yang berhasil dipindahkan:
+                </p>
               </div>
-              <h3 class="text-xl font-black text-base-content tracking-tight">{{ summaryTitle }}</h3>
-              <p class="text-xs text-base-content/60 font-medium">
-                Ringkasan rincian data siswa yang berhasil dipindahkan:
-              </p>
-            </div>
 
-            <!-- Summary Table -->
-            <div class="overflow-y-auto max-h-80 border border-base-200 rounded-2xl shrink-0">
-              <table class="table table-zebra table-compact w-full text-xs">
-                <thead>
-                  <tr class="bg-base-200 text-[10px] uppercase font-black sticky top-0 z-10">
-                    <th>#</th>
-                    <th>Nama Siswa</th>
-                    <th>NIS</th>
-                    <th>Kelas Asal</th>
-                    <th>Kelas Tujuan</th>
-                    <th>Rombel</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, idx) in summaryItems" :key="idx">
-                    <td class="font-bold text-center text-amber-400">{{ idx + 1 }}</td>
-                    <td class="font-bold text-base-content">{{ item.name }}</td>
-                    <td class="font-mono text-base-content/60">{{ item.nis }}</td>
-                    <td>
-                      <span class="px-2 py-0.5 rounded-lg bg-base-200 border border-base-300 text-base-content/70 font-extrabold text-[10px]">
-                        {{ item.fromClass }}
+              <!-- Summary Table -->
+              <div class="overflow-y-auto max-h-80 border border-base-200 rounded-2xl shrink-0">
+                <table class="table table-zebra table-compact w-full text-xs">
+                  <thead>
+                    <tr class="bg-base-200 text-[10px] uppercase font-black sticky top-0 z-10">
+                      <th>#</th>
+                      <th>Nama Siswa</th>
+                      <th>NIS</th>
+                      <th>Kelas Asal</th>
+                      <th>Kelas Tujuan</th>
+                      <th>Rombel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(item, idx) in summaryItems" :key="idx">
+                      <td class="font-bold text-center text-amber-400">{{ idx + 1 }}</td>
+                      <td class="font-bold text-base-content">{{ item.name }}</td>
+                      <td class="font-mono text-base-content/60">{{ item.nis }}</td>
+                      <td>
+                        <span class="px-2 py-0.5 rounded-lg bg-base-200 border border-base-300 text-base-content/70 font-extrabold text-[10px]">
+                          {{ item.fromClass }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold text-[10px]">
+                          {{ item.toClass }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-extrabold text-[10px]">
+                          {{ item.rombel }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex flex-col sm:flex-row gap-3 pt-2 shrink-0">
+                <button @click="resetAndContinue" class="btn btn-emerald bg-emerald-500 hover:bg-emerald-600 text-black border-0 w-full rounded-2xl font-black gap-2 shadow-lg shadow-emerald-500/20">
+                  <Icon name="mingcute:refresh-4-line" size="18" />
+                  Lanjut Reshuffle / Upload File Lagi
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
+      <!-- AUDIT LOG HISTORY MODAL -->
+      <Teleport to="body">
+        <Transition name="modal">
+          <div v-if="showHistoryModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4" @click.self="showHistoryModal = false">
+            <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
+            <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-3xl z-10 p-6 sm:p-8 space-y-6 border border-sky-500/30 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+              
+              <div class="flex items-center justify-between border-b border-base-200 pb-4 shrink-0">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+                    <Icon name="mingcute:history-line" size="24" />
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-black text-base-content">Riwayat Audit Log Reshuffle</h3>
+                    <p class="text-xs text-base-content/60 font-medium">Rekaman histori pemindahan kelas oleh pengguna</p>
+                  </div>
+                </div>
+                <button @click="showHistoryModal = false" class="btn btn-ghost btn-circle btn-sm">
+                  <Icon name="mingcute:close-line" size="20" />
+                </button>
+              </div>
+
+              <!-- Content Area -->
+              <div class="overflow-y-auto space-y-4 pr-1 flex-1">
+                <div v-if="loadingLogs" class="text-center py-12 space-y-3">
+                  <span class="loading loading-spinner loading-lg text-sky-400"></span>
+                  <p class="text-xs text-base-content/50 font-bold">Memuat riwayat audit log...</p>
+                </div>
+
+                <div v-else-if="reshuffleLogs.length === 0" class="text-center py-12 space-y-2">
+                  <Icon name="mingcute:inbox-line" size="48" class="text-base-content/30 mx-auto" />
+                  <p class="text-sm font-black text-base-content/60">Belum ada riwayat pemindahan</p>
+                </div>
+
+                <div v-else v-for="log in reshuffleLogs" :key="log.id" class="bg-base-200/40 p-5 rounded-3xl border border-base-300/50 space-y-3">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-base-300/30 pb-3">
+                    <div class="flex items-center gap-2.5">
+                      <span :class="['px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider', log.actionType === 'EXCEL' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-primary/10 text-primary border border-primary/20']">
+                        {{ log.actionType === 'EXCEL' ? 'Excel Import' : 'Pilih Langsung' }}
                       </span>
-                    </td>
-                    <td>
-                      <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold text-[10px]">
-                        {{ item.toClass }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-extrabold text-[10px]">
-                        {{ item.rombel }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                      <span class="text-xs font-black text-base-content">{{ log.targetClassName }}</span>
+                    </div>
 
-            <div class="flex flex-col sm:flex-row gap-3 pt-2 shrink-0">
-              <button @click="resetAndContinue" class="btn btn-emerald bg-emerald-500 hover:bg-emerald-600 text-black border-0 w-full rounded-2xl font-black gap-2 shadow-lg shadow-emerald-500/20">
-                <Icon name="mingcute:refresh-4-line" size="18" />
-                Lanjut Reshuffle / Upload File Lagi
-              </button>
-            </div>
+                    <div class="text-[11px] text-base-content/50 font-mono font-bold flex items-center gap-2">
+                      <Icon name="mingcute:time-line" size="14" />
+                      {{ new Date(log.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) }}
+                    </div>
+                  </div>
 
+                  <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div class="space-y-1">
+                      <p class="text-[11px] text-base-content/60 font-bold">
+                        Diproses Oleh: <strong class="text-base-content">{{ log.operatorName }}</strong> ({{ log.operatorNis }})
+                      </p>
+                      <p class="text-[11px] text-base-content/60 font-bold">
+                        Jumlah Siswa: <strong class="text-emerald-400">{{ log.successCount }} Siswa Berhasil</strong>
+                      </p>
+                    </div>
+
+                    <button 
+                      @click="activeLogDetail = activeLogDetail === log.id ? null : log.id" 
+                      class="btn btn-xs rounded-xl font-black gap-1.5"
+                      :class="activeLogDetail === log.id ? 'btn-primary' : 'btn-ghost border border-base-300'"
+                    >
+                      <Icon :name="activeLogDetail === log.id ? 'mingcute:eye-close-line' : 'mingcute:eye-line'" size="14" />
+                      {{ activeLogDetail === log.id ? 'Sembunyikan Rincian' : 'Lihat Rincian Siswa' }}
+                    </button>
+                  </div>
+
+                  <!-- Expandable Detail Table -->
+                  <div v-if="activeLogDetail === log.id" class="pt-3 border-t border-base-300/30 animate-in fade-in duration-200">
+                    <div class="overflow-x-auto max-h-60 rounded-2xl border border-base-300/60 bg-base-100">
+                      <table class="table table-zebra table-compact w-full text-[11px]">
+                        <thead>
+                          <tr class="bg-base-200 text-[9px] uppercase font-black">
+                            <th>#</th>
+                            <th>Nama Siswa</th>
+                            <th>NIS</th>
+                            <th>Dari Kelas</th>
+                            <th>Ke Kelas</th>
+                            <th>Rombel</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="(item, idx) in log.details" :key="idx">
+                            <td class="font-bold text-center text-amber-400">{{ idx + 1 }}</td>
+                            <td class="font-bold">{{ item.name }}</td>
+                            <td class="font-mono text-base-content/60">{{ item.nis }}</td>
+                            <td>{{ item.fromClass }}</td>
+                            <td class="text-emerald-400 font-bold">{{ item.toClass }}</td>
+                            <td class="text-sky-400 font-bold">{{ item.rombel }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <div class="pt-2 text-right shrink-0">
+                <button @click="showHistoryModal = false" class="btn btn-ghost rounded-2xl font-black text-xs px-6">
+                  Tutup
+                </button>
+              </div>
+
+            </div>
           </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- AUDIT LOG HISTORY MODAL -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showHistoryModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="showHistoryModal = false">
-          <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
-          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-3xl z-10 p-6 sm:p-8 space-y-6 border border-sky-500/30 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-            
-            <div class="flex items-center justify-between border-b border-base-200 pb-4 shrink-0">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
-                  <Icon name="mingcute:history-line" size="24" />
-                </div>
-                <div>
-                  <h3 class="text-lg font-black text-base-content">Riwayat Audit Log Reshuffle</h3>
-                  <p class="text-xs text-base-content/60 font-medium">Rekaman histori pemindahan kelas oleh pengguna</p>
-                </div>
-              </div>
-              <button @click="showHistoryModal = false" class="btn btn-ghost btn-circle btn-sm">
-                <Icon name="mingcute:close-line" size="20" />
-              </button>
-            </div>
-
-            <!-- Content Area -->
-            <div class="overflow-y-auto space-y-4 pr-1 flex-1">
-              <div v-if="loadingLogs" class="text-center py-12 space-y-3">
-                <span class="loading loading-spinner loading-lg text-sky-400"></span>
-                <p class="text-xs text-base-content/50 font-bold">Memuat riwayat audit log...</p>
-              </div>
-
-              <div v-else-if="reshuffleLogs.length === 0" class="text-center py-12 space-y-2">
-                <Icon name="mingcute:inbox-line" size="48" class="text-base-content/30 mx-auto" />
-                <p class="text-sm font-black text-base-content/60">Belum ada riwayat pemindahan</p>
-              </div>
-
-              <div v-else v-for="log in reshuffleLogs" :key="log.id" class="bg-base-200/40 p-5 rounded-3xl border border-base-300/50 space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-base-300/30 pb-3">
-                  <div class="flex items-center gap-2.5">
-                    <span :class="['px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider', log.actionType === 'EXCEL' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-primary/10 text-primary border border-primary/20']">
-                      {{ log.actionType === 'EXCEL' ? 'Excel Import' : 'Pilih Langsung' }}
-                    </span>
-                    <span class="text-xs font-black text-base-content">{{ log.targetClassName }}</span>
-                  </div>
-
-                  <div class="text-[11px] text-base-content/50 font-mono font-bold flex items-center gap-2">
-                    <Icon name="mingcute:time-line" size="14" />
-                    {{ new Date(log.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) }}
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
-                  <div class="space-y-1">
-                    <p class="text-[11px] text-base-content/60 font-bold">
-                      Diproses Oleh: <strong class="text-base-content">{{ log.operatorName }}</strong> ({{ log.operatorNis }})
-                    </p>
-                    <p class="text-[11px] text-base-content/60 font-bold">
-                      Jumlah Siswa: <strong class="text-emerald-400">{{ log.successCount }} Siswa Berhasil</strong>
-                    </p>
-                  </div>
-
-                  <button 
-                    @click="activeLogDetail = activeLogDetail === log.id ? null : log.id" 
-                    class="btn btn-xs rounded-xl font-black gap-1.5"
-                    :class="activeLogDetail === log.id ? 'btn-primary' : 'btn-ghost border border-base-300'"
-                  >
-                    <Icon :name="activeLogDetail === log.id ? 'mingcute:eye-close-line' : 'mingcute:eye-line'" size="14" />
-                    {{ activeLogDetail === log.id ? 'Sembunyikan Rincian' : 'Lihat Rincian Siswa' }}
-                  </button>
-                </div>
-
-                <!-- Expandable Detail Table -->
-                <div v-if="activeLogDetail === log.id" class="pt-3 border-t border-base-300/30 animate-in fade-in duration-200">
-                  <div class="overflow-x-auto max-h-60 rounded-2xl border border-base-300/60 bg-base-100">
-                    <table class="table table-zebra table-compact w-full text-[11px]">
-                      <thead>
-                        <tr class="bg-base-200 text-[9px] uppercase font-black">
-                          <th>#</th>
-                          <th>Nama Siswa</th>
-                          <th>NIS</th>
-                          <th>Dari Kelas</th>
-                          <th>Ke Kelas</th>
-                          <th>Rombel</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr v-for="(item, idx) in log.details" :key="idx">
-                          <td class="font-bold text-center text-amber-400">{{ idx + 1 }}</td>
-                          <td class="font-bold">{{ item.name }}</td>
-                          <td class="font-mono text-base-content/60">{{ item.nis }}</td>
-                          <td>{{ item.fromClass }}</td>
-                          <td class="text-emerald-400 font-bold">{{ item.toClass }}</td>
-                          <td class="text-sky-400 font-bold">{{ item.rombel }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            <div class="pt-2 text-right shrink-0">
-              <button @click="showHistoryModal = false" class="btn btn-ghost rounded-2xl font-black text-xs px-6">
-                Tutup
-              </button>
-            </div>
-
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+        </Transition>
+      </Teleport>
+    </ClientOnly>
 
   </div>
 </template>
