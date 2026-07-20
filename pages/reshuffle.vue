@@ -138,8 +138,30 @@ const openWebConfirm = () => {
   showConfirmModal.value = true;
 };
 
+// Realtime Progress Modal state
+const showProgressModal = ref(false);
+const progressPercent = ref(0);
+const progressCurrent = ref(0);
+const progressTotal = ref(0);
+const progressTitle = ref('');
+const progressSubtitle = ref('');
+
 const handleWebReshuffle = async () => {
   submitting.value = true;
+  showProgressModal.value = true;
+  progressTitle.value = 'Memproses Reshuffle Siswa...';
+  progressSubtitle.value = `Memindahkan ${selectedStudentIds.value.length} siswa ke kelas tujuan`;
+  progressTotal.value = selectedStudentIds.value.length;
+  progressCurrent.value = 0;
+  progressPercent.value = 10;
+
+  const timer = setInterval(() => {
+    if (progressPercent.value < 90) {
+      progressPercent.value += 10;
+      progressCurrent.value = Math.min(progressTotal.value, Math.round((progressPercent.value / 100) * progressTotal.value));
+    }
+  }, 100);
+
   try {
     const res = await $fetch('/api/system/reshuffle', {
       method: 'POST',
@@ -150,10 +172,19 @@ const handleWebReshuffle = async () => {
       }
     });
 
-    $toast.success(res?.message || 'Reshuffle siswa berhasil');
-    selectedStudentIds.value = [];
-    await fetchSourceStudents();
+    clearInterval(timer);
+    progressPercent.value = 100;
+    progressCurrent.value = progressTotal.value;
+
+    setTimeout(async () => {
+      showProgressModal.value = false;
+      $toast.success(res?.message || 'Reshuffle siswa berhasil');
+      selectedStudentIds.value = [];
+      await fetchSourceStudents();
+    }, 400);
   } catch (e) {
+    clearInterval(timer);
+    showProgressModal.value = false;
     $toast.error(e?.data?.message || 'Gagal memproses reshuffle siswa');
   } finally {
     submitting.value = false;
@@ -232,20 +263,45 @@ const openExcelConfirm = () => {
 
 const handleExcelReshuffle = async () => {
   submitting.value = true;
-  try {
-    const res = await $fetch('/api/system/reshuffle/import', {
-      method: 'POST',
-      body: { 
-        targetClassId: excelTargetClassId.value,
-        rows: excelRows.value 
-      }
-    });
+  showProgressModal.value = true;
 
-    $toast.success(res?.message || 'Proses reshuffle dari Excel selesai');
-    excelRows.value = [];
-    excelFile.value = null;
-    await fetchSourceStudents();
+  const targetClassObj = classes.value.find((c) => c.id === excelTargetClassId.value);
+  const targetClassName = targetClassObj?.className || 'Kelas Tujuan';
+
+  progressTitle.value = 'Mengimpor Data Excel...';
+  progressSubtitle.value = `Memproses ${excelRows.value.length} siswa ke kelas "${targetClassName}"`;
+  progressTotal.value = excelRows.value.length;
+  progressCurrent.value = 0;
+  progressPercent.value = 0;
+
+  const CHUNK_SIZE = 25;
+  const totalRows = excelRows.value.length;
+  let processed = 0;
+
+  try {
+    for (let i = 0; i < totalRows; i += CHUNK_SIZE) {
+      const chunk = excelRows.value.slice(i, i + CHUNK_SIZE);
+      await $fetch('/api/system/reshuffle/import', {
+        method: 'POST',
+        body: {
+          targetClassId: excelTargetClassId.value,
+          rows: chunk
+        }
+      });
+      processed += chunk.length;
+      progressCurrent.value = Math.min(totalRows, processed);
+      progressPercent.value = Math.round((progressCurrent.value / totalRows) * 100);
+    }
+
+    setTimeout(async () => {
+      showProgressModal.value = false;
+      $toast.success(`Reshuffle Excel selesai. ${totalRows} data siswa berhasil dipindahkan.`);
+      excelRows.value = [];
+      excelFile.value = null;
+      await fetchSourceStudents();
+    }, 400);
   } catch (e) {
+    showProgressModal.value = false;
     $toast.error(e?.data?.message || 'Gagal mengimpor reshuffle dari Excel');
   } finally {
     submitting.value = false;
@@ -630,6 +686,50 @@ const handleExcelReshuffle = async () => {
                 <Icon v-else name="mingcute:check-circle-line" size="18" />
                 Ya, Terapkan
               </button>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- REALTIME PROGRESS MODAL -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showProgressModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
+          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-md z-10 p-6 sm:p-8 space-y-6 border border-emerald-500/30 animate-in zoom-in-95 duration-200">
+            
+            <div class="text-center space-y-3">
+              <div class="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10 animate-pulse">
+                <Icon name="mingcute:transfer-4-line" size="36" />
+              </div>
+              <h3 class="text-xl font-black text-base-content tracking-tight">{{ progressTitle }}</h3>
+              <p class="text-xs text-base-content/60 font-medium leading-relaxed">
+                {{ progressSubtitle }}
+              </p>
+            </div>
+
+            <!-- Progress Bar Indicator -->
+            <div class="space-y-3 bg-base-200/40 p-4 rounded-2xl border border-base-300/40">
+              <div class="flex justify-between items-center text-xs font-black">
+                <span class="text-emerald-400 font-mono">{{ progressCurrent }} / {{ progressTotal }} Siswa</span>
+                <span class="text-base-content/90 font-mono text-sm font-black">{{ progressPercent }}%</span>
+              </div>
+
+              <div class="w-full bg-base-200 rounded-full h-4 p-1 border border-base-300/60 overflow-hidden shadow-inner">
+                <div 
+                  class="bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400 h-full rounded-full transition-all duration-300 ease-out shadow-lg shadow-emerald-500/30"
+                  :style="{ width: progressPercent + '%' }"
+                ></div>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <p class="text-[11px] text-base-content/50 font-bold flex items-center justify-center gap-2">
+                <span class="loading loading-spinner loading-xs text-emerald-400"></span>
+                Mohon tunggu, jangan menutup halaman...
+              </p>
             </div>
 
           </div>
