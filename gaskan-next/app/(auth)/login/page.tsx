@@ -30,65 +30,86 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorData(null);
 
-    const payload = {
-      NIS: identifier,
-      email: identifier,
-      username: identifier,
-      Password: password,
-      password: password,
-      force,
-    };
-
     try {
-      // Call primary login endpoint or fallback endpoint
-      let response;
+      let token: string | null = null;
+      let userData: any = null;
+
+      // 1. Try unified backend endpoint /auth/login with standard { identifier, password } schema
       try {
-        response = await api.post('/auth/login', payload);
-      } catch (firstErr: any) {
-        if (firstErr?.response?.status === 404) {
-          response = await api.post('/api/auth/login', payload);
+        const res = await api.post('/auth/login', {
+          identifier: identifier.trim(),
+          password: password,
+        });
+
+        if (res.data?.success && res.data?.data) {
+          token = res.data.data.token;
+          userData = res.data.data.user;
+        } else if (res.data?.token || res.data?.user) {
+          token = res.data.token;
+          userData = res.data.user;
+        }
+      } catch (primaryErr: any) {
+        // If 404 or missing route, try /api/auth/login or legacy /api/login
+        if (primaryErr?.response?.status === 404) {
+          try {
+            const legacyRes = await api.post('/api/login', {
+              NIS: identifier.trim(),
+              Password: password,
+              force,
+            });
+
+            if (legacyRes.data) {
+              token = legacyRes.data.sessionId || 'session_' + Date.now();
+              userData = {
+                id: legacyRes.data.NIS || identifier,
+                nis: legacyRes.data.NIS || identifier,
+                name: legacyRes.data.Nama || identifier,
+                role: legacyRes.data.Kelas === 'admin' ? 'admin' : 'siswa',
+              };
+            }
+          } catch (legacyErr) {
+            throw primaryErr; // throw original backend validation/auth error
+          }
         } else {
-          throw firstErr;
+          throw primaryErr;
         }
       }
 
-      const resData = response.data;
-
-      // Extract user info and token
-      const token =
-        resData?.token ||
-        resData?.access_token ||
-        resData?.data?.token ||
-        response.headers['authorization']?.replace('Bearer ', '') ||
-        'session_active';
-
-      const user =
-        resData?.user ||
-        resData?.data?.user ||
-        resData?.data || {
-          id: resData?.id || identifier,
-          nis: resData?.nis || identifier,
-          name: resData?.nama || resData?.name || identifier,
-          role: resData?.role || (identifier.toLowerCase().includes('admin') ? 'admin' : 'siswa'),
-          email: resData?.email || (identifier.includes('@') ? identifier : `${identifier}@smtijogja.sch.id`),
+      if (token && userData) {
+        // Format user object cleanly
+        const formattedUser = {
+          id: String(userData.id || userData.nis || identifier),
+          name: userData.name || userData.nama || userData.Nama || identifier,
+          email: userData.email || (identifier.includes('@') ? identifier : `${identifier}@smtijogja.sch.id`),
+          role: String(userData.role || 'siswa').toLowerCase() as 'admin' | 'guru' | 'siswa',
+          avatar: userData.photoUrl || userData.url_picture,
         };
 
-      login(token, user);
-      toast.success('Login berhasil! Selamat datang.');
-      router.push('/home');
+        login(token, formattedUser);
+        toast.success('Login berhasil! Selamat datang.');
+        router.push('/home');
+      } else {
+        throw new Error('Respon login dari server tidak valid');
+      }
     } catch (err: any) {
-      console.error('API login error response:', err?.response?.data || err);
+      console.error('[LOGIN] API error:', err?.response?.data || err);
 
       const errResponseData = err?.response?.data;
       const statusCode = err?.response?.status;
-      const apiMessage =
-        errResponseData?.message ||
-        errResponseData?.error ||
-        errResponseData?.data?.message ||
-        (typeof errResponseData === 'string' ? errResponseData : null) ||
-        'NIS/Email atau password yang Anda masukkan tidak sesuai.';
+      
+      // Extract clear human readable message
+      let apiMessage = 'NIS/Email atau password salah';
+      if (errResponseData?.message) {
+        apiMessage = errResponseData.message;
+      } else if (errResponseData?.error) {
+        apiMessage = errResponseData.error;
+      } else if (errResponseData?.errors?.identifier) {
+        apiMessage = errResponseData.errors.identifier[0];
+      } else if (errResponseData?.errors?.password) {
+        apiMessage = errResponseData.errors.password[0];
+      }
 
-      const canForceLogin = statusCode === 400 || errResponseData?.code === 400 || errResponseData?.forceAvailable;
+      const canForceLogin = statusCode === 400 || errResponseData?.code === 400;
 
       setErrorData({
         message: apiMessage,
@@ -97,7 +118,7 @@ export default function LoginPage() {
       });
 
       toast.error(apiMessage);
-    } fontFinally: {
+    } finally {
       setIsLoading(false);
     }
   };
