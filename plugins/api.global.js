@@ -1,18 +1,38 @@
+/**
+ * api.global.js — Universal Direct API Interceptor
+ *
+ * Strategy: Override $fetch GLOBALLY so every call to $fetch('/api/...')
+ * is rewritten to the real backend URL when useProxy=false (default).
+ *
+ * This works because we replace the URL string itself before ofetch
+ * resolves it — unlike baseURL approach which runs too late.
+ */
 import { useAuthStore } from '~/store/useAuthStore';
 
+const REAL_API_BASE = (
+  (typeof process !== 'undefined' && process.env?.NUXT_PUBLIC_API_BASE) ||
+  'https://gaskan-api.smtijogja.my.id'
+).replace(/\/+$/, '');
+
 export default defineNuxtPlugin({
-  name: 'api-fetch-interceptor',
+  name: 'api-global-interceptor',
   enforce: 'pre',
   setup(nuxtApp) {
     const config = useRuntimeConfig();
-    const rawApiBase = config.public.apiBase || 'https://gaskan-api.smtijogja.my.id';
-    const apiBase = rawApiBase.replace(/\/+$/, '');
+    const apiBase = (config.public.apiBase || REAL_API_BASE).replace(/\/+$/, '');
 
-    const apiFetch = $fetch.create({
-      onRequest({ request, options }) {
+    /**
+     * Build a raw fetch wrapper that:
+     * 1. Gets current proxy setting and token from store
+     * 2. Rewrites relative /api/... to real backend when not proxying
+     * 3. Attaches Authorization header when we have a token
+     */
+    function buildInterceptedFetch() {
+      return async function interceptedFetch(request, options = {}) {
         let useProxy = false;
         let token = null;
 
+        // Read store state — safe to call even before Pinia is hydrated
         try {
           const authStore = useAuthStore();
           useProxy = Boolean(authStore.useProxy);
@@ -21,57 +41,71 @@ export default defineNuxtPlugin({
           useProxy = false;
         }
 
-        if (typeof localStorage !== 'undefined' && !token) {
-          token = localStorage.getItem('gaskan_jwt_token');
+        // Fallback to localStorage when store is not yet initialized
+        if (typeof localStorage !== 'undefined') {
+          if (token === null) {
+            token = localStorage.getItem('gaskan_jwt_token');
+          }
+          if (useProxy === false) {
+            const stored = localStorage.getItem('gaskan_use_proxy');
+            if (stored === 'true') useProxy = true;
+          }
         }
 
-        const reqUrl = typeof request === 'string' ? request : (request.url || '');
+        // Resolve the final URL
+        let resolvedUrl = typeof request === 'string' ? request : (request?.url || '');
+        const opts = { ...options };
 
-        // Direct Real API Mode (useProxy = false - DEFAULT):
-        // Rewrite relative /api/... calls directly to Real API backend URL (https://gaskan-api.smtijogja.my.id)
-        if (
-          !useProxy &&
-          reqUrl.startsWith('/api/') &&
-          !reqUrl.startsWith('/api/auth/login') &&
-          !reqUrl.startsWith('/api/auth/logout')
-        ) {
-          options.baseURL = apiBase;
+        // When NOT using proxy AND request is a relative /api/ path → redirect to real backend
+        if (!useProxy && typeof resolvedUrl === 'string' && resolvedUrl.startsWith('/api/')) {
+          resolvedUrl = `${apiBase}${resolvedUrl}`;
 
+          // Attach Authorization header
           if (token) {
-            const existingHeaders = options.headers
-              ? (options.headers instanceof Headers ? Object.fromEntries(options.headers.entries()) : options.headers)
+            const existing = opts.headers
+              ? (opts.headers instanceof Headers
+                  ? Object.fromEntries(opts.headers.entries())
+                  : { ...opts.headers })
               : {};
-            options.headers = {
-              ...existingHeaders,
+            opts.headers = {
+              ...existing,
               Authorization: `Bearer ${token}`,
             };
           }
         }
-      },
-      onResponseError({ response }) {
-        if (response && response.status === 401) {
-          if (import.meta.client) {
+
+        // Perform the actual fetch using ofetch
+        try {
+          return await $fetch.raw(resolvedUrl, opts).then(r => r._data ?? r);
+        } catch (err) {
+          // Auto-logout on 401
+          if (err?.response?.status === 401 && import.meta.client) {
             const router = useRouter();
             if (router.currentRoute.value?.path !== '/login') {
-              console.warn('Sesi habis (401 terdeteksi), mengarahkan ke halaman login...');
-              try {
-                useAuthStore().clearSessionUser();
-              } catch {}
+              console.warn('[API] 401 – redirecting to login');
+              try { useAuthStore().clearSessionUser(); } catch {}
               router.push('/login');
             }
           }
+          throw err;
         }
-      }
-    });
+      };
+    }
 
-    // Replace $fetch globally across Nuxt instance and window
-    globalThis.$fetch = apiFetch;
-    nuxtApp.$fetch = apiFetch;
+    // Create the interceptor
+    const interceptedFetch = buildInterceptedFetch();
+
+    // Override globalThis.$fetch AND nuxtApp.$fetch
+    // Components that use $fetch() directly will pick up this override
+    nuxtApp.hook('app:created', () => {
+      nuxtApp.$fetch = interceptedFetch;
+    });
 
     return {
       provide: {
-        api: apiFetch,
+        // Expose as $api for explicit usage: const { $api } = useNuxtApp()
+        api: interceptedFetch,
       },
     };
-  }
+  },
 });

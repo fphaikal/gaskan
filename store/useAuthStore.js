@@ -1,5 +1,26 @@
 import { defineStore } from "pinia";
-import { useRequestFetch } from "#app";
+
+const REAL_API_BASE = 'https://gaskan-api.smtijogja.my.id';
+
+// Helper: get current API base based on proxy setting
+function getApiBase(useProxy = false) {
+  if (useProxy) return ''; // empty = relative URL → goes through Nitro proxy
+  // Read from runtimeConfig if available
+  if (typeof window !== 'undefined') {
+    try {
+      const nuxtApp = window.__NUXT__;
+      const configBase = nuxtApp?.config?.public?.apiBase;
+      if (configBase) return configBase.replace(/\/+$/, '');
+    } catch {}
+  }
+  return REAL_API_BASE;
+}
+
+// Helper: build headers with Bearer token
+function authHeaders(token) {
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -10,7 +31,7 @@ export const useAuthStore = defineStore("auth", {
     kelas: null,
     nama: null,
     token: typeof localStorage !== 'undefined' ? localStorage.getItem('gaskan_jwt_token') || null : null,
-    useProxy: false, // Default: false (Direct Real API mode for maximum speed & stability)
+    useProxy: false, // Global system setting — synced from database on login
     initialized: false,
     userData: null,
     userLoading: false,
@@ -49,9 +70,12 @@ export const useAuthStore = defineStore("auth", {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('gaskan_use_proxy', String(newValue));
       }
+      // Persist to database so ALL users pick it up on next load
       try {
-        await $fetch('/api/system/settings', {
+        const base = getApiBase(false); // always use direct for settings save
+        await $fetch(`${base}/api/system/settings`, {
           method: 'POST',
+          headers: authHeaders(this.token),
           body: { useProxy: newValue }
         });
         console.log('[SYSTEM PROXY SETTING SAVED TO DATABASE]:', newValue);
@@ -62,25 +86,33 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async fetchSystemSettings() {
+      // Fetch useProxy value from database and sync to store
       try {
-        const res = await $fetch('/api/system/settings');
+        const base = getApiBase(false); // always direct for system settings
+        const res = await $fetch(`${base}/api/system/settings`, {
+          headers: authHeaders(this.token),
+        });
         if (res?.success && res.data?.useProxy !== undefined) {
           this.useProxy = Boolean(res.data.useProxy);
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('gaskan_use_proxy', String(this.useProxy));
           }
+          console.log('[SYSTEM SETTINGS SYNCED] useProxy =', this.useProxy);
         }
       } catch (err) {
-        // Fallback silently if unauthenticated
+        // Fallback silently
       }
     },
 
     async refreshSession() {
       try {
-        const sessionFetch = $fetch;
-        const data = await sessionFetch("/api/auth/me");
+        const base = getApiBase(this.useProxy);
+        const data = await $fetch(`${base}/api/auth/me`, {
+          headers: authHeaders(this.token),
+        });
         this.setSessionUser(data.user, data.token);
         this.initialized = true;
+        // Sync proxy setting from DB in background (non-blocking)
         this.fetchSystemSettings();
         return data.user;
       } catch (error) {
@@ -96,8 +128,10 @@ export const useAuthStore = defineStore("auth", {
 
       this.userLoading = true;
       try {
-        const sessionFetch = $fetch;
-        const data = await sessionFetch("/api/user");
+        const base = getApiBase(this.useProxy);
+        const data = await $fetch(`${base}/api/user`, {
+          headers: authHeaders(this.token),
+        });
         this.userData = data;
         return data;
       } catch (error) {
@@ -110,18 +144,18 @@ export const useAuthStore = defineStore("auth", {
 
     async authenticateUser({ NIS, Password, force }) {
       try {
-        const data = await $fetch("/api/auth/login", {
+        // Login ALWAYS goes directly to real backend (no proxy for auth)
+        const base = getApiBase(false);
+        const data = await $fetch(`${base}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: {
-            NIS,
-            Password,
-            force,
-          },
+          body: { NIS, Password, force },
         });
 
         if (data?.user) {
           this.setSessionUser(data.user, data.token);
+          // After login, sync proxy setting from DB
+          this.fetchSystemSettings();
         }
       } catch (error) {
         this.loading = false;
@@ -133,15 +167,15 @@ export const useAuthStore = defineStore("auth", {
 
     async logUserOut() {
       try {
-        // Panggil endpoint logout secara synchronous (ditunggu) agar cookie terhapus sebelum redirect
-        await $fetch("/api/auth/logout", { method: "POST" }).catch((err) => {
+        const base = getApiBase(false);
+        await $fetch(`${base}/api/auth/logout`, {
+          method: "POST",
+          headers: authHeaders(this.token),
+        }).catch((err) => {
           console.error("Logout API error:", err);
         });
       } finally {
-        // Bersihkan state di Pinia
         this.clearSessionUser();
-        
-        // Redirect ke halaman login
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
