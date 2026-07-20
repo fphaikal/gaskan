@@ -579,7 +579,7 @@ const handleExcelReshuffle = async () => {
         </div>
 
         <button 
-          @click="openWebConfirm"
+          @click="handleWebReshuffle"
           :disabled="submitting || !targetClassId"
           class="btn btn-primary btn-sm rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2 w-full sm:w-auto"
         >
@@ -667,7 +667,7 @@ const handleExcelReshuffle = async () => {
               Preview Data Excel ({{ excelRows.length }} Siswa Terbaca)
             </h4>
             <button 
-              @click="openExcelConfirm" 
+              @click="handleExcelReshuffle" 
               :disabled="submitting"
               class="btn btn-emerald bg-emerald-500 hover:bg-emerald-600 text-black border-0 btn-sm rounded-2xl font-black gap-2 shadow-lg shadow-emerald-500/20"
             >
