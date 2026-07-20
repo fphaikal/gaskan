@@ -107,6 +107,14 @@ const confirmMessage = ref('');
 const confirmDetails = ref(null);
 const pendingAction = ref(null);
 
+// Progress Modal state
+const showProgressModal = ref(false);
+const progressTitle = ref('');
+const progressSubtitle = ref('');
+const progressTotal = ref(0);
+const progressCurrent = ref(0);
+const progressPercent = ref(0);
+
 const executeConfirmAction = async () => {
   if (pendingAction.value) {
     const action = pendingAction.value;
