@@ -28,12 +28,16 @@ const excelRows = ref([]);
 const excelParsing = ref(false);
 const excelTemplateClassId = ref('');
 
+const fetchClasses = async () => {
+  const classRes = await $fetch('/api/classes').catch(() => null);
+  classes.value = classRes?.data || classRes || [];
+};
+
 // Fetch all classes & initial students
 const fetchData = async () => {
   loading.value = true;
   try {
-    const classRes = await $fetch('/api/classes').catch(() => null);
-    classes.value = classRes?.data || classRes || [];
+    await fetchClasses();
     
     if (classes.value.length > 0 && !sourceClassId.value) {
       sourceClassId.value = classes.value[0].id;
@@ -180,6 +184,7 @@ const handleWebReshuffle = async () => {
       showProgressModal.value = false;
       $toast.success(res?.message || 'Reshuffle siswa berhasil');
       selectedStudentIds.value = [];
+      await fetchClasses();
       await fetchSourceStudents();
     }, 400);
   } catch (e) {
@@ -298,6 +303,7 @@ const handleExcelReshuffle = async () => {
       $toast.success(`Reshuffle Excel selesai. ${totalRows} data siswa berhasil dipindahkan.`);
       excelRows.value = [];
       excelFile.value = null;
+      await fetchClasses();
       await fetchSourceStudents();
     }, 400);
   } catch (e) {
