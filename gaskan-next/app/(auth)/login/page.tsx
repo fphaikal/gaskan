@@ -30,57 +30,45 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorData(null);
 
-    // Exact payload matching Nuxt useAuthStore.js: { NIS, Password, force }
-    const nuxtPayload = {
-      NIS: identifier,
+    // Payload containing both standard backend Zod keys (identifier, password)
+    // and Nuxt legacy keys (NIS, Password, force) for maximum compatibility.
+    const loginPayload = {
+      identifier: identifier.trim(),
+      password: password,
+      NIS: identifier.trim(),
       Password: password,
       force: force,
     };
 
     try {
-      let token: string | null = null;
-      let userData: any = null;
       let resData: any = null;
 
       try {
-        // Primary Nuxt route: /api/auth/login
-        const response = await api.post('/api/auth/login', nuxtPayload);
+        const response = await api.post('/auth/login', loginPayload);
         resData = response.data;
       } catch (err1: any) {
-        // Secondary route fallbacks: /auth/login or /api/login
-        if (err1?.response?.status === 404) {
-          try {
-            const fallbackRes = await api.post('/auth/login', {
-              identifier: identifier,
-              password: password,
-            });
-            resData = fallbackRes.data;
-          } catch (err2: any) {
-            const legacyRes = await api.post('/api/login', nuxtPayload);
-            resData = legacyRes.data;
-          }
+        if (err1?.response?.status === 404 || !err1?.response) {
+          const fallbackRes = await api.post('/login', loginPayload);
+          resData = fallbackRes.data;
         } else {
           throw err1;
         }
       }
 
-      // Extract token and user matching backend response structure
-      if (resData) {
-        token =
-          resData?.token ||
-          resData?.data?.token ||
-          resData?.sessionId ||
-          resData?.access_token ||
-          'session_' + Date.now();
+      const token =
+        resData?.token ||
+        resData?.data?.token ||
+        resData?.sessionId ||
+        resData?.access_token ||
+        'session_' + Date.now();
 
-        userData = resData?.user || resData?.data?.user || resData?.data || {
-          id: resData?.NIS || identifier,
-          nis: resData?.NIS || identifier,
-          name: resData?.Nama || resData?.name || identifier,
-          role: (resData?.Kelas || resData?.role || 'siswa').toLowerCase(),
-          email: identifier.includes('@') ? identifier : `${identifier}@smtijogja.sch.id`,
-        };
-      }
+      const userData = resData?.user || resData?.data?.user || resData?.data || {
+        id: resData?.NIS || identifier,
+        nis: resData?.NIS || identifier,
+        name: resData?.Nama || resData?.name || identifier,
+        role: (resData?.Kelas || resData?.role || 'siswa').toLowerCase(),
+        email: identifier.includes('@') ? identifier : `${identifier}@smtijogja.sch.id`,
+      };
 
       if (token && userData) {
         const formattedUser = {
@@ -98,17 +86,21 @@ export default function LoginPage() {
         throw new Error('Respon login dari server tidak valid');
       }
     } catch (err: any) {
-      console.error('[LOGIN] API error:', err?.response?.data || err);
+      console.error('[LOGIN] Error:', err);
 
       const errResponseData = err?.response?.data;
       const statusCode = err?.response?.status;
       
-      const apiMessage =
-        errResponseData?.message ||
-        errResponseData?.error ||
-        errResponseData?.data?.message ||
-        (typeof errResponseData === 'string' ? errResponseData : null) ||
-        'NIS/Email atau password yang Anda masukkan salah.';
+      let apiMessage = 'NIS/Email atau password yang Anda masukkan salah.';
+      if (err?.code === 'ERR_NETWORK' || !err?.response) {
+        apiMessage = 'Tidak dapat terhubung ke server backend (Network Error). Silakan periksa koneksi internet Anda.';
+      } else if (errResponseData?.message) {
+        apiMessage = errResponseData.message;
+      } else if (errResponseData?.error) {
+        apiMessage = errResponseData.error;
+      } else if (errResponseData?.errors?.identifier) {
+        apiMessage = errResponseData.errors.identifier[0];
+      }
 
       const canForceLogin = statusCode === 400 || errResponseData?.code === 400 || errResponseData?.forceAvailable;
 
