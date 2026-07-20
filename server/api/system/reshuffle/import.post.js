@@ -1,11 +1,16 @@
 import { defineEventHandler, readBody } from 'h3';
-import { requireRole } from '~/server/utils/auth';
+import { requireRole, getUpstreamAuthHeaders, readUpstreamJson } from '~/server/utils/auth';
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['admin', 'developer']);
+  const session = requireRole(event, ['admin', 'developer']);
+  const config = useRuntimeConfig();
+
   const body = await readBody(event);
-  return await fetchBackend(event, '/api/system/reshuffle/import', {
+  const res = await fetch(`${config.public.apiBase}/api/system/reshuffle/import`, {
     method: 'POST',
-    body
+    headers: getUpstreamAuthHeaders(session, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify(body),
   });
+
+  return readUpstreamJson(res);
 });
