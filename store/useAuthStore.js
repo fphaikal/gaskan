@@ -9,17 +9,25 @@ export const useAuthStore = defineStore("auth", {
     role: null,
     kelas: null,
     nama: null,
+    token: typeof localStorage !== 'undefined' ? localStorage.getItem('gaskan_jwt_token') || null : null,
+    useProxy: typeof localStorage !== 'undefined' ? localStorage.getItem('gaskan_use_proxy') === 'true' : false, // Default: false (Direct Real API mode for max speed)
     initialized: false,
     userData: null,
     userLoading: false,
   }),
   actions: {
-    setSessionUser(user) {
+    setSessionUser(user, token = null) {
       this.authenticated = true;
       this.nis = user?.nis || null;
       this.role = user?.role || null;
       this.kelas = user?.kelas || null;
       this.nama = user?.nama || null;
+      if (token) {
+        this.token = token;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('gaskan_jwt_token', token);
+        }
+      }
     },
 
     clearSessionUser() {
@@ -28,14 +36,26 @@ export const useAuthStore = defineStore("auth", {
       this.role = null;
       this.kelas = null;
       this.nama = null;
+      this.token = null;
       this.userData = null;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('gaskan_jwt_token');
+      }
+    },
+
+    toggleProxy(value) {
+      this.useProxy = value !== undefined ? Boolean(value) : !this.useProxy;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('gaskan_use_proxy', String(this.useProxy));
+      }
+      return this.useProxy;
     },
 
     async refreshSession() {
       try {
         const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
         const data = await sessionFetch("/api/auth/me");
-        this.setSessionUser(data.user);
+        this.setSessionUser(data.user, data.token);
         this.initialized = true;
         return data.user;
       } catch (error) {
@@ -76,7 +96,7 @@ export const useAuthStore = defineStore("auth", {
         });
 
         if (data?.user) {
-          this.setSessionUser(data.user);
+          this.setSessionUser(data.user, data.token);
         }
       } catch (error) {
         this.loading = false;

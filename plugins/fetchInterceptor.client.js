@@ -1,36 +1,58 @@
 import { useAuthStore } from '~/store/useAuthStore';
 
 export default defineNuxtPlugin((nuxtApp) => {
-  // Simpan instance $fetch bawaan Nuxt
   const originalFetch = globalThis.$fetch;
+  const config = useRuntimeConfig();
+  const rawApiBase = config.public.apiBase || 'http://localhost:5000';
+  const apiBase = rawApiBase.replace(/\/+$/, '');
 
-  // Timpa dengan wrapper interceptor
-  globalThis.$fetch = async (...args) => {
+  globalThis.$fetch = async (request, opts = {}) => {
+    const authStore = useAuthStore();
+    
+    // Determine whether to use proxy or direct real API
+    let useProxy = authStore.useProxy;
+    if (typeof localStorage !== 'undefined') {
+      const storedProxy = localStorage.getItem('gaskan_use_proxy');
+      if (storedProxy !== null) {
+        useProxy = storedProxy === 'true';
+      }
+    }
+
+    let targetRequest = request;
+    let options = { ...opts };
+
+    // Direct Real API Mode: rewrite /api/... to direct backend URL
+    // Exclude /api/auth/login and /api/auth/logout which set Nitro session cookies
+    if (!useProxy && typeof request === 'string' && request.startsWith('/api/') && !request.startsWith('/api/auth/login') && !request.startsWith('/api/auth/logout')) {
+      targetRequest = `${apiBase}${request}`;
+
+      const token = authStore.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('gaskan_jwt_token') : null);
+      if (token) {
+        options.headers = {
+          ...options.headers,
+          Authorization: `Bearer ${token}`,
+        };
+      }
+    }
+
     try {
-      // Jalankan request normal
-      return await originalFetch(...args);
+      return await originalFetch(targetRequest, options);
     } catch (error) {
-      // Tangkap error jika statusnya 401 Unauthorized
-      const requestUrl = typeof args[0] === 'string' ? args[0] : '';
+      const requestUrl = typeof targetRequest === 'string' ? targetRequest : '';
       const isTestConnection = requestUrl.includes('test-connection');
 
       if (error.response && error.response.status === 401 && !isTestConnection) {
         const router = useRouter();
         
-        // Pastikan kita tidak mencegat 401 di halaman login (misal saat salah password)
         if (router.currentRoute.value.path !== '/login') {
           console.warn('Sesi habis (401 terdeteksi), mengarahkan ke halaman login...');
-          
-          // Bersihkan data sesi client. Session sebenarnya ada di cookie HttpOnly.
           useAuthStore().clearSessionUser();
-          
-          // Redirect ke login
           router.push('/login');
         }
       }
       
-      // Lempar kembali errornya agar komponen yang memanggil (seperti useFetch) tetap bisa menanganinya
       throw error;
     }
   };
 });
+
