@@ -276,7 +276,7 @@ const handleExcelReshuffle = async () => {
             class="select select-bordered select-sm w-full rounded-2xl font-bold text-xs focus:select-primary"
           >
             <option v-for="c in classes" :key="c.id" :value="c.id">
-              {{ c.className }} ({{ c._count?.students || 0 }} siswa)
+              {{ c.className }} ({{ c._count?.users ?? c._count?.students ?? c.studentCount ?? 0 }} siswa)
             </option>
           </select>
         </div>
