@@ -801,9 +801,6 @@ const handleExcelReshuffle = async () => {
           </div>
         </div>
       </Transition>
-          </div>
-        </div>
-      </Transition>
     </Teleport>
 
     <!-- SUMMARY MODAL AFTER RESHUFFLE -->
