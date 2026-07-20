@@ -10,7 +10,14 @@ import { id as localeId } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
+
+const getImageUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 export default function HomePage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -25,6 +32,7 @@ export default function HomePage() {
   const [systemStats, setSystemStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'attendance' | 'failures'>('attendance');
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
+  const [activePreviewImage, setActivePreviewImage] = useState<string | null>(null);
 
   // Table Filters & Pagination
   const [searchQuery, setSearchQuery] = useState('');
@@ -400,70 +408,80 @@ export default function HomePage() {
                       </div>
                     ) : (
                       <div className="divide-y divide-border">
-                        {paginatedAttendances.map((a: any) => (
-                          <div
-                            key={a.id}
-                            onClick={() => setSelectedAttendance(a)}
-                            className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors cursor-pointer group"
-                          >
-                            {/* Student Avatar + Name */}
-                            <div className="col-span-4 flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-xl overflow-hidden bg-primary/10 border border-border shrink-0 flex items-center justify-center font-bold text-xs shadow-inner">
-                                {a.photoUrl ? (
-                                  <img src={a.photoUrl} alt={a.studentName} className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className={`w-full h-full flex items-center justify-center font-bold text-xs ${avatarColor(a.studentName)}`}>
-                                    {a.studentName?.charAt(0)}
-                                  </div>
-                                )}
+                        {paginatedAttendances.map((a: any) => {
+                          const photoSrc = getImageUrl(a.photoUrl || a.user?.photoUrl);
+                          return (
+                            <div
+                              key={a.id}
+                              onClick={() => setSelectedAttendance(a)}
+                              className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors cursor-pointer group"
+                            >
+                              {/* Student Avatar + Name */}
+                              <div className="col-span-4 flex items-center gap-3 min-w-0">
+                                <div className="w-9 h-9 rounded-xl overflow-hidden bg-primary/10 border border-border shrink-0 flex items-center justify-center font-bold text-xs shadow-inner">
+                                  {photoSrc ? (
+                                    <img
+                                      src={photoSrc}
+                                      alt={a.studentName}
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                      onError={(e: any) => {
+                                        e.target.style.display = 'none';
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className={`w-full h-full flex items-center justify-center font-bold text-xs ${avatarColor(a.studentName)}`}>
+                                      {a.studentName?.charAt(0)}
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                                  {a.studentName}
+                                </span>
                               </div>
-                              <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                                {a.studentName}
-                              </span>
-                            </div>
 
-                            {/* Class / Major */}
-                            <div className="col-span-3 min-w-0">
-                              <p className="text-xs font-bold text-foreground truncate">{a.className || '—'}</p>
-                              <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">
-                                {a.majorName || 'TEKNIK MEKATRONIKA'}
-                              </p>
-                            </div>
-
-                            {/* Time: IN & OUT */}
-                            <div className="col-span-2 flex flex-col justify-center min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-black uppercase text-emerald-500">IN</span>
-                                <span className="text-xs font-mono font-bold">{formatTime(a.time)}</span>
+                              {/* Class / Major */}
+                              <div className="col-span-3 min-w-0">
+                                <p className="text-xs font-bold text-foreground truncate">{a.className || '—'}</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">
+                                  {a.majorName || 'Umum'}
+                                </p>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-black uppercase text-rose-500">OUT</span>
-                                <span className="text-xs font-mono font-bold text-muted-foreground">
-                                  {a.lastOutTime || a.checkOutTime ? formatTime(a.lastOutTime || a.checkOutTime) : '-'}
+
+                              {/* Time: IN & OUT */}
+                              <div className="col-span-2 flex flex-col justify-center min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] font-black uppercase text-emerald-500">IN</span>
+                                  <span className="text-xs font-mono font-bold">{formatTime(a.time)}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] font-black uppercase text-rose-500">OUT</span>
+                                  <span className="text-xs font-mono font-bold text-muted-foreground">
+                                    {a.lastOutTime || a.checkOutTime ? formatTime(a.lastOutTime || a.checkOutTime) : '-'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Method */}
+                              <div className="col-span-2 flex items-center gap-1.5">
+                                <Icon icon={methodLabel(a.method).icon} className={`text-base ${methodLabel(a.method).color}`} />
+                                <span className={`text-[10px] font-bold ${methodLabel(a.method).color}`}>
+                                  {methodLabel(a.method).label}
+                                </span>
+                              </div>
+
+                              {/* Status Badge */}
+                              <div className="col-span-1 flex justify-end">
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
+                                    getStatus(a.status).badge
+                                  }`}
+                                >
+                                  {a.status === 'TERLAMBAT' ? 'LAMBAT' : a.status}
                                 </span>
                               </div>
                             </div>
-
-                            {/* Method */}
-                            <div className="col-span-2 flex items-center gap-1.5">
-                              <Icon icon={methodLabel(a.method).icon} className={`text-base ${methodLabel(a.method).color}`} />
-                              <span className={`text-[10px] font-bold ${methodLabel(a.method).color}`}>
-                                {methodLabel(a.method).label}
-                              </span>
-                            </div>
-
-                            {/* Status Badge */}
-                            <div className="col-span-1 flex justify-end">
-                              <span
-                                className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
-                                  getStatus(a.status).badge
-                                }`}
-                              >
-                                {a.status === 'TERLAMBAT' ? 'LAMBAT' : a.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -529,28 +547,38 @@ export default function HomePage() {
                     </div>
                   ) : (
                     <div className="divide-y divide-border">
-                      {recentFaceFailures.map((f: any) => (
-                        <div
-                          key={f.id}
-                          className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-rose-500/5 transition-colors"
-                        >
-                          <div className="col-span-2 flex items-center">
-                            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
-                              <Icon icon="mingcute:user-close-line" className="text-xl" />
+                      {recentFaceFailures.map((f: any) => {
+                        const failureImg = getImageUrl(f.image);
+                        return (
+                          <div
+                            key={f.id}
+                            className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-rose-500/5 transition-colors"
+                          >
+                            <div className="col-span-2 flex items-center">
+                              <div
+                                className="w-10 h-10 rounded-xl overflow-hidden bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => failureImg && setActivePreviewImage(failureImg)}
+                              >
+                                {failureImg ? (
+                                  <img src={failureImg} alt="Capture" className="w-full h-full object-cover" />
+                                ) : (
+                                  <Icon icon="mingcute:user-close-line" className="text-xl" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="col-span-4 min-w-0">
+                              <p className="text-sm font-bold text-rose-500 truncate">{f.identifier}</p>
+                              <p className="text-[10px] text-muted-foreground">{f.message}</p>
+                            </div>
+                            <div className="col-span-3">
+                              <p className="text-xs font-semibold">{f.gate || 'Gerbang Utama SMTI'}</p>
+                            </div>
+                            <div className="col-span-3 text-right">
+                              <p className="text-xs font-mono font-bold">{formatTime(f.timestamp)}</p>
                             </div>
                           </div>
-                          <div className="col-span-4 min-w-0">
-                            <p className="text-sm font-bold text-rose-500 truncate">{f.identifier}</p>
-                            <p className="text-[10px] text-muted-foreground">{f.message}</p>
-                          </div>
-                          <div className="col-span-3">
-                            <p className="text-xs font-semibold">{f.gate || 'Gerbang Utama SMTI'}</p>
-                          </div>
-                          <div className="col-span-3 text-right">
-                            <p className="text-xs font-mono font-bold">{formatTime(f.timestamp)}</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -646,41 +674,168 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Attendance Detail Dialog Modal */}
+        {/* ═══ NUXXT MATCHING DETAIL MODAL ═══ */}
         {selectedAttendance && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedAttendance(null)}>
-            <div className="bg-card rounded-3xl border border-border shadow-2xl w-full max-w-md p-6 space-y-4 relative" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div>
-                  <h3 className="text-lg font-bold">{selectedAttendance.studentName}</h3>
-                  <p className="text-xs text-muted-foreground">{selectedAttendance.className} · {selectedAttendance.majorName}</p>
+            <div className="bg-card rounded-[2rem] border border-border shadow-2xl w-full max-w-md overflow-hidden z-10 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="p-6 border-b border-border flex items-center justify-between bg-muted/20">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-border shrink-0 shadow-inner cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => {
+                      const photo = getImageUrl(selectedAttendance.photoUrl);
+                      if (photo) setActivePreviewImage(photo);
+                    }}
+                  >
+                    {selectedAttendance.photoUrl ? (
+                      <img src={getImageUrl(selectedAttendance.photoUrl)} alt={selectedAttendance.studentName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center text-xl font-black ${avatarColor(selectedAttendance.studentName)}`}>
+                        {selectedAttendance.studentName?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-foreground">{selectedAttendance.studentName}</h3>
+                    <p className="text-xs text-muted-foreground font-bold">{selectedAttendance.className || 'Belum ada kelas'} · {selectedAttendance.majorName || 'Umum'}</p>
+                  </div>
                 </div>
                 <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setSelectedAttendance(null)}>
-                  ✕
+                  <Icon icon="mingcute:close-line" className="text-xl" />
                 </Button>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/50">
-                  <span className="text-xs font-semibold text-muted-foreground">Status Kehadiran</span>
-                  <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase border ${getStatus(selectedAttendance.status).badge}`}>
+              {/* Modal Body */}
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {/* Status Badge */}
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/40 border border-border/50">
+                  <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Status Kehadiran</span>
+                  <div className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border ${getStatus(selectedAttendance.status).badge}`}>
                     {selectedAttendance.status}
-                  </span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-xs py-1">
-                  <span className="text-muted-foreground">Waktu Masuk</span>
-                  <span className="font-bold">{formatFull(selectedAttendance.time)}</span>
+
+                {/* Detail rows */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Icon icon="mingcute:time-fill" className="text-base" />
+                      <span className="font-bold">Waktu Masuk</span>
+                    </div>
+                    <span className="font-mono font-bold text-foreground">{formatFull(selectedAttendance.time)}</span>
+                  </div>
+
+                  {(selectedAttendance.lastOutTime || selectedAttendance.checkOutTime) && (
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Icon icon="mingcute:time-fill" className="text-base text-rose-500" />
+                        <span className="font-bold">Waktu Pulang</span>
+                      </div>
+                      <span className="font-mono font-bold text-foreground">{formatFull(selectedAttendance.lastOutTime || selectedAttendance.checkOutTime)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Icon icon={methodLabel(selectedAttendance.method).icon} className="text-base" />
+                      <span className="font-bold">Metode Tap</span>
+                    </div>
+                    <span className={`font-bold ${methodLabel(selectedAttendance.method).color}`}>
+                      {methodLabel(selectedAttendance.method).label}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Icon icon="mingcute:school-line" className="text-base" />
+                      <span className="font-bold">Kelas</span>
+                    </div>
+                    <span className="font-bold text-foreground">{selectedAttendance.className || '—'}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Icon icon="mingcute:building-4-line" className="text-base" />
+                      <span className="font-bold">Jurusan</span>
+                    </div>
+                    <span className="font-bold text-foreground">{selectedAttendance.majorName || '—'}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-xs py-1">
-                  <span className="text-muted-foreground">Metode Tap</span>
-                  <span className="font-bold">{methodLabel(selectedAttendance.method).label}</span>
-                </div>
+
+                {/* Detailed Scan Logs with Captured Photos */}
+                {selectedAttendance.logs && selectedAttendance.logs.length > 0 && (
+                  <div className="pt-4 border-t border-border space-y-3">
+                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Detail Scan Wajah & Foto</h4>
+                    <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                      {selectedAttendance.logs.map((log: any) => {
+                        const logPhoto = getImageUrl(log.notes || selectedAttendance.photoUrl);
+                        return (
+                          <div key={log.id} className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/60 transition-colors">
+                            <div
+                              className="w-12 h-12 rounded-xl overflow-hidden bg-muted border border-border shrink-0 shadow-inner relative cursor-pointer hover:scale-105 transition-transform"
+                              onClick={() => logPhoto && setActivePreviewImage(logPhoto)}
+                            >
+                              {logPhoto ? (
+                                <img src={logPhoto} alt="scan" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-primary/10 text-primary">
+                                  Scan
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-mono font-bold">{formatTime(log.timestamp)}</span>
+                                <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase border ${getStatus(log.status).badge}`}>
+                                  {log.status}
+                                </span>
+                              </div>
+                              {log.gate && (
+                                <p className="text-[9px] font-bold text-muted-foreground truncate mt-0.5 flex items-center gap-1">
+                                  <Icon icon="mingcute:location-fill" className="text-primary text-xs shrink-0" />
+                                  {log.gate}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <Button className="w-full rounded-2xl font-bold" onClick={() => setSelectedAttendance(null)}>
-                Tutup
-              </Button>
+              {/* Modal Footer */}
+              <div className="p-6 pt-0 flex gap-3">
+                <Button variant="outline" className="flex-1 rounded-2xl font-bold" onClick={() => setSelectedAttendance(null)}>
+                  Tutup
+                </Button>
+                <Link href="/absensi" className="flex-1">
+                  <Button className="w-full rounded-2xl font-bold bg-primary text-primary-foreground hover:bg-primary/90">
+                    Lihat Semua Absensi
+                  </Button>
+                </Link>
+              </div>
             </div>
+          </div>
+        )}
+
+        {/* ═══ IMAGE PREVIEW MODAL (LIGHTBOX) ═══ */}
+        {activePreviewImage && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md animate-in fade-in duration-200" onClick={() => setActivePreviewImage(null)}>
+            <button
+              className="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors p-2 rounded-full bg-white/10 hover:bg-white/20"
+              onClick={() => setActivePreviewImage(null)}
+            >
+              <Icon icon="mingcute:close-line" className="text-2xl" />
+            </button>
+            <img
+              src={activePreviewImage}
+              alt="Preview"
+              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/20"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
       </div>

@@ -1,11 +1,20 @@
 import type { NextConfig } from "next";
-import path from "path";
 
-const targetApi = process.env.NEXT_PUBLIC_API_BASE || "";
+const targetApi = process.env.NEXT_PUBLIC_API_BASE || "https://api.tierkun.my.id";
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: path.resolve(__dirname),
+  reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.tierkun.my.id',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
   },
   async rewrites() {
     if (!targetApi) return [];
@@ -13,6 +22,14 @@ const nextConfig: NextConfig = {
       {
         source: "/api/:path*",
         destination: `${targetApi}/api/:path*`,
+      },
+      {
+        source: "/uploads/:path*",
+        destination: `${targetApi}/uploads/:path*`,
+      },
+      {
+        source: "/file/:path*",
+        destination: `${targetApi}/file/:path*`,
       },
     ];
   },
