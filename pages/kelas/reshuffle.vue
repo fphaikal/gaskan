@@ -184,10 +184,23 @@ const handleFileUpload = (event) => {
   reader.readAsArrayBuffer(file);
 };
 
+const excelTargetClassId = ref('');
+
 // Submit Excel Reshuffle
 const handleExcelReshuffle = async () => {
+  if (!excelTargetClassId.value) {
+    $toast.error('Harap pilih Kelas Tujuan terlebih dahulu');
+    return;
+  }
   if (excelRows.value.length === 0) {
     $toast.error('Belum ada data Excel yang diunggah');
+    return;
+  }
+
+  const targetClassObj = classes.value.find((c) => c.id === excelTargetClassId.value);
+  const targetClassName = targetClassObj?.className || 'Kelas Tujuan';
+
+  if (!confirm(`Konfirmasi: Terapkan ${excelRows.value.length} baris data Excel ke kelas "${targetClassName}"?`)) {
     return;
   }
 
@@ -195,7 +208,10 @@ const handleExcelReshuffle = async () => {
   try {
     const res = await $fetch('/api/system/reshuffle/import', {
       method: 'POST',
-      body: { rows: excelRows.value }
+      body: { 
+        targetClassId: excelTargetClassId.value,
+        rows: excelRows.value 
+      }
     });
 
     $toast.success(res?.message || 'Proses reshuffle dari Excel selesai');
@@ -458,9 +474,19 @@ const handleExcelReshuffle = async () => {
 
       <!-- Step 2: Upload Excel -->
       <div class="bg-base-100 p-6 rounded-3xl border border-base-200 shadow-sm space-y-4">
-        <div class="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
-          <Icon name="mingcute:upload-3-fill" size="16" />
-          Langkah 2: Unggah File Excel Hasil Edit
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
+            <Icon name="mingcute:upload-3-fill" size="16" />
+            Langkah 2: Pilih Kelas Tujuan & Unggah File Excel
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-base-content/60 shrink-0">Kelas Tujuan:</label>
+            <select v-model="excelTargetClassId" class="select select-bordered select-sm rounded-2xl font-bold text-xs focus:select-primary">
+              <option value="" disabled>-- Pilih Kelas Tujuan --</option>
+              <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
+            </select>
+          </div>
         </div>
 
         <div class="border-2 border-dashed border-base-300 rounded-3xl p-8 text-center hover:border-primary transition-colors cursor-pointer relative bg-base-200/20">
@@ -478,7 +504,7 @@ const handleExcelReshuffle = async () => {
               {{ excelFile ? excelFile.name : 'Klik atau drag & drop file Excel reshuffle (.xlsx) di sini' }}
             </h4>
             <p class="text-xs text-base-content/50">
-              Format kolom otomatis dibaca: ID Siswa/NIS, Kelas Tujuan, Rombel
+              Format 4 Kolom Terbaca: <strong>No</strong> (Absen), <strong>NIS</strong>, <strong>Nama</strong>, <strong>Rombel</strong>
             </p>
           </div>
         </div>
