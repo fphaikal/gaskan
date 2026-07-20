@@ -10,6 +10,7 @@ import { id as localeId } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 export default function HomePage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -25,6 +26,14 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'attendance' | 'failures'>('attendance');
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
 
+  // Table Filters & Pagination
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [classList, setClassList] = useState<any[]>([]);
+
   // State for Siswa
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -33,9 +42,10 @@ export default function HomePage() {
   // Fetch Admin / Dev Data
   const fetchAdminData = useCallback(async () => {
     try {
-      const [countRes, loginRes] = await Promise.allSettled([
+      const [countRes, loginRes, classRes] = await Promise.allSettled([
         api.get('/count'),
         api.get('/log/login'),
+        api.get('/classes'),
       ]);
 
       if (countRes.status === 'fulfilled' && countRes.value?.data) {
@@ -43,6 +53,10 @@ export default function HomePage() {
       }
       if (loginRes.status === 'fulfilled' && loginRes.value?.data) {
         setLoginLogs(Array.isArray(loginRes.value.data) ? loginRes.value.data : []);
+      }
+      if (classRes.status === 'fulfilled' && classRes.value?.data) {
+        const classesData = classRes.value.data?.data || classRes.value.data || [];
+        if (Array.isArray(classesData)) setClassList(classesData);
       }
     } catch (e) {
       console.error('Failed to fetch admin dashboard data:', e);
@@ -110,9 +124,9 @@ export default function HomePage() {
   const formatFull = (ts?: string) => (ts ? format(parseISO(ts), 'EEEE, d MMM yyyy · HH:mm', { locale: localeId }) : '-');
 
   const methodLabel = (m: string) => {
-    if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:faceid-line', color: 'text-primary' };
-    if (m === 'QR_CODE') return { label: 'QR Code', icon: 'mingcute:qrcode-2-line', color: 'text-blue-500' };
-    return { label: 'Manual', icon: 'mingcute:edit-2-line', color: 'text-muted-foreground' };
+    if (m === 'FACE_RECOGNITION') return { label: 'FACE ID', icon: 'mingcute:faceid-line', color: 'text-primary' };
+    if (m === 'QR_CODE') return { label: 'QR CODE', icon: 'mingcute:qrcode-2-line', color: 'text-blue-500' };
+    return { label: 'MANUAL', icon: 'mingcute:edit-2-line', color: 'text-muted-foreground' };
   };
 
   const getStatus = (s: string) => {
@@ -120,6 +134,7 @@ export default function HomePage() {
       case 'HADIR':
         return { color: 'text-emerald-500', badge: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' };
       case 'TERLAMBAT':
+      case 'LAMBAT':
         return { color: 'text-amber-500', badge: 'bg-amber-500/10 border-amber-500/30 text-amber-500' };
       case 'IZIN':
         return { color: 'text-sky-500', badge: 'bg-sky-500/10 border-sky-500/30 text-sky-500' };
@@ -140,9 +155,32 @@ export default function HomePage() {
   ];
   const avatarColor = (name?: string) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
-  // Strictly real data from API response
-  const recentAttendances: any[] = countData?.recentAttendances || [];
+  // Raw API Data
+  const rawAttendances: any[] = countData?.recentAttendances || [];
   const recentFaceFailures: any[] = countData?.recentFaceFailures || [];
+
+  // Filtered & Paginated Attendances
+  const filteredAttendances = useMemo(() => {
+    return rawAttendances.filter((a) => {
+      const nameMatch = (a.studentName || '').toLowerCase().includes(searchQuery.toLowerCase()) || (a.nis || '').includes(searchQuery);
+      const classMatch = !selectedClass || a.classId === selectedClass || a.className === selectedClass;
+      
+      let statusMatch = true;
+      if (statusFilter === 'HADIR') statusMatch = a.status === 'HADIR';
+      else if (statusFilter === 'LAMBAT') statusMatch = a.status === 'TERLAMBAT' || a.status === 'LAMBAT';
+      else if (statusFilter === 'IZIN') statusMatch = a.status === 'IZIN' || a.status === 'SAKIT';
+      else if (statusFilter === 'BELUM') statusMatch = a.status === 'ALPHA' || a.status === 'BELUM';
+
+      return nameMatch && classMatch && statusMatch;
+    });
+  }, [rawAttendances, searchQuery, selectedClass, statusFilter]);
+
+  const totalAttendances = filteredAttendances.length;
+  const totalPages = Math.max(1, Math.ceil(totalAttendances / itemsPerPage));
+  const paginatedAttendances = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAttendances.slice(start, start + itemsPerPage);
+  }, [filteredAttendances, currentPage, itemsPerPage]);
 
   if (authLoading) {
     return (
@@ -233,8 +271,9 @@ export default function HomePage() {
 
         {/* ROW 2: Activity Table + Right Sidebar */}
         <div className="grid grid-cols-12 gap-6">
-          {/* Main Activity Table */}
+          {/* Main Activity Table Card */}
           <div className="col-span-12 lg:col-span-8 bg-card rounded-3xl border border-border shadow-sm flex flex-col overflow-hidden">
+            {/* Header Tabs */}
             <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-6">
                 <button
@@ -247,9 +286,9 @@ export default function HomePage() {
                   }`}
                 >
                   Aktivitas Absensi
-                  <Badge variant="secondary" className="font-mono text-[10px]">
-                    {recentAttendances.length}
-                  </Badge>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary">
+                    {rawAttendances.length}
+                  </span>
                 </button>
 
                 <button
@@ -262,9 +301,9 @@ export default function HomePage() {
                   }`}
                 >
                   Gagal Deteksi Wajah
-                  <Badge variant="secondary" className="font-mono text-[10px]">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-500">
                     {recentFaceFailures.length}
-                  </Badge>
+                  </span>
                 </button>
               </div>
 
@@ -278,73 +317,205 @@ export default function HomePage() {
 
             {/* Attendance Tab */}
             {activeTab === 'attendance' ? (
-              <div className="overflow-x-auto w-full flex-1">
-                <div className="min-w-[650px]">
-                  <div className="grid grid-cols-12 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-6 py-3 border-b border-border bg-muted/20">
-                    <div className="col-span-4">Siswa</div>
-                    <div className="col-span-3">Kelas / Jurusan</div>
-                    <div className="col-span-2">Waktu</div>
-                    <div className="col-span-2">Metode</div>
-                    <div className="col-span-1 text-right">Status</div>
+              <div className="flex flex-col flex-1">
+                {/* Search & Filter Controls Toolbar matching Nuxt design */}
+                <div className="p-4 border-b border-border bg-muted/10 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Search Input */}
+                    <div className="relative">
+                      <Icon icon="mingcute:search-line" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" />
+                      <input
+                        type="text"
+                        placeholder="Cari nama / NIS..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-xl text-xs font-semibold placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                      />
+                    </div>
+
+                    {/* Class Filter Dropdown */}
+                    <select
+                      value={selectedClass}
+                      onChange={(e) => {
+                        setSelectedClass(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none focus:border-primary transition-colors cursor-pointer"
+                    >
+                      <option value="">Semua Kelas</option>
+                      {classList.map((cls) => (
+                        <option key={cls.id} value={cls.id || cls.className}>
+                          {cls.className}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  {recentAttendances.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40 space-y-2">
-                      <Icon icon="mingcute:time-line" className="text-5xl" />
-                      <p className="text-xs font-black uppercase tracking-widest">Belum ada absensi</p>
+                  {/* Status Chips */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {[
+                      { id: 'ALL', label: 'SEMUA' },
+                      { id: 'HADIR', label: 'HADIR' },
+                      { id: 'LAMBAT', label: 'LAMBAT' },
+                      { id: 'IZIN', label: 'IZIN/SAKIT' },
+                      { id: 'BELUM', label: 'BELUM ABSEN' },
+                    ].map((chip) => (
+                      <button
+                        key={chip.id}
+                        type="button"
+                        onClick={() => {
+                          setStatusFilter(chip.id);
+                          setCurrentPage(1);
+                        }}
+                        className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                          statusFilter === chip.id
+                            ? 'bg-primary text-primary-foreground shadow-sm scale-105'
+                            : 'bg-muted/40 text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table Container */}
+                <div className="overflow-x-auto w-full flex-1">
+                  <div className="min-w-[650px]">
+                    <div className="grid grid-cols-12 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-6 py-3 border-b border-border bg-muted/20">
+                      <div className="col-span-4">Siswa</div>
+                      <div className="col-span-3">Kelas / Jurusan</div>
+                      <div className="col-span-2">Waktu</div>
+                      <div className="col-span-2">Metode</div>
+                      <div className="col-span-1 text-right">Status</div>
                     </div>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {recentAttendances.map((a: any) => (
-                        <div
-                          key={a.id}
-                          onClick={() => setSelectedAttendance(a)}
-                          className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors cursor-pointer group"
-                        >
-                          <div className="col-span-4 flex items-center gap-3 min-w-0">
-                            <div
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${avatarColor(
-                                a.studentName
-                              )}`}
-                            >
-                              {a.studentName?.charAt(0)}
+
+                    {paginatedAttendances.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/40 space-y-2">
+                        <Icon icon="mingcute:time-line" className="text-5xl" />
+                        <p className="text-xs font-black uppercase tracking-widest">Belum ada absensi</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {paginatedAttendances.map((a: any) => (
+                          <div
+                            key={a.id}
+                            onClick={() => setSelectedAttendance(a)}
+                            className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors cursor-pointer group"
+                          >
+                            {/* Student Avatar + Name */}
+                            <div className="col-span-4 flex items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 rounded-xl overflow-hidden bg-primary/10 border border-border shrink-0 flex items-center justify-center font-bold text-xs shadow-inner">
+                                {a.photoUrl ? (
+                                  <img src={a.photoUrl} alt={a.studentName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className={`w-full h-full flex items-center justify-center font-bold text-xs ${avatarColor(a.studentName)}`}>
+                                    {a.studentName?.charAt(0)}
+                                  </div>
+                                )}
+                              </div>
+                              <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                                {a.studentName}
+                              </span>
                             </div>
-                            <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                              {a.studentName}
-                            </span>
-                          </div>
 
-                          <div className="col-span-3 min-w-0">
-                            <p className="text-xs font-bold text-foreground truncate">{a.className || '—'}</p>
-                            <p className="text-[10px] font-semibold text-muted-foreground uppercase">
-                              {a.majorName || 'Umum'}
-                            </p>
-                          </div>
+                            {/* Class / Major */}
+                            <div className="col-span-3 min-w-0">
+                              <p className="text-xs font-bold text-foreground truncate">{a.className || '—'}</p>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">
+                                {a.majorName || 'TEKNIK MEKATRONIKA'}
+                              </p>
+                            </div>
 
-                          <div className="col-span-2">
-                            <span className="text-xs font-mono font-bold">{formatTime(a.time)}</span>
-                          </div>
+                            {/* Time: IN & OUT */}
+                            <div className="col-span-2 flex flex-col justify-center min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-black uppercase text-emerald-500">IN</span>
+                                <span className="text-xs font-mono font-bold">{formatTime(a.time)}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-black uppercase text-rose-500">OUT</span>
+                                <span className="text-xs font-mono font-bold text-muted-foreground">
+                                  {a.lastOutTime || a.checkOutTime ? formatTime(a.lastOutTime || a.checkOutTime) : '-'}
+                                </span>
+                              </div>
+                            </div>
 
-                          <div className="col-span-2 flex items-center gap-1.5">
-                            <Icon icon={methodLabel(a.method).icon} className={`text-base ${methodLabel(a.method).color}`} />
-                            <span className={`text-[10px] font-bold ${methodLabel(a.method).color}`}>
-                              {methodLabel(a.method).label}
-                            </span>
-                          </div>
+                            {/* Method */}
+                            <div className="col-span-2 flex items-center gap-1.5">
+                              <Icon icon={methodLabel(a.method).icon} className={`text-base ${methodLabel(a.method).color}`} />
+                              <span className={`text-[10px] font-bold ${methodLabel(a.method).color}`}>
+                                {methodLabel(a.method).label}
+                              </span>
+                            </div>
 
-                          <div className="col-span-1 flex justify-end">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
-                                getStatus(a.status).badge
-                              }`}
-                            >
-                              {a.status}
-                            </span>
+                            {/* Status Badge */}
+                            <div className="col-span-1 flex justify-end">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
+                                  getStatus(a.status).badge
+                                }`}
+                              >
+                                {a.status === 'TERLAMBAT' ? 'LAMBAT' : a.status}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer Pagination Bar matching Nuxt design */}
+                <div className="px-6 py-3 border-t border-border bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <span className="text-muted-foreground font-semibold">
+                    Menampilkan {totalAttendances > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{' '}
+                    {Math.min(currentPage * itemsPerPage, totalAttendances)} dari {totalAttendances} siswa
+                  </span>
+
+                  <div className="flex items-center gap-4">
+                    {/* Page Size Selector */}
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="px-2 py-1 bg-background border border-border rounded-lg text-xs font-semibold focus:outline-none"
+                    >
+                      <option value={10}>10 / hal</option>
+                      <option value={20}>20 / hal</option>
+                      <option value={50}>50 / hal</option>
+                    </select>
+
+                    {/* Prev / Next Controls */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-7 h-7 rounded-lg"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      >
+                        ‹
+                      </Button>
+                      <span className="text-xs font-mono font-bold px-2">
+                        {currentPage} / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-7 h-7 rounded-lg"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      >
+                        ›
+                      </Button>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -373,7 +544,7 @@ export default function HomePage() {
                             <p className="text-[10px] text-muted-foreground">{f.message}</p>
                           </div>
                           <div className="col-span-3">
-                            <p className="text-xs font-semibold">{f.gate}</p>
+                            <p className="text-xs font-semibold">{f.gate || 'Gerbang Utama SMTI'}</p>
                           </div>
                           <div className="col-span-3 text-right">
                             <p className="text-xs font-mono font-bold">{formatTime(f.timestamp)}</p>
