@@ -181,28 +181,21 @@ const resetAndContinue = () => {
 const handleWebReshuffle = async () => {
   if (submitting.value) return;
   if (!targetClassId.value) {
-    $toast.error('Harap pilih Kelas Tujuan terlebih dahulu pada langkah 2!');
+    $toast.error('Harap pilih Kelas Tujuan terlebih dahulu');
     return;
   }
   if (selectedStudentIds.value.length === 0) {
-    $toast.error('Harap pilih minimal 1 siswa yang akan dipindahkan!');
+    $toast.error('Pilih minimal 1 siswa yang akan dipindahkan');
     return;
   }
 
   submitting.value = true;
   showProgressModal.value = true;
   progressTitle.value = 'Memproses Reshuffle Siswa...';
-  progressSubtitle.value = `Memindahkan ${selectedStudentIds.value.length} siswa ke kelas tujuan`;
+  progressSubtitle.value = `Mengirim data pemindahan ${selectedStudentIds.value.length} siswa ke server...`;
   progressTotal.value = selectedStudentIds.value.length;
   progressCurrent.value = 0;
-  progressPercent.value = 10;
-
-  const timer = setInterval(() => {
-    if (progressPercent.value < 90) {
-      progressPercent.value += 10;
-      progressCurrent.value = Math.min(progressTotal.value, Math.round((progressPercent.value / 100) * progressTotal.value));
-    }
-  }, 100);
+  progressPercent.value = 40;
 
   try {
     const res = await $fetch('/api/system/reshuffle', {
@@ -214,9 +207,8 @@ const handleWebReshuffle = async () => {
       }
     });
 
-    clearInterval(timer);
     progressPercent.value = 100;
-    progressCurrent.value = progressTotal.value;
+    progressCurrent.value = selectedStudentIds.value.length;
 
     summaryItems.value = res?.data?.summary || selectedStudentIds.value.map(id => {
       const st = students.value.find(s => s.id === id);
@@ -240,7 +232,6 @@ const handleWebReshuffle = async () => {
       showSummaryModal.value = true;
     }, 400);
   } catch (e) {
-    clearInterval(timer);
     showProgressModal.value = false;
     $toast.error(e?.data?.message || 'Gagal memproses reshuffle siswa');
   } finally {
@@ -589,7 +580,7 @@ const handleExcelReshuffle = async () => {
         </div>
 
         <button 
-          @click="handleWebReshuffle"
+          @click="openWebConfirm"
           :disabled="submitting"
           class="btn btn-primary btn-sm rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2 w-full sm:w-auto"
         >
@@ -677,7 +668,7 @@ const handleExcelReshuffle = async () => {
               Preview Data Excel ({{ excelRows.length }} Siswa Terbaca)
             </h4>
             <button 
-              @click="handleExcelReshuffle" 
+              @click="openExcelConfirm" 
               :disabled="submitting"
               class="btn btn-emerald bg-emerald-500 hover:bg-emerald-600 text-black border-0 btn-sm rounded-2xl font-black gap-2 shadow-lg shadow-emerald-500/20"
             >
