@@ -46,75 +46,80 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* GASKAN custom theme colors matching Nuxt */
+  --color-gaskan-yellow: #F2C300;
+  --color-gaskan-dark: #181826;
+  --color-gaskan-card: #212134;
 }
 
+/* Light Theme Variables */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.97 0.015 85);
+  --foreground: oklch(0.173 0.021 285.27);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.173 0.021 285.27);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.173 0.021 285.27);
+
+  /* GASKAN Primary Yellow (#F2C300) */
+  --primary: oklch(0.834 0.164 85.84);
+  --primary-foreground: oklch(0.2 0.05 85);
+
+  --secondary: oklch(0.93 0.015 85);
+  --secondary-foreground: oklch(0.2 0.05 85);
+  --muted: oklch(0.94 0.01 85);
+  --muted-foreground: oklch(0.45 0.02 285);
+  --accent: oklch(0.92 0.02 85);
+  --accent-foreground: oklch(0.2 0.05 85);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: oklch(0.88 0.015 85);
+  --input: oklch(0.88 0.015 85);
+  --ring: oklch(0.834 0.164 85.84);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  --sidebar: oklch(0.98 0.01 85);
+  --sidebar-foreground: oklch(0.173 0.021 285.27);
+  --sidebar-primary: oklch(0.834 0.164 85.84);
+  --sidebar-primary-foreground: oklch(0.2 0.05 85);
+  --sidebar-accent: oklch(0.93 0.015 85);
+  --sidebar-accent-foreground: oklch(0.2 0.05 85);
+  --sidebar-border: oklch(0.88 0.015 85);
+  --sidebar-ring: oklch(0.834 0.164 85.84);
 }
 
+/* Dark Theme Variables matching Nuxt (#181826 background, #F2C300 yellow primary) */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.173 0.021 285.27);
+  --foreground: oklch(0.95 0.01 285);
+  --card: oklch(0.22 0.03 285);
+  --card-foreground: oklch(0.95 0.01 285);
+  --popover: oklch(0.22 0.03 285);
+  --popover-foreground: oklch(0.95 0.01 285);
+
+  /* GASKAN Primary Yellow (#F2C300) */
+  --primary: oklch(0.834 0.164 85.84);
+  --primary-foreground: oklch(0.2 0.05 85);
+
+  --secondary: oklch(0.28 0.03 285);
+  --secondary-foreground: oklch(0.95 0.01 285);
+  --muted: oklch(0.25 0.03 285);
+  --muted-foreground: oklch(0.7 0.02 285);
+  --accent: oklch(0.28 0.03 285);
+  --accent-foreground: oklch(0.95 0.01 285);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --ring: oklch(0.834 0.164 85.84);
+
+  --sidebar: oklch(0.2 0.025 285);
+  --sidebar-foreground: oklch(0.95 0.01 285);
+  --sidebar-primary: oklch(0.834 0.164 85.84);
+  --sidebar-primary-foreground: oklch(0.2 0.05 85);
+  --sidebar-accent: oklch(0.28 0.03 285);
+  --sidebar-accent-foreground: oklch(0.95 0.01 285);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.834 0.164 85.84);
 }
 
 @layer base {
@@ -127,4 +132,33 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Animations matching Nuxt landing page */
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(90px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(90px) rotate(-360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+.animate-orbit {
+  animation: orbit 5s linear infinite;
+}
+
+.animate-orbit-delay {
+  animation: orbit 5s linear infinite;
+  animation-delay: -1.66s;
+}
+
+.animate-orbit-delay2 {
+  animation: orbit 5s linear infinite;
+  animation-delay: -3.33s;
+}
+
+.animate-float {
+  animation: float 3.5s ease-in-out infinite;
 }
