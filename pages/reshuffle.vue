@@ -189,9 +189,9 @@ const handleFileUpload = (event) => {
       });
 
       if (excelRows.value.length === 0) {
-        $toast.error('Tidak ada baris data reshuffle valid yang ditemukan di file Excel ini');
+        $toast.error('Tidak ada data siswa valid yang ditemukan di file Excel ini');
       } else {
-        $toast.success(`Berhasil membaca ${excelRows.value.length} baris data dari Excel`);
+        $toast.success(`Berhasil membaca ${excelRows.value.length} data siswa dari Excel`);
       }
     } catch (err) {
       console.error('Error parsing excel:', err);
@@ -220,7 +220,7 @@ const openExcelConfirm = () => {
   const targetClassObj = classes.value.find((c) => c.id === excelTargetClassId.value);
   const targetClassName = targetClassObj?.className || 'Kelas Tujuan';
 
-  confirmMessage.value = `Apakah Anda yakin ingin menerapkan ${excelRows.value.length} baris data Excel ke kelas "${targetClassName}"?`;
+  confirmMessage.value = `Apakah Anda yakin ingin menerapkan ${excelRows.value.length} data siswa Excel ke kelas "${targetClassName}"?`;
   confirmDetails.value = {
     count: excelRows.value.length,
     targetClass: targetClassName,
@@ -540,7 +540,7 @@ const handleExcelReshuffle = async () => {
         <div v-if="excelRows.length > 0" class="space-y-4 pt-4 border-t border-base-200">
           <div class="flex items-center justify-between">
             <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
-              Preview Data Excel ({{ excelRows.length }} Baris Terbaca)
+              Preview Data Excel ({{ excelRows.length }} Siswa Terbaca)
             </h4>
             <button 
               @click="openExcelConfirm" 
@@ -565,7 +565,7 @@ const handleExcelReshuffle = async () => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(row, idx) in excelRows.slice(0, 100)" :key="idx">
+                <tr v-for="(row, idx) in excelRows" :key="idx">
                   <td class="font-bold text-center text-amber-400">{{ row['No'] || row['no'] || (idx + 1) }}</td>
                   <td class="font-mono font-bold">{{ row['NIS'] || row['nis'] || row['ID Siswa'] || row.id || '-' }}</td>
                   <td class="font-bold text-base-content">{{ row['Nama'] || row['nama'] || row['Nama Siswa'] || row.name || '-' }}</td>
