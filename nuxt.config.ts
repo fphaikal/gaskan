@@ -33,6 +33,11 @@ export default defineNuxtConfig({
     // exclude all URLs that start with /secret
     exclude: ['/monitor/**', '/fornaira', '/log/**'],
   },
+  routeRules: {
+    '/api/**': {
+      proxy: `${(process.env.NUXT_PUBLIC_API_BASE || 'https://gaskan-api.smtijogja.my.id').replace(/\/+$/, '')}/api/**`
+    }
+  },
   runtimeConfig: {
     sessionSecret: process.env.NUXT_SESSION_SECRET || process.env.SESSION_SECRET,
     public: {

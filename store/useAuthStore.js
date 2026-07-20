@@ -1,24 +1,5 @@
 import { defineStore } from "pinia";
-
-const REAL_API_BASE = 'https://gaskan-api.smtijogja.my.id';
-
-// Helper: get current API base based on proxy setting
-function getDirectBase() {
-  if (typeof window !== 'undefined') {
-    try {
-      const nuxtApp = window.__NUXT__;
-      const configBase = nuxtApp?.config?.public?.apiBase;
-      if (configBase) return configBase.replace(/\/+$/, '');
-    } catch {}
-  }
-  return REAL_API_BASE;
-}
-
-// Helper: build headers with Bearer token
-function authHeaders(token) {
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-}
+import { useRequestFetch } from "#app";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -29,7 +10,7 @@ export const useAuthStore = defineStore("auth", {
     kelas: null,
     nama: null,
     token: typeof localStorage !== 'undefined' ? localStorage.getItem('gaskan_jwt_token') || null : null,
-    useProxy: false, // Global system setting — synced from database on login
+    useProxy: false,
     initialized: false,
     userData: null,
     userLoading: false,
@@ -68,12 +49,9 @@ export const useAuthStore = defineStore("auth", {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('gaskan_use_proxy', String(newValue));
       }
-      // Persist to database so ALL users pick it up on next load
       try {
-        const base = getDirectBase();
-        await $fetch(`${base}/api/system/settings`, {
+        await $fetch('/api/system/settings', {
           method: 'POST',
-          headers: authHeaders(this.token),
           body: { useProxy: newValue }
         });
         console.log('[SYSTEM PROXY SETTING SAVED TO DATABASE]:', newValue);
@@ -84,12 +62,8 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async fetchSystemSettings() {
-      // Fetch useProxy value from database and sync to store
       try {
-        const base = getDirectBase();
-        const res = await $fetch(`${base}/api/system/settings`, {
-          headers: authHeaders(this.token),
-        });
+        const res = await $fetch('/api/system/settings');
         if (res?.success && res.data?.useProxy !== undefined) {
           this.useProxy = Boolean(res.data.useProxy);
           if (typeof localStorage !== 'undefined') {
@@ -97,17 +71,16 @@ export const useAuthStore = defineStore("auth", {
           }
         }
       } catch (err) {
-        // Fallback silently
+        // Fallback silently if unauthenticated
       }
     },
 
     async refreshSession() {
-      // auth/me goes through Nitro server (session cookie based)
       try {
-        const data = await $fetch("/api/auth/me");
+        const sessionFetch = $fetch;
+        const data = await sessionFetch("/api/auth/me");
         this.setSessionUser(data.user, data.token);
         this.initialized = true;
-        // Sync proxy setting from DB in background (non-blocking)
         this.fetchSystemSettings();
         return data.user;
       } catch (error) {
@@ -123,11 +96,8 @@ export const useAuthStore = defineStore("auth", {
 
       this.userLoading = true;
       try {
-        // Direct to real backend for content data
-        const base = getDirectBase();
-        const data = await $fetch(`${base}/api/user`, {
-          headers: authHeaders(this.token),
-        });
+        const sessionFetch = $fetch;
+        const data = await sessionFetch("/api/user");
         this.userData = data;
         return data;
       } catch (error) {
@@ -139,19 +109,19 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async authenticateUser({ NIS, Password, force }) {
-      // Login goes through Nuxt Nitro server handler (server/api/auth/login.post.js)
-      // which handles: field mapping (NIS → identifier), session cookie, etc.
       try {
         const data = await $fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: { NIS, Password, force },
+          body: {
+            NIS,
+            Password,
+            force,
+          },
         });
 
         if (data?.user) {
           this.setSessionUser(data.user, data.token);
-          // After login, sync proxy setting from DB
-          this.fetchSystemSettings();
         }
       } catch (error) {
         this.loading = false;
@@ -162,11 +132,8 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async logUserOut() {
-      // Logout through Nitro to clear session cookie
       try {
-        await $fetch("/api/auth/logout", {
-          method: "POST",
-        }).catch((err) => {
+        await $fetch("/api/auth/logout", { method: "POST" }).catch((err) => {
           console.error("Logout API error:", err);
         });
       } finally {
