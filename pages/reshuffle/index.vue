@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useNuxtApp } from '#app';
 import * as XLSX from 'xlsx';
@@ -155,29 +155,7 @@ const showSummaryModal = ref(false);
 const summaryItems = ref([]);
 const summaryTitle = ref('');
 
-// Audit History Modal State
-const showHistoryModal = ref(false);
-const reshuffleLogs = ref([]);
-const loadingLogs = ref(false);
-const activeLogDetail = ref(null);
-
-const fetchHistoryLogs = async () => {
-  loadingLogs.value = true;
-  try {
-    const res = await $fetch('/api/system/reshuffle/history').catch(() => null);
-    reshuffleLogs.value = res?.data || [];
-  } catch (e) {
-    console.error('Failed to fetch reshuffle logs:', e);
-  } finally {
-    loadingLogs.value = false;
-  }
-};
-
-const openHistoryModal = async () => {
-  showHistoryModal.value = true;
-  activeLogDetail.value = null;
-  await fetchHistoryLogs();
-};
+// (History modal replaced by dedicated page: /reshuffle/history)
 
 const resetAndContinue = () => {
   showSummaryModal.value = false;
@@ -412,13 +390,13 @@ const handleExcelReshuffle = async () => {
             Import Excel
           </button>
         </div>
-        <button
-          @click="openHistoryModal"
+        <NuxtLink
+          to="/reshuffle/history"
           class="px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 text-sky-400 hover:text-white hover:bg-sky-500/20 border border-sky-500/20 w-full sm:w-auto shrink-0"
         >
           <Icon name="mingcute:history-line" size="16" />
           Riwayat Audit Log
-        </button>
+        </NuxtLink>
       </div>
     </div>
 
@@ -883,116 +861,6 @@ const handleExcelReshuffle = async () => {
         </Transition>
       </Teleport>
 
-      <!-- AUDIT LOG HISTORY MODAL -->
-      <Teleport to="body">
-        <Transition name="modal">
-          <div v-if="showHistoryModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4" @click.self="showHistoryModal = false">
-            <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
-            <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-3xl z-10 p-6 sm:p-8 space-y-6 border border-sky-500/30 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
-              
-              <div class="flex items-center justify-between border-b border-base-200 pb-4 shrink-0">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
-                    <Icon name="mingcute:history-line" size="24" />
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-black text-base-content">Riwayat Audit Log Reshuffle</h3>
-                    <p class="text-xs text-base-content/60 font-medium">Rekaman histori pemindahan kelas oleh pengguna</p>
-                  </div>
-                </div>
-                <button @click="showHistoryModal = false" class="btn btn-ghost btn-circle btn-sm">
-                  <Icon name="mingcute:close-line" size="20" />
-                </button>
-              </div>
-
-              <!-- Content Area -->
-              <div class="overflow-y-auto space-y-4 pr-1 flex-1">
-                <div v-if="loadingLogs" class="text-center py-12 space-y-3">
-                  <span class="loading loading-spinner loading-lg text-sky-400"></span>
-                  <p class="text-xs text-base-content/50 font-bold">Memuat riwayat audit log...</p>
-                </div>
-
-                <div v-else-if="reshuffleLogs.length === 0" class="text-center py-12 space-y-2">
-                  <Icon name="mingcute:inbox-line" size="48" class="text-base-content/30 mx-auto" />
-                  <p class="text-sm font-black text-base-content/60">Belum ada riwayat pemindahan</p>
-                </div>
-
-                <div v-else v-for="log in reshuffleLogs" :key="log.id" class="bg-base-200/40 p-5 rounded-3xl border border-base-300/50 space-y-3">
-                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-base-300/30 pb-3">
-                    <div class="flex items-center gap-2.5">
-                      <span :class="['px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider', log.actionType === 'EXCEL' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-primary/10 text-primary border border-primary/20']">
-                        {{ log.actionType === 'EXCEL' ? 'Excel Import' : 'Pilih Langsung' }}
-                      </span>
-                      <span class="text-xs font-black text-base-content">{{ log.targetClassName }}</span>
-                    </div>
-
-                    <div class="text-[11px] text-base-content/50 font-mono font-bold flex items-center gap-2">
-                      <Icon name="mingcute:time-line" size="14" />
-                      {{ new Date(log.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) }}
-                    </div>
-                  </div>
-
-                  <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <div class="space-y-1">
-                      <p class="text-[11px] text-base-content/60 font-bold">
-                        Diproses Oleh: <strong class="text-base-content">{{ log.operatorName }}</strong> ({{ log.operatorNis }})
-                      </p>
-                      <p class="text-[11px] text-base-content/60 font-bold">
-                        Jumlah Siswa: <strong class="text-emerald-400">{{ log.successCount }} Siswa Berhasil</strong>
-                      </p>
-                    </div>
-
-                    <button 
-                      @click="activeLogDetail = activeLogDetail === log.id ? null : log.id" 
-                      class="btn btn-xs rounded-xl font-black gap-1.5"
-                      :class="activeLogDetail === log.id ? 'btn-primary' : 'btn-ghost border border-base-300'"
-                    >
-                      <Icon :name="activeLogDetail === log.id ? 'mingcute:eye-close-line' : 'mingcute:eye-line'" size="14" />
-                      {{ activeLogDetail === log.id ? 'Sembunyikan Rincian' : 'Lihat Rincian Siswa' }}
-                    </button>
-                  </div>
-
-                  <!-- Expandable Detail Table -->
-                  <div v-if="activeLogDetail === log.id" class="pt-3 border-t border-base-300/30 animate-in fade-in duration-200">
-                    <div class="overflow-x-auto max-h-60 rounded-2xl border border-base-300/60 bg-base-100">
-                      <table class="table table-zebra table-compact w-full text-[11px]">
-                        <thead>
-                          <tr class="bg-base-200 text-[9px] uppercase font-black">
-                            <th>#</th>
-                            <th>Nama Siswa</th>
-                            <th>NIS</th>
-                            <th>Dari Kelas</th>
-                            <th>Ke Kelas</th>
-                            <th>Rombel</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="(item, idx) in log.details" :key="idx">
-                            <td class="font-bold text-center text-amber-400">{{ idx + 1 }}</td>
-                            <td class="font-bold">{{ item.name }}</td>
-                            <td class="font-mono text-base-content/60">{{ item.nis }}</td>
-                            <td>{{ item.fromClass }}</td>
-                            <td class="text-emerald-400 font-bold">{{ item.toClass }}</td>
-                            <td class="text-sky-400 font-bold">{{ item.rombel }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-              <div class="pt-2 text-right shrink-0">
-                <button @click="showHistoryModal = false" class="btn btn-ghost rounded-2xl font-black text-xs px-6">
-                  Tutup
-                </button>
-              </div>
-
-            </div>
-          </div>
-        </Transition>
-      </Teleport>
     </ClientOnly>
 
   </div>
