@@ -10,7 +10,7 @@ export const useAuthStore = defineStore("auth", {
     kelas: null,
     nama: null,
     token: typeof localStorage !== 'undefined' ? localStorage.getItem('gaskan_jwt_token') || null : null,
-    useProxy: typeof localStorage !== 'undefined' ? localStorage.getItem('gaskan_use_proxy') === 'true' : false, // Default: false (Direct Real API mode for max speed)
+    useProxy: false, // Default: false (Direct Real API mode for maximum speed & stability)
     initialized: false,
     userData: null,
     userLoading: false,

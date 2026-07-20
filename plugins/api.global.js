@@ -3,7 +3,7 @@ import { useAuthStore } from '~/store/useAuthStore';
 export default defineNuxtPlugin((nuxtApp) => {
   const originalFetch = globalThis.$fetch;
   const config = useRuntimeConfig();
-  const rawApiBase = config.public.apiBase || 'https://api.tierkun.my.id';
+  const rawApiBase = config.public.apiBase || 'https://gaskan-api.smtijogja.my.id';
   const apiBase = rawApiBase.replace(/\/+$/, '');
 
   const customApiFetch = async (request, opts = {}) => {
@@ -12,28 +12,22 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     try {
       const authStore = useAuthStore();
-      useProxy = authStore.useProxy;
+      useProxy = Boolean(authStore.useProxy);
       token = authStore.token;
     } catch {
-      // Store might not be mounted yet
+      useProxy = false;
     }
 
-    if (typeof localStorage !== 'undefined') {
-      const storedProxy = localStorage.getItem('gaskan_use_proxy');
-      if (storedProxy !== null) {
-        useProxy = storedProxy === 'true';
-      }
-      if (!token) {
-        token = localStorage.getItem('gaskan_jwt_token');
-      }
+    if (typeof localStorage !== 'undefined' && !token) {
+      token = localStorage.getItem('gaskan_jwt_token');
     }
 
     let targetRequest = request;
     let options = { ...opts };
 
     // Direct Real API Mode (useProxy = false - DEFAULT):
-    // Rewrite /api/... calls directly to NUXT_PUBLIC_API_BASE backend URL
-    // Exclude /api/auth/login and /api/auth/logout which set Nitro session cookies
+    // Rewrite /api/... calls directly to Real API backend URL (https://gaskan-api.smtijogja.my.id)
+    // Exclude /api/auth/login and /api/auth/logout which handle session cookies
     if (
       !useProxy &&
       typeof request === 'string' &&
