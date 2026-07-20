@@ -24,16 +24,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       let res;
       try {
-        res = await api.get('/auth/me');
+        res = await api.get('/auth/me', { timeout: 4000 });
       } catch (err1) {
-        res = await api.get('/user').catch(() => null);
+        res = await api.get('/user', { timeout: 4000 }).catch(() => null);
       }
 
       if (res?.data) {
         const u = res.data.user || res.data.data || res.data;
         if (u) {
           const updatedUser: User = {
-            id: u.id || u.nis || '1',
+            id: String(u.id || u.nis || '1'),
             name: u.nama || u.name || 'Pengguna',
             email: u.email || '',
             role: String(u.role || 'siswa').toLowerCase() as any,
@@ -44,12 +44,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     } catch (e) {
-      // Keep existing user on minor network error
+      // Keep existing user state
     }
   }, []);
 
   useEffect(() => {
-    const initAuth = async () => {
+    const initAuth = () => {
       try {
         const storedToken = localStorage.getItem('auth_token');
         const storedUser = localStorage.getItem('auth_user');
@@ -64,10 +64,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
 
           if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            try {
+              setUser(JSON.parse(storedUser));
+            } catch (e) {
+              // ignore parse error
+            }
           }
 
-          await refreshUser();
+          // Fetch fresh user data in background without blocking initial UI render
+          refreshUser().catch(() => null);
         } else {
           if (typeof document !== 'undefined') {
             document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -86,10 +91,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [refreshUser]);
 
   const login = (newToken: string, userData: User) => {
+    const normalizedUser = {
+      ...userData,
+      role: String(userData.role || 'siswa').toLowerCase() as any,
+    };
     setToken(newToken);
-    setUser(userData);
+    setUser(normalizedUser);
     localStorage.setItem('auth_token', newToken);
-    localStorage.setItem('auth_user', JSON.stringify(userData));
+    localStorage.setItem('auth_user', JSON.stringify(normalizedUser));
     if (typeof document !== 'undefined') {
       const encodedToken = encodeURIComponent(newToken);
       document.cookie = `auth_token=${encodedToken}; path=/; max-age=604800; SameSite=Lax`;
