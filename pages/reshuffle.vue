@@ -142,13 +142,41 @@ const openWebConfirm = () => {
   showConfirmModal.value = true;
 };
 
-// Realtime Progress Modal state
-const showProgressModal = ref(false);
-const progressPercent = ref(0);
-const progressCurrent = ref(0);
-const progressTotal = ref(0);
-const progressTitle = ref('');
-const progressSubtitle = ref('');
+// Summary Modal State
+const showSummaryModal = ref(false);
+const summaryItems = ref([]);
+const summaryTitle = ref('');
+
+// Audit History Modal State
+const showHistoryModal = ref(false);
+const reshuffleLogs = ref([]);
+const loadingLogs = ref(false);
+const activeLogDetail = ref(null);
+
+const fetchHistoryLogs = async () => {
+  loadingLogs.value = true;
+  try {
+    const res = await $fetch('/api/system/reshuffle/history').catch(() => null);
+    reshuffleLogs.value = res?.data || [];
+  } catch (e) {
+    console.error('Failed to fetch reshuffle logs:', e);
+  } finally {
+    loadingLogs.value = false;
+  }
+};
+
+const openHistoryModal = async () => {
+  showHistoryModal.value = true;
+  activeLogDetail.value = null;
+  await fetchHistoryLogs();
+};
+
+const resetAndContinue = () => {
+  showSummaryModal.value = false;
+  excelFile.value = null;
+  excelRows.value = [];
+  selectedStudentIds.value = [];
+};
 
 const handleWebReshuffle = async () => {
   submitting.value = true;
@@ -180,12 +208,26 @@ const handleWebReshuffle = async () => {
     progressPercent.value = 100;
     progressCurrent.value = progressTotal.value;
 
+    summaryItems.value = res?.data?.summary || selectedStudentIds.value.map(id => {
+      const st = students.value.find(s => s.id === id);
+      const targetClassObj = classes.value.find(c => c.id === targetClassId.value);
+      const sourceClassObj = classes.value.find(c => c.id === sourceClassId.value);
+      return {
+        name: st?.name || '-',
+        nis: st?.nis || '-',
+        fromClass: sourceClassObj?.className || 'Kelas Asal',
+        toClass: targetClassObj?.className || 'Kelas Tujuan',
+        rombel: targetRombel.value || '-'
+      };
+    });
+    summaryTitle.value = `Reshuffle Berhasil! ${selectedStudentIds.value.length} Siswa Dipindahkan`;
+
     setTimeout(async () => {
       showProgressModal.value = false;
-      $toast.success(res?.message || 'Reshuffle siswa berhasil');
       selectedStudentIds.value = [];
       await fetchClasses();
       await fetchSourceStudents();
+      showSummaryModal.value = true;
     }, 400);
   } catch (e) {
     clearInterval(timer);
@@ -283,6 +325,17 @@ const handleExcelReshuffle = async () => {
   const totalRows = excelRows.value.length;
   let processed = 0;
 
+  summaryItems.value = excelRows.value.map(row => {
+    return {
+      name: row['Nama'] || row['nama'] || row['Nama Siswa'] || row.name || '-',
+      nis: row['NIS'] || row['nis'] || row['ID Siswa'] || row.id || '-',
+      fromClass: 'Sebelum Reshuffle',
+      toClass: row['Kelas Tujuan'] || row['Kelas'] || targetClassName,
+      rombel: row['Rombel'] || row['rombel'] || '-'
+    };
+  });
+  summaryTitle.value = `Reshuffle Excel Selesai! ${totalRows} Data Siswa Berhasil Dipindahkan`;
+
   try {
     for (let i = 0; i < totalRows; i += CHUNK_SIZE) {
       const chunk = excelRows.value.slice(i, i + CHUNK_SIZE);
@@ -300,11 +353,11 @@ const handleExcelReshuffle = async () => {
 
     setTimeout(async () => {
       showProgressModal.value = false;
-      $toast.success(`Reshuffle Excel selesai. ${totalRows} data siswa berhasil dipindahkan.`);
       excelRows.value = [];
       excelFile.value = null;
       await fetchClasses();
       await fetchSourceStudents();
+      showSummaryModal.value = true;
     }, 400);
   } catch (e) {
     showProgressModal.value = false;
@@ -333,7 +386,7 @@ const handleExcelReshuffle = async () => {
       </div>
 
       <!-- Tab Selection Toggle -->
-      <div class="flex items-center p-1.5 bg-base-200/60 rounded-2xl border border-base-300/40 shrink-0">
+      <div class="flex items-center p-1.5 bg-base-200/60 rounded-2xl border border-base-300/40 shrink-0 gap-1">
         <button
           @click="activeTab = 'website'"
           :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'website' ? 'bg-primary text-primary-content shadow-lg shadow-primary/20' : 'text-base-content/60 hover:text-base-content']"
@@ -347,6 +400,13 @@ const handleExcelReshuffle = async () => {
         >
           <Icon name="mingcute:file-import-fill" size="16" />
           Import Excel
+        </button>
+        <button
+          @click="openHistoryModal"
+          class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 text-sky-400 hover:text-white hover:bg-sky-500/20 border border-sky-500/20"
+        >
+          <Icon name="mingcute:history-line" size="16" />
+          Riwayat Audit Log
         </button>
       </div>
     </div>
@@ -736,6 +796,187 @@ const handleExcelReshuffle = async () => {
                 <span class="loading loading-spinner loading-xs text-emerald-400"></span>
                 Mohon tunggu, jangan menutup halaman...
               </p>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- SUMMARY MODAL AFTER RESHUFFLE -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showSummaryModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="resetAndContinue">
+          <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
+          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-2xl z-10 p-6 sm:p-8 space-y-6 border border-emerald-500/30 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            
+            <div class="text-center space-y-2 shrink-0">
+              <div class="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+                <Icon name="mingcute:check-circle-fill" size="36" />
+              </div>
+              <h3 class="text-xl font-black text-base-content tracking-tight">{{ summaryTitle }}</h3>
+              <p class="text-xs text-base-content/60 font-medium">
+                Ringkasan rincian data siswa yang berhasil dipindahkan:
+              </p>
+            </div>
+
+            <!-- Summary Table -->
+            <div class="overflow-y-auto max-h-80 border border-base-200 rounded-2xl shrink-0">
+              <table class="table table-zebra table-compact w-full text-xs">
+                <thead>
+                  <tr class="bg-base-200 text-[10px] uppercase font-black sticky top-0 z-10">
+                    <th>#</th>
+                    <th>Nama Siswa</th>
+                    <th>NIS</th>
+                    <th>Kelas Asal</th>
+                    <th>Kelas Tujuan</th>
+                    <th>Rombel</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, idx) in summaryItems" :key="idx">
+                    <td class="font-bold text-center text-amber-400">{{ idx + 1 }}</td>
+                    <td class="font-bold text-base-content">{{ item.name }}</td>
+                    <td class="font-mono text-base-content/60">{{ item.nis }}</td>
+                    <td>
+                      <span class="px-2 py-0.5 rounded-lg bg-base-200 border border-base-300 text-base-content/70 font-extrabold text-[10px]">
+                        {{ item.fromClass }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold text-[10px]">
+                        {{ item.toClass }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-extrabold text-[10px]">
+                        {{ item.rombel }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 pt-2 shrink-0">
+              <button @click="resetAndContinue" class="btn btn-emerald bg-emerald-500 hover:bg-emerald-600 text-black border-0 w-full rounded-2xl font-black gap-2 shadow-lg shadow-emerald-500/20">
+                <Icon name="mingcute:refresh-4-line" size="18" />
+                Lanjut Reshuffle / Upload File Lagi
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- AUDIT LOG HISTORY MODAL -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showHistoryModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="showHistoryModal = false">
+          <div class="absolute inset-0 bg-black/75 backdrop-blur-md"></div>
+          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-3xl z-10 p-6 sm:p-8 space-y-6 border border-sky-500/30 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            
+            <div class="flex items-center justify-between border-b border-base-200 pb-4 shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+                  <Icon name="mingcute:history-line" size="24" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-black text-base-content">Riwayat Audit Log Reshuffle</h3>
+                  <p class="text-xs text-base-content/60 font-medium">Rekaman histori pemindahan kelas oleh pengguna</p>
+                </div>
+              </div>
+              <button @click="showHistoryModal = false" class="btn btn-ghost btn-circle btn-sm">
+                <Icon name="mingcute:close-line" size="20" />
+              </button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="overflow-y-auto space-y-4 pr-1 flex-1">
+              <div v-if="loadingLogs" class="text-center py-12 space-y-3">
+                <span class="loading loading-spinner loading-lg text-sky-400"></span>
+                <p class="text-xs text-base-content/50 font-bold">Memuat riwayat audit log...</p>
+              </div>
+
+              <div v-else-if="reshuffleLogs.length === 0" class="text-center py-12 space-y-2">
+                <Icon name="mingcute:inbox-line" size="48" class="text-base-content/30 mx-auto" />
+                <p class="text-sm font-black text-base-content/60">Belum ada riwayat pemindahan</p>
+              </div>
+
+              <div v-else v-for="log in reshuffleLogs" :key="log.id" class="bg-base-200/40 p-5 rounded-3xl border border-base-300/50 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-base-300/30 pb-3">
+                  <div class="flex items-center gap-2.5">
+                    <span :class="['px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider', log.actionType === 'EXCEL' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-primary/10 text-primary border border-primary/20']">
+                      {{ log.actionType === 'EXCEL' ? 'Excel Import' : 'Pilih Langsung' }}
+                    </span>
+                    <span class="text-xs font-black text-base-content">{{ log.targetClassName }}</span>
+                  </div>
+
+                  <div class="text-[11px] text-base-content/50 font-mono font-bold flex items-center gap-2">
+                    <Icon name="mingcute:time-line" size="14" />
+                    {{ new Date(log.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) }}
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div class="space-y-1">
+                    <p class="text-[11px] text-base-content/60 font-bold">
+                      Diproses Oleh: <strong class="text-base-content">{{ log.operatorName }}</strong> ({{ log.operatorNis }})
+                    </p>
+                    <p class="text-[11px] text-base-content/60 font-bold">
+                      Jumlah Siswa: <strong class="text-emerald-400">{{ log.successCount }} Siswa Berhasil</strong>
+                    </p>
+                  </div>
+
+                  <button 
+                    @click="activeLogDetail = activeLogDetail === log.id ? null : log.id" 
+                    class="btn btn-xs rounded-xl font-black gap-1.5"
+                    :class="activeLogDetail === log.id ? 'btn-primary' : 'btn-ghost border border-base-300'"
+                  >
+                    <Icon :name="activeLogDetail === log.id ? 'mingcute:eye-close-line' : 'mingcute:eye-line'" size="14" />
+                    {{ activeLogDetail === log.id ? 'Sembunyikan Rincian' : 'Lihat Rincian Siswa' }}
+                  </button>
+                </div>
+
+                <!-- Expandable Detail Table -->
+                <div v-if="activeLogDetail === log.id" class="pt-3 border-t border-base-300/30 animate-in fade-in duration-200">
+                  <div class="overflow-x-auto max-h-60 rounded-2xl border border-base-300/60 bg-base-100">
+                    <table class="table table-zebra table-compact w-full text-[11px]">
+                      <thead>
+                        <tr class="bg-base-200 text-[9px] uppercase font-black">
+                          <th>#</th>
+                          <th>Nama Siswa</th>
+                          <th>NIS</th>
+                          <th>Dari Kelas</th>
+                          <th>Ke Kelas</th>
+                          <th>Rombel</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="(item, idx) in log.details" :key="idx">
+                          <td class="font-bold text-center text-amber-400">{{ idx + 1 }}</td>
+                          <td class="font-bold">{{ item.name }}</td>
+                          <td class="font-mono text-base-content/60">{{ item.nis }}</td>
+                          <td>{{ item.fromClass }}</td>
+                          <td class="text-emerald-400 font-bold">{{ item.toClass }}</td>
+                          <td class="text-sky-400 font-bold">{{ item.rombel }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="pt-2 text-right shrink-0">
+              <button @click="showHistoryModal = false" class="btn btn-ghost rounded-2xl font-black text-xs px-6">
+                Tutup
+              </button>
             </div>
 
           </div>
