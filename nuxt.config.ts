@@ -33,15 +33,6 @@ export default defineNuxtConfig({
     // exclude all URLs that start with /secret
     exclude: ['/monitor/**', '/fornaira', '/log/**'],
   },
-  routeRules: {
-    // Auth routes: handled by server/api/auth/* handlers (field mapping, session cookie, etc.)
-    // Do NOT proxy these — let Nitro server handlers run
-    '/api/auth/**': {},
-    // All other API routes: proxy directly to backend
-    '/api/**': {
-      proxy: `${(process.env.NUXT_PUBLIC_API_BASE || 'https://gaskan-api.smtijogja.my.id').replace(/\/+$/, '')}/api/**`
-    }
-  },
   runtimeConfig: {
     sessionSecret: process.env.NUXT_SESSION_SECRET || process.env.SESSION_SECRET,
     public: {
