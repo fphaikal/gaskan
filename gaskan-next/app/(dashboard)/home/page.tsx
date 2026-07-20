@@ -9,7 +9,6 @@ import { format, parseISO } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -26,28 +25,25 @@ export default function HomePage() {
   const [systemStats, setSystemStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'attendance' | 'failures'>('attendance');
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
-  const [activePreviewImage, setActivePreviewImage] = useState<string | null>(null);
 
   // State for Siswa
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [studentAttendance, setStudentAttendance] = useState<any>(null);
-  const [studentLoading, setStudentLoading] = useState<boolean>(false);
-  const [selectedDayLog, setSelectedDayLog] = useState<any>(null);
 
   // Fetch Admin / Dev Data
   const fetchAdminData = useCallback(async () => {
     try {
       const [countRes, loginRes] = await Promise.allSettled([
-        api.get('/count').catch(() => api.get('/api/count')),
-        api.get('/log/login').catch(() => api.get('/api/log/login')),
+        api.get('/count'),
+        api.get('/log/login'),
       ]);
 
       if (countRes.status === 'fulfilled' && countRes.value?.data) {
-        setCountData(countRes.value.data?.data || countRes.value.data);
+        setCountData(countRes.value.data);
       }
       if (loginRes.status === 'fulfilled' && loginRes.value?.data) {
-        setLoginLogs(loginRes.value.data?.data || loginRes.value.data || []);
+        setLoginLogs(Array.isArray(loginRes.value.data) ? loginRes.value.data : []);
       }
     } catch (e) {
       console.error('Failed to fetch admin dashboard data:', e);
@@ -58,8 +54,8 @@ export default function HomePage() {
   const fetchSystemData = useCallback(async () => {
     if (!isDeveloper) return;
     try {
-      const res = await api.get('/dev/system').catch(() => api.get('/api/dev/system'));
-      if (res.data) setSystemStats(res.data?.data || res.data);
+      const res = await api.get('/dev/system');
+      if (res.data) setSystemStats(res.data);
     } catch (e) {
       // silent fallback
     }
@@ -68,16 +64,11 @@ export default function HomePage() {
   // Fetch Student Data
   const fetchStudentData = useCallback(async () => {
     if (isAdminOrDev) return;
-    setStudentLoading(true);
     try {
-      const res = await api
-        .get(`/attendance/my?month=${selectedMonth}&year=${selectedYear}`)
-        .catch(() => api.get(`/api/attendance/my?month=${selectedMonth}&year=${selectedYear}`));
+      const res = await api.get(`/attendance/my?month=${selectedMonth}&year=${selectedYear}`);
       if (res.data) setStudentAttendance(res.data?.data || res.data);
     } catch (e) {
       console.error('Failed to fetch student attendance:', e);
-    } finally {
-      setStudentLoading(false);
     }
   }, [isAdminOrDev, selectedMonth, selectedYear]);
 
@@ -150,34 +141,20 @@ export default function HomePage() {
   ];
   const avatarColor = (name?: string) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
-  // Mock fallbacks if countData is not yet populated
-  const recentAttendances = countData?.recentAttendances || [
-    { id: '1', studentName: 'Ahmad Fauzi', className: 'XII RPL 1', majorName: 'RPL', time: new Date().toISOString(), method: 'FACE_RECOGNITION', status: 'HADIR' },
-    { id: '2', studentName: 'Siti Nurhaliza', className: 'XI TKJ 2', majorName: 'TKJ', time: new Date(Date.now() - 600000).toISOString(), method: 'QR_CODE', status: 'HADIR' },
-    { id: '3', studentName: 'Budi Santoso', className: 'X TMI 1', majorName: 'TMI', time: new Date(Date.now() - 1200000).toISOString(), method: 'FACE_RECOGNITION', status: 'TERLAMBAT' },
-    { id: '4', studentName: 'Dewi Lestari', className: 'XII Kimia 3', majorName: 'Kimia', time: new Date(Date.now() - 3600000).toISOString(), method: 'MANUAL', status: 'IZIN' },
-  ];
+  const recentAttendances = countData?.recentAttendances && countData.recentAttendances.length > 0
+    ? countData.recentAttendances
+    : [
+        { id: '1', studentName: 'Ahmad Fauzi', className: 'XII RPL 1', majorName: 'RPL', time: new Date().toISOString(), method: 'FACE_RECOGNITION', status: 'HADIR' },
+        { id: '2', studentName: 'Siti Nurhaliza', className: 'XI TKJ 2', majorName: 'TKJ', time: new Date(Date.now() - 600000).toISOString(), method: 'QR_CODE', status: 'HADIR' },
+        { id: '3', studentName: 'Budi Santoso', className: 'X TMI 1', majorName: 'TMI', time: new Date(Date.now() - 1200000).toISOString(), method: 'FACE_RECOGNITION', status: 'TERLAMBAT' },
+        { id: '4', studentName: 'Dewi Lestari', className: 'XII Kimia 3', majorName: 'Kimia', time: new Date(Date.now() - 3600000).toISOString(), method: 'MANUAL', status: 'IZIN' },
+      ];
 
-  const recentFaceFailures = countData?.recentFaceFailures || [
-    { id: 'f1', identifier: 'UNKNOWN_USER', message: 'Wajah tidak terdeteksi di database', timestamp: new Date(Date.now() - 1800000).toISOString(), gate: 'Gerbang Utama SMTI' },
-  ];
-
-  // Months & Years for Siswa view
-  const monthsList = [
-    { value: 1, name: 'Januari' },
-    { value: 2, name: 'Februari' },
-    { value: 3, name: 'Maret' },
-    { value: 4, name: 'April' },
-    { value: 5, name: 'Mei' },
-    { value: 6, name: 'Juni' },
-    { value: 7, name: 'Juli' },
-    { value: 8, name: 'Agustus' },
-    { value: 9, name: 'September' },
-    { value: 10, name: 'Oktober' },
-    { value: 11, name: 'November' },
-    { value: 12, name: 'Desember' },
-  ];
-  const yearsList = [new Date().getFullYear(), new Date().getFullYear() - 1];
+  const recentFaceFailures = countData?.recentFaceFailures && countData.recentFaceFailures.length > 0
+    ? countData.recentFaceFailures
+    : [
+        { id: 'f1', identifier: 'UNKNOWN_USER', message: 'Wajah tidak terdeteksi di database', timestamp: new Date(Date.now() - 1800000).toISOString(), gate: 'Gerbang Utama SMTI' },
+      ];
 
   if (authLoading) {
     return (
@@ -323,89 +300,100 @@ export default function HomePage() {
                     <div className="col-span-1 text-right">Status</div>
                   </div>
 
-                  <div className="divide-y divide-border">
-                    {recentAttendances.map((a: any) => (
-                      <div
-                        key={a.id}
-                        onClick={() => setSelectedAttendance(a)}
-                        className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors cursor-pointer group"
-                      >
-                        {/* Student Name */}
-                        <div className="col-span-4 flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${avatarColor(
-                              a.studentName
-                            )}`}
-                          >
-                            {a.studentName?.charAt(0)}
+                  {recentAttendances.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/50 space-y-2">
+                      <Icon icon="mingcute:time-line" className="text-5xl" />
+                      <p className="text-xs font-black uppercase tracking-widest">Belum ada aktivitas absensi hari ini</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {recentAttendances.map((a: any) => (
+                        <div
+                          key={a.id}
+                          onClick={() => setSelectedAttendance(a)}
+                          className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors cursor-pointer group"
+                        >
+                          <div className="col-span-4 flex items-center gap-3 min-w-0">
+                            <div
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${avatarColor(
+                                a.studentName
+                              )}`}
+                            >
+                              {a.studentName?.charAt(0)}
+                            </div>
+                            <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                              {a.studentName}
+                            </span>
                           </div>
-                          <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                            {a.studentName}
-                          </span>
-                        </div>
 
-                        {/* Class/Major */}
-                        <div className="col-span-3 min-w-0">
-                          <p className="text-xs font-bold text-foreground truncate">{a.className || '—'}</p>
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase">
-                            {a.majorName || 'Umum'}
-                          </p>
-                        </div>
+                          <div className="col-span-3 min-w-0">
+                            <p className="text-xs font-bold text-foreground truncate">{a.className || '—'}</p>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                              {a.majorName || 'Umum'}
+                            </p>
+                          </div>
 
-                        {/* Time */}
-                        <div className="col-span-2">
-                          <span className="text-xs font-mono font-bold">{formatTime(a.time)}</span>
-                        </div>
+                          <div className="col-span-2">
+                            <span className="text-xs font-mono font-bold">{formatTime(a.time)}</span>
+                          </div>
 
-                        {/* Method */}
-                        <div className="col-span-2 flex items-center gap-1.5">
-                          <Icon icon={methodLabel(a.method).icon} className={`text-base ${methodLabel(a.method).color}`} />
-                          <span className={`text-[10px] font-bold ${methodLabel(a.method).color}`}>
-                            {methodLabel(a.method).label}
-                          </span>
-                        </div>
+                          <div className="col-span-2 flex items-center gap-1.5">
+                            <Icon icon={methodLabel(a.method).icon} className={`text-base ${methodLabel(a.method).color}`} />
+                            <span className={`text-[10px] font-bold ${methodLabel(a.method).color}`}>
+                              {methodLabel(a.method).label}
+                            </span>
+                          </div>
 
-                        {/* Status */}
-                        <div className="col-span-1 flex justify-end">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
-                              getStatus(a.status).badge
-                            }`}
-                          >
-                            {a.status}
-                          </span>
+                          <div className="col-span-1 flex justify-end">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
+                                getStatus(a.status).badge
+                              }`}
+                            >
+                              {a.status}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
               /* Failures Tab */
               <div className="overflow-x-auto w-full flex-1">
-                <div className="min-w-[650px] divide-y divide-border">
-                  {recentFaceFailures.map((f: any) => (
-                    <div
-                      key={f.id}
-                      className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-rose-500/5 transition-colors"
-                    >
-                      <div className="col-span-2 flex items-center">
-                        <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
-                          <Icon icon="mingcute:user-close-line" className="text-xl" />
-                        </div>
-                      </div>
-                      <div className="col-span-4 min-w-0">
-                        <p className="text-sm font-bold text-rose-500 truncate">{f.identifier}</p>
-                        <p className="text-[10px] text-muted-foreground">{f.message}</p>
-                      </div>
-                      <div className="col-span-3">
-                        <p className="text-xs font-semibold">{f.gate}</p>
-                      </div>
-                      <div className="col-span-3 text-right">
-                        <p className="text-xs font-mono font-bold">{formatTime(f.timestamp)}</p>
-                      </div>
+                <div className="min-w-[650px]">
+                  {recentFaceFailures.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-emerald-500/70 space-y-2">
+                      <Icon icon="mingcute:shield-check-line" className="text-5xl" />
+                      <p className="text-xs font-black uppercase tracking-widest">Aman · Tidak ada kegagalan wajah</p>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {recentFaceFailures.map((f: any) => (
+                        <div
+                          key={f.id}
+                          className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-rose-500/5 transition-colors"
+                        >
+                          <div className="col-span-2 flex items-center">
+                            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                              <Icon icon="mingcute:user-close-line" className="text-xl" />
+                            </div>
+                          </div>
+                          <div className="col-span-4 min-w-0">
+                            <p className="text-sm font-bold text-rose-500 truncate">{f.identifier}</p>
+                            <p className="text-[10px] text-muted-foreground">{f.message}</p>
+                          </div>
+                          <div className="col-span-3">
+                            <p className="text-xs font-semibold">{f.gate}</p>
+                          </div>
+                          <div className="col-span-3 text-right">
+                            <p className="text-xs font-mono font-bold">{formatTime(f.timestamp)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
