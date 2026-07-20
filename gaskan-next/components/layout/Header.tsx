@@ -71,6 +71,7 @@ export function Header() {
             alt="Logo"
             width={28}
             height={28}
+            style={{ width: 'auto', height: 'auto' }}
             className="dark:invert-0"
           />
           <span className="font-bold text-primary">GASKAN</span>

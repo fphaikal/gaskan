@@ -13,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuItem,
@@ -54,19 +55,21 @@ export function UserNav() {
         }
       />
       <DropdownMenuContent className="w-56" align="end">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email || user?.nis || user?.username || 'No details'}
-            </p>
-            <div className="pt-1">
-              <Badge variant="outline" className="text-[10px] capitalize">
-                {displayRole}
-              </Badge>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{displayName}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user?.email || user?.nis || user?.username || 'No details'}
+              </p>
+              <div className="pt-1">
+                <Badge variant="outline" className="text-[10px] capitalize">
+                  {displayRole}
+                </Badge>
+              </div>
             </div>
-          </div>
-        </DropdownMenuLabel>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           render={

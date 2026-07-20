@@ -153,7 +153,7 @@ export function Sidebar() {
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <Link href="/home" className="flex items-center gap-3 overflow-hidden">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} />
+              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />
             </div>
             {!isCollapsed && (
               <span className="text-lg font-bold tracking-tight text-primary whitespace-nowrap">
@@ -208,7 +208,7 @@ export function Sidebar() {
         <SheetContent side="left" className="w-72 p-0 flex flex-col h-full lg:hidden">
           <SheetHeader className="h-16 border-b border-border px-4 flex flex-row items-center gap-3 space-y-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} />
+              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />
             </div>
             <SheetTitle className="text-lg font-bold text-primary">GASKAN</SheetTitle>
           </SheetHeader>

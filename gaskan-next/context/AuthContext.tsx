@@ -66,6 +66,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           // Fetch fresh user data from API in background
           await refreshUser();
+        } else {
+          if (typeof document !== 'undefined') {
+            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          }
         }
       } catch (error) {
         console.error('Failed to restore auth session:', error);
