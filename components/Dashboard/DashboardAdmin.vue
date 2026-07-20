@@ -59,6 +59,7 @@ const avatarColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarCo
 
 // === MODAL STATE ===
 const selectedAttendance = ref(null);
+const selectedFailure = ref(null);
 const showModal = ref(false);
 const activeTab = ref('attendance'); // attendance, failures
 
@@ -67,6 +68,13 @@ const openDetail = (a) => {
   showModal.value = true;
 };
 const closeModal = () => { showModal.value = false; selectedAttendance.value = null; };
+
+const openFailureDetail = (f) => {
+  selectedFailure.value = f;
+};
+const closeFailureDetail = () => {
+  selectedFailure.value = null;
+};
 
 const activePreviewImage = ref(null);
 const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
@@ -246,7 +254,8 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
 
               <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-200/20">
                 <div v-for="f in count?.recentFaceFailures || []" :key="f.id"
-                     class="grid grid-cols-12 items-center px-6 py-3 hover:bg-rose-500/5 transition-colors group cursor-default">
+                     @click="openFailureDetail(f)"
+                     class="grid grid-cols-12 items-center px-6 py-3 hover:bg-rose-500/5 transition-colors group cursor-pointer">
                   
                   <!-- Captured Photo Thumbnail -->
                   <div class="col-span-2 flex items-center">
@@ -254,8 +263,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
                       <img v-if="f.image" 
                            :src="f.image" 
                            alt="Failed capture" 
-                           class="w-full h-full object-cover cursor-zoom-in" 
-                           @click="openImagePreview(f.image)" />
+                           class="w-full h-full object-cover" />
                       <div v-else class="w-full h-full flex items-center justify-center bg-rose-500/10 text-rose-500">
                         <Icon name="mingcute:user-close-line" size="18" />
                       </div>
@@ -484,6 +492,103 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
               <button @click="closeModal" class="btn btn-ghost flex-1 rounded-2xl font-black">Tutup</button>
               <NuxtLink :to="`/absensi`" @click="closeModal" class="btn bg-orange-500 hover:bg-orange-600 text-white flex-1 rounded-2xl font-black border-0 shadow-lg shadow-orange-500/20">
                 Lihat Semua Absensi
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══ FAILURE DETAIL MODAL ═══ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="selectedFailure" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="closeFailureDetail">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden z-10">
+            
+            <!-- Modal Header -->
+            <div class="p-6 bg-rose-500/10 flex items-center justify-between border-b border-rose-500/20">
+              <div class="flex items-center gap-4 min-w-0">
+                <div class="w-14 h-14 rounded-2xl overflow-hidden bg-base-200 border border-base-300 shrink-0 shadow-inner relative flex items-center justify-center">
+                  <img v-if="selectedFailure.image" 
+                       :src="selectedFailure.image" 
+                       alt="Failed capture" 
+                       class="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform duration-300" 
+                       @click.stop="openImagePreview(selectedFailure.image)" />
+                  <div v-else class="w-full h-full flex items-center justify-center bg-rose-500/10 text-rose-500">
+                    <Icon name="mingcute:user-close-line" size="28" />
+                  </div>
+                </div>
+                <div class="min-w-0">
+                  <span class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-rose-500/10 border border-rose-500/20 text-rose-500 mb-1 inline-block">Gagal Deteksi Wajah</span>
+                  <h3 class="text-base font-black text-rose-500 truncate" :title="selectedFailure.identifier">{{ selectedFailure.identifier || 'STRANGER/UNKNOWN' }}</h3>
+                  <p class="text-xs text-base-content/50 font-bold">Token / NISN / Identitas</p>
+                </div>
+              </div>
+              <button @click="closeFailureDetail" class="btn btn-ghost btn-sm btn-circle shrink-0">
+                <Icon name="mingcute:close-line" size="20" />
+              </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+              
+              <!-- Image preview card if available -->
+              <div v-if="selectedFailure.image" class="relative w-full h-44 rounded-2xl overflow-hidden bg-base-200 border border-base-300 shadow-inner flex items-center justify-center group/img cursor-pointer" @click="openImagePreview(selectedFailure.image)">
+                <img :src="selectedFailure.image" alt="Captured Face" class="w-full h-full object-contain group-hover/img:scale-105 transition-transform duration-300" />
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5 backdrop-blur-[1px]">
+                  <Icon name="mingcute:zoom-in-line" size="18" /> Perbesar Foto
+                </div>
+              </div>
+
+              <!-- Detail Rows -->
+              <div class="space-y-3 pt-1">
+                <div>
+                  <p class="text-[10px] font-black text-base-content/40 uppercase tracking-widest mb-1">Pesan Kejadian / Alasan</p>
+                  <div class="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/20 text-xs font-bold text-base-content/90 leading-relaxed">
+                    {{ selectedFailure.message }}
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-b border-base-200/50">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:location-fill" size="16" class="text-orange-500" />
+                    <span class="text-xs font-bold">Gerbang / Mesin</span>
+                  </div>
+                  <span class="text-xs font-black text-base-content">{{ selectedFailure.gate || 'Unknown' }}</span>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-b border-base-200/50">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:time-fill" size="16" />
+                    <span class="text-xs font-bold">Waktu Kejadian</span>
+                  </div>
+                  <span class="text-xs font-black text-base-content">{{ formatFull(selectedFailure.timestamp) }}</span>
+                </div>
+
+                <div v-if="selectedFailure.ip" class="flex items-center justify-between py-1 border-b border-base-200/50">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:wifi-line" size="16" />
+                    <span class="text-xs font-bold">IP Mesin / URL</span>
+                  </div>
+                  <span class="text-xs font-mono font-bold text-base-content/80">{{ selectedFailure.ip }}</span>
+                </div>
+
+                <div class="flex items-center justify-between py-1">
+                  <div class="flex items-center gap-2 text-base-content/40">
+                    <Icon name="mingcute:key-2-line" size="16" />
+                    <span class="text-xs font-bold">Tipe Aksi Log</span>
+                  </div>
+                  <span class="text-xs font-mono font-bold text-rose-500 uppercase">{{ selectedFailure.action || 'FACE_RECOGNITION_FAILED' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 pt-0 flex gap-3">
+              <button @click="closeFailureDetail" class="btn btn-ghost flex-1 rounded-2xl font-black">Tutup</button>
+              <NuxtLink to="/log/error" @click="closeFailureDetail" class="btn bg-rose-500 hover:bg-rose-600 text-white flex-1 rounded-2xl font-black border-0 shadow-lg shadow-rose-500/20">
+                Lihat Semua Log Error
               </NuxtLink>
             </div>
           </div>
