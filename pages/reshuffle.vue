@@ -3,10 +3,6 @@ import { ref, computed, onMounted } from 'vue';
 import { useNuxtApp } from '#app';
 import * as XLSX from 'xlsx';
 
-definePageMeta({
-  middleware: ['auth']
-});
-
 useHead({
   title: 'Reshuffle & Acak Kelas | GASKAN'
 });
