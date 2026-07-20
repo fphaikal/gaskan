@@ -208,6 +208,18 @@ const systemMetricsFormatted = computed(() => {
       diskStr = `${sys.disk.used} / ${sys.disk.total}`;
     }
 
+    return {
+      HOST: host,
+      OS: osName,
+      RAM: ramStr,
+      DISK: diskStr,
+    };
+  } catch (err) {
+    console.error('Error formatting system metrics:', err);
+    return null;
+  }
+});
+
 const alumniOnDevice = ref([]);
 const fetchAlumniStatus = async () => {
   try {
