@@ -220,7 +220,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
             >
               Aktivitas Absensi
               <div :class="['badge badge-sm border-0 font-black text-[9px]', activeTab === 'attendance' ? 'bg-orange-500/10 text-orange-500' : 'bg-base-200 text-base-content/40']">
-                {{ count?.recentAttendances?.length || 0 }}
+                {{ filteredAttendances.length }}
               </div>
             </button>
             <button 
