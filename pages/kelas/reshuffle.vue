@@ -160,12 +160,12 @@ const handleFileUpload = (event) => {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { range: 2 }); // Skip title header
+      const jsonRows = XLSX.utils.sheet_to_json(firstSheet); // Row 1 is header (No, NIS, Nama, Rombel, Kelas Tujuan)
 
       excelRows.value = jsonRows.filter((row) => {
-        const id = row['ID Siswa'] || row.id || row['NIS'] || row.nis || row['NISN'] || row.nisn;
-        const targetCls = row['Kelas Tujuan (Nama Kelas)'] || row['Kelas Tujuan'] || row.class || row.kelas;
-        return Boolean(id && targetCls);
+        const nis = row['NIS'] || row['nis'] || row['ID Siswa'] || row.id || row['NISN'] || row.nisn;
+        const name = row['Nama'] || row['nama'] || row['Nama Siswa'] || row.name;
+        return Boolean(nis || name);
       });
 
       if (excelRows.value.length === 0) {
@@ -504,26 +504,26 @@ const handleExcelReshuffle = async () => {
             <table class="table table-zebra table-compact w-full text-xs">
               <thead>
                 <tr class="bg-base-200 text-[10px] uppercase font-black">
-                  <th>#</th>
-                  <th>ID / NIS Siswa</th>
+                  <th>No (Absen)</th>
+                  <th>NIS</th>
                   <th>Nama Siswa</th>
+                  <th>Rombel</th>
                   <th>Kelas Tujuan</th>
-                  <th>Rombel Baru</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(row, idx) in excelRows.slice(0, 100)" :key="idx">
-                  <td class="font-bold text-base-content/50">{{ idx + 1 }}</td>
-                  <td class="font-mono">{{ row['ID Siswa'] || row['NIS'] || row.id || row.nis }}</td>
-                  <td class="font-bold text-base-content">{{ row['Nama Siswa'] || row.name || '-' }}</td>
+                  <td class="font-bold text-center text-amber-400">{{ row['No'] || row['no'] || (idx + 1) }}</td>
+                  <td class="font-mono font-bold">{{ row['NIS'] || row['nis'] || row['ID Siswa'] || row.id || '-' }}</td>
+                  <td class="font-bold text-base-content">{{ row['Nama'] || row['nama'] || row['Nama Siswa'] || row.name || '-' }}</td>
                   <td>
-                    <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-extrabold text-[10px]">
-                      {{ row['Kelas Tujuan (Nama Kelas)'] || row['Kelas Tujuan'] || row.class || '-' }}
+                    <span class="px-2.5 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-extrabold text-[10px]">
+                      {{ row['Rombel'] || row['rombel'] || '-' }}
                     </span>
                   </td>
                   <td>
-                    <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 font-extrabold text-[10px]">
-                      {{ row['Rombel Baru (Opsional)'] || row.rombel || '-' }}
+                    <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold text-[10px]">
+                      {{ row['Kelas Tujuan'] || row['Kelas'] || row['Kelas Tujuan (Nama Kelas)'] || 'Kelas Saat Ini' }}
                     </span>
                   </td>
                 </tr>
