@@ -1,0 +1,540 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useNuxtApp } from '#app';
+import * as XLSX from 'xlsx';
+
+definePageMeta({
+  middleware: ['auth']
+});
+
+useHead({
+  title: 'Reshuffle & Acak Kelas | GASKAN'
+});
+
+const { $toast } = useNuxtApp();
+
+const activeTab = ref('website'); // 'website' | 'excel'
+const loading = ref(false);
+const submitting = ref(false);
+
+const classes = ref([]);
+const sourceClassId = ref('');
+const targetClassId = ref('');
+const targetRombel = ref('');
+
+const students = ref([]);
+const selectedStudentIds = ref([]);
+const searchQuery = ref('');
+
+// Excel upload state
+const excelFile = ref(null);
+const excelRows = ref([]);
+const excelParsing = ref(false);
+const excelTemplateClassId = ref('');
+
+// Fetch all classes & initial students
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    const classRes = await $fetch('/api/classes').catch(() => null);
+    classes.value = classRes?.data || classRes || [];
+    
+    if (classes.value.length > 0 && !sourceClassId.value) {
+      sourceClassId.value = classes.value[0].id;
+    }
+    await fetchSourceStudents();
+  } catch (e) {
+    console.error('Error fetching reshuffle data:', e);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchSourceStudents = async () => {
+  if (!sourceClassId.value) {
+    students.value = [];
+    return;
+  }
+  loading.value = true;
+  try {
+    const res = await $fetch(`/api/students?classId=${sourceClassId.value}&limit=200&status=AKTIF`).catch(() => null);
+    students.value = res?.data || [];
+    selectedStudentIds.value = [];
+  } catch (e) {
+    $toast.error('Gagal mengambil data siswa kelas asal');
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(fetchData);
+
+// Filtered students by search
+const filteredStudents = computed(() => {
+  if (!searchQuery.value) return students.value;
+  const q = searchQuery.value.toLowerCase();
+  return students.value.filter((s) => 
+    s.name?.toLowerCase().includes(q) || 
+    s.nis?.includes(q) || 
+    s.nisn?.includes(q) ||
+    s.rombel?.toLowerCase().includes(q)
+  );
+});
+
+const isAllSelected = computed(() => {
+  return filteredStudents.value.length > 0 && selectedStudentIds.value.length === filteredStudents.value.length;
+});
+
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedStudentIds.value = [];
+  } else {
+    selectedStudentIds.value = filteredStudents.value.map((s) => s.id);
+  }
+};
+
+const toggleSelectStudent = (id) => {
+  if (selectedStudentIds.value.includes(id)) {
+    selectedStudentIds.value = selectedStudentIds.value.filter((item) => item !== id);
+  } else {
+    selectedStudentIds.value.push(id);
+  }
+};
+
+// Website Reshuffle Submit
+const handleWebReshuffle = async () => {
+  if (selectedStudentIds.value.length === 0) {
+    $toast.error('Pilih minimal 1 siswa yang akan dipindahkan');
+    return;
+  }
+  if (!targetClassId.value) {
+    $toast.error('Pilih kelas tujuan terlebih dahulu');
+    return;
+  }
+
+  const targetClassObj = classes.value.find((c) => c.id === targetClassId.value);
+  const targetClassName = targetClassObj?.className || 'Kelas Tujuan';
+
+  if (!confirm(`Konfirmasi: Pindahkan ${selectedStudentIds.value.length} siswa ke kelas "${targetClassName}"${targetRombel.value ? ' (' + targetRombel.value + ')' : ''}?`)) {
+    return;
+  }
+
+  submitting.value = true;
+  try {
+    const res = await $fetch('/api/system/reshuffle', {
+      method: 'POST',
+      body: {
+        studentIds: selectedStudentIds.value,
+        targetClassId: targetClassId.value,
+        rombel: targetRombel.value || null
+      }
+    });
+
+    $toast.success(res?.message || 'Reshuffle siswa berhasil');
+    selectedStudentIds.value = [];
+    await fetchSourceStudents();
+  } catch (e) {
+    $toast.error(e?.data?.message || 'Gagal memproses reshuffle siswa');
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// Download Template Excel
+const handleDownloadTemplate = () => {
+  const url = `/api/system/reshuffle/template${excelTemplateClassId.value ? '?classId=' + excelTemplateClassId.value : ''}`;
+  window.open(url, '_blank');
+};
+
+// Handle Excel File Upload & Parse via SheetJS
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  excelFile.value = file;
+  excelParsing.value = true;
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { range: 2 }); // Skip title header
+
+      excelRows.value = jsonRows.filter((row) => {
+        const id = row['ID Siswa'] || row.id || row['NIS'] || row.nis || row['NISN'] || row.nisn;
+        const targetCls = row['Kelas Tujuan (Nama Kelas)'] || row['Kelas Tujuan'] || row.class || row.kelas;
+        return Boolean(id && targetCls);
+      });
+
+      if (excelRows.value.length === 0) {
+        $toast.error('Tidak ada baris data reshuffle valid yang ditemukan di file Excel ini');
+      } else {
+        $toast.success(`Berhasil membaca ${excelRows.value.length} baris data dari Excel`);
+      }
+    } catch (err) {
+      console.error('Error parsing excel:', err);
+      $toast.error('Gagal membaca file Excel. Pastikan format .xlsx valid.');
+    } finally {
+      excelParsing.value = false;
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+// Submit Excel Reshuffle
+const handleExcelReshuffle = async () => {
+  if (excelRows.value.length === 0) {
+    $toast.error('Belum ada data Excel yang diunggah');
+    return;
+  }
+
+  submitting.value = true;
+  try {
+    const res = await $fetch('/api/system/reshuffle/import', {
+      method: 'POST',
+      body: { rows: excelRows.value }
+    });
+
+    $toast.success(res?.message || 'Proses reshuffle dari Excel selesai');
+    excelRows.value = [];
+    excelFile.value = null;
+    await fetchSourceStudents();
+  } catch (e) {
+    $toast.error(e?.data?.message || 'Gagal mengimpor reshuffle dari Excel');
+  } finally {
+    submitting.value = false;
+  }
+};
+</script>
+
+<template>
+  <div class="space-y-6 pb-20 animate-in fade-in duration-500">
+    
+    <!-- Top Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-base-100 p-6 rounded-3xl border border-base-200 shadow-sm">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-base-content/40 mb-1">
+          <NuxtLink to="/kelas" class="hover:text-primary transition-colors">Manajemen Kelas</NuxtLink>
+          <span>/</span>
+          <span class="text-primary">Reshuffle & Acak Kelas</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black text-base-content tracking-tight">Reshuffle & Penataan Kelas</h1>
+        <p class="text-xs text-base-content/60 mt-1">
+          Pindahkan siswa antar kelas dan atur rombel (rombongan belajar) untuk persiapan tahun ajaran baru.
+        </p>
+      </div>
+
+      <!-- Tab Selection Toggle -->
+      <div class="flex items-center p-1.5 bg-base-200/60 rounded-2xl border border-base-300/40 shrink-0">
+        <button
+          @click="activeTab = 'website'"
+          :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'website' ? 'bg-primary text-primary-content shadow-lg shadow-primary/20' : 'text-base-content/60 hover:text-base-content']"
+        >
+          <Icon name="mingcute:global-line" size="16" />
+          Secara Website
+        </button>
+        <button
+          @click="activeTab = 'excel'"
+          :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'excel' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-base-content/60 hover:text-base-content']"
+        >
+          <Icon name="mingcute:file-excel-line" size="16" />
+          Upload Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: RESHUFFLE SECARA WEBSITE -->
+    <div v-if="activeTab === 'website'" class="space-y-6">
+      
+      <!-- Control Panel (Source Class -> Target Class & Rombel) -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+        
+        <!-- Source Class Select -->
+        <div class="md:col-span-4 bg-base-100 p-5 rounded-3xl border border-base-200 shadow-sm space-y-2">
+          <label class="text-xs font-black uppercase tracking-wider text-base-content/50 flex items-center gap-1.5">
+            <Icon name="mingcute:logout-box-line" class="text-amber-500" size="16" />
+            1. Pilih Kelas Asal
+          </label>
+          <select 
+            v-model="sourceClassId" 
+            @change="fetchSourceStudents"
+            class="select select-bordered select-sm w-full rounded-2xl font-bold text-xs focus:select-primary"
+          >
+            <option v-for="c in classes" :key="c.id" :value="c.id">
+              {{ c.className }} ({{ c._count?.students || 0 }} siswa)
+            </option>
+          </select>
+        </div>
+
+        <!-- Target Class & Rombel Select -->
+        <div class="md:col-span-8 bg-base-100 p-5 rounded-3xl border border-base-200 shadow-sm grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+          <div class="sm:col-span-6 space-y-1">
+            <label class="text-xs font-black uppercase tracking-wider text-base-content/50 flex items-center gap-1.5">
+              <Icon name="mingcute:login-box-line" class="text-emerald-500" size="16" />
+              2. Pilih Kelas Tujuan
+            </label>
+            <select 
+              v-model="targetClassId" 
+              class="select select-bordered select-sm w-full rounded-2xl font-bold text-xs focus:select-primary"
+            >
+              <option value="" disabled>-- Pilih Kelas Tujuan --</option>
+              <option v-for="c in classes" :key="c.id" :value="c.id">
+                {{ c.className }}
+              </option>
+            </select>
+          </div>
+
+          <div class="sm:col-span-6 space-y-1">
+            <label class="text-xs font-black uppercase tracking-wider text-base-content/50 flex items-center gap-1.5">
+              <Icon name="mingcute:group-fill" class="text-sky-500" size="16" />
+              Rombel Baru (Opsional)
+            </label>
+            <input 
+              v-model="targetRombel"
+              type="text" 
+              placeholder="Contoh: Rombel A / 1" 
+              class="input input-bordered input-sm w-full rounded-2xl font-bold text-xs focus:input-primary"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Selection Table -->
+      <div class="bg-base-100 rounded-3xl border border-base-200 shadow-sm overflow-hidden">
+        
+        <!-- Search & Quick Selection Header -->
+        <div class="p-5 border-b border-base-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <input 
+              type="checkbox" 
+              :checked="isAllSelected" 
+              @change="toggleSelectAll"
+              class="checkbox checkbox-primary checkbox-sm rounded-lg"
+            />
+            <div>
+              <h3 class="font-black text-sm text-base-content">
+                Daftar Siswa ({{ selectedStudentIds.length }}/{{ filteredStudents.length }} Terpilih)
+              </h3>
+              <p class="text-[11px] text-base-content/50">Centang siswa yang akan dipindahkan ke kelas tujuan</p>
+            </div>
+          </div>
+
+          <div class="relative w-full sm:w-64">
+            <Icon name="mingcute:search-line" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size="16" />
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Cari nama, NIS, rombel..." 
+              class="input input-sm input-bordered w-full pl-9 rounded-xl text-xs font-semibold"
+            />
+          </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full text-xs">
+            <thead>
+              <tr class="bg-base-200/40 text-[10px] uppercase tracking-wider font-black text-base-content/50">
+                <th class="w-12 text-center">Pilih</th>
+                <th>Siswa</th>
+                <th>NIS / NISN</th>
+                <th>Rombel Saat Ini</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="loading">
+                <td colspan="5" class="py-12 text-center text-base-content/40">
+                  <span class="loading loading-spinner loading-md text-primary"></span>
+                  <p class="mt-2 font-bold">Memuat daftar siswa...</p>
+                </td>
+              </tr>
+              <tr v-else-if="filteredStudents.length === 0">
+                <td colspan="5" class="py-12 text-center text-base-content/40 font-bold">
+                  Tidak ada siswa aktif ditemukan di kelas asal ini.
+                </td>
+              </tr>
+              <tr 
+                v-else
+                v-for="s in filteredStudents" 
+                :key="s.id"
+                @click="toggleSelectStudent(s.id)"
+                :class="['cursor-pointer transition-colors', selectedStudentIds.includes(s.id) ? 'bg-primary/5' : '']"
+              >
+                <td class="text-center" @click.stop>
+                  <input 
+                    type="checkbox" 
+                    :checked="selectedStudentIds.includes(s.id)"
+                    @change="toggleSelectStudent(s.id)"
+                    class="checkbox checkbox-primary checkbox-xs rounded"
+                  />
+                </td>
+                <td>
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
+                      <img v-if="s.photoUrl || s.faceUrl" :src="s.photoUrl || s.faceUrl" class="w-full h-full object-cover" />
+                      <span v-else>{{ s.name?.charAt(0) }}</span>
+                    </div>
+                    <span class="font-bold text-base-content">{{ s.name }}</span>
+                  </div>
+                </td>
+                <td class="font-mono font-semibold text-base-content/70">
+                  {{ s.nis || s.nisn || '-' }}
+                </td>
+                <td>
+                  <span class="px-2.5 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-extrabold text-[10px]">
+                    {{ s.rombel || 'Tanpa Rombel' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-black text-[9px] uppercase">
+                    {{ s.status || 'AKTIF' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Floating Action Footer -->
+      <div v-if="selectedStudentIds.length > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-base-100/90 backdrop-blur-md border border-primary/30 p-4 rounded-3xl shadow-2xl flex items-center gap-6 z-50 animate-in slide-in-from-bottom duration-300">
+        <div>
+          <p class="text-xs font-black text-white">
+            {{ selectedStudentIds.length }} Siswa Terpilih
+          </p>
+          <p class="text-[11px] text-base-content/60">
+            Akan dipindahkan ke kelas yang dipilih
+          </p>
+        </div>
+
+        <button 
+          @click="handleWebReshuffle"
+          :disabled="submitting || !targetClassId"
+          class="btn btn-primary btn-sm rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2"
+        >
+          <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+          <Icon v-else name="mingcute:transfer-4-line" size="16" />
+          Proses Reshuffle Ke Kelas Tujuan
+        </button>
+      </div>
+
+    </div>
+
+    <!-- TAB 2: RESHUFFLE VIA UPLOAD EXCEL -->
+    <div v-if="activeTab === 'excel'" class="space-y-6">
+      
+      <!-- Step 1: Download Template -->
+      <div class="bg-base-100 p-6 rounded-3xl border border-base-200 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+        <div class="md:col-span-7 space-y-1">
+          <div class="flex items-center gap-2 text-amber-400 text-xs font-black uppercase tracking-wider">
+            <Icon name="mingcute:download-3-fill" size="16" />
+            Langkah 1: Unduh Template Excel Reshuffle
+          </div>
+          <h3 class="text-base font-black text-base-content">Unduh File Template Pre-Filled</h3>
+          <p class="text-xs text-base-content/60">
+            Template berisi daftar seluruh siswa aktif beserta ID, NIS, dan kolom **Kelas Tujuan** & **Rombel Baru** yang siap Anda isi.
+          </p>
+        </div>
+
+        <div class="md:col-span-5 flex flex-col sm:flex-row items-center gap-3">
+          <select v-model="excelTemplateClassId" class="select select-bordered select-sm w-full sm:w-auto rounded-2xl text-xs font-bold">
+            <option value="">-- Semua Kelas --</option>
+            <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
+          </select>
+
+          <button 
+            @click="handleDownloadTemplate"
+            class="btn btn-amber bg-amber-500 hover:bg-amber-600 text-black border-0 btn-sm rounded-2xl font-black w-full sm:w-auto shrink-0 gap-2 shadow-lg shadow-amber-500/20"
+          >
+            <Icon name="mingcute:file-download-line" size="16" />
+            Unduh Template .XLSX
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Upload Excel -->
+      <div class="bg-base-100 p-6 rounded-3xl border border-base-200 shadow-sm space-y-4">
+        <div class="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
+          <Icon name="mingcute:upload-3-fill" size="16" />
+          Langkah 2: Unggah File Excel Hasil Edit
+        </div>
+
+        <div class="border-2 border-dashed border-base-300 rounded-3xl p-8 text-center hover:border-primary transition-colors cursor-pointer relative bg-base-200/20">
+          <input 
+            type="file" 
+            accept=".xlsx, .xls, .csv" 
+            @change="handleFileUpload"
+            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+          />
+          <div class="space-y-2">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+              <Icon name="mingcute:file-excel-line" size="32" />
+            </div>
+            <h4 class="font-black text-sm text-base-content">
+              {{ excelFile ? excelFile.name : 'Klik atau drag & drop file Excel reshuffle (.xlsx) di sini' }}
+            </h4>
+            <p class="text-xs text-base-content/50">
+              Format kolom otomatis dibaca: ID Siswa/NIS, Kelas Tujuan, Rombel
+            </p>
+          </div>
+        </div>
+
+        <!-- Excel Data Preview Table -->
+        <div v-if="excelRows.length > 0" class="space-y-4 pt-4 border-t border-base-200">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-black uppercase tracking-wider text-base-content">
+              Preview Data Excel ({{ excelRows.length }} Baris Terbaca)
+            </h4>
+            <button 
+              @click="handleExcelReshuffle" 
+              :disabled="submitting"
+              class="btn btn-emerald bg-emerald-500 hover:bg-emerald-600 text-black border-0 btn-sm rounded-2xl font-black gap-2 shadow-lg shadow-emerald-500/20"
+            >
+              <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+              <Icon v-else name="mingcute:check-circle-line" size="16" />
+              Proses Reshuffle Dari Excel
+            </button>
+          </div>
+
+          <div class="overflow-x-auto max-h-96 rounded-2xl border border-base-200">
+            <table class="table table-zebra table-compact w-full text-xs">
+              <thead>
+                <tr class="bg-base-200 text-[10px] uppercase font-black">
+                  <th>#</th>
+                  <th>ID / NIS Siswa</th>
+                  <th>Nama Siswa</th>
+                  <th>Kelas Tujuan</th>
+                  <th>Rombel Baru</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, idx) in excelRows.slice(0, 100)" :key="idx">
+                  <td class="font-bold text-base-content/50">{{ idx + 1 }}</td>
+                  <td class="font-mono">{{ row['ID Siswa'] || row['NIS'] || row.id || row.nis }}</td>
+                  <td class="font-bold text-base-content">{{ row['Nama Siswa'] || row.name || '-' }}</td>
+                  <td>
+                    <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-extrabold text-[10px]">
+                      {{ row['Kelas Tujuan (Nama Kelas)'] || row['Kelas Tujuan'] || row.class || '-' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 font-extrabold text-[10px]">
+                      {{ row['Rombel Baru (Opsional)'] || row.rombel || '-' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</template>
