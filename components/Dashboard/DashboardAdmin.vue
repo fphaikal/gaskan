@@ -166,6 +166,27 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
 <template>
   <div class="flex flex-col gap-4 animate-in fade-in duration-700">
 
+    <!-- Developer / Admin Global API Mode Control Strip -->
+    <div v-if="isDeveloper || isAdmin" class="bg-base-100/90 backdrop-blur border border-base-200/80 rounded-2xl px-5 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-sm shrink-0">
+      <div class="flex items-center gap-3">
+        <div :class="['w-2.5 h-2.5 rounded-full animate-pulse', useProxy ? 'bg-amber-500' : 'bg-emerald-500']"></div>
+        <div class="flex flex-col">
+          <span class="text-[9px] font-black uppercase tracking-widest text-base-content/40">Mode API Global Sistem (Semua Pengguna):</span>
+          <span class="text-xs font-bold text-base-content flex items-center gap-1.5 mt-0.5">
+            <Icon :name="useProxy ? 'mingcute:refresh-line' : 'mingcute:lightning-fill'" size="14" :class="useProxy ? 'text-amber-500' : 'text-emerald-500'" />
+            <span :class="useProxy ? 'text-amber-600 font-extrabold' : 'text-emerald-600 font-extrabold'">
+              {{ useProxy ? 'Nitro Proxy Server (ON)' : 'Direct Real API (OFF - Rekomendasi Cepat ⚡)' }}
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <button @click="toggleProxyMode" class="btn btn-xs rounded-xl font-black border-base-200 hover:border-orange-500 transition-all flex items-center gap-1.5 bg-base-200/60 hover:bg-orange-500 hover:text-white group">
+        <Icon name="mingcute:settings-6-line" size="13" class="text-orange-500 group-hover:text-white" />
+        <span>Ubah Mode: {{ useProxy ? 'Beralih ke Direct Real API ⚡' : 'Beralih ke Proxy 🔄' }}</span>
+      </button>
+    </div>
+
     <!-- ROW 1: Hero + Stat Cards -->
     <div class="grid grid-cols-12 gap-4 shrink-0">
 
