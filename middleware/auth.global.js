@@ -7,16 +7,18 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const routeName = to.name?.toString() || '';
   const isPublicRoute = publicRoutes.includes(routeName);
   
-  // Get user from store
+  // Get user from store (restored from localStorage if client)
   let user = authStore.authenticated ? { role: authStore.role } : null;
 
-  // If not authenticated and not yet initialized, try to refresh session ONCE
-  // This works even on public routes so we can show "Dashboard" button if logged in
-  if (!user && !authStore.initialized) {
+  // Always verify session with server on first page load/refresh
+  if (!authStore.initialized) {
     try {
-      user = await authStore.refreshSession();
+      const refreshed = await authStore.refreshSession();
+      if (refreshed) user = refreshed;
     } catch {
-      user = null;
+      if (!user && authStore.authenticated) {
+        user = { role: authStore.role };
+      }
     }
   }
 

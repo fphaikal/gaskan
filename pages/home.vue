@@ -8,7 +8,7 @@ import DashboardSiswa from '~/components/Dashboard/DashboardSiswa.vue';
 
 const authStore = useAuthStore();
 const { nis, role: sessionRole } = storeToRefs(authStore);
-const sessionFetch = $fetch;
+const sessionFetch = useRequestFetch();
 
 const currentRole = computed(() => sessionRole.value || 'siswa');
 const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(currentRole.value));

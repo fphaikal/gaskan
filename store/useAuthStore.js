@@ -117,7 +117,8 @@ export const useAuthStore = defineStore("auth", {
 
     async refreshSession() {
       try {
-        const data = await $fetch("/api/auth/me");
+        const fetcher = useRequestFetch();
+        const data = await fetcher("/api/auth/me");
         if (data?.user) {
           this.setSessionUser(data.user, data.token);
         }
@@ -140,7 +141,8 @@ export const useAuthStore = defineStore("auth", {
 
       this.userLoading = true;
       try {
-        const data = await $fetch("/api/user");
+        const fetcher = useRequestFetch();
+        const data = await fetcher("/api/user");
         if (data) {
           this.userData = data;
           if (isClient) {

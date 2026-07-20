@@ -101,6 +101,7 @@ export const createSessionFromLogin = (data, now = Date.now()) => {
 
 export const publicSession = (session) => ({
   authenticated: true,
+  token: session.sessionId,
   user: {
     kelas: session.kelas,
     nama: session.nama,
