@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useNuxtApp } from '#app';
 import * as XLSX from 'xlsx';
@@ -312,27 +312,23 @@ const handleExcelReshuffle = async () => {
   const totalRows = excelRows.value.length;
   let processed = 0;
 
-  summaryItems.value = excelRows.value.map(row => {
-    return {
-      name: row['Nama'] || row['nama'] || row['Nama Siswa'] || row.name || '-',
-      nis: row['NIS'] || row['nis'] || row['ID Siswa'] || row.id || '-',
-      fromClass: 'Sebelum Reshuffle',
-      toClass: row['Kelas Tujuan'] || row['Kelas'] || targetClassName,
-      rombel: row['Rombel'] || row['rombel'] || '-'
-    };
-  });
   summaryTitle.value = `Reshuffle Excel Selesai! ${totalRows} Data Siswa Berhasil Dipindahkan`;
+  const collectedSummary = [];
 
   try {
     for (let i = 0; i < totalRows; i += CHUNK_SIZE) {
       const chunk = excelRows.value.slice(i, i + CHUNK_SIZE);
-      await $fetch('/api/system/reshuffle/import', {
+      const chunkRes = await $fetch('/api/system/reshuffle/import', {
         method: 'POST',
         body: {
           targetClassId: excelTargetClassId.value,
           rows: chunk
         }
       });
+      // Collect real summary with actual fromClass from backend
+      if (chunkRes?.data?.summary) {
+        collectedSummary.push(...chunkRes.data.summary);
+      }
       processed += chunk.length;
       progressCurrent.value = Math.min(totalRows, processed);
       progressPercent.value = Math.round((progressCurrent.value / totalRows) * 100);
@@ -344,6 +340,8 @@ const handleExcelReshuffle = async () => {
       excelFile.value = null;
       await fetchClasses();
       await fetchSourceStudents();
+      // Use real summary from backend responses (includes actual fromClass)
+      summaryItems.value = collectedSummary.length > 0 ? collectedSummary : [];
       showSummaryModal.value = true;
     }, 400);
   } catch (e) {
