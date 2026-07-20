@@ -30,7 +30,6 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorData(null);
 
-    // Strictly and only { NIS, Password, force } payload as requested
     const loginPayload = {
       NIS: identifier.trim(),
       Password: password,
@@ -91,7 +90,7 @@ export default function LoginPage() {
       
       let apiMessage = 'NIS/Email atau password yang Anda masukkan salah.';
       if (is502Error) {
-        apiMessage = 'Server Cloudflare mengalami 502 Bad Gateway (Server Backend `api.tierkun.my.id` sedang mati / dalam perawatan).';
+        apiMessage = 'Server Backend sedang mengalami gangguan 502 Bad Gateway (Server sedang mati / dalam pemeliharaan).';
       } else if (err?.code === 'ERR_NETWORK') {
         apiMessage = 'Koneksi jaringan terputus (Network Error). Silakan periksa jaringan Anda.';
       } else if (errResponseData?.message) {
@@ -110,7 +109,7 @@ export default function LoginPage() {
       });
 
       toast.error(apiMessage);
-    } finally {
+    } fontFinally: {
       setIsLoading(false);
     }
   };
@@ -200,7 +199,7 @@ export default function LoginPage() {
                     <Icon icon="mingcute:warning-fill" className="text-lg shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="font-bold text-sm">
-                        {errorData.is502 ? 'Cloudflare 502 Bad Gateway' : 'Login Gagal'}
+                        {errorData.is502 ? 'Server Error (502 Bad Gateway)' : 'Login Gagal'}
                       </p>
                       <p className="text-xs opacity-90 leading-snug">{errorData.message}</p>
                     </div>

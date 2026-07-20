@@ -1,14 +1,12 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_API_BASE) {
-    return process.env.NEXT_PUBLIC_API_BASE;
-  }
-  // In browser, use relative path '/api' to leverage Next.js rewrite proxy and avoid CORS errors
+  const envApi = process.env.NEXT_PUBLIC_API_BASE;
   if (typeof window !== 'undefined') {
+    // Leverage Next.js relative route proxy in client browser
     return '/api';
   }
-  return 'https://api.tierkun.my.id/api';
+  return envApi || '/api';
 };
 
 const api = axios.create({
@@ -20,7 +18,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Dynamic baseURL resolution if needed
     if (typeof window !== 'undefined' && !config.baseURL) {
       config.baseURL = getBaseUrl();
     }

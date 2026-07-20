@@ -80,7 +80,8 @@ export default function RealtimeMonitorPage() {
   const [socketId, setSocketId] = useState<string>("");
   const [devices, setDevices] = useState<DeviceStatus[]>(INITIAL_DEVICES);
   const [liveFeed, setLiveFeed] = useState<LiveScanFeed[]>([]);
-  const wsUrl = process.env.NEXT_PUBLIC_WS_BASE || "wss://api.tierkun.my.id";
+  const wsUrl = process.env.NEXT_PUBLIC_WS_BASE || "";
+
 
   useEffect(() => {
     // Connect Socket.IO on mount
