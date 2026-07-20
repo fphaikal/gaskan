@@ -149,7 +149,12 @@ export const useAuthStore = defineStore("auth", {
         const data = await $fetch(`${base}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: { NIS, Password, force },
+          // Backend Zod schema expects: identifier (NIS/email) + password (lowercase)
+          body: {
+            identifier: NIS,
+            password: Password,
+            force,
+          },
         });
 
         if (data?.user) {
