@@ -23,6 +23,12 @@ api.interceptors.request.use(
       if (!config.baseURL) {
         config.baseURL = getBaseUrl();
       }
+
+      // Guard against double /api/api/ prefixing if a caller passes '/api/...'
+      if (config.url && config.url.startsWith('/api/')) {
+        config.url = config.url.substring(4);
+      }
+
       const token = localStorage.getItem('auth_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

@@ -40,7 +40,7 @@ export default function LoginPage() {
       let resData: any = null;
 
       try {
-        const response = await api.post('/api/auth/login', loginPayload);
+        const response = await api.post('/auth/login', loginPayload);
         resData = response.data;
       } catch (err1: any) {
         if (err1?.response?.status === 404) {
@@ -78,7 +78,6 @@ export default function LoginPage() {
         login(token, formattedUser);
         toast.success('Login berhasil! Selamat datang.');
         
-        // Ensure smooth redirect to dashboard
         window.location.href = '/home';
       } else {
         throw new Error('Respon login dari server tidak valid');
