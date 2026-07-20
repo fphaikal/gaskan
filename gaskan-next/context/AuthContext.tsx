@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: u.id || u.nis || '1',
             name: u.nama || u.name || 'Pengguna',
             email: u.email || '',
-            role: u.role || 'siswa',
+            role: String(u.role || 'siswa').toLowerCase() as any,
             avatar: u.url_picture || u.avatar,
           };
           setUser(updatedUser);

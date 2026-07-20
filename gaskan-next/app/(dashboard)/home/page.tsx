@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
   const { user, isLoading: authLoading } = useAuth();
-  const role = user?.role || 'siswa';
+  const role = (user?.role || 'siswa').toLowerCase();
   const isAdminOrDev = ['admin', 'developer', 'guru'].includes(role);
   const isDeveloper = role === 'developer';
   const isGuru = role === 'guru';
