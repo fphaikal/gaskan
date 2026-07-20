@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/store/useAuthStore';
 import { format, parseISO } from 'date-fns';
@@ -35,15 +35,17 @@ const formatFull = (ts) => ts ? format(parseISO(ts), "EEEE, d MMM yyyy · HH:mm"
 const methodLabel = (m) => {
   if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:faceid-line', color: 'text-primary' };
   if (m === 'QR_CODE') return { label: 'QR Code', icon: 'mingcute:qrcode-2-line', color: 'text-info' };
+  if (m === 'BELUM_ABSEN') return { label: 'Belum Absen', icon: 'mingcute:time-line', color: 'text-rose-500/60' };
   return { label: 'Manual', icon: 'mingcute:edit-2-line', color: 'text-base-content/40' };
 };
 
 const statusMap = {
-  HADIR:     { color: 'text-emerald-500', dot: 'bg-emerald-500', badge: 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500' },
-  TERLAMBAT: { color: 'text-amber-500',   dot: 'bg-amber-500',   badge: 'bg-amber-500/10 border border-amber-500/30 text-amber-500' },
-  IZIN:      { color: 'text-sky-500',     dot: 'bg-sky-500',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-500' },
-  SAKIT:     { color: 'text-orange-400',  dot: 'bg-orange-400',  badge: 'bg-orange-400/10 border border-orange-400/30 text-orange-400' },
-  ALPHA:     { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500' },
+  HADIR:       { color: 'text-emerald-500', dot: 'bg-emerald-500', badge: 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500' },
+  TERLAMBAT:   { color: 'text-amber-500',   dot: 'bg-amber-500',   badge: 'bg-amber-500/10 border border-amber-500/30 text-amber-500' },
+  IZIN:        { color: 'text-sky-500',     dot: 'bg-sky-500',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-500' },
+  SAKIT:       { color: 'text-orange-400',  dot: 'bg-orange-400',  badge: 'bg-orange-400/10 border border-orange-400/30 text-orange-400' },
+  ALPHA:       { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500' },
+  BELUM_ABSEN: { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500' },
 };
 const getStatus = (s) => statusMap[s] || statusMap.ALPHA;
 
@@ -60,6 +62,7 @@ const avatarColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarCo
 // === MODAL STATE ===
 const selectedAttendance = ref(null);
 const selectedFailure = ref(null);
+const selectedSecurityLog = ref(null);
 const showModal = ref(false);
 const activeTab = ref('attendance'); // attendance, failures
 
@@ -75,6 +78,67 @@ const openFailureDetail = (f) => {
 const closeFailureDetail = () => {
   selectedFailure.value = null;
 };
+
+const openSecurityLogDetail = (log) => {
+  selectedSecurityLog.value = log;
+};
+const closeSecurityLogDetail = () => {
+  selectedSecurityLog.value = null;
+};
+
+// === FILTERING & PAGINATION FOR ATTENDANCE ===
+const searchQuery = ref('');
+const selectedClassFilter = ref('');
+const statusFilter = ref('ALL'); // ALL, HADIR, TERLAMBAT, IZIN_SAKIT, ALPHA
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+const classList = computed(() => {
+  const list = props.count?.recentAttendances || [];
+  const classes = new Set();
+  list.forEach(a => {
+    if (a.className) classes.add(a.className);
+  });
+  return Array.from(classes).sort();
+});
+
+const filteredAttendances = computed(() => {
+  let list = props.count?.recentAttendances || [];
+  
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase().trim();
+    list = list.filter(a =>
+      (a.studentName && a.studentName.toLowerCase().includes(q)) ||
+      (a.nis && a.nis.toString().toLowerCase().includes(q)) ||
+      (a.className && a.className.toLowerCase().includes(q))
+    );
+  }
+
+  if (selectedClassFilter.value) {
+    list = list.filter(a => a.className === selectedClassFilter.value);
+  }
+
+  if (statusFilter.value !== 'ALL') {
+    if (statusFilter.value === 'IZIN_SAKIT') {
+      list = list.filter(a => a.status === 'IZIN' || a.status === 'SAKIT');
+    } else {
+      list = list.filter(a => a.status === statusFilter.value);
+    }
+  }
+
+  return list;
+});
+
+const totalPages = computed(() => Math.ceil(filteredAttendances.value.length / itemsPerPage.value) || 1);
+
+const paginatedAttendances = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return filteredAttendances.value.slice(start, start + itemsPerPage.value);
+});
+
+watch([searchQuery, selectedClassFilter, statusFilter, itemsPerPage], () => {
+  currentPage.value = 1;
+});
 
 const useProxy = computed(() => authStore.useProxy);
 const toggleProxyMode = () => {
@@ -174,6 +238,42 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
         </div>
 
         <template v-if="activeTab === 'attendance'">
+          <!-- Filter Toolbar -->
+          <div class="px-6 py-3 bg-base-200/30 border-b border-base-200/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <!-- Search input -->
+            <div class="relative flex-1 min-w-[180px] max-w-xs">
+              <Icon name="mingcute:search-line" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
+              <input v-model="searchQuery"
+                     type="text"
+                     placeholder="Cari nama / NIS..."
+                     class="input input-xs w-full pl-8 rounded-xl bg-base-100 border-base-200 text-xs focus:border-orange-500 font-medium" />
+            </div>
+
+            <!-- Filters & Pills -->
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- Class Dropdown Filter -->
+              <select v-model="selectedClassFilter" class="select select-xs rounded-xl bg-base-100 border-base-200 text-xs font-bold">
+                <option value="">Semua Kelas</option>
+                <option v-for="c in classList" :key="c" :value="c">{{ c }}</option>
+              </select>
+
+              <!-- Status Filter Pills -->
+              <div class="flex items-center gap-1 bg-base-100 p-0.5 rounded-xl border border-base-200">
+                <button v-for="st in [
+                  { key: 'ALL', label: 'Semua' },
+                  { key: 'HADIR', label: 'Hadir' },
+                  { key: 'TERLAMBAT', label: 'Lambat' },
+                  { key: 'IZIN_SAKIT', label: 'Izin/Sakit' },
+                  { key: 'ALPHA', label: 'Belum Absen' }
+                ]" :key="st.key"
+                        @click="statusFilter = st.key"
+                        :class="['px-2 py-0.5 rounded-lg text-[9px] font-black uppercase transition-all', statusFilter === st.key ? 'bg-orange-500 text-white shadow-sm' : 'text-base-content/50 hover:text-base-content']">
+                  {{ st.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="overflow-x-auto w-full flex-1 flex flex-col min-h-0 custom-scrollbar">
             <div class="min-w-[680px] flex-1 flex flex-col min-h-0">
               <!-- Col headers -->
@@ -186,7 +286,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
               </div>
 
               <div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-base-200/20">
-                <div v-for="a in count?.recentAttendances || []" :key="a.id"
+                <div v-for="a in paginatedAttendances" :key="a.id"
                      @click="openDetail(a)"
                      class="grid grid-cols-12 items-center px-6 py-3 hover:bg-orange-500/5 transition-colors group cursor-pointer">
 
@@ -234,14 +334,36 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
                   <!-- Status -->
                   <div class="col-span-1 flex justify-end">
                     <div :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wide whitespace-nowrap', getStatus(a.status).badge]">
-                      {{ a.status === 'TERLAMBAT' ? 'Lambat' : a.status }}
+                      {{ a.status === 'TERLAMBAT' ? 'Lambat' : (a.status === 'ALPHA' ? 'Belum Absen' : a.status) }}
                     </div>
                   </div>
                 </div>
 
-                <div v-if="!count?.recentAttendances?.length" class="flex flex-col items-center justify-center py-20 opacity-10">
-                  <Icon name="mingcute:time-line" size="56" />
-                  <p class="text-xs font-black uppercase mt-3 tracking-widest">Belum ada absensi</p>
+                <div v-if="!filteredAttendances.length" class="flex flex-col items-center justify-center py-16 opacity-30">
+                  <Icon name="mingcute:time-line" size="48" />
+                  <p class="text-xs font-black uppercase mt-2 tracking-widest">Tidak ada data absensi sesuai filter</p>
+                </div>
+              </div>
+
+              <!-- Pagination Footer -->
+              <div class="px-6 py-2.5 bg-base-200/20 border-t border-base-200/40 flex items-center justify-between gap-4 text-xs font-bold text-base-content/60 shrink-0">
+                <div class="text-[11px] font-bold text-base-content/50">
+                  Menampilkan {{ filteredAttendances.length ? ((currentPage - 1) * itemsPerPage) + 1 : 0 }} - {{ Math.min(currentPage * itemsPerPage, filteredAttendances.length) }} dari {{ filteredAttendances.length }} siswa
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <select v-model="itemsPerPage" class="select select-xs rounded-lg bg-base-100 border-base-200 text-[10px] font-bold">
+                    <option :value="10">10 / hal</option>
+                    <option :value="20">20 / hal</option>
+                    <option :value="50">50 / hal</option>
+                    <option :value="100">100 / hal</option>
+                  </select>
+
+                  <div class="join">
+                    <button class="join-item btn btn-xs rounded-l-lg font-black border-base-200" :disabled="currentPage <= 1" @click="currentPage--">«</button>
+                    <button class="join-item btn btn-xs font-black bg-base-200 border-base-200 pointer-events-none">Hal {{ currentPage }} / {{ totalPages }}</button>
+                    <button class="join-item btn btn-xs rounded-r-lg font-black border-base-200" :disabled="currentPage >= totalPages" @click="currentPage++">»</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -341,13 +463,14 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
             <!-- Admin Log -->
             <template v-if="!isGuru">
               <div v-for="log in count?.recentLogs || []" :key="log.id"
-                   class="flex items-center gap-3 p-3 rounded-2xl bg-base-200/30 hover:bg-base-200/50 hover:border-orange-500/20 border border-transparent transition-all group cursor-default">
+                   @click="openSecurityLogDetail(log)"
+                   class="flex items-center gap-3 p-3 rounded-2xl bg-base-200/30 hover:bg-base-200/50 hover:border-orange-500/20 border border-transparent transition-all group cursor-pointer">
                 <div class="w-8 h-8 rounded-xl bg-white border border-base-200/50 flex items-center justify-center text-orange-500 shadow-sm shrink-0 group-hover:scale-110 transition-transform">
                   <Icon name="mingcute:key-2-fill" size="16" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-bold truncate text-base-content">{{ log.details?.identifier || 'System' }}</p>
-                  <p class="text-[8px] font-black uppercase text-base-content/20 tracking-tighter">{{ log.action }}</p>
+                  <p class="text-xs font-bold truncate text-base-content">{{ log.details?.identifier || log.details?.message || log.action || 'System Log' }}</p>
+                  <p class="text-[8px] font-black uppercase text-base-content/40 tracking-tighter">{{ log.action }} · {{ formatTime(log.timestamp) }}</p>
                 </div>
               </div>
             </template>
@@ -606,6 +729,81 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
               <button @click="closeFailureDetail" class="btn btn-ghost flex-1 rounded-2xl font-black">Tutup</button>
               <NuxtLink to="/log/error" @click="closeFailureDetail" class="btn bg-rose-500 hover:bg-rose-600 text-white flex-1 rounded-2xl font-black border-0 shadow-lg shadow-rose-500/20">
                 Lihat Semua Log Error
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══ SECURITY MONITOR LOG DETAIL MODAL ═══ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="selectedSecurityLog" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="closeSecurityLogDetail">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div class="relative bg-base-100 rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden z-10">
+            
+            <!-- Modal Header -->
+            <div class="p-6 bg-orange-500/10 flex items-center justify-between border-b border-orange-500/20">
+              <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-2xl bg-white border border-base-200 flex items-center justify-center text-orange-500 shadow-sm shrink-0">
+                  <Icon name="mingcute:key-2-fill" size="24" />
+                </div>
+                <div class="min-w-0">
+                  <span class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-orange-500/10 border border-orange-500/20 text-orange-500 mb-1 inline-block">Security Monitor Log</span>
+                  <h3 class="text-base font-black text-base-content truncate">{{ selectedSecurityLog.action }}</h3>
+                  <p class="text-xs text-base-content/50 font-bold">{{ formatFull(selectedSecurityLog.timestamp) }}</p>
+                </div>
+              </div>
+              <button @click="closeSecurityLogDetail" class="btn btn-ghost btn-sm btn-circle shrink-0">
+                <Icon name="mingcute:close-line" size="20" />
+              </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              
+              <!-- Detail Rows -->
+              <div class="space-y-3">
+                <div v-if="selectedSecurityLog.details?.message || selectedSecurityLog.details?.msg">
+                  <p class="text-[10px] font-black text-base-content/40 uppercase tracking-widest mb-1">Detail Pesan</p>
+                  <div class="p-3 rounded-2xl bg-base-200/50 border border-base-200 text-xs font-bold text-base-content/90 leading-relaxed">
+                    {{ selectedSecurityLog.details?.message || selectedSecurityLog.details?.msg }}
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-b border-base-200/50" v-if="selectedSecurityLog.details?.identifier">
+                  <span class="text-xs font-bold text-base-content/40">Identitas / Subjek</span>
+                  <span class="text-xs font-black text-orange-500">{{ selectedSecurityLog.details?.identifier }}</span>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-b border-base-200/50" v-if="selectedSecurityLog.details?.role">
+                  <span class="text-xs font-bold text-base-content/40">Peran / Role</span>
+                  <span class="text-xs font-black text-base-content uppercase">{{ selectedSecurityLog.details?.role }}</span>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-b border-base-200/50" v-if="selectedSecurityLog.details?.gate">
+                  <span class="text-xs font-bold text-base-content/40">Gerbang / Perangkat</span>
+                  <span class="text-xs font-black text-base-content">{{ selectedSecurityLog.details?.gate }}</span>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-b border-base-200/50" v-if="selectedSecurityLog.details?.ip">
+                  <span class="text-xs font-bold text-base-content/40">Alamat IP</span>
+                  <span class="text-xs font-mono font-bold text-base-content/80">{{ selectedSecurityLog.details?.ip }}</span>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-b border-base-200/50" v-if="selectedSecurityLog.entity">
+                  <span class="text-xs font-bold text-base-content/40">Entitas Sistem</span>
+                  <span class="text-xs font-mono font-bold text-base-content/70">{{ selectedSecurityLog.entity }} (ID: {{ selectedSecurityLog.entityId || '-' }})</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 pt-0 flex gap-3">
+              <button @click="closeSecurityLogDetail" class="btn btn-ghost flex-1 rounded-2xl font-black">Tutup</button>
+              <NuxtLink to="/log/login" @click="closeSecurityLogDetail" class="btn bg-orange-500 hover:bg-orange-600 text-white flex-1 rounded-2xl font-black border-0 shadow-lg shadow-orange-500/20">
+                Lihat Semua Log
               </NuxtLink>
             </div>
           </div>
