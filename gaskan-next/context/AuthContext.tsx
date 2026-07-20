@@ -26,7 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         res = await api.get('/auth/me');
       } catch (err1) {
-        res = await api.get('/user').catch(() => api.get('/api/auth/me'));
+        res = await api.get('/user').catch(() => null);
       }
 
       if (res?.data) {
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     } catch (e) {
-      // Keep existing stored user on minor API error
+      // Keep existing user on minor network error
     }
   }, []);
 
@@ -56,19 +56,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (storedToken) {
           setToken(storedToken);
-          if (typeof document !== 'undefined' && !document.cookie.includes('auth_token=')) {
-            document.cookie = `auth_token=${storedToken}; path=/; max-age=86400; SameSite=Lax`;
+          if (typeof document !== 'undefined') {
+            const encodedToken = encodeURIComponent(storedToken);
+            document.cookie = `auth_token=${encodedToken}; path=/; max-age=86400; SameSite=Lax`;
+            document.cookie = `token=${encodedToken}; path=/; max-age=86400; SameSite=Lax`;
+            document.cookie = `sessionId=${encodedToken}; path=/; max-age=86400; SameSite=Lax`;
           }
 
           if (storedUser) {
             setUser(JSON.parse(storedUser));
           }
 
-          // Fetch fresh user data from API in background
           await refreshUser();
         } else {
           if (typeof document !== 'undefined') {
             document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            document.cookie = 'sessionId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
           }
         }
       } catch (error) {
@@ -87,18 +91,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('auth_token', newToken);
     localStorage.setItem('auth_user', JSON.stringify(userData));
     if (typeof document !== 'undefined') {
-      document.cookie = `auth_token=${newToken}; path=/; max-age=86400; SameSite=Lax`;
+      const encodedToken = encodeURIComponent(newToken);
+      document.cookie = `auth_token=${encodedToken}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `token=${encodedToken}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `sessionId=${encodedToken}; path=/; max-age=604800; SameSite=Lax`;
     }
   };
 
   const logout = () => {
-    api.post('/auth/logout').catch(() => api.post('/api/auth/logout')).catch(() => {});
+    api.post('/auth/logout').catch(() => null);
     setToken(null);
     setUser(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     if (typeof document !== 'undefined') {
-      document.cookie = `auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'sessionId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   };
 

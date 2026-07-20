@@ -11,6 +11,7 @@ const getBaseUrl = () => {
 
 const api = axios.create({
   baseURL: getBaseUrl(),
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -25,6 +26,7 @@ api.interceptors.request.use(
       const token = localStorage.getItem('auth_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        config.headers['X-Session-Id'] = token;
       }
     }
     return config;
@@ -34,7 +36,6 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor: Do NOT forcibly redirect or wipe session on 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
