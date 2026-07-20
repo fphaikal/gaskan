@@ -54,10 +54,25 @@ export const useAuthStore = defineStore("auth", {
           method: 'POST',
           body: { useProxy: newValue }
         });
+        console.log('[SYSTEM PROXY SETTING SAVED TO DATABASE]:', newValue);
       } catch (err) {
-        console.warn('Gagal menyimpan pengaturan proxy ke server:', err);
+        console.warn('Gagal menyimpan pengaturan proxy ke server DB:', err);
       }
       return this.useProxy;
+    },
+
+    async fetchSystemSettings() {
+      try {
+        const res = await $fetch('/api/system/settings');
+        if (res?.success && res.data?.useProxy !== undefined) {
+          this.useProxy = Boolean(res.data.useProxy);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('gaskan_use_proxy', String(this.useProxy));
+          }
+        }
+      } catch (err) {
+        // Fallback silently if unauthenticated
+      }
     },
 
     async refreshSession() {
@@ -66,6 +81,7 @@ export const useAuthStore = defineStore("auth", {
         const data = await sessionFetch("/api/auth/me");
         this.setSessionUser(data.user, data.token);
         this.initialized = true;
+        this.fetchSystemSettings();
         return data.user;
       } catch (error) {
         this.clearSessionUser();
