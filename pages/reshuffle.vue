@@ -179,6 +179,16 @@ const resetAndContinue = () => {
 };
 
 const handleWebReshuffle = async () => {
+  if (submitting.value) return;
+  if (!targetClassId.value) {
+    $toast.error('Harap pilih Kelas Tujuan terlebih dahulu pada langkah 2!');
+    return;
+  }
+  if (selectedStudentIds.value.length === 0) {
+    $toast.error('Harap pilih minimal 1 siswa yang akan dipindahkan!');
+    return;
+  }
+
   submitting.value = true;
   showProgressModal.value = true;
   progressTitle.value = 'Memproses Reshuffle Siswa...';
@@ -580,7 +590,7 @@ const handleExcelReshuffle = async () => {
 
         <button 
           @click="handleWebReshuffle"
-          :disabled="submitting || !targetClassId"
+          :disabled="submitting"
           class="btn btn-primary btn-sm rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2 w-full sm:w-auto"
         >
           <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
