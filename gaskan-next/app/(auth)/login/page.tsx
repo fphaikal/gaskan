@@ -77,7 +77,9 @@ export default function LoginPage() {
 
         login(token, formattedUser);
         toast.success('Login berhasil! Selamat datang.');
-        router.push('/home');
+        
+        // Ensure smooth redirect to dashboard
+        window.location.href = '/home';
       } else {
         throw new Error('Respon login dari server tidak valid');
       }
@@ -109,7 +111,7 @@ export default function LoginPage() {
       });
 
       toast.error(apiMessage);
-    } fontFinally: {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -125,7 +127,7 @@ export default function LoginPage() {
     };
     login(mockToken, mockUser);
     toast.success('Login Mode Demo Berhasil!');
-    router.push('/home');
+    window.location.href = '/home';
   };
 
   const handleSubmit = (e: React.FormEvent) => {
