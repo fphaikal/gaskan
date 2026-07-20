@@ -30,53 +30,59 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorData(null);
 
+    // Exact payload matching Nuxt useAuthStore.js: { NIS, Password, force }
+    const nuxtPayload = {
+      NIS: identifier,
+      Password: password,
+      force: force,
+    };
+
     try {
       let token: string | null = null;
       let userData: any = null;
+      let resData: any = null;
 
-      // 1. Try unified backend endpoint /auth/login with standard { identifier, password } schema
       try {
-        const res = await api.post('/auth/login', {
-          identifier: identifier.trim(),
-          password: password,
-        });
-
-        if (res.data?.success && res.data?.data) {
-          token = res.data.data.token;
-          userData = res.data.data.user;
-        } else if (res.data?.token || res.data?.user) {
-          token = res.data.token;
-          userData = res.data.user;
-        }
-      } catch (primaryErr: any) {
-        // If 404 or missing route, try /api/auth/login or legacy /api/login
-        if (primaryErr?.response?.status === 404) {
+        // Primary Nuxt route: /api/auth/login
+        const response = await api.post('/api/auth/login', nuxtPayload);
+        resData = response.data;
+      } catch (err1: any) {
+        // Secondary route fallbacks: /auth/login or /api/login
+        if (err1?.response?.status === 404) {
           try {
-            const legacyRes = await api.post('/api/login', {
-              NIS: identifier.trim(),
-              Password: password,
-              force,
+            const fallbackRes = await api.post('/auth/login', {
+              identifier: identifier,
+              password: password,
             });
-
-            if (legacyRes.data) {
-              token = legacyRes.data.sessionId || 'session_' + Date.now();
-              userData = {
-                id: legacyRes.data.NIS || identifier,
-                nis: legacyRes.data.NIS || identifier,
-                name: legacyRes.data.Nama || identifier,
-                role: legacyRes.data.Kelas === 'admin' ? 'admin' : 'siswa',
-              };
-            }
-          } catch (legacyErr) {
-            throw primaryErr; // throw original backend validation/auth error
+            resData = fallbackRes.data;
+          } catch (err2: any) {
+            const legacyRes = await api.post('/api/login', nuxtPayload);
+            resData = legacyRes.data;
           }
         } else {
-          throw primaryErr;
+          throw err1;
         }
       }
 
+      // Extract token and user matching backend response structure
+      if (resData) {
+        token =
+          resData?.token ||
+          resData?.data?.token ||
+          resData?.sessionId ||
+          resData?.access_token ||
+          'session_' + Date.now();
+
+        userData = resData?.user || resData?.data?.user || resData?.data || {
+          id: resData?.NIS || identifier,
+          nis: resData?.NIS || identifier,
+          name: resData?.Nama || resData?.name || identifier,
+          role: (resData?.Kelas || resData?.role || 'siswa').toLowerCase(),
+          email: identifier.includes('@') ? identifier : `${identifier}@smtijogja.sch.id`,
+        };
+      }
+
       if (token && userData) {
-        // Format user object cleanly
         const formattedUser = {
           id: String(userData.id || userData.nis || identifier),
           name: userData.name || userData.nama || userData.Nama || identifier,
@@ -97,19 +103,14 @@ export default function LoginPage() {
       const errResponseData = err?.response?.data;
       const statusCode = err?.response?.status;
       
-      // Extract clear human readable message
-      let apiMessage = 'NIS/Email atau password salah';
-      if (errResponseData?.message) {
-        apiMessage = errResponseData.message;
-      } else if (errResponseData?.error) {
-        apiMessage = errResponseData.error;
-      } else if (errResponseData?.errors?.identifier) {
-        apiMessage = errResponseData.errors.identifier[0];
-      } else if (errResponseData?.errors?.password) {
-        apiMessage = errResponseData.errors.password[0];
-      }
+      const apiMessage =
+        errResponseData?.message ||
+        errResponseData?.error ||
+        errResponseData?.data?.message ||
+        (typeof errResponseData === 'string' ? errResponseData : null) ||
+        'NIS/Email atau password yang Anda masukkan salah.';
 
-      const canForceLogin = statusCode === 400 || errResponseData?.code === 400;
+      const canForceLogin = statusCode === 400 || errResponseData?.code === 400 || errResponseData?.forceAvailable;
 
       setErrorData({
         message: apiMessage,
