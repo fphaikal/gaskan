@@ -208,21 +208,39 @@ const systemMetricsFormatted = computed(() => {
       diskStr = `${sys.disk.used} / ${sys.disk.total}`;
     }
 
-    return {
-      HOST: host,
-      OS: osName,
-      RAM: ramStr,
-      DISK: diskStr,
-    };
-  } catch (err) {
-    console.error('Error formatting system metrics:', err);
-    return null;
-  }
-});
+const alumniOnDevice = ref([]);
+const fetchAlumniStatus = async () => {
+  try {
+    const res = await $fetch('/api/system/alumni-device-status').catch(() => null);
+    alumniOnDevice.value = res?.data?.alumni || res?.alumni || [];
+  } catch {}
+};
+onMounted(fetchAlumniStatus);
 </script>
 
 <template>
   <div class="flex flex-col gap-4 animate-in fade-in duration-700">
+
+    <!-- PERINGATAN ALUMNI HIKVISION -->
+    <div v-if="alumniOnDevice.length > 0" class="bg-amber-500/15 border border-amber-500/40 rounded-3xl p-4 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+          <Icon name="mingcute:alert-fill" size="20" class="animate-pulse" />
+        </div>
+        <div>
+          <h4 class="text-xs font-black text-white">
+            Peringatan Keamanan Perangkat: {{ alumniOnDevice.length }} Alumni Terdeteksi di Mesin Hikvision
+          </h4>
+          <p class="text-[11px] text-amber-200/80 mt-0.5">
+            Siswa alumni belum dilepas dari mesin scan wajah. Anda dapat mengelola & melepas (detach) data alumni sekarang.
+          </p>
+        </div>
+      </div>
+      <NuxtLink to="/semester" class="btn btn-xs bg-amber-500 hover:bg-amber-600 text-black border-0 rounded-xl font-black shrink-0">
+        <Icon name="mingcute:settings-6-fill" size="14" />
+        Buka Kelola Alumni & Semester →
+      </NuxtLink>
+    </div>
 
     <!-- ROW 1: Hero + Stat Cards -->
     <div class="grid grid-cols-12 gap-4 items-stretch shrink-0">
