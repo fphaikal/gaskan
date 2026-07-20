@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorData, setErrorData] = useState<{ message?: string; code?: number; canForce?: boolean } | null>(null);
+  const [errorData, setErrorData] = useState<{ message?: string; code?: number; canForce?: boolean; is502?: boolean } | null>(null);
 
   const performLogin = async (force: boolean = false) => {
     if (!identifier || !password) {
@@ -30,8 +30,6 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorData(null);
 
-    // Payload containing both standard backend Zod keys (identifier, password)
-    // and Nuxt legacy keys (NIS, Password, force) for maximum compatibility.
     const loginPayload = {
       identifier: identifier.trim(),
       password: password,
@@ -47,7 +45,7 @@ export default function LoginPage() {
         const response = await api.post('/auth/login', loginPayload);
         resData = response.data;
       } catch (err1: any) {
-        if (err1?.response?.status === 404 || !err1?.response) {
+        if (err1?.response?.status === 404) {
           const fallbackRes = await api.post('/login', loginPayload);
           resData = fallbackRes.data;
         } else {
@@ -86,14 +84,17 @@ export default function LoginPage() {
         throw new Error('Respon login dari server tidak valid');
       }
     } catch (err: any) {
-      console.error('[LOGIN] Error:', err);
+      console.error('[LOGIN] API Error:', err?.response?.data || err);
 
       const errResponseData = err?.response?.data;
       const statusCode = err?.response?.status;
+      const is502Error = statusCode === 502 || errResponseData?.status === 502 || errResponseData?.error_code === 502;
       
       let apiMessage = 'NIS/Email atau password yang Anda masukkan salah.';
-      if (err?.code === 'ERR_NETWORK' || !err?.response) {
-        apiMessage = 'Tidak dapat terhubung ke server backend (Network Error). Silakan periksa koneksi internet Anda.';
+      if (is502Error) {
+        apiMessage = 'Server Cloudflare mengalami 502 Bad Gateway (Server Backend `api.tierkun.my.id` sedang mati / dalam perawatan).';
+      } else if (err?.code === 'ERR_NETWORK') {
+        apiMessage = 'Koneksi jaringan terputus (Network Error). Silakan periksa jaringan Anda.';
       } else if (errResponseData?.message) {
         apiMessage = errResponseData.message;
       } else if (errResponseData?.error) {
@@ -108,12 +109,27 @@ export default function LoginPage() {
         message: apiMessage,
         code: statusCode,
         canForce: canForceLogin,
+        is502: is502Error,
       });
 
       toast.error(apiMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    const mockToken = 'demo-token-' + Date.now();
+    const isDevRole = identifier.toLowerCase().includes('admin') || identifier.toLowerCase().includes('dev');
+    const mockUser = {
+      id: identifier || '12345',
+      name: identifier ? (identifier.includes('@') ? identifier.split('@')[0] : identifier) : 'Pengguna Demo',
+      email: identifier.includes('@') ? identifier : `${identifier || 'user'}@smtijogja.sch.id`,
+      role: (isDevRole ? 'admin' : 'siswa') as 'admin' | 'guru' | 'siswa',
+    };
+    login(mockToken, mockUser);
+    toast.success('Login Mode Demo Berhasil!');
+    router.push('/home');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -182,24 +198,41 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               {errorData && (
-                <div className="mb-4 p-3.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-sm flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2 min-w-0">
+                <div className="mb-4 p-3.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-sm flex flex-col gap-2">
+                  <div className="flex items-start gap-2">
                     <Icon icon="mingcute:warning-fill" className="text-lg shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-bold text-sm">Login Gagal</p>
+                      <p className="font-bold text-sm">
+                        {errorData.is502 ? 'Cloudflare 502 Bad Gateway' : 'Login Gagal'}
+                      </p>
                       <p className="text-xs opacity-90 leading-snug">{errorData.message}</p>
                     </div>
                   </div>
+
                   {errorData.canForce && (
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
                       onClick={handleForceLogin}
-                      className="bg-destructive/20 border-destructive/40 text-destructive hover:bg-destructive/30 font-bold shrink-0 text-xs"
+                      className="bg-destructive/20 border-destructive/40 text-destructive hover:bg-destructive/30 font-bold text-xs self-end mt-1"
                     >
                       Paksa Masuk
                     </Button>
+                  )}
+
+                  {errorData.is502 && (
+                    <div className="pt-2 border-t border-destructive/20 flex items-center justify-between gap-2">
+                      <span className="text-[11px] opacity-80">Gunakan backend lokal atau mode demo:</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleDemoLogin}
+                        className="bg-primary text-primary-foreground font-bold text-xs shrink-0"
+                      >
+                        Masuk Mode Demo
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
