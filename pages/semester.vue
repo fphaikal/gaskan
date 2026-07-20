@@ -41,25 +41,6 @@ const promoForm = ref({
   targetSemesterId: ''
 });
 
-// Fetch semesters
-const fetchSemesters = async () => {
-  loading.value = true;
-  try {
-    const [semData, ayData] = await Promise.all([
-      $fetch('/api/semester'),
-      $fetch('/api/academic-years')
-    ]);
-    semesters.value = semData?.data || [];
-    academicYears.value = ayData?.data || [];
-  } catch (e) {
-    console.error('Failed to fetch data:', e);
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(fetchSemesters);
-
 // Actions
 const openCreate = () => {
   editMode.value = false;
@@ -187,6 +168,8 @@ const saveAcademicYear = async () => {
   } finally {
     saving.value = false;
   }
+};
+
 const alumniOnDevice = ref([]);
 const selectedAlumniIds = ref([]);
 const showDetachModal = ref(false);
