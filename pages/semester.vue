@@ -187,22 +187,106 @@ const saveAcademicYear = async () => {
   } finally {
     saving.value = false;
   }
+const alumniOnDevice = ref([]);
+const selectedAlumniIds = ref([]);
+const showDetachModal = ref(false);
+const detaching = ref(false);
+const promotionStep = ref(0);
+const promotionResult = ref(null);
+
+const fetchAlumniDeviceStatus = async () => {
+  try {
+    const res = await $fetch('/api/system/alumni-device-status').catch(() => null);
+    alumniOnDevice.value = res?.data?.alumni || res?.alumni || [];
+  } catch (e) {
+    console.error('Error fetching alumni device status:', e);
+  }
 };
+
+// Fetch semesters
+const fetchSemesters = async () => {
+  loading.value = true;
+  try {
+    const [semData, ayData] = await Promise.all([
+      $fetch('/api/semester'),
+      $fetch('/api/academic-years'),
+      fetchAlumniDeviceStatus()
+    ]);
+    semesters.value = semData?.data || [];
+    academicYears.value = ayData?.data || [];
+  } catch (e) {
+    console.error('Failed to fetch data:', e);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(fetchSemesters);
 
 const runPromotion = async () => {
   if (!promoForm.value.targetSemesterId) return;
   saving.value = true;
+  promotionStep.value = 1;
+  promotionResult.value = null;
+
   try {
+    await new Promise((r) => setTimeout(r, 600));
+    promotionStep.value = 2;
+    await new Promise((r) => setTimeout(r, 800));
+    promotionStep.value = 3;
+
     const res = await $fetch('/api/system/promote', { 
       method: 'POST', 
       body: { targetSemesterId: promoForm.value.targetSemesterId } 
     });
-    $toast.success(`Kenaikan kelas selesai: ${res.data.promoted} naik, ${res.data.graduated} lulus`);
-    showPromotionModal.value = false;
+
+    promotionResult.value = res?.data || res;
+    promotionStep.value = 4;
+    $toast.success(`Kenaikan kelas selesai: ${res?.data?.promoted || 0} naik, ${res?.data?.graduated || 0} lulus`);
+    await fetchSemesters();
   } catch (e) {
     $toast.error('Gagal memproses kenaikan kelas');
+    promotionStep.value = 0;
   } finally {
     saving.value = false;
+  }
+};
+
+const toggleSelectAlumni = (id) => {
+  if (selectedAlumniIds.value.includes(id)) {
+    selectedAlumniIds.value = selectedAlumniIds.value.filter((item) => item !== id);
+  } else {
+    selectedAlumniIds.value.push(id);
+  }
+};
+
+const toggleSelectAllAlumni = () => {
+  if (selectedAlumniIds.value.length === alumniOnDevice.value.length) {
+    selectedAlumniIds.value = [];
+  } else {
+    selectedAlumniIds.value = alumniOnDevice.value.map((a) => a.id);
+  }
+};
+
+const handleDetachAlumni = async () => {
+  if (selectedAlumniIds.value.length === 0) {
+    $toast.error('Pilih minimal 1 alumni yang ingin dilepas dari mesin');
+    return;
+  }
+  detaching.value = true;
+  try {
+    const res = await $fetch('/api/system/alumni-detach', {
+      method: 'POST',
+      body: { studentIds: selectedAlumniIds.value }
+    });
+    $toast.success(res?.message || 'Berhasil melepas alumni dari mesin');
+    showDetachModal.value = false;
+    selectedAlumniIds.value = [];
+    await fetchSemesters();
+  } catch (e) {
+    $toast.error('Gagal melepas alumni dari mesin');
+  } finally {
+    detaching.value = false;
   }
 };
 
@@ -211,6 +295,30 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
 
 <template>
   <div class="space-y-6">
+    <!-- ⚠️ ALUMNI WARNING BANNER -->
+    <div v-if="alumniOnDevice.length > 0" class="bg-amber-500/15 border border-amber-500/40 rounded-3xl p-5 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+      <div class="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+          <Icon name="mingcute:alert-fill" size="24" class="animate-pulse" />
+        </div>
+        <div>
+          <h4 class="text-sm font-black text-white">
+            Peringatan Keamanan Perangkat Hikvision ({{ alumniOnDevice.length }} Alumni Terdeteksi)
+          </h4>
+          <p class="text-xs text-amber-200/80 mt-0.5">
+            Terdapat {{ alumniOnDevice.length }} siswa berstatus ALUMNI yang datanya masih aktif di mesin scan wajah.
+          </p>
+        </div>
+      </div>
+
+      <button
+        @click="selectedAlumniIds = alumniOnDevice.map(a => a.id); showDetachModal = true"
+        class="btn bg-amber-500 hover:bg-amber-600 text-black border-0 rounded-xl font-black text-xs shrink-0"
+      >
+        <Icon name="mingcute:settings-6-fill" size="16" />
+        Kelola & Detach Alumni
+      </button>
+    </div>
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
