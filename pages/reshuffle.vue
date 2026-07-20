@@ -283,7 +283,7 @@ const handleExcelReshuffle = async () => {
           @click="activeTab = 'excel'"
           :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'excel' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-base-content/60 hover:text-base-content']"
         >
-          <Icon name="mingcute:file-excel-line" size="16" />
+          <Icon name="mingcute:file-import-fill" size="16" />
           Import Excel
         </button>
       </div>
@@ -524,8 +524,8 @@ const handleExcelReshuffle = async () => {
             class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
           <div class="space-y-2">
-            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
-              <Icon name="mingcute:file-excel-line" size="32" />
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20 shadow-lg shadow-amber-500/10">
+              <Icon name="mingcute:upload-2-fill" size="32" />
             </div>
             <h4 class="font-black text-sm text-base-content">
               {{ excelFile ? excelFile.name : 'Klik atau drag & drop file Excel reshuffle (.xlsx) di sini' }}
