@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const session = requireAuthSession(event);
+  const session = requireSession(event);
   const config = useRuntimeConfig();
 
   const res = await fetch(`${config.public.apiBase}/api/team/my-profile`, {

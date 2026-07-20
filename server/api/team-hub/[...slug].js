@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const session = requireAuthSession(event);
+  const session = requireSession(event);
   const config = useRuntimeConfig();
 
   const slug = event.context.params.slug || '';
