@@ -313,10 +313,10 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
           <Icon name="mingcute:calendar-add-fill" size="18" />
           <span class="whitespace-nowrap">Tahun Ajaran</span>
         </button>
-        <button @click="navigateTo('/reshuffle')" class="btn btn-ghost border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded-2xl gap-2 font-black">
+        <NuxtLink to="/reshuffle" class="btn btn-ghost border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded-2xl gap-2 font-black">
           <Icon name="mingcute:transfer-4-line" size="18" />
           <span class="whitespace-nowrap">Reshuffle Kelas</span>
-        </button>
+        </NuxtLink>
         <button @click="showPromotionModal = true" class="btn bg-amber-500 hover:bg-amber-600 text-white border-0 rounded-2xl gap-2 font-black shadow-lg shadow-amber-500/20">
           <Icon name="mingcute:arrow-up-circle-fill" size="18" />
           <span class="whitespace-nowrap">Naik Kelas</span>
