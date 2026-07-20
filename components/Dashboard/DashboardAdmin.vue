@@ -29,8 +29,35 @@ const greeting = computed(() => {
   return 'Selamat Malam';
 });
 
-const formatTime = (ts) => ts ? format(parseISO(ts), 'HH:mm') : '-';
-const formatFull = (ts) => ts ? format(parseISO(ts), "EEEE, d MMM yyyy · HH:mm", { locale: id }) : '-';
+const safeDate = (ts) => {
+  if (!ts) return null;
+  try {
+    const d = typeof ts === 'string' ? parseISO(ts) : new Date(ts);
+    return isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+};
+
+const formatTime = (ts) => {
+  const d = safeDate(ts);
+  return d ? format(d, 'HH:mm') : '-';
+};
+
+const formatFull = (ts) => {
+  const d = safeDate(ts);
+  return d ? format(d, "EEEE, d MMM yyyy · HH:mm", { locale: id }) : '-';
+};
+
+const formatDateShort = (ts) => {
+  const d = safeDate(ts);
+  return d ? format(d, 'dd MMM yyyy') : '-';
+};
+
+const formatDateDayMonth = (ts) => {
+  const d = safeDate(ts);
+  return d ? format(d, 'dd MMM') : '-';
+};
 
 const methodLabel = (m) => {
   if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:faceid-line', color: 'text-primary' };
@@ -456,7 +483,7 @@ const systemMetricsFormatted = computed(() => {
                   <!-- Waktu -->
                   <div class="col-span-3 text-right">
                     <p class="text-xs font-black text-base-content/60">{{ formatTime(f.timestamp) }}</p>
-                    <p class="text-[8px] font-bold text-base-content/30 mt-0.5">{{ format(parseISO(f.timestamp), 'dd MMM yyyy') }}</p>
+                    <p class="text-[8px] font-bold text-base-content/30 mt-0.5">{{ formatDateShort(f.timestamp) }}</p>
                   </div>
                 </div>
 
@@ -521,7 +548,7 @@ const systemMetricsFormatted = computed(() => {
                    class="p-4 rounded-2xl bg-base-200/30 hover:bg-base-200/50 border border-transparent hover:border-amber-500/20 transition-all">
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-[8px] font-black uppercase tracking-widest text-amber-500 px-2 py-0.5 bg-amber-500/10 rounded-lg border border-amber-500/20">{{ leave.type }}</span>
-                  <span class="text-[8px] text-base-content/30 font-bold">{{ format(parseISO(leave.createdAt), 'dd MMM') }}</span>
+                  <span class="text-[8px] text-base-content/30 font-bold">{{ formatDateDayMonth(leave.createdAt) }}</span>
                 </div>
                 <p class="text-xs font-bold text-base-content mb-3 truncate">{{ leave.studentName }}</p>
                 <NuxtLink to="/izin" class="btn btn-xs btn-block rounded-xl font-black text-[9px] h-8 min-h-0 bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-sm transition-all">PROSES DATA</NuxtLink>
