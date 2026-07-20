@@ -313,7 +313,7 @@ const bentoCard = "bg-base-100 rounded-3xl p-6 transition-all duration-300";
           <Icon name="mingcute:calendar-add-fill" size="18" />
           <span class="whitespace-nowrap">Tahun Ajaran</span>
         </button>
-        <button @click="navigateTo('/kelas/reshuffle')" class="btn btn-ghost border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded-2xl gap-2 font-black">
+        <button @click="navigateTo('/reshuffle')" class="btn btn-ghost border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded-2xl gap-2 font-black">
           <Icon name="mingcute:transfer-4-line" size="18" />
           <span class="whitespace-nowrap">Reshuffle Kelas</span>
         </button>

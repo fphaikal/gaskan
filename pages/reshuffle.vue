@@ -452,7 +452,7 @@ const handleExcelReshuffle = async () => {
           </div>
           <h3 class="text-base font-black text-base-content">Unduh File Template Pre-Filled</h3>
           <p class="text-xs text-base-content/60">
-            Template berisi daftar seluruh siswa aktif beserta ID, NIS, dan kolom **Kelas Tujuan** & **Rombel Baru** yang siap Anda isi.
+            Template 4 kolom (No, NIS, Nama, Rombel) berisi daftar siswa aktif yang siap Anda isi & edit.
           </p>
         </div>
 
@@ -549,7 +549,7 @@ const handleExcelReshuffle = async () => {
                   </td>
                   <td>
                     <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold text-[10px]">
-                      {{ row['Kelas Tujuan'] || row['Kelas'] || row['Kelas Tujuan (Nama Kelas)'] || 'Kelas Saat Ini' }}
+                      {{ row['Kelas Tujuan'] || row['Kelas'] || 'Sesuai Pilihan' }}
                     </span>
                   </td>
                 </tr>

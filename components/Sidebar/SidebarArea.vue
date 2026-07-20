@@ -96,7 +96,7 @@ const menuGroups = [
         icon: 'mingcute:transfer-4-line',
         role: ['admin', 'developer'],
         label: 'Reshuffle Kelas',
-        route: '/kelas/reshuffle',
+        route: '/reshuffle',
       },
       {
         icon: 'mingcute:user-setting-fill',
