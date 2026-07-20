@@ -311,8 +311,33 @@ const categoryBadgeClass = (cat) => {
 
 <template>
   <div class="space-y-6 max-w-6xl mx-auto px-4 pb-16 text-left">
-    <!-- Header Banner -->
-    <div class="bg-gradient-to-br from-primary/20 via-base-200 to-base-100 p-6 sm:p-8 rounded-[2.5rem] border border-primary/20 shadow-xl relative overflow-hidden">
+    <!-- Loading Profile State -->
+    <div v-if="loadingProfile" class="flex justify-center py-20">
+      <span class="loading loading-spinner loading-lg text-primary opacity-40"></span>
+    </div>
+
+    <!-- Access Denied State for Non-Team Members -->
+    <div v-else-if="!isTeamMember" class="min-h-[50vh] flex items-center justify-center p-4">
+      <div class="max-w-md w-full text-center bg-base-100 p-8 rounded-[2.5rem] border border-base-200 shadow-xl space-y-4">
+        <div class="w-16 h-16 rounded-3xl bg-error/10 text-error flex items-center justify-center mx-auto">
+          <Icon name="mingcute:lock-fill" class="text-3xl" />
+        </div>
+        <h2 class="text-2xl font-black text-base-content tracking-tight">Akses Terbatas</h2>
+        <p class="text-xs text-base-content/60 leading-relaxed">
+          Halaman Workspace Teams khusus untuk anggota tim terdaftar GASKAN. Akun Anda belum terhubung sebagai anggota tim.
+        </p>
+        <div class="pt-2">
+          <NuxtLink to="/home" class="btn btn-primary w-full rounded-2xl font-bold shadow-lg shadow-primary/20">
+            Kembali ke Dashboard
+          </NuxtLink>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Teams Content -->
+    <template v-else>
+      <!-- Header Banner -->
+      <div class="bg-gradient-to-br from-primary/20 via-base-200 to-base-100 p-6 sm:p-8 rounded-[2.5rem] border border-primary/20 shadow-xl relative overflow-hidden">
       <div class="absolute -right-8 -bottom-8 w-40 h-40 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
       <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="space-y-1">
@@ -756,5 +781,6 @@ const categoryBadgeClass = (cat) => {
         </div>
       </div>
     </dialog>
+    </template>
   </div>
 </template>

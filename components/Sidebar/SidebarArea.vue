@@ -4,7 +4,7 @@ import { useAuthStore } from '~/store/useAuthStore'
 import { useThemeStore } from '../../store/useThemeStore'
 import { storeToRefs } from 'pinia'
 import { onClickOutside } from '@vueuse/core'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import SidebarItem from './SidebarItem.vue'
 
 const target = ref(null)
@@ -33,14 +33,46 @@ const roleLabel = computed(() => {
 
 const { userData: currentUser, authenticated } = storeToRefs(authStore)
 
+const hasTeamAccess = ref(false)
+
+const checkTeamAccess = async () => {
+  if (['admin', 'developer'].includes(currentRole.value)) {
+    hasTeamAccess.value = true;
+    return;
+  }
+  try {
+    const res = await $fetch('/api/team/my-profile');
+    hasTeamAccess.value = Boolean(res?.data);
+  } catch {
+    hasTeamAccess.value = false;
+  }
+}
+
 // Use centralized fetcher
 if (authenticated.value) {
-  fetchUserData()
+  fetchUserData();
 } else {
   const unwatchSidebar = watch(authenticated, (val) => {
-    if (val) { fetchUserData(); unwatchSidebar() }
+    if (val) {
+      fetchUserData();
+      checkTeamAccess();
+      unwatchSidebar();
+    }
   })
 }
+
+onMounted(() => {
+  if (authenticated.value) {
+    checkTeamAccess();
+  }
+});
+
+const isItemVisible = (item) => {
+  if (item.route === '/teams') {
+    return hasTeamAccess.value;
+  }
+  return item.role.includes('all') || item.role.includes(currentRole.value);
+};
 
 const showLogoutModal = ref(false)
 
@@ -189,7 +221,6 @@ const menuGroups = [
     ]
   }
 ]
-
 </script>
 
 <template>
@@ -260,9 +291,9 @@ const menuGroups = [
     <div class="flex-1 overflow-y-auto overflow-x-hidden py-4 no-scrollbar">
       <nav class="flex flex-col gap-6 px-3">
         <template v-for="menuGroup in menuGroups" :key="menuGroup.name">
-          <!-- Filter: Only show group if it has visible items for this role -->
+          <!-- Filter: Only show group if it has visible items -->
           <div
-            v-if="menuGroup.menuItems.some(i => i.role.includes('all') || i.role.includes(currentRole))"
+            v-if="menuGroup.menuItems.some(isItemVisible)"
           >
             <!-- Group Label -->
             <div
@@ -291,7 +322,7 @@ const menuGroups = [
             <!-- Menu Items -->
             <ul class="flex flex-col gap-0.5">
               <SidebarItem
-                v-for="menuItem in menuGroup.menuItems"
+                v-for="menuItem in menuGroup.menuItems.filter(isItemVisible)"
                 :key="menuItem.label"
                 :item="menuItem"
                 :userRole="currentRole"
@@ -380,7 +411,6 @@ const menuGroups = [
 </template>
 
 <style scoped>
-/* Smooth overlay transition */
 .overlay-enter-active,
 .overlay-leave-active {
   transition: opacity 0.2s ease;
@@ -390,7 +420,6 @@ const menuGroups = [
   opacity: 0;
 }
 
-/* Hide scrollbar */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -399,4 +428,3 @@ const menuGroups = [
   scrollbar-width: none;
 }
 </style>
-
