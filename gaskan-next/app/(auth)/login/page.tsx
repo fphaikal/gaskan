@@ -19,65 +19,96 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorData, setErrorData] = useState<{ message?: string; code?: number; canForce?: boolean } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performLogin = async (force: boolean = false) => {
     if (!identifier || !password) {
-      toast.error('Silakan isi NIS/Email dan Password');
+      toast.error('Silakan isi NIS / Email dan Password');
       return;
     }
 
     setIsLoading(true);
-    setErrorMsg(null);
+    setErrorData(null);
+
+    const payload = {
+      NIS: identifier,
+      email: identifier,
+      username: identifier,
+      Password: password,
+      password: password,
+      force,
+    };
 
     try {
-      const response = await api.post('/auth/login', {
-        NIS: identifier,
-        email: identifier,
-        username: identifier,
-        Password: password,
-        password: password,
-      });
+      // Call primary login endpoint or fallback endpoint
+      let response;
+      try {
+        response = await api.post('/auth/login', payload);
+      } catch (firstErr: any) {
+        if (firstErr?.response?.status === 404) {
+          response = await api.post('/api/auth/login', payload);
+        } else {
+          throw firstErr;
+        }
+      }
 
-      const data = response.data;
-      const token = data?.token || data?.access_token || data?.data?.token || 'mock-token-' + Date.now();
-      const user = data?.user || data?.data?.user || {
-        id: '1',
-        nis: identifier,
-        nama: identifier,
-        role: 'siswa',
-      };
+      const resData = response.data;
+
+      // Extract user info and token
+      const token =
+        resData?.token ||
+        resData?.access_token ||
+        resData?.data?.token ||
+        response.headers['authorization']?.replace('Bearer ', '') ||
+        'session_active';
+
+      const user =
+        resData?.user ||
+        resData?.data?.user ||
+        resData?.data || {
+          id: resData?.id || identifier,
+          nis: resData?.nis || identifier,
+          name: resData?.nama || resData?.name || identifier,
+          role: resData?.role || (identifier.toLowerCase().includes('admin') ? 'admin' : 'siswa'),
+          email: resData?.email || (identifier.includes('@') ? identifier : `${identifier}@smtijogja.sch.id`),
+        };
 
       login(token, user);
       toast.success('Login berhasil! Selamat datang.');
       router.push('/home');
     } catch (err: any) {
-      console.warn('API login failed, attempting fallback login for demo/testing mode:', err);
-      const apiErrorMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message;
+      console.error('API login error response:', err?.response?.data || err);
 
-      // Fallback for development/offline testing if backend endpoint is not active
-      if (!err?.response || err?.response?.status === 404 || err?.code === 'ERR_NETWORK') {
-        const mockToken = 'mock-jwt-token-' + Date.now();
-        const mockUser = {
-          id: '1',
-          nis: identifier,
-          nama: identifier.includes('@') ? identifier.split('@')[0] : identifier,
-          role: 'siswa',
-          email: identifier.includes('@') ? identifier : `${identifier}@smtijogja.sch.id`,
-        };
-        login(mockToken, mockUser);
-        toast.success('Login berhasil (Mode Demo)');
-        router.push('/home');
-        return;
-      }
+      const errResponseData = err?.response?.data;
+      const statusCode = err?.response?.status;
+      const apiMessage =
+        errResponseData?.message ||
+        errResponseData?.error ||
+        errResponseData?.data?.message ||
+        (typeof errResponseData === 'string' ? errResponseData : null) ||
+        'NIS/Email atau password yang Anda masukkan tidak sesuai.';
 
-      const message = apiErrorMsg || 'Email/NIS atau password salah';
-      setErrorMsg(message);
-      toast.error(message);
-    } finally {
+      const canForceLogin = statusCode === 400 || errResponseData?.code === 400 || errResponseData?.forceAvailable;
+
+      setErrorData({
+        message: apiMessage,
+        code: statusCode,
+        canForce: canForceLogin,
+      });
+
+      toast.error(apiMessage);
+    } fontFinally: {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    performLogin(false);
+  };
+
+  const handleForceLogin = () => {
+    performLogin(true);
   };
 
   return (
@@ -136,13 +167,26 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {errorMsg && (
-                <div className="mb-4 p-3 rounded-lg bg-destructive/15 border border-destructive/30 text-destructive text-sm flex items-start gap-2">
-                  <Icon icon="mingcute:warning-fill" className="text-lg shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="font-semibold">Login Gagal</p>
-                    <p className="text-xs opacity-90">{errorMsg}</p>
+              {errorData && (
+                <div className="mb-4 p-3.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-sm flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <Icon icon="mingcute:warning-fill" className="text-lg shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-bold text-sm">Login Gagal</p>
+                      <p className="text-xs opacity-90 leading-snug">{errorData.message}</p>
+                    </div>
                   </div>
+                  {errorData.canForce && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleForceLogin}
+                      className="bg-destructive/20 border-destructive/40 text-destructive hover:bg-destructive/30 font-bold shrink-0 text-xs"
+                    >
+                      Paksa Masuk
+                    </Button>
+                  )}
                 </div>
               )}
 
