@@ -3,9 +3,7 @@ import { defineStore } from "pinia";
 const REAL_API_BASE = 'https://gaskan-api.smtijogja.my.id';
 
 // Helper: get current API base based on proxy setting
-function getApiBase(useProxy = false) {
-  if (useProxy) return ''; // empty = relative URL → goes through Nitro proxy
-  // Read from runtimeConfig if available
+function getDirectBase() {
   if (typeof window !== 'undefined') {
     try {
       const nuxtApp = window.__NUXT__;
@@ -72,7 +70,7 @@ export const useAuthStore = defineStore("auth", {
       }
       // Persist to database so ALL users pick it up on next load
       try {
-        const base = getApiBase(false); // always use direct for settings save
+        const base = getDirectBase();
         await $fetch(`${base}/api/system/settings`, {
           method: 'POST',
           headers: authHeaders(this.token),
@@ -88,7 +86,7 @@ export const useAuthStore = defineStore("auth", {
     async fetchSystemSettings() {
       // Fetch useProxy value from database and sync to store
       try {
-        const base = getApiBase(false); // always direct for system settings
+        const base = getDirectBase();
         const res = await $fetch(`${base}/api/system/settings`, {
           headers: authHeaders(this.token),
         });
@@ -97,7 +95,6 @@ export const useAuthStore = defineStore("auth", {
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('gaskan_use_proxy', String(this.useProxy));
           }
-          console.log('[SYSTEM SETTINGS SYNCED] useProxy =', this.useProxy);
         }
       } catch (err) {
         // Fallback silently
@@ -105,11 +102,9 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async refreshSession() {
+      // auth/me goes through Nitro server (session cookie based)
       try {
-        const base = getApiBase(this.useProxy);
-        const data = await $fetch(`${base}/api/auth/me`, {
-          headers: authHeaders(this.token),
-        });
+        const data = await $fetch("/api/auth/me");
         this.setSessionUser(data.user, data.token);
         this.initialized = true;
         // Sync proxy setting from DB in background (non-blocking)
@@ -128,7 +123,8 @@ export const useAuthStore = defineStore("auth", {
 
       this.userLoading = true;
       try {
-        const base = getApiBase(this.useProxy);
+        // Direct to real backend for content data
+        const base = getDirectBase();
         const data = await $fetch(`${base}/api/user`, {
           headers: authHeaders(this.token),
         });
@@ -143,18 +139,13 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async authenticateUser({ NIS, Password, force }) {
+      // Login goes through Nuxt Nitro server handler (server/api/auth/login.post.js)
+      // which handles: field mapping (NIS → identifier), session cookie, etc.
       try {
-        // Login ALWAYS goes directly to real backend (no proxy for auth)
-        const base = getApiBase(false);
-        const data = await $fetch(`${base}/api/auth/login`, {
+        const data = await $fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // Backend Zod schema expects: identifier (NIS/email) + password (lowercase)
-          body: {
-            identifier: NIS,
-            password: Password,
-            force,
-          },
+          body: { NIS, Password, force },
         });
 
         if (data?.user) {
@@ -171,11 +162,10 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async logUserOut() {
+      // Logout through Nitro to clear session cookie
       try {
-        const base = getApiBase(false);
-        await $fetch(`${base}/api/auth/logout`, {
+        await $fetch("/api/auth/logout", {
           method: "POST",
-          headers: authHeaders(this.token),
         }).catch((err) => {
           console.error("Logout API error:", err);
         });

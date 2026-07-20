@@ -1,18 +1,21 @@
 /**
  * api.global.js — Universal Direct API Interceptor
  *
- * Strategy: Override $fetch GLOBALLY so every call to $fetch('/api/...')
- * is rewritten to the real backend URL when useProxy=false (default).
- *
- * This works because we replace the URL string itself before ofetch
- * resolves it — unlike baseURL approach which runs too late.
+ * - Auth routes (/api/auth/**) → go through Nuxt Nitro proxy (session cookie handling)
+ * - All other content routes (/api/**) → go directly to real backend when useProxy=false
  */
 import { useAuthStore } from '~/store/useAuthStore';
 
-const REAL_API_BASE = (
-  (typeof process !== 'undefined' && process.env?.NUXT_PUBLIC_API_BASE) ||
-  'https://gaskan-api.smtijogja.my.id'
-).replace(/\/+$/, '');
+const REAL_API_BASE = 'https://gaskan-api.smtijogja.my.id';
+
+// Auth routes that MUST stay on Nitro proxy (session cookie + field mapping)
+const AUTH_PROXY_PATHS = [
+  '/api/auth/',
+];
+
+function isAuthRoute(url) {
+  return AUTH_PROXY_PATHS.some(prefix => url.startsWith(prefix));
+}
 
 export default defineNuxtPlugin({
   name: 'api-global-interceptor',
@@ -21,90 +24,77 @@ export default defineNuxtPlugin({
     const config = useRuntimeConfig();
     const apiBase = (config.public.apiBase || REAL_API_BASE).replace(/\/+$/, '');
 
-    /**
-     * Build a raw fetch wrapper that:
-     * 1. Gets current proxy setting and token from store
-     * 2. Rewrites relative /api/... to real backend when not proxying
-     * 3. Attaches Authorization header when we have a token
-     */
-    function buildInterceptedFetch() {
-      return async function interceptedFetch(request, options = {}) {
-        let useProxy = false;
-        let token = null;
+    nuxtApp.hook('app:created', () => {
+      // Wrap $fetch to rewrite content API calls directly to backend
+      const originalFetch = nuxtApp.$fetch ?? $fetch;
 
-        // Read store state — safe to call even before Pinia is hydrated
-        try {
-          const authStore = useAuthStore();
-          useProxy = Boolean(authStore.useProxy);
-          token = authStore.token;
-        } catch {
-          useProxy = false;
-        }
+      nuxtApp.$fetch = new Proxy(originalFetch, {
+        apply(target, thisArg, args) {
+          const [request, options = {}] = args;
+          const url = typeof request === 'string' ? request : (request?.url || '');
 
-        // Fallback to localStorage when store is not yet initialized
-        if (typeof localStorage !== 'undefined') {
-          if (token === null) {
-            token = localStorage.getItem('gaskan_jwt_token');
+          // Skip auth routes — they stay on Nitro
+          if (isAuthRoute(url)) {
+            return Reflect.apply(target, thisArg, args);
           }
-          if (useProxy === false) {
-            const stored = localStorage.getItem('gaskan_use_proxy');
-            if (stored === 'true') useProxy = true;
-          }
-        }
 
-        // Resolve the final URL
-        let resolvedUrl = typeof request === 'string' ? request : (request?.url || '');
-        const opts = { ...options };
+          let useProxy = false;
+          let token = null;
 
-        // When NOT using proxy AND request is a relative /api/ path → redirect to real backend
-        if (!useProxy && typeof resolvedUrl === 'string' && resolvedUrl.startsWith('/api/')) {
-          resolvedUrl = `${apiBase}${resolvedUrl}`;
+          try {
+            const authStore = useAuthStore();
+            useProxy = Boolean(authStore.useProxy);
+            token = authStore.token;
+          } catch {}
 
-          // Attach Authorization header
-          if (token) {
-            const existing = opts.headers
-              ? (opts.headers instanceof Headers
-                  ? Object.fromEntries(opts.headers.entries())
-                  : { ...opts.headers })
-              : {};
-            opts.headers = {
-              ...existing,
-              Authorization: `Bearer ${token}`,
-            };
-          }
-        }
-
-        // Perform the actual fetch using ofetch
-        try {
-          return await $fetch.raw(resolvedUrl, opts).then(r => r._data ?? r);
-        } catch (err) {
-          // Auto-logout on 401
-          if (err?.response?.status === 401 && import.meta.client) {
-            const router = useRouter();
-            if (router.currentRoute.value?.path !== '/login') {
-              console.warn('[API] 401 – redirecting to login');
-              try { useAuthStore().clearSessionUser(); } catch {}
-              router.push('/login');
+          if (typeof localStorage !== 'undefined') {
+            if (!token) token = localStorage.getItem('gaskan_jwt_token');
+            if (!useProxy) {
+              const stored = localStorage.getItem('gaskan_use_proxy');
+              if (stored === 'true') useProxy = true;
             }
           }
-          throw err;
+
+          // Rewrite /api/... → https://gaskan-api.smtijogja.my.id/api/... when not proxying
+          if (!useProxy && url.startsWith('/api/')) {
+            const newUrl = `${apiBase}${url}`;
+            const newOptions = { ...options };
+
+            if (token) {
+              const existing = newOptions.headers
+                ? (newOptions.headers instanceof Headers
+                    ? Object.fromEntries(newOptions.headers.entries())
+                    : { ...newOptions.headers })
+                : {};
+              newOptions.headers = { ...existing, Authorization: `Bearer ${token}` };
+            }
+
+            return Reflect.apply(target, thisArg, [newUrl, newOptions]);
+          }
+
+          return Reflect.apply(target, thisArg, args);
         }
-      };
-    }
-
-    // Create the interceptor
-    const interceptedFetch = buildInterceptedFetch();
-
-    // Override globalThis.$fetch AND nuxtApp.$fetch
-    // Components that use $fetch() directly will pick up this override
-    nuxtApp.hook('app:created', () => {
-      nuxtApp.$fetch = interceptedFetch;
+      });
     });
 
     return {
       provide: {
-        // Expose as $api for explicit usage: const { $api } = useNuxtApp()
-        api: interceptedFetch,
+        api: (url, opts = {}) => {
+          // useNuxtApp().$api() — same logic as above for explicit usage
+          const isAuth = isAuthRoute(typeof url === 'string' ? url : '');
+          if (!isAuth) {
+            let token = null;
+            try { token = useAuthStore().token; } catch {}
+            if (!token && typeof localStorage !== 'undefined') token = localStorage.getItem('gaskan_jwt_token');
+            if (token && typeof url === 'string' && url.startsWith('/api/')) {
+              const newOpts = { ...opts };
+              const existing = newOpts.headers ? { ...newOpts.headers } : {};
+              newOpts.headers = { ...existing, Authorization: `Bearer ${token}` };
+              return $fetch(`${apiBase}${url}`, newOpts);
+            }
+          }
+          return $fetch(url, opts);
+        },
       },
     };
   },
