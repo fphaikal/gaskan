@@ -1,466 +1,612 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  Users,
-  School,
-  CalendarCheck,
-  Percent,
-  ArrowRight,
-  UserCheck,
-  FileSpreadsheet,
-  Activity,
-  ShieldCheck,
-  Clock,
-  RefreshCw,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Clock3,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import api from "@/lib/api";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api';
+import { Icon } from '@iconify/react';
+import { format, parseISO } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
-interface SummaryStats {
-  totalSiswa: number;
-  totalKelas: number;
-  absensiHariIni: number;
-  persentaseKehadiran: number;
-  hadir: number;
-  izin: number;
-  sakit: number;
-  alpa: number;
-}
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface RecentActivity {
-  id: string | number;
-  nama: string;
-  nis: string;
-  kelas: string;
-  waktu: string;
-  status: "hadir" | "izin" | "sakit" | "alpa";
-}
+export default function HomePage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const role = user?.role || 'siswa';
+  const isAdminOrDev = ['admin', 'developer', 'guru'].includes(role);
+  const isDeveloper = role === 'developer';
+  const isGuru = role === 'guru';
 
-const MOCK_STATS: SummaryStats = {
-  totalSiswa: 1248,
-  totalKelas: 36,
-  absensiHariIni: 1180,
-  persentaseKehadiran: 94.5,
-  hadir: 1120,
-  izin: 35,
-  sakit: 25,
-  alpa: 68,
-};
+  // State for Admin/Dev
+  const [countData, setCountData] = useState<any>(null);
+  const [loginLogs, setLoginLogs] = useState<any[]>([]);
+  const [systemStats, setSystemStats] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'attendance' | 'failures'>('attendance');
+  const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
+  const [activePreviewImage, setActivePreviewImage] = useState<string | null>(null);
 
-const MOCK_RECENT_ACTIVITIES: RecentActivity[] = [
-  {
-    id: 1,
-    nama: "Ahmad Fauzi",
-    nis: "20241001",
-    kelas: "X RPL 1",
-    waktu: "07:05:12",
-    status: "hadir",
-  },
-  {
-    id: 2,
-    nama: "Siti Nurhaliza",
-    nis: "20241002",
-    kelas: "X RPL 1",
-    waktu: "07:10:45",
-    status: "hadir",
-  },
-  {
-    id: 3,
-    nama: "Budi Santoso",
-    nis: "20241003",
-    kelas: "XI TKJ 2",
-    waktu: "07:14:20",
-    status: "hadir",
-  },
-  {
-    id: 4,
-    nama: "Dewi Lestari",
-    nis: "20241004",
-    kelas: "XII MM 1",
-    waktu: "-",
-    status: "izin",
-  },
-  {
-    id: 5,
-    nama: "Rizky Ramadhan",
-    nis: "20241005",
-    kelas: "X TKJ 1",
-    waktu: "-",
-    status: "sakit",
-  },
-  {
-    id: 6,
-    nama: "Eka Prasetya",
-    nis: "20241006",
-    kelas: "XI RPL 2",
-    waktu: "-",
-    status: "alpa",
-  },
-];
+  // State for Siswa
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [studentAttendance, setStudentAttendance] = useState<any>(null);
+  const [studentLoading, setStudentLoading] = useState<boolean>(false);
+  const [selectedDayLog, setSelectedDayLog] = useState<any>(null);
 
-export default function DashboardHomePage() {
-  const [stats, setStats] = useState<SummaryStats>(MOCK_STATS);
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
-    MOCK_RECENT_ACTIVITIES
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
+  // Fetch Admin / Dev Data
+  const fetchAdminData = useCallback(async () => {
     try {
-      const res = await api.get("/dashboard/summary");
-      if (res.data && res.data.stats) {
-        setStats(res.data.stats);
-      }
-      if (res.data && res.data.recent) {
-        setRecentActivities(res.data.recent);
-      }
-    } catch (error) {
-      console.log("Using mock summary dashboard data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const [countRes, loginRes] = await Promise.allSettled([
+        api.get('/count').catch(() => api.get('/api/count')),
+        api.get('/log/login').catch(() => api.get('/api/log/login')),
+      ]);
 
-  useEffect(() => {
-    fetchDashboardData();
+      if (countRes.status === 'fulfilled' && countRes.value?.data) {
+        setCountData(countRes.value.data?.data || countRes.value.data);
+      }
+      if (loginRes.status === 'fulfilled' && loginRes.value?.data) {
+        setLoginLogs(loginRes.value.data?.data || loginRes.value.data || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch admin dashboard data:', e);
+    }
   }, []);
 
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "hadir":
-        return (
-          <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Hadir
-          </Badge>
-        );
-      case "izin":
-        return (
-          <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/25 border-blue-200 dark:border-blue-800 flex items-center gap-1">
-            <Clock3 className="h-3 w-3" /> Izin
-          </Badge>
-        );
-      case "sakit":
-        return (
-          <Badge className="bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 border-amber-200 dark:border-amber-800 flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" /> Sakit
-          </Badge>
-        );
-      case "alpa":
-        return (
-          <Badge className="bg-rose-500/15 text-rose-600 hover:bg-rose-500/25 border-rose-200 dark:border-rose-800 flex items-center gap-1">
-            <XCircle className="h-3 w-3" /> Alpa
-          </Badge>
-        );
+  // Fetch Developer System Info
+  const fetchSystemData = useCallback(async () => {
+    if (!isDeveloper) return;
+    try {
+      const res = await api.get('/dev/system').catch(() => api.get('/api/dev/system'));
+      if (res.data) setSystemStats(res.data?.data || res.data);
+    } catch (e) {
+      // silent fallback
+    }
+  }, [isDeveloper]);
+
+  // Fetch Student Data
+  const fetchStudentData = useCallback(async () => {
+    if (isAdminOrDev) return;
+    setStudentLoading(true);
+    try {
+      const res = await api
+        .get(`/attendance/my?month=${selectedMonth}&year=${selectedYear}`)
+        .catch(() => api.get(`/api/attendance/my?month=${selectedMonth}&year=${selectedYear}`));
+      if (res.data) setStudentAttendance(res.data?.data || res.data);
+    } catch (e) {
+      console.error('Failed to fetch student attendance:', e);
+    } finally {
+      setStudentLoading(false);
+    }
+  }, [isAdminOrDev, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    if (isAdminOrDev) {
+      fetchAdminData();
+      if (isDeveloper) {
+        fetchSystemData();
+        const interval = setInterval(fetchSystemData, 5000);
+        return () => clearInterval(interval);
+      }
+    } else {
+      fetchStudentData();
+    }
+  }, [isAdminOrDev, isDeveloper, fetchAdminData, fetchSystemData, fetchStudentData]);
+
+  // Greeting & Date calculations
+  const todayStr = useMemo(() => format(new Date(), 'EEEE, d MMMM yyyy', { locale: localeId }), []);
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 11) return 'Selamat Pagi';
+    if (h < 15) return 'Selamat Siang';
+    if (h < 19) return 'Selamat Sore';
+    return 'Selamat Malam';
+  }, []);
+
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Pengguna';
+  const firstWord = displayName.split(' ')[0];
+
+  const today = countData?.today || {
+    present: 120,
+    late: 8,
+    absent: 4,
+    izin: 6,
+    sakit: 2,
+    attendancePercentage: 94,
+  };
+
+  const formatTime = (ts?: string) => (ts ? format(parseISO(ts), 'HH:mm') : '-');
+  const formatFull = (ts?: string) => (ts ? format(parseISO(ts), 'EEEE, d MMM yyyy · HH:mm', { locale: localeId }) : '-');
+
+  const methodLabel = (m: string) => {
+    if (m === 'FACE_RECOGNITION') return { label: 'Face ID', icon: 'mingcute:faceid-line', color: 'text-primary' };
+    if (m === 'QR_CODE') return { label: 'QR Code', icon: 'mingcute:qrcode-2-line', color: 'text-blue-500' };
+    return { label: 'Manual', icon: 'mingcute:edit-2-line', color: 'text-muted-foreground' };
+  };
+
+  const getStatus = (s: string) => {
+    switch (s) {
+      case 'HADIR':
+        return { color: 'text-emerald-500', badge: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' };
+      case 'TERLAMBAT':
+        return { color: 'text-amber-500', badge: 'bg-amber-500/10 border-amber-500/30 text-amber-500' };
+      case 'IZIN':
+        return { color: 'text-sky-500', badge: 'bg-sky-500/10 border-sky-500/30 text-sky-500' };
+      case 'SAKIT':
+        return { color: 'text-orange-400', badge: 'bg-orange-400/10 border-orange-400/30 text-orange-400' };
+      case 'ALPHA':
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return { color: 'text-rose-500', badge: 'bg-rose-500/10 border-rose-500/30 text-rose-500' };
     }
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return "S";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
-  };
+  const avatarColors = [
+    'bg-primary/20 text-primary',
+    'bg-emerald-500/20 text-emerald-500',
+    'bg-amber-500/20 text-amber-500',
+    'bg-sky-500/20 text-sky-500',
+    'bg-rose-500/20 text-rose-500',
+  ];
+  const avatarColor = (name?: string) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
-  const quickNavCards = [
-    {
-      title: "Data Siswa",
-      description: "Kelola data master siswa, NIS, dan status kelas",
-      icon: Users,
-      href: "/siswa",
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
-    },
-    {
-      title: "Data Kelas",
-      description: "Kelola rombel, wali kelas, dan jurusan",
-      icon: School,
-      href: "/kelas",
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10",
-    },
-    {
-      title: "Absensi Presensi",
-      description: "Rekap data kehadiran harian dan cetak laporan",
-      icon: CalendarCheck,
-      href: "/absensi",
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-500/10",
-    },
-    {
-      title: "Permohonan Izin",
-      description: "Verifikasi dan kelola persetujuan surat izin/sakit",
-      icon: FileSpreadsheet,
-      href: "/izin",
-      color: "text-amber-500",
-      bgColor: "bg-amber-500/10",
-    },
-    {
-      title: "Realtime Monitor",
-      description: "Pantau perangkat IoT scan absensi secara live",
-      icon: Activity,
-      href: "/monitor",
-      color: "text-rose-500",
-      bgColor: "bg-rose-500/10",
-    },
-    {
-      title: "Kelola Admin",
-      description: "Kelola peran pengguna dan akses akun administrator",
-      icon: ShieldCheck,
-      href: "/admin",
-      color: "text-indigo-500",
-      bgColor: "bg-indigo-500/10",
-    },
+  // Mock fallbacks if countData is not yet populated
+  const recentAttendances = countData?.recentAttendances || [
+    { id: '1', studentName: 'Ahmad Fauzi', className: 'XII RPL 1', majorName: 'RPL', time: new Date().toISOString(), method: 'FACE_RECOGNITION', status: 'HADIR' },
+    { id: '2', studentName: 'Siti Nurhaliza', className: 'XI TKJ 2', majorName: 'TKJ', time: new Date(Date.now() - 600000).toISOString(), method: 'QR_CODE', status: 'HADIR' },
+    { id: '3', studentName: 'Budi Santoso', className: 'X TMI 1', majorName: 'TMI', time: new Date(Date.now() - 1200000).toISOString(), method: 'FACE_RECOGNITION', status: 'TERLAMBAT' },
+    { id: '4', studentName: 'Dewi Lestari', className: 'XII Kimia 3', majorName: 'Kimia', time: new Date(Date.now() - 3600000).toISOString(), method: 'MANUAL', status: 'IZIN' },
   ];
 
-  return (
-    <div className="space-y-6 pb-8">
-      {/* Top Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-background border">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Selamat Datang di Dashboard Gaskan
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Sistem Informasi Presensi dan Monitoring Kehadiran Siswa Real-time.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchDashboardData}
-          disabled={isLoading}
-          className="w-fit gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          <span>Refresh Data</span>
-        </Button>
+  const recentFaceFailures = countData?.recentFaceFailures || [
+    { id: 'f1', identifier: 'UNKNOWN_USER', message: 'Wajah tidak terdeteksi di database', timestamp: new Date(Date.now() - 1800000).toISOString(), gate: 'Gerbang Utama SMTI' },
+  ];
+
+  // Months & Years for Siswa view
+  const monthsList = [
+    { value: 1, name: 'Januari' },
+    { value: 2, name: 'Februari' },
+    { value: 3, name: 'Maret' },
+    { value: 4, name: 'April' },
+    { value: 5, name: 'Mei' },
+    { value: 6, name: 'Juni' },
+    { value: 7, name: 'Juli' },
+    { value: 8, name: 'Agustus' },
+    { value: 9, name: 'September' },
+    { value: 10, name: 'Oktober' },
+    { value: 11, name: 'November' },
+    { value: 12, name: 'Desember' },
+  ];
+  const yearsList = [new Date().getFullYear(), new Date().getFullYear() - 1];
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin" />
       </div>
+    );
+  }
 
-      {/* Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-sm border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Siswa
-            </CardTitle>
-            <div className="p-2 rounded-md bg-blue-500/10 text-blue-500">
-              <Users className="h-4 w-4" />
+  // ----------------------------------------------------
+  // ADMIN / GURU / DEVELOPER DASHBOARD VIEW
+  // ----------------------------------------------------
+  if (isAdminOrDev) {
+    return (
+      <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+        {/* ROW 1: Hero Greeting + Quick Stat Widgets */}
+        <div className="grid grid-cols-12 gap-4">
+          {/* Hero Banner */}
+          <Link
+            href="/profile"
+            className="col-span-12 md:col-span-5 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-6 relative overflow-hidden shadow-xl shadow-amber-500/20 flex flex-col justify-between hover:scale-[1.01] transition-transform cursor-pointer group"
+          >
+            <div className="relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 mb-1">
+                {greeting} — {todayStr}
+              </p>
+              <h1 className="text-3xl font-extrabold text-white leading-tight">{firstWord}</h1>
+              <p className="text-xs text-white/80 font-semibold mt-2">
+                {countData?.klasifikasi?.siswa || 520} siswa · {countData?.pendingLeaves || 3} izin pending ·{' '}
+                {today.attendancePercentage || 94}% hadir
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalSiswa.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Terdaftar dalam sistem
-            </p>
-          </CardContent>
-        </Card>
+            <div className="absolute right-5 top-1/2 -translate-y-1/2 grid grid-cols-4 gap-1.5 opacity-15 group-hover:opacity-25 transition-opacity">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <div key={i} className="w-3.5 h-3.5 rounded-sm bg-white" />
+              ))}
+            </div>
+          </Link>
 
-        <Card className="shadow-sm border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Kelas
-            </CardTitle>
-            <div className="p-2 rounded-md bg-purple-500/10 text-purple-500">
-              <School className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalKelas}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Rombongan belajar aktif
-            </p>
-          </CardContent>
-        </Card>
+          {/* Stat Cards */}
+          {/* Alpha */}
+          <Link
+            href="/absensi"
+            className="col-span-3 md:col-span-2 bg-rose-500 rounded-3xl p-4 text-white shadow-lg shadow-rose-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
+          >
+            <Icon icon="mingcute:close-circle-fill" className="text-2xl mb-1 opacity-80" />
+            <p className="text-3xl font-black leading-none">{today.absent}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Alpha</p>
+          </Link>
 
-        <Card className="shadow-sm border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Absensi Hari Ini
-            </CardTitle>
-            <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-500">
-              <CalendarCheck className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.absensiHariIni}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total presensi tercatat
-            </p>
-          </CardContent>
-        </Card>
+          {/* Izin/Sakit */}
+          <Link
+            href="/izin"
+            className="col-span-3 md:col-span-2 bg-amber-500 rounded-3xl p-4 text-white shadow-lg shadow-amber-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
+          >
+            <Icon icon="mingcute:document-fill" className="text-2xl mb-1 opacity-80" />
+            <p className="text-3xl font-black leading-none">{today.izin + today.sakit}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Izin/Sakit</p>
+          </Link>
 
-        <Card className="shadow-sm border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Persentase Kehadiran
-            </CardTitle>
-            <div className="p-2 rounded-md bg-amber-500/10 text-amber-500">
-              <Percent className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.persentaseKehadiran}%</div>
-            <div className="w-full bg-muted rounded-full h-1.5 mt-2 overflow-hidden">
+          {/* Lambat */}
+          <Link
+            href="/absensi"
+            className="col-span-3 md:col-span-1 bg-orange-400 rounded-3xl p-4 text-white shadow-lg shadow-orange-400/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
+          >
+            <Icon icon="mingcute:time-fill" className="text-xl mb-1 opacity-80" />
+            <p className="text-2xl font-black leading-none">{today.late}</p>
+            <p className="text-[9px] font-black uppercase tracking-widest mt-1 opacity-80">Lambat</p>
+          </Link>
+
+          {/* Hadir */}
+          <Link
+            href="/absensi"
+            className="col-span-3 md:col-span-2 bg-emerald-500 rounded-3xl p-4 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
+          >
+            <Icon icon="mingcute:check-circle-fill" className="text-2xl mb-1 opacity-80" />
+            <p className="text-3xl font-black leading-none">{today.present + today.late}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Hadir</p>
+            <div className="w-full bg-white/20 h-1.5 rounded-full mt-2 overflow-hidden">
               <div
-                className="bg-emerald-500 h-1.5 rounded-full"
-                style={{ width: `${Math.min(stats.persentaseKehadiran, 100)}%` }}
+                className="h-full bg-white rounded-full transition-all duration-1000"
+                style={{ width: `${today.attendancePercentage || 0}%` }}
               />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Grid Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Quick Action Navigation */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="border shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg">Aksi Cepat & Navigasi</CardTitle>
-              <CardDescription>
-                Pintas ke modul manajemen dan laporan aktivitas presensi
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {quickNavCards.map((card) => {
-                const IconComponent = card.icon;
-                return (
-                  <Link key={card.href} href={card.href} className="group block">
-                    <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors flex items-start justify-between h-full">
-                      <div className="space-y-1 pr-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-2 rounded-md ${card.bgColor} ${card.color}`}>
-                            <IconComponent className="h-4 w-4" />
-                          </div>
-                          <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-                            {card.title}
-                          </h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                          {card.description}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-1 shrink-0" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          {/* Additional breakdown overview card */}
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">
-                Rincian Status Presensi Hari Ini
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-200 dark:border-emerald-900/50">
-                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Hadir</p>
-                <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
-                  {stats.hadir}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-200 dark:border-blue-900/50">
-                <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Izin</p>
-                <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">
-                  {stats.izin}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-900/50">
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">Sakit</p>
-                <p className="text-xl font-bold text-amber-700 dark:text-amber-300 mt-1">
-                  {stats.sakit}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-200 dark:border-rose-900/50">
-                <p className="text-xs font-medium text-rose-600 dark:text-rose-400">Alpa</p>
-                <p className="text-xl font-bold text-rose-700 dark:text-rose-300 mt-1">
-                  {stats.alpa}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+            <p className="text-[9px] opacity-70 mt-0.5">{today.attendancePercentage || 0}%</p>
+          </Link>
         </div>
 
-        {/* Right 1 Col: Recent Attendance Activity Feed */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="border shadow-sm h-full flex flex-col justify-between">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" /> Aktivitas Terbaru
-                </CardTitle>
-                <Link href="/absensi">
-                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2">
-                    Lihat Semua
-                  </Button>
-                </Link>
-              </div>
-              <CardDescription>Scan presensi masuk terupdate</CardDescription>
-            </CardHeader>
-
-            <CardContent className="flex-1 space-y-4 pt-1">
-              {recentActivities.map((act) => (
-                <div
-                  key={act.id}
-                  className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors"
+        {/* ROW 2: Activity Table + Right Sidebar */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Main Activity Table */}
+          <div className="col-span-12 lg:col-span-8 bg-card rounded-3xl border border-border shadow-sm flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-6">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('attendance')}
+                  className={`flex items-center gap-2 pb-1 border-b-2 font-black text-sm tracking-wide transition-all ${
+                    activeTab === 'attendance'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <Avatar className="h-8 w-8 text-xs shrink-0">
-                      <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                        {getInitials(act.nama)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="overflow-hidden">
-                      <p className="text-xs font-semibold truncate text-foreground">
-                        {act.nama}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {act.kelas} &bull; NIS: {act.nis}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                    {getStatusBadge(act.status)}
-                    <span className="text-[10px] text-muted-foreground">
-                      {act.waktu}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
+                  Aktivitas Absensi
+                  <Badge variant="secondary" className="font-mono text-[10px]">
+                    {recentAttendances.length}
+                  </Badge>
+                </button>
 
-            <div className="p-4 pt-0">
-              <Link href="/monitor" className="w-full block">
-                <Button variant="outline" className="w-full text-xs gap-2">
-                  <Activity className="h-3.5 w-3.5" /> Buka Live Monitor
-                </Button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('failures')}
+                  className={`flex items-center gap-2 pb-1 border-b-2 font-black text-sm tracking-wide transition-all ${
+                    activeTab === 'failures'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Gagal Deteksi Wajah
+                  <Badge variant="secondary" className="font-mono text-[10px]">
+                    {recentFaceFailures.length}
+                  </Badge>
+                </button>
+              </div>
+
+              <Link
+                href={activeTab === 'attendance' ? '/absensi' : '/log'}
+                className="text-[10px] font-black uppercase text-primary hover:underline tracking-widest"
+              >
+                Lihat Semua →
               </Link>
             </div>
-          </Card>
+
+            {/* Attendance Tab */}
+            {activeTab === 'attendance' ? (
+              <div className="overflow-x-auto w-full flex-1">
+                <div className="min-w-[650px]">
+                  <div className="grid grid-cols-12 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-6 py-3 border-b border-border bg-muted/20">
+                    <div className="col-span-4">Siswa</div>
+                    <div className="col-span-3">Kelas / Jurusan</div>
+                    <div className="col-span-2">Waktu</div>
+                    <div className="col-span-2">Metode</div>
+                    <div className="col-span-1 text-right">Status</div>
+                  </div>
+
+                  <div className="divide-y divide-border">
+                    {recentAttendances.map((a: any) => (
+                      <div
+                        key={a.id}
+                        onClick={() => setSelectedAttendance(a)}
+                        className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors cursor-pointer group"
+                      >
+                        {/* Student Name */}
+                        <div className="col-span-4 flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${avatarColor(
+                              a.studentName
+                            )}`}
+                          >
+                            {a.studentName?.charAt(0)}
+                          </div>
+                          <span className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                            {a.studentName}
+                          </span>
+                        </div>
+
+                        {/* Class/Major */}
+                        <div className="col-span-3 min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">{a.className || '—'}</p>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase">
+                            {a.majorName || 'Umum'}
+                          </p>
+                        </div>
+
+                        {/* Time */}
+                        <div className="col-span-2">
+                          <span className="text-xs font-mono font-bold">{formatTime(a.time)}</span>
+                        </div>
+
+                        {/* Method */}
+                        <div className="col-span-2 flex items-center gap-1.5">
+                          <Icon icon={methodLabel(a.method).icon} className={`text-base ${methodLabel(a.method).color}`} />
+                          <span className={`text-[10px] font-bold ${methodLabel(a.method).color}`}>
+                            {methodLabel(a.method).label}
+                          </span>
+                        </div>
+
+                        {/* Status */}
+                        <div className="col-span-1 flex justify-end">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
+                              getStatus(a.status).badge
+                            }`}
+                          >
+                            {a.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Failures Tab */
+              <div className="overflow-x-auto w-full flex-1">
+                <div className="min-w-[650px] divide-y divide-border">
+                  {recentFaceFailures.map((f: any) => (
+                    <div
+                      key={f.id}
+                      className="grid grid-cols-12 items-center px-6 py-3.5 hover:bg-rose-500/5 transition-colors"
+                    >
+                      <div className="col-span-2 flex items-center">
+                        <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                          <Icon icon="mingcute:user-close-line" className="text-xl" />
+                        </div>
+                      </div>
+                      <div className="col-span-4 min-w-0">
+                        <p className="text-sm font-bold text-rose-500 truncate">{f.identifier}</p>
+                        <p className="text-[10px] text-muted-foreground">{f.message}</p>
+                      </div>
+                      <div className="col-span-3">
+                        <p className="text-xs font-semibold">{f.gate}</p>
+                      </div>
+                      <div className="col-span-3 text-right">
+                        <p className="text-xs font-mono font-bold">{formatTime(f.timestamp)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Sidebar Widgets */}
+          <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+            {/* Quick Nav Grid */}
+            <div className="bg-card rounded-3xl p-5 border border-border shadow-sm">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">
+                Navigasi Cepat
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { to: '/siswa', icon: 'mingcute:user-add-fill', label: 'Daftar Siswa', color: 'text-primary bg-primary/10' },
+                  { to: '/izin', icon: 'mingcute:file-check-fill', label: 'Review Izin', color: 'text-amber-500 bg-amber-500/10' },
+                  { to: '/absensi', icon: 'mingcute:calendar-2-fill', label: 'Absensi', color: 'text-emerald-500 bg-emerald-500/10' },
+                  { to: '/admin', icon: 'mingcute:settings-6-fill', label: 'Manajemen', color: 'text-sky-500 bg-sky-500/10' },
+                ].map((nav) => (
+                  <Link
+                    key={nav.to}
+                    href={nav.to}
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/40 hover:bg-muted/80 hover:scale-[1.02] transition-all group"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${nav.color}`}>
+                      <Icon icon={nav.icon} className="text-xl" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground text-center">
+                      {nav.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Context Feed */}
+            <div className="bg-card rounded-3xl p-5 border border-border shadow-sm flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                  {isGuru ? 'Izin Menunggu Review' : 'Security Monitor'}
+                </p>
+                <Link href="/log" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">
+                  Semua
+                </Link>
+              </div>
+
+              <div className="space-y-3">
+                {loginLogs.slice(0, 4).map((log: any, idx: number) => (
+                  <div
+                    key={log.id || idx}
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/60 transition-all"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Icon icon="mingcute:key-2-fill" className="text-base" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">{log.user?.name || log.identifier || 'System User'}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase">{log.action || 'LOGIN_SUCCESS'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dev System Strip */}
+        {isDeveloper && systemStats && (
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/40 border border-border rounded-2xl px-6 py-3">
+            {[
+              { label: 'HOST', val: systemStats?.osInfo?.hostname || 'smti-server' },
+              { label: 'OS', val: systemStats?.osInfo?.distro || 'Ubuntu Linux' },
+              { label: 'RAM', val: systemStats?.memory?.used || '4.2 GB' },
+              { label: 'DISK', val: systemStats?.disk?.used || '45%' },
+            ].map((st) => (
+              <div key={st.label} className="flex items-center gap-2">
+                <span className="text-[9px] font-black text-primary uppercase tracking-widest">{st.label}</span>
+                <span className="text-xs font-bold text-muted-foreground">{st.val}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Online</span>
+            </div>
+          </div>
+        )}
+
+        {/* Attendance Detail Dialog Modal */}
+        {selectedAttendance && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedAttendance(null)}>
+            <div className="bg-card rounded-3xl border border-border shadow-2xl w-full max-w-md p-6 space-y-4 relative" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <div>
+                  <h3 className="text-lg font-bold">{selectedAttendance.studentName}</h3>
+                  <p className="text-xs text-muted-foreground">{selectedAttendance.className} · {selectedAttendance.majorName}</p>
+                </div>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setSelectedAttendance(null)}>
+                  ✕
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 rounded-2xl bg-muted/50">
+                  <span className="text-xs font-semibold text-muted-foreground">Status Kehadiran</span>
+                  <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase border ${getStatus(selectedAttendance.status).badge}`}>
+                    {selectedAttendance.status}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs py-1">
+                  <span className="text-muted-foreground">Waktu Masuk</span>
+                  <span className="font-bold">{formatFull(selectedAttendance.time)}</span>
+                </div>
+                <div className="flex justify-between text-xs py-1">
+                  <span className="text-muted-foreground">Metode Tap</span>
+                  <span className="font-bold">{methodLabel(selectedAttendance.method).label}</span>
+                </div>
+              </div>
+
+              <Button className="w-full rounded-2xl font-bold" onClick={() => setSelectedAttendance(null)}>
+                Tutup
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // SISWA DASHBOARD VIEW
+  // ----------------------------------------------------
+  const studentSummary = studentAttendance?.summary || { hadir: 18, terlambat: 2, izin: 1, sakit: 0, alpha: 0, total: 21 };
+  const studentRate = studentSummary.total ? Math.round(((studentSummary.hadir + studentSummary.terlambat) / studentSummary.total) * 100) : 95;
+
+  return (
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Student Profile Card (2x1) */}
+        <div className="lg:col-span-2 bg-gradient-to-br from-primary/15 via-card to-card border border-border rounded-3xl p-6 flex items-center gap-6 shadow-sm">
+          <div className="w-20 h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-3xl font-extrabold shadow-inner shrink-0">
+            {displayName.charAt(0)}
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold">Halo, {firstWord}!</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Siswa Active · NIS: {user?.id || '12345678'}
+            </p>
+          </div>
+        </div>
+
+        {/* Today Status (1x1) */}
+        <div className="bg-card border border-border rounded-3xl p-6 flex flex-col justify-between shadow-sm">
+          <p className="text-xs font-semibold text-muted-foreground">Status Hari Ini</p>
+          <div className="flex items-center gap-3 text-emerald-500">
+            <Icon icon="mingcute:check-circle-fill" className="text-4xl" />
+            <div>
+              <span className="text-2xl font-black">Hadir</span>
+              <p className="text-xs opacity-70">07:05 WIB</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly Attendance Rate (1x1) */}
+        <div className="bg-card border border-border rounded-3xl p-6 flex flex-col justify-between shadow-sm">
+          <p className="text-xs font-semibold text-muted-foreground">Kehadiran Bulan Ini</p>
+          <div>
+            <div className="flex items-end gap-2">
+              <span className="text-4xl font-extrabold text-emerald-500">{studentRate}%</span>
+              <span className="text-xs text-muted-foreground pb-1">dari {studentSummary.total} hari</span>
+            </div>
+            <div className="w-full bg-muted h-2 rounded-full mt-3 overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${studentRate}%` }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly Summary Cards (Full Span) */}
+        <div className="lg:col-span-4 bg-card border border-border rounded-3xl p-6 shadow-sm">
+          <p className="text-xs font-semibold text-muted-foreground mb-4">Rekap Absensi Bulan Ini</p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-emerald-500/10 p-4 rounded-2xl text-center">
+              <p className="text-3xl font-black text-emerald-500 mb-1">{studentSummary.hadir}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Hadir</p>
+            </div>
+            <div className="bg-amber-500/10 p-4 rounded-2xl text-center">
+              <p className="text-3xl font-black text-amber-500 mb-1">{studentSummary.terlambat}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Terlambat</p>
+            </div>
+            <div className="bg-sky-500/10 p-4 rounded-2xl text-center">
+              <p className="text-3xl font-black text-sky-500 mb-1">{studentSummary.izin}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Izin</p>
+            </div>
+            <div className="bg-orange-400/10 p-4 rounded-2xl text-center">
+              <p className="text-3xl font-black text-orange-400 mb-1">{studentSummary.sakit}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Sakit</p>
+            </div>
+            <div className="bg-rose-500/10 p-4 rounded-2xl text-center">
+              <p className="text-3xl font-black text-rose-500 mb-1">{studentSummary.alpha}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Alpha</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
