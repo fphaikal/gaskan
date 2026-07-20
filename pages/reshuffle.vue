@@ -245,15 +245,15 @@ const handleExcelReshuffle = async () => {
           @click="activeTab = 'website'"
           :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'website' ? 'bg-primary text-primary-content shadow-lg shadow-primary/20' : 'text-base-content/60 hover:text-base-content']"
         >
-          <Icon name="mingcute:global-line" size="16" />
-          Secara Website
+          <Icon name="mingcute:cursor-hand-line" size="16" />
+          Pilih Langsung
         </button>
         <button
           @click="activeTab = 'excel'"
           :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'excel' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-base-content/60 hover:text-base-content']"
         >
           <Icon name="mingcute:file-excel-line" size="16" />
-          Upload Excel
+          Import Excel
         </button>
       </div>
     </div>
