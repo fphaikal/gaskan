@@ -1,16 +1,28 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization') || '';
+    let authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
+    if (!authHeader) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get('auth_token')?.value;
+      if (token) {
+        authHeader = `Bearer ${token}`;
+      }
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
 
     const res = await fetch(`${API_BASE}/api/auth/me`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authHeader,
-      },
+      headers,
       cache: 'no-store',
     });
 
