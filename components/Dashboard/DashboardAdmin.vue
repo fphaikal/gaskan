@@ -152,10 +152,10 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
   <div class="flex flex-col gap-4 animate-in fade-in duration-700">
 
     <!-- ROW 1: Hero + Stat Cards -->
-    <div class="grid grid-cols-12 gap-4 shrink-0">
+    <div class="grid grid-cols-12 gap-4 items-stretch shrink-0">
 
       <!-- Hero -->
-      <NuxtLink to="/profile" class="col-span-12 md:col-span-5 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-400 rounded-3xl p-6 relative overflow-hidden shadow-xl shadow-orange-500/25 min-h-[100px] flex flex-col justify-between hover:scale-[1.01] transition-transform cursor-pointer group">
+      <NuxtLink to="/profile" class="col-span-12 lg:col-span-4 h-full bg-gradient-to-br from-orange-500 via-orange-400 to-amber-400 rounded-3xl p-5 relative overflow-hidden shadow-xl shadow-orange-500/25 flex flex-col justify-between hover:scale-[1.01] transition-transform cursor-pointer group">
         <div class="relative z-10">
           <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 mb-0.5">{{ greeting }} — {{ todayStr }}</p>
           <h1 class="text-2xl font-black text-white leading-tight">{{ firstWord }}</h1>
@@ -169,32 +169,32 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
       </NuxtLink>
 
       <!-- Alpha -->
-      <NuxtLink to="/absensi" class="col-span-3 md:col-span-2 bg-rose-500 rounded-3xl p-4 text-white shadow-lg shadow-rose-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+      <NuxtLink to="/absensi" class="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-rose-500 rounded-3xl p-4 text-white shadow-lg shadow-rose-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
         <Icon name="mingcute:close-circle-fill" size="20" class="mb-1 opacity-70" />
         <p class="text-3xl font-black leading-none">{{ today.absent }}</p>
         <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-70">Alpha</p>
       </NuxtLink>
 
       <!-- Izin -->
-      <NuxtLink to="/izin" class="col-span-3 md:col-span-2 bg-amber-500 rounded-3xl p-4 text-white shadow-lg shadow-amber-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+      <NuxtLink to="/izin" class="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-amber-500 rounded-3xl p-4 text-white shadow-lg shadow-amber-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
         <Icon name="mingcute:document-fill" size="20" class="mb-1 opacity-70" />
         <p class="text-3xl font-black leading-none">{{ today.izin + today.sakit }}</p>
         <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-70">Izin/Sakit</p>
       </NuxtLink>
 
       <!-- Terlambat -->
-      <NuxtLink to="/absensi" class="col-span-3 md:col-span-1 bg-orange-400 rounded-3xl p-4 text-white shadow-lg shadow-orange-400/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
-        <Icon name="mingcute:time-fill" size="18" class="mb-1 opacity-70" />
-        <p class="text-2xl font-black leading-none">{{ today.late }}</p>
-        <p class="text-[8px] font-black uppercase tracking-widest mt-1 opacity-70">Lambat</p>
+      <NuxtLink to="/absensi" class="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-orange-400 rounded-3xl p-4 text-white shadow-lg shadow-orange-400/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+        <Icon name="mingcute:time-fill" size="20" class="mb-1 opacity-70" />
+        <p class="text-3xl font-black leading-none">{{ today.late }}</p>
+        <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-70">Lambat</p>
       </NuxtLink>
 
-      <!-- Hadir (large) -->
-      <NuxtLink to="/absensi" class="col-span-3 md:col-span-2 bg-emerald-500 rounded-3xl p-4 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
+      <!-- Hadir -->
+      <NuxtLink to="/absensi" class="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-emerald-500 rounded-3xl p-4 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer">
         <Icon name="mingcute:check-circle-fill" size="20" class="mb-1 opacity-70" />
         <p class="text-3xl font-black leading-none">{{ today.present + today.late }}</p>
         <p class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-70">Hadir</p>
-        <div class="w-full bg-white/20 h-1 rounded-full mt-2 overflow-hidden">
+        <div class="w-full bg-white/20 h-1 rounded-full mt-1.5 overflow-hidden">
           <div class="h-full bg-white rounded-full transition-all duration-1000" :style="{ width: `${today.attendancePercentage || 0}%` }"></div>
         </div>
         <p class="text-[8px] opacity-60 mt-0.5">{{ today.attendancePercentage || 0 }}%</p>
