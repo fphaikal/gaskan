@@ -141,10 +141,19 @@ watch([searchQuery, selectedClassFilter, statusFilter, itemsPerPage], () => {
 });
 
 const useProxy = computed(() => authStore.useProxy);
-const toggleProxyMode = () => {
-  const isNowProxy = authStore.toggleProxy();
-  console.log(`[API MODE TOGGLED] Mode is now: ${isNowProxy ? 'Nitro Proxy (ON)' : 'Direct Real API (OFF)'}`);
+const toggleProxyMode = async () => {
+  const isNowProxy = await authStore.toggleProxy();
+  console.log(`[SYSTEM GLOBAL API MODE TOGGLED] Mode is now: ${isNowProxy ? 'Nitro Proxy (ON)' : 'Direct Real API (OFF)'}`);
 };
+
+watch(() => props.count?.useProxy, (newVal) => {
+  if (newVal !== undefined && newVal !== authStore.useProxy) {
+    authStore.useProxy = newVal;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('gaskan_use_proxy', String(newVal));
+    }
+  }
+}, { immediate: true });
 
 const activePreviewImage = ref(null);
 const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
@@ -211,7 +220,7 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
     <div class="grid grid-cols-12 gap-4">
 
       <!-- Activity Table -->
-      <div class="col-span-12 lg:col-span-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm flex flex-col overflow-hidden">
+      <div class="col-span-12 lg:col-span-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm flex flex-col overflow-hidden h-[540px]">
         <div class="px-6 py-4 border-b border-base-200/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
           <div class="flex items-center gap-6">
             <button 
@@ -355,8 +364,8 @@ const navigateTo = useNuxtApp().$router?.push ?? (() => {});
                   <select v-model="itemsPerPage" class="select select-xs rounded-lg bg-base-100 border-base-200 text-[10px] font-bold">
                     <option :value="10">10 / hal</option>
                     <option :value="20">20 / hal</option>
-                    <option :value="50">50 / hal</option>
-                    <option :value="100">100 / hal</option>
+                    <option :value="30">30 / hal</option>
+                    <option :value="50">50 / hal (max)</option>
                   </select>
 
                   <div class="join">

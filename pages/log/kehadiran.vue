@@ -36,7 +36,7 @@ const getStatus = (s) => {
 
 const { nis, role } = storeToRefs(useAuthStore());
 const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(role.value));
-const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
+const sessionFetch = $fetch;
 
 const logResponse = ref(null);
 const logSiswa = ref(null);

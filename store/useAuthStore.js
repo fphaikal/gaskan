@@ -43,17 +43,26 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    toggleProxy(value) {
-      this.useProxy = value !== undefined ? Boolean(value) : !this.useProxy;
+    async toggleProxy(value) {
+      const newValue = value !== undefined ? Boolean(value) : !this.useProxy;
+      this.useProxy = newValue;
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('gaskan_use_proxy', String(this.useProxy));
+        localStorage.setItem('gaskan_use_proxy', String(newValue));
+      }
+      try {
+        await $fetch('/api/system/settings', {
+          method: 'POST',
+          body: { useProxy: newValue }
+        });
+      } catch (err) {
+        console.warn('Gagal menyimpan pengaturan proxy ke server:', err);
       }
       return this.useProxy;
     },
 
     async refreshSession() {
       try {
-        const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
+        const sessionFetch = $fetch;
         const data = await sessionFetch("/api/auth/me");
         this.setSessionUser(data.user, data.token);
         this.initialized = true;
@@ -71,7 +80,7 @@ export const useAuthStore = defineStore("auth", {
 
       this.userLoading = true;
       try {
-        const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
+        const sessionFetch = $fetch;
         const data = await sessionFetch("/api/user");
         this.userData = data;
         return data;
