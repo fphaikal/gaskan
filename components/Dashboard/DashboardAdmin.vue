@@ -150,33 +150,47 @@ const useRouter = () => useNuxtApp().$router;
 const navigateTo = useNuxtApp().$router?.push ?? (() => {});
 
 const systemMetricsFormatted = computed(() => {
-  const sys = props.system;
-  if (!sys) return null;
+  try {
+    const sys = props.system;
+    if (!sys || typeof sys !== 'object') return null;
 
-  const hw = sys.hardware || {};
-  const osData = hw.os || {};
-  const mem = hw.memory || {};
-  const diskData = sys.disk || {};
+    const hw = sys.hardware || {};
+    const osData = hw.os || {};
+    const mem = hw.memory || {};
+    const diskData = sys.disk || {};
 
-  const host = osData.hostname || sys.osInfo?.hostname || 'Server Host';
-  const platform = osData.platform ? osData.platform.toUpperCase() : (sys.osInfo?.distro || 'Linux');
-  const arch = osData.arch ? ` (${osData.arch})` : '';
-  const osName = `${platform}${arch}`;
-  
-  const ramUsedGB = mem.usedMB ? (mem.usedMB / 1024).toFixed(1) : '-';
-  const ramTotalGB = mem.totalMB ? (mem.totalMB / 1024).toFixed(1) : '-';
-  const ramStr = mem.usedMB ? `${ramUsedGB} GB / ${ramTotalGB} GB` : '-';
+    const host = osData.hostname || sys.osInfo?.hostname || 'Server Host';
+    const platform = osData.platform ? String(osData.platform).toUpperCase() : (sys.osInfo?.distro || 'Linux');
+    const arch = osData.arch ? ` (${osData.arch})` : '';
+    const osName = `${platform}${arch}`;
 
-  const diskUsedGB = (diskData.totalGB && diskData.freeGB) ? (diskData.totalGB - diskData.freeGB).toFixed(1) : '-';
-  const diskTotalGB = diskData.totalGB ? diskData.totalGB.toFixed(1) : '-';
-  const diskStr = diskData.totalGB ? `${diskUsedGB} GB / ${diskTotalGB} GB (${diskData.usagePercent || 0}%)` : '-';
+    let ramStr = '-';
+    if (mem.usedMB && mem.totalMB) {
+      ramStr = `${(Number(mem.usedMB) / 1024).toFixed(1)} GB / ${(Number(mem.totalMB) / 1024).toFixed(1)} GB`;
+    } else if (sys.memory?.used) {
+      ramStr = `${sys.memory.used} ${sys.memory.unit || ''}`;
+    }
 
-  return {
-    HOST: host,
-    OS: osName,
-    RAM: ramStr,
-    DISK: diskStr,
-  };
+    let diskStr = '-';
+    if (diskData.usedGB && diskData.totalGB) {
+      diskStr = `${diskData.usedGB} GB / ${diskData.totalGB} GB (${diskData.usagePercent || 0}%)`;
+    } else if (diskData.freeGB && diskData.totalGB) {
+      const uGB = (Number(diskData.totalGB) - Number(diskData.freeGB)).toFixed(1);
+      diskStr = `${uGB} GB / ${diskData.totalGB} GB`;
+    } else if (sys.disk?.used) {
+      diskStr = `${sys.disk.used} / ${sys.disk.total}`;
+    }
+
+    return {
+      HOST: host,
+      OS: osName,
+      RAM: ramStr,
+      DISK: diskStr,
+    };
+  } catch (err) {
+    console.error('Error formatting system metrics:', err);
+    return null;
+  }
 });
 </script>
 
