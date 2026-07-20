@@ -127,6 +127,23 @@ const pageNumbers = computed(() => {
 const toggleDetail = (id) => { expandedLogId.value = expandedLogId.value === id ? null : id; };
 
 const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+const fixing = ref(false);
+
+const fixHistoryData = async () => {
+  fixing.value = true;
+  try {
+    const res = await $fetch('/api/system/reshuffle/fix-history', { method: 'POST' }).catch(() => null);
+    if (res?.success) {
+      $toast.success(res.message || 'Data historis berhasil diperbaiki!');
+      await fetchLogs();
+      fetchStats();
+    } else {
+      $toast.error('Gagal memperbaiki data historis');
+    }
+  } finally {
+    fixing.value = false;
+  }
+};
 </script>
 
 
@@ -152,7 +169,12 @@ const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 
             <p class="text-xs text-base-content/60 mt-1">Rekaman lengkap setiap operasi pemindahan kelas beserta data siswa yang dipindahkan.</p>
           </div>
         </div>
-        <div class="flex gap-2 shrink-0">
+        <div class="flex flex-wrap gap-2 shrink-0">
+          <button @click="fixHistoryData" :disabled="fixing || loading" class="btn btn-warning btn-sm rounded-2xl font-black gap-2 border-0 shadow-lg shadow-amber-500/20 bg-amber-500 hover:bg-amber-600 text-black" :title="'Perbaiki data kelas asal yang masih tampil Sebelum Reshuffle'">
+            <span v-if="fixing" class="loading loading-spinner loading-xs"></span>
+            <Icon v-else name="mingcute:magic-2-fill" size="16" />
+            Perbaiki Data Lama
+          </button>
           <button @click="fetchLogs" :disabled="loading" class="btn btn-ghost btn-sm rounded-2xl font-black gap-2 border border-base-300/60">
             <Icon name="mingcute:refresh-4-line" size="16" :class="{ 'animate-spin': loading }" />
             Refresh
@@ -312,7 +334,15 @@ const formatDateShort = (d) => new Date(d).toLocaleString('id-ID', { dateStyle: 
                         </div>
                       </td>
                       <td class="font-mono text-base-content/60 font-semibold text-[11px]">{{ item.nis || '-' }}</td>
-                      <td><span class="px-2 py-0.5 rounded-lg bg-base-200/80 border border-base-300/60 text-base-content/60 font-extrabold text-[10px]">{{ item.fromClass || '-' }}</span></td>
+                      <td>
+                        <span
+                          v-if="item.fromClass && item.fromClass !== 'Sebelum Reshuffle' && item.fromClass !== 'Tanpa Kelas'"
+                          class="px-2 py-0.5 rounded-lg bg-base-200/80 border border-base-300/60 text-base-content/60 font-extrabold text-[10px]"
+                        >{{ item.fromClass }}</span>
+                        <span v-else class="px-2 py-0.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-amber-400/60 font-extrabold text-[10px] italic" title="Data historis — kelas asal tidak tersedia. Klik Perbaiki Data Lama untuk mencoba memulihkan.">
+                          Tidak diketahui
+                        </span>
+                      </td>
                       <td><span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold text-[10px]">{{ item.toClass }}</span></td>
                       <td><span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-extrabold text-[10px]">{{ item.rombel || '-' }}</span></td>
                     </tr>
