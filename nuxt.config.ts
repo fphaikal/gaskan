@@ -7,6 +7,22 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/tailwind.css'],
 
+  routeRules: {
+    '/home': { ssr: false },
+    '/admin/**': { ssr: false },
+    '/absensi/**': { ssr: false },
+    '/siswa/**': { ssr: false },
+    '/izin/**': { ssr: false },
+    '/kelas/**': { ssr: false },
+    '/semester/**': { ssr: false },
+    '/jurusan/**': { ssr: false },
+    '/log/**': { ssr: false },
+    '/config/**': { ssr: false },
+    '/reshuffle/**': { ssr: false },
+    '/profile': { ssr: false },
+    '/monitor/**': { ssr: false },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },

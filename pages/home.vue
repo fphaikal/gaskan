@@ -16,27 +16,23 @@ const isDeveloper = computed(() => currentRole.value === 'developer');
 
 const { userData: user, userLoading } = storeToRefs(authStore);
 
-// Use centralized fetcher
-if (authStore.authenticated) {
-  await authStore.fetchUserData();
-} else {
-  const unwatch = watch(() => authStore.authenticated, async (newVal) => {
-    if (newVal) {
-      await authStore.fetchUserData();
-      unwatch();
-    }
-  });
-}
-
 const count = ref(null);
 const login = ref(null);
-
-if (isAdminOrDev.value) {
-  try { count.value = await sessionFetch('/api/count'); } catch {}
-  try { login.value = await sessionFetch('/api/log/login'); } catch {}
-}
-
 const system = ref(null);
+
+const fetchAdminData = async () => {
+  if (!isAdminOrDev.value) return;
+  try {
+    const [countRes, loginRes] = await Promise.allSettled([
+      sessionFetch('/api/count'),
+      sessionFetch('/api/log/login')
+    ]);
+    if (countRes.status === 'fulfilled') count.value = countRes.value;
+    if (loginRes.status === 'fulfilled') login.value = loginRes.value;
+  } catch (err) {
+    console.error('Error fetching dashboard admin stats:', err);
+  }
+};
 
 const refreshSystem = async () => {
   if (!isAdminOrDev.value) return;
@@ -49,9 +45,32 @@ const refreshSystem = async () => {
   }
 };
 
+const initHomeData = async () => {
+  if (authStore.authenticated) {
+    await authStore.fetchUserData();
+    if (isAdminOrDev.value) {
+      await fetchAdminData();
+    }
+  }
+};
+
+if (authStore.authenticated) {
+  await initHomeData();
+} else {
+  const unwatch = watch(() => authStore.authenticated, async (newVal) => {
+    if (newVal) {
+      await initHomeData();
+      unwatch();
+    }
+  });
+}
+
 onMounted(async () => {
+  if (!user.value && authStore.authenticated) {
+    await initHomeData();
+  }
   if (isAdminOrDev.value) {
-    await refreshSystem();
+    refreshSystem();
   }
 });
 
