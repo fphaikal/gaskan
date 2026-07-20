@@ -1,4 +1,7 @@
+'use client';
+
 import { LandingNavbar } from '@/components/landing/LandingNavbar';
+
 import { LandingHero } from '@/components/landing/LandingHero';
 import { LandingFeatures } from '@/components/landing/LandingFeatures';
 import { LandingStats } from '@/components/landing/LandingStats';
