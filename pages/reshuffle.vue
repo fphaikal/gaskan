@@ -386,24 +386,26 @@ const handleExcelReshuffle = async () => {
       </div>
 
       <!-- Tab Selection Toggle -->
-      <div class="flex items-center p-1.5 bg-base-200/60 rounded-2xl border border-base-300/40 shrink-0 gap-1">
-        <button
-          @click="activeTab = 'website'"
-          :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'website' ? 'bg-primary text-primary-content shadow-lg shadow-primary/20' : 'text-base-content/60 hover:text-base-content']"
-        >
-          <Icon name="mingcute:cursor-hand-line" size="16" />
-          Pilih Langsung
-        </button>
-        <button
-          @click="activeTab = 'excel'"
-          :class="['px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2', activeTab === 'excel' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-base-content/60 hover:text-base-content']"
-        >
-          <Icon name="mingcute:file-import-fill" size="16" />
-          Import Excel
-        </button>
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center p-1.5 bg-base-200/60 rounded-2xl border border-base-300/40 shrink-0 gap-1.5 w-full sm:w-auto">
+        <div class="grid grid-cols-2 gap-1.5 sm:flex sm:items-center">
+          <button
+            @click="activeTab = 'website'"
+            :class="['px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2', activeTab === 'website' ? 'bg-primary text-primary-content shadow-lg shadow-primary/20' : 'text-base-content/60 hover:text-base-content']"
+          >
+            <Icon name="mingcute:cursor-hand-line" size="16" />
+            Pilih Langsung
+          </button>
+          <button
+            @click="activeTab = 'excel'"
+            :class="['px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2', activeTab === 'excel' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-base-content/60 hover:text-base-content']"
+          >
+            <Icon name="mingcute:file-import-fill" size="16" />
+            Import Excel
+          </button>
+        </div>
         <button
           @click="openHistoryModal"
-          class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 text-sky-400 hover:text-white hover:bg-sky-500/20 border border-sky-500/20"
+          class="px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 text-sky-400 hover:text-white hover:bg-sky-500/20 border border-sky-500/20 w-full sm:w-auto shrink-0"
         >
           <Icon name="mingcute:history-line" size="16" />
           Riwayat Audit Log
@@ -566,12 +568,12 @@ const handleExcelReshuffle = async () => {
       </div>
 
       <!-- Floating Action Footer -->
-      <div v-if="selectedStudentIds.length > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-base-100/90 backdrop-blur-md border border-primary/30 p-4 rounded-3xl shadow-2xl flex items-center gap-6 z-50 animate-in slide-in-from-bottom duration-300">
-        <div>
+      <div v-if="selectedStudentIds.length > 0" class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg bg-base-100/95 backdrop-blur-xl border border-primary/30 p-3.5 sm:p-4 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 z-50 animate-in slide-in-from-bottom duration-300">
+        <div class="text-center sm:text-left">
           <p class="text-xs font-black text-white">
             {{ selectedStudentIds.length }} Siswa Terpilih
           </p>
-          <p class="text-[11px] text-base-content/60">
+          <p class="text-[10px] text-base-content/60">
             Akan dipindahkan ke kelas yang dipilih
           </p>
         </div>
@@ -579,7 +581,7 @@ const handleExcelReshuffle = async () => {
         <button 
           @click="openWebConfirm"
           :disabled="submitting || !targetClassId"
-          class="btn btn-primary btn-sm rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2"
+          class="btn btn-primary btn-sm rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2 w-full sm:w-auto"
         >
           <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
           <Icon v-else name="mingcute:transfer-4-line" size="16" />
