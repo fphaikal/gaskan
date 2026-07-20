@@ -97,8 +97,25 @@ const toggleSelectStudent = (id) => {
   }
 };
 
+// Confirmation Modal state
+const showConfirmModal = ref(false);
+const confirmMessage = ref('');
+const confirmDetails = ref(null);
+const pendingAction = ref(null);
+
+const executeConfirmAction = async () => {
+  if (pendingAction.value) {
+    const action = pendingAction.value;
+    pendingAction.value = null;
+    showConfirmModal.value = false;
+    await action();
+  } else {
+    showConfirmModal.value = false;
+  }
+};
+
 // Website Reshuffle Submit
-const handleWebReshuffle = async () => {
+const openWebConfirm = () => {
   if (selectedStudentIds.value.length === 0) {
     $toast.error('Pilih minimal 1 siswa yang akan dipindahkan');
     return;
@@ -111,10 +128,17 @@ const handleWebReshuffle = async () => {
   const targetClassObj = classes.value.find((c) => c.id === targetClassId.value);
   const targetClassName = targetClassObj?.className || 'Kelas Tujuan';
 
-  if (!confirm(`Konfirmasi: Pindahkan ${selectedStudentIds.value.length} siswa ke kelas "${targetClassName}"${targetRombel.value ? ' (' + targetRombel.value + ')' : ''}?`)) {
-    return;
-  }
+  confirmMessage.value = `Apakah Anda yakin ingin memindahkan ${selectedStudentIds.value.length} siswa ke kelas "${targetClassName}"?`;
+  confirmDetails.value = {
+    count: selectedStudentIds.value.length,
+    targetClass: targetClassName,
+    rombel: targetRombel.value || null
+  };
+  pendingAction.value = handleWebReshuffle;
+  showConfirmModal.value = true;
+};
 
+const handleWebReshuffle = async () => {
   submitting.value = true;
   try {
     const res = await $fetch('/api/system/reshuffle', {
@@ -156,7 +180,7 @@ const handleFileUpload = (event) => {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonRows = XLSX.utils.sheet_to_json(firstSheet); // Row 1 is header (No, NIS, Nama, Rombel, Kelas Tujuan)
+      const jsonRows = XLSX.utils.sheet_to_json(firstSheet); // Row 1 is header (No, NIS, Nama, Rombel)
 
       excelRows.value = jsonRows.filter((row) => {
         const nis = row['NIS'] || row['nis'] || row['ID Siswa'] || row.id || row['NISN'] || row.nisn;
@@ -183,7 +207,7 @@ const handleFileUpload = (event) => {
 const excelTargetClassId = ref('');
 
 // Submit Excel Reshuffle
-const handleExcelReshuffle = async () => {
+const openExcelConfirm = () => {
   if (!excelTargetClassId.value) {
     $toast.error('Harap pilih Kelas Tujuan terlebih dahulu');
     return;
@@ -196,10 +220,17 @@ const handleExcelReshuffle = async () => {
   const targetClassObj = classes.value.find((c) => c.id === excelTargetClassId.value);
   const targetClassName = targetClassObj?.className || 'Kelas Tujuan';
 
-  if (!confirm(`Konfirmasi: Terapkan ${excelRows.value.length} baris data Excel ke kelas "${targetClassName}"?`)) {
-    return;
-  }
+  confirmMessage.value = `Apakah Anda yakin ingin menerapkan ${excelRows.value.length} baris data Excel ke kelas "${targetClassName}"?`;
+  confirmDetails.value = {
+    count: excelRows.value.length,
+    targetClass: targetClassName,
+    rombel: null
+  };
+  pendingAction.value = handleExcelReshuffle;
+  showConfirmModal.value = true;
+};
 
+const handleExcelReshuffle = async () => {
   submitting.value = true;
   try {
     const res = await $fetch('/api/system/reshuffle/import', {
@@ -424,7 +455,7 @@ const handleExcelReshuffle = async () => {
         </div>
 
         <button 
-          @click="handleWebReshuffle"
+          @click="openWebConfirm"
           :disabled="submitting || !targetClassId"
           class="btn btn-primary btn-sm rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2"
         >
@@ -512,7 +543,7 @@ const handleExcelReshuffle = async () => {
               Preview Data Excel ({{ excelRows.length }} Baris Terbaca)
             </h4>
             <button 
-              @click="handleExcelReshuffle" 
+              @click="openExcelConfirm" 
               :disabled="submitting"
               class="btn btn-emerald bg-emerald-500 hover:bg-emerald-600 text-black border-0 btn-sm rounded-2xl font-black gap-2 shadow-lg shadow-emerald-500/20"
             >
@@ -557,6 +588,54 @@ const handleExcelReshuffle = async () => {
       </div>
 
     </div>
+
+    <!-- MODAL KONFIRMASI RESHUFFLE -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showConfirmModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4" @click.self="showConfirmModal = false">
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
+          <div class="relative bg-base-100 rounded-[2.5rem] shadow-2xl w-full max-w-md z-10 p-6 sm:p-8 space-y-6 border border-primary/20 animate-in zoom-in-95 duration-200">
+            
+            <div class="text-center space-y-3">
+              <div class="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+                <Icon name="mingcute:transfer-4-line" size="36" />
+              </div>
+              <h3 class="text-xl font-black text-base-content tracking-tight">Konfirmasi Reshuffle</h3>
+              <p class="text-xs text-base-content/70 font-medium leading-relaxed">
+                {{ confirmMessage }}
+              </p>
+            </div>
+
+            <div v-if="confirmDetails" class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50 space-y-2 text-xs">
+              <div class="flex justify-between items-center text-base-content/70 font-bold">
+                <span>Jumlah Siswa:</span>
+                <span class="text-amber-400 font-black text-sm">{{ confirmDetails.count }} Siswa</span>
+              </div>
+              <div class="flex justify-between items-center text-base-content/70 font-bold">
+                <span>Kelas Tujuan:</span>
+                <span class="text-emerald-400 font-black text-sm">{{ confirmDetails.targetClass }}</span>
+              </div>
+              <div v-if="confirmDetails.rombel" class="flex justify-between items-center text-base-content/70 font-bold">
+                <span>Rombel Baru:</span>
+                <span class="text-sky-400 font-black text-sm">{{ confirmDetails.rombel }}</span>
+              </div>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button @click="showConfirmModal = false" :disabled="submitting" class="btn btn-ghost flex-1 rounded-2xl font-black text-xs">
+                Batal
+              </button>
+              <button @click="executeConfirmAction" :disabled="submitting" class="btn bg-emerald-500 hover:bg-emerald-600 text-black border-0 flex-1 rounded-2xl font-black shadow-lg shadow-emerald-500/20 gap-2 text-xs">
+                <span v-if="submitting" class="loading loading-spinner loading-xs"></span>
+                <Icon v-else name="mingcute:check-circle-line" size="18" />
+                Ya, Terapkan
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
   </div>
 </template>
