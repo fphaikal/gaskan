@@ -15,6 +15,7 @@ useSeoMeta({
 
 // State
 const members = ref([]);
+const availableUsers = ref([]);
 const loading = ref(true);
 const showModal = ref(false);
 const editMode = ref(false);
@@ -32,10 +33,34 @@ const form = ref({
   linkedin: '',
   instagram: '',
   email: '',
+  bio: '',
+  customLinks: [],
+  userId: '',
   year: '',
   order: 0,
   isActive: true,
 });
+
+const parseCustomLinks = (raw) => {
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(raw) ? raw : [];
+};
+
+const addCustomLink = () => {
+  form.value.customLinks.push({ label: '', url: '', icon: 'mingcute:link-2-line' });
+};
+
+const removeCustomLink = (idx) => {
+  form.value.customLinks.splice(idx, 1);
+};
 
 // Year Picker Helpers
 const startYear = ref(new Date().getFullYear());
@@ -107,8 +132,12 @@ const resolvePhoto = (url) => {
 const fetchMembers = async () => {
   loading.value = true;
   try {
-    const res = await $fetch('/api/team');
-    members.value = Array.isArray(res?.data) ? res.data : [];
+    const [resTeam, resUsers] = await Promise.all([
+      $fetch('/api/team'),
+      $fetch('/api/team/available-users').catch(() => ({ data: [] })),
+    ]);
+    members.value = Array.isArray(resTeam?.data) ? resTeam.data : [];
+    availableUsers.value = Array.isArray(resUsers?.data) ? resUsers.data : [];
   } catch (e) {
     console.error('Failed to fetch team members:', e);
     $toast.error('Gagal mengambil data tim');
@@ -213,6 +242,9 @@ const openCreate = () => {
     linkedin: '',
     instagram: '',
     email: '',
+    bio: '',
+    customLinks: [],
+    userId: '',
     year: '',
     order: members.value.length,
     isActive: true,
@@ -228,7 +260,12 @@ const openEdit = (member) => {
   editMode.value = true;
   photoFile.value = null;
   photoPreview.value = member.photoUrl;
-  form.value = { ...member };
+  form.value = {
+    ...member,
+    bio: member.bio || '',
+    customLinks: parseCustomLinks(member.customLinks),
+    userId: member.userId || '',
+  };
   parseYearFromForm(member.year);
   showModal.value = true;
 };
@@ -239,7 +276,10 @@ const saveMember = async () => {
   try {
     const formData = new FormData();
     Object.keys(form.value).forEach(key => {
-      if (form.value[key] !== null && form.value[key] !== undefined) {
+      if (key === 'customLinks') {
+        const cleanLinks = form.value.customLinks.filter(l => l.url && l.url.trim() !== '');
+        formData.append('customLinks', JSON.stringify(cleanLinks));
+      } else if (form.value[key] !== null && form.value[key] !== undefined) {
         formData.append(key, form.value[key]);
       }
     });
@@ -297,7 +337,7 @@ const roleColor = (role) => {
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
       <div>
         <h1 class="text-2xl md:text-3xl font-black text-base-content tracking-tight">Manajemen Tim</h1>
-        <p class="text-sm text-base-content/60 mt-1">Kelola orang-orang di balik GASKAN</p>
+        <p class="text-sm text-base-content/60 mt-1">Kelola orang-orang di balik GASKAN & sambungkan ke akun siswa/user</p>
       </div>
       <button @click="openCreate" class="btn btn-primary rounded-2xl gap-2 h-12 shadow-lg shadow-primary/20">
         <Icon name="mingcute:user-add-fill" size="18" />
@@ -329,62 +369,48 @@ const roleColor = (role) => {
           <div class="flex-1 space-y-2.5">
             <div class="skeleton h-4 w-3/4"></div>
             <div class="skeleton h-2 w-1/2 opacity-40"></div>
-            <div class="flex gap-2 mt-2">
-              <div class="skeleton w-5 h-5 rounded-full opacity-30"></div>
-              <div class="skeleton w-5 h-5 rounded-full opacity-30"></div>
-              <div class="skeleton w-5 h-5 rounded-full opacity-30"></div>
-            </div>
           </div>
-          <div class="flex flex-col gap-2">
-            <div class="skeleton w-6 h-6 rounded-lg opacity-20"></div>
-            <div class="skeleton w-6 h-6 rounded-lg opacity-20"></div>
-          </div>
-        </div>
-        <div class="mt-6 pt-4 border-t border-base-200/60 flex items-center justify-between">
-          <div class="flex items-center gap-1.5">
-            <div class="skeleton w-2 h-2 rounded-full"></div>
-            <div class="skeleton h-2 w-12 opacity-30"></div>
-          </div>
-          <div class="skeleton h-2 w-10 opacity-20"></div>
         </div>
       </div>
     </div>
 
     <!-- Team List -->
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div v-for="m in filteredMembers" :key="m.id" :class="[bentoCard, 'group hover:border-primary/40']">
-        <div class="flex items-start gap-4">
-          <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-primary/10">
-            <img v-if="m.photoUrl" :src="resolvePhoto(m.photoUrl)" class="w-full h-full object-cover" />
-            <Icon v-else name="mingcute:user-4-fill" size="24" class="opacity-40" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-base-content truncate">{{ m.name }}</h3>
-            <p class="text-xs font-bold uppercase tracking-wider mt-0.5" :class="roleColor(m.role)">{{ m.role }}</p>
-            <div class="flex gap-2 mt-3">
-              <a v-if="m.github" :href="m.github" target="_blank" class="text-base-content/40 hover:text-primary transition-colors">
-                <Icon name="mdi:github" size="18" />
-              </a>
-              <a v-if="m.linkedin" :href="m.linkedin" target="_blank" class="text-base-content/40 hover:text-primary transition-colors">
-                <Icon name="entypo-social:linkedin-with-circle" size="18" />
-              </a>
-              <a v-if="m.instagram" :href="m.instagram" target="_blank" class="text-base-content/40 hover:text-primary transition-colors">
-                <Icon name="mage:instagram-circle" size="18" />
-              </a>
+      <div v-for="m in filteredMembers" :key="m.id" :class="[bentoCard, 'group hover:border-primary/40 flex flex-col justify-between']">
+        <div>
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-primary/10">
+              <img v-if="m.photoUrl" :src="resolvePhoto(m.photoUrl)" class="w-full h-full object-cover" />
+              <Icon v-else name="mingcute:user-4-fill" size="24" class="opacity-40" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-base-content truncate">{{ m.name }}</h3>
+              <p class="text-xs font-bold uppercase tracking-wider mt-0.5" :class="roleColor(m.role)">{{ m.role }}</p>
+              
+              <!-- User account connection tag -->
+              <div v-if="m.user" class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold">
+                <Icon name="mingcute:user-check-fill" class="text-xs" />
+                <span class="truncate max-w-[120px]">{{ m.user.name }}</span>
+              </div>
+              <div v-else class="text-[10px] text-base-content/40 italic mt-1">
+                Belum terhubung akun
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button @click="openEdit(m)" class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary">
+                <Icon name="mingcute:edit-2-line" />
+              </button>
+              <button @click="confirmDelete(m.id)" class="btn btn-ghost btn-xs rounded-lg hover:bg-error/10 hover:text-error">
+                <Icon name="mingcute:delete-2-line" />
+              </button>
             </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <!-- Space for actions -->
-          </div>
-          <div class="flex flex-col gap-2">
-            <button @click="openEdit(m)" class="btn btn-ghost btn-xs rounded-lg hover:bg-primary/10 hover:text-primary">
-              <Icon name="mingcute:edit-2-line" />
-            </button>
-            <button @click="confirmDelete(m.id)" class="btn btn-ghost btn-xs rounded-lg hover:bg-error/10 hover:text-error">
-              <Icon name="mingcute:delete-2-line" />
-            </button>
-          </div>
+
+          <p v-if="m.bio" class="text-xs opacity-60 mt-3 italic line-clamp-2 bg-base-200/40 p-2 rounded-xl">
+            "{{ m.bio }}"
+          </p>
         </div>
+
         <div class="mt-4 pt-4 border-t border-base-200/60 flex items-center justify-between">
           <div class="flex items-center gap-1.5">
             <div :class="['w-2 h-2 rounded-full', m.isActive ? 'bg-success' : 'bg-base-300']"></div>
@@ -417,6 +443,12 @@ const roleColor = (role) => {
             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Peran / Role</span></label>
             <input v-model="form.role" type="text" placeholder="Contoh: Backend Developer" class="input input-bordered w-full rounded-2xl bg-base-200/30" />
           </div>
+
+          <div class="form-control md:col-span-2">
+            <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Bio / Deskripsi Profil</span></label>
+            <textarea v-model="form.bio" rows="2" placeholder="Tuliskan bio singkat atau motivasi..." class="textarea textarea-bordered w-full rounded-2xl bg-base-200/30 text-xs" />
+          </div>
+
           <div class="form-control md:col-span-2">
             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Foto Anggota</span></label>
             <div class="flex items-center gap-4 p-4 bg-base-200/30 rounded-2xl border border-dashed border-base-300">
@@ -430,6 +462,20 @@ const roleColor = (role) => {
               </div>
             </div>
           </div>
+
+          <div class="form-control md:col-span-2">
+            <label class="label">
+              <span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Hubungkan ke Akun Siswa / User</span>
+            </label>
+            <select v-model="form.userId" class="select select-bordered w-full rounded-2xl bg-base-200/30 text-xs font-semibold">
+              <option value="">-- Tanpa Koneksi Akun --</option>
+              <option v-for="u in availableUsers" :key="u.id" :value="u.id">
+                {{ u.name }} ({{ u.role }}) - {{ u.nis || u.email || u.id }}
+              </option>
+            </select>
+            <p class="text-[9px] mt-1 opacity-40">User terhubung dapat mengakses platform teams & mengedit profil ini secara mandiri.</p>
+          </div>
+
           <div class="form-control">
             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">GitHub URL</span></label>
             <input v-model="form.github" type="text" placeholder="https://github.com/..." class="input input-bordered w-full rounded-2xl bg-base-200/30" />
@@ -446,6 +492,31 @@ const roleColor = (role) => {
             <label class="label"><span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Email</span></label>
             <input v-model="form.email" type="email" placeholder="email@example.com" class="input input-bordered w-full rounded-2xl bg-base-200/30" />
           </div>
+
+          <!-- Custom Links Builder -->
+          <div class="form-control md:col-span-2">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-[10px] uppercase tracking-widest opacity-40">Tautan Custom (Website / Portfolio / Blog)</span>
+              <button type="button" @click="addCustomLink" class="btn btn-xs btn-primary rounded-xl gap-1">
+                <Icon name="mingcute:add-line" />
+                <span>Tambah Link</span>
+              </button>
+            </div>
+            
+            <div class="space-y-2 bg-base-200/20 p-3 rounded-2xl border border-base-200/60">
+              <div v-for="(link, idx) in form.customLinks" :key="idx" class="flex items-center gap-2">
+                <input v-model="link.label" type="text" placeholder="Label (ex: Portfolio)" class="input input-bordered input-sm rounded-xl bg-base-100 flex-1 text-xs" />
+                <input v-model="link.url" type="text" placeholder="URL (ex: https://...)" class="input input-bordered input-sm rounded-xl bg-base-100 flex-1 text-xs" />
+                <button type="button" @click="removeCustomLink(idx)" class="btn btn-ghost btn-xs text-error btn-circle">
+                  <Icon name="mingcute:delete-2-line" />
+                </button>
+              </div>
+              <div v-if="form.customLinks.length === 0" class="text-xs opacity-40 italic text-center py-2">
+                Belum ada tautan custom tambahan
+              </div>
+            </div>
+          </div>
+
           <div class="form-control">
             <label class="label">
               <span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-40">Tahun / Periode</span>
@@ -475,7 +546,7 @@ const roleColor = (role) => {
             <input v-model.number="form.order" type="number" class="input input-bordered w-full rounded-2xl bg-base-200/30" />
           </div>
           <div class="form-control md:col-span-2">
-            <label class="label cursor-pointer justify-start gap-3 px-1">
+            <label class="cursor-pointer justify-start gap-3 px-1 flex items-center">
               <input v-model="form.isActive" type="checkbox" class="toggle toggle-primary toggle-sm" />
               <span class="label-text font-bold text-[10px] uppercase tracking-widest opacity-60">Aktif & Tampilkan</span>
             </label>
@@ -518,7 +589,6 @@ const roleColor = (role) => {
           </button>
         </div>
 
-        <!-- Main Cropper Viewport Container -->
         <div class="bg-base-300/60 rounded-2xl overflow-hidden p-2 relative shadow-inner">
           <Cropper
             v-if="showCropper"
@@ -531,9 +601,7 @@ const roleColor = (role) => {
           />
         </div>
 
-        <!-- Interactive Control Bar -->
         <div class="mt-4 p-3 bg-base-200/60 border border-base-300 rounded-2xl flex flex-wrap items-center justify-between gap-3">
-          <!-- Zoom & Transform Controls -->
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="text-[10px] font-bold uppercase tracking-widest opacity-40 mr-1">Kontrol:</span>
             
@@ -564,7 +632,6 @@ const roleColor = (role) => {
             </button>
           </div>
 
-          <!-- Aspect Ratio Options -->
           <div class="flex items-center gap-1.5 ml-auto">
             <span class="text-[10px] font-bold uppercase tracking-widest opacity-40 mr-1">Rasio:</span>
             <button
@@ -588,7 +655,6 @@ const roleColor = (role) => {
           </div>
         </div>
 
-        <!-- Modal Actions -->
         <div class="modal-action mt-6 gap-2">
           <button @click="cancelCrop" class="btn btn-ghost rounded-2xl px-6">Batal</button>
           <button @click="applyCrop" class="btn btn-primary rounded-2xl px-8 shadow-lg shadow-primary/20 flex items-center gap-2 font-bold">

@@ -64,6 +64,12 @@ const menuGroups = [
         route: '/home',
       },
       {
+        icon: 'mingcute:group-3-fill',
+        role: ['all'],
+        label: 'Workspace Teams',
+        route: '/teams',
+      },
+      {
         icon: 'mingcute:user-3-line',
         role: ['all'],
         label: 'Profil Saya',

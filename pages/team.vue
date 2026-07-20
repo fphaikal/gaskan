@@ -1,7 +1,6 @@
 <script setup>
 definePageMeta({ layout: 'blank' })
 
-
 const team = ref([])
 const loading = ref(true)
 
@@ -26,7 +25,6 @@ const fetchTeam = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch team:', error)
-    // Fallback to static data if needed, or just leave empty
   } finally {
     loading.value = false;
   }
@@ -47,7 +45,6 @@ const groupedTeam = computed(() => {
     }
   })
 
-  // Sort each group by 'order'
   pembimbing.sort((a, b) => (a.order || 0) - (b.order || 0))
   pengembang.sort((a, b) => (a.order || 0) - (b.order || 0))
 
@@ -78,11 +75,32 @@ const resolvePhoto = (url) => {
   return url;
 };
 
+const parseCustomLinks = (raw) => {
+  if (!raw) return []
+  if (typeof raw === 'string') {
+    try {
+      const p = JSON.parse(raw)
+      return Array.isArray(p) ? p : []
+    } catch {
+      return []
+    }
+  }
+  return Array.isArray(raw) ? raw : []
+}
+
 const getSocmed = (m) => {
   const socmed = []
   if (m.instagram) socmed.push({ name: 'Instagram', link: m.instagram })
   if (m.linkedin) socmed.push({ name: 'LinkedIn', link: m.linkedin })
   if (m.github) socmed.push({ name: 'github', link: m.github })
+
+  const custom = parseCustomLinks(m.customLinks)
+  custom.forEach(item => {
+    if (item.url) {
+      socmed.push({ name: item.label || 'Link', link: item.url, isCustom: true, icon: item.icon })
+    }
+  })
+
   return socmed
 }
 
@@ -116,10 +134,10 @@ useSeoMeta({
 </script>
 
 <template>
-  <div class="min-h-screen py-24 px-4">
+  <div class="min-h-screen py-20 px-4">
     <div class="max-w-5xl mx-auto">
       <!-- Header -->
-      <div class="text-center mb-16 space-y-3">
+      <div class="text-center mb-12 space-y-3">
         <div class="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-1.5 rounded-full border border-primary/20 mb-2">
           Tim GASKAN
         </div>
@@ -131,14 +149,13 @@ useSeoMeta({
         </p>
       </div>
 
-
       <!-- Loading State -->
       <div v-if="loading" class="flex justify-center py-20">
         <span class="loading loading-spinner loading-lg text-primary opacity-40"></span>
       </div>
 
       <!-- Grouped Team Sections (by Role Category) -->
-      <div v-else class="space-y-16 py-4">
+      <div v-else class="space-y-14 py-4">
         <div
           v-for="group in groupedTeam"
           :key="group.title"
@@ -146,20 +163,23 @@ useSeoMeta({
         >
           <!-- Section Header -->
           <div class="border-b border-base-200/80 pb-4 text-left">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                <Icon :name="group.icon" size="20" />
+            <div class="flex items-start sm:items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <Icon :name="group.icon" size="20" />
+                </div>
+                <div class="min-w-0">
+                  <h2 class="text-xl sm:text-2xl font-black tracking-tight text-base-content leading-tight">
+                    {{ group.title }}
+                  </h2>
+                  <p class="text-xs opacity-50 mt-0.5 leading-normal">
+                    {{ group.title === 'Pembimbing' ? 'Pembimbing dan penanggung jawab proyek GASKAN.' : 'Anggota tim pengembang dan pembuat sistem GASKAN.' }}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 class="text-2xl font-black tracking-tight text-base-content">
-                  {{ group.title }}
-                </h2>
-                <p class="text-xs opacity-50 mt-0.5">
-                  {{ group.title === 'Pembimbing' ? 'Pembimbing dan penanggung jawab proyek GASKAN.' : 'Anggota tim pengembang dan pembuat sistem GASKAN.' }}
-                </p>
-              </div>
-              <span class="badge badge-primary badge-outline font-semibold px-2 py-3 text-xs ml-auto">
-                {{ group.members.length }} Orang
+              <span class="shrink-0 bg-primary/10 border border-primary/20 text-primary font-bold text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1 self-start sm:self-center">
+                <span>{{ group.members.length }}</span>
+                <span>Orang</span>
               </span>
             </div>
           </div>
@@ -170,39 +190,44 @@ useSeoMeta({
               v-for="t in group.members"
               :key="t.id"
               @click="openDetail(t)"
-              class="group bg-base-200 border border-base-300 hover:border-primary/40 rounded-2xl p-5 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer relative"
+              class="group bg-base-200 border border-base-300 hover:border-primary/40 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer relative overflow-hidden"
             >
               <!-- Avatar + Period Badge -->
               <div class="flex items-start justify-between gap-2">
-                <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                   <img v-if="t.photoUrl && !t.photoUrl.includes('0000')" :src="resolvePhoto(t.photoUrl)" :alt="t.name" class="w-full h-full object-cover" />
                   <Icon v-else name="mingcute:user-4-fill" class="text-2xl text-primary/60" />
                 </div>
-                <span v-if="t.year" class="badge badge-sm bg-base-300/60 border border-base-300/60 text-[9px] font-black py-2 rounded-lg text-base-content/60">
+                <span v-if="t.year" class="badge badge-sm bg-base-300/60 border border-base-300/60 text-[9px] font-black py-1.5 px-2 rounded-lg text-base-content/60 shrink-0 truncate max-w-[80px]">
                   {{ t.year }}
                 </span>
               </div>
 
               <!-- Info -->
-              <div class="flex-1 text-left">
-                <h3 class="font-bold text-sm leading-tight text-base-content">{{ t.name }}</h3>
-                <p class="text-xs mt-1 font-medium" :class="roleColor(t.role)">{{ t.role }}</p>
+              <div class="flex-1 text-left min-w-0">
+                <h3 class="font-bold text-xs sm:text-sm leading-tight text-base-content line-clamp-2">{{ t.name }}</h3>
+                <p class="text-[11px] sm:text-xs mt-1 font-medium truncate" :class="roleColor(t.role)">{{ t.role }}</p>
+                <p v-if="t.bio" class="text-[10px] opacity-60 mt-1.5 line-clamp-2 italic leading-relaxed">
+                  "{{ t.bio }}"
+                </p>
               </div>
 
               <!-- Social links -->
-              <div class="flex gap-1.5">
+              <div class="flex flex-wrap gap-1.5 pt-1">
                 <a
                   v-for="s in getSocmed(t)"
-                  :key="s.name"
+                  :key="s.name + s.link"
                   :href="s.link"
                   target="_blank"
                   @click.stop
-                  class="w-7 h-7 rounded-lg bg-base-300 hover:bg-primary hover:text-dark flex items-center justify-center transition-colors duration-200"
+                  class="w-7 h-7 rounded-lg bg-base-300 hover:bg-primary hover:text-dark flex items-center justify-center transition-colors duration-200 shrink-0"
+                  :title="s.name"
                   :aria-label="s.name"
                 >
                   <Icon v-if="s.name === 'Instagram'" name="mage:instagram-circle" class="text-sm text-base-content/60 group-hover:text-primary-content" />
                   <Icon v-else-if="s.name === 'LinkedIn'" name="entypo-social:linkedin-with-circle" class="text-sm text-base-content/60 group-hover:text-primary-content" />
                   <Icon v-else-if="s.name === 'github'" name="mdi:github" class="text-sm text-base-content/60 group-hover:text-primary-content" />
+                  <Icon v-else :name="s.icon || 'mingcute:external-link-line'" class="text-sm text-base-content/60 group-hover:text-primary-content" />
                 </a>
               </div>
             </div>
@@ -244,6 +269,14 @@ useSeoMeta({
             <p class="text-sm font-bold mt-1" :class="roleColor(selectedMember.role)">{{ selectedMember.role }}</p>
           </div>
 
+          <!-- Bio Section if present -->
+          <div v-if="selectedMember.bio" class="px-2">
+            <div class="p-3.5 rounded-2xl bg-base-200/70 border border-base-300 text-xs text-base-content/80 leading-relaxed text-left italic relative">
+              <Icon name="mingcute:quote-left-fill" class="text-primary/20 text-xl absolute top-2 left-2 pointer-events-none" />
+              <p class="relative z-10 pl-3 font-medium">{{ selectedMember.bio }}</p>
+            </div>
+          </div>
+
           <!-- Period Badge -->
           <div v-if="selectedMember.year" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-base-200 border border-base-300 text-xs font-bold opacity-75">
             <Icon name="mingcute:time-line" class="text-primary text-sm" />
@@ -261,10 +294,10 @@ useSeoMeta({
             </a>
           </div>
 
-          <!-- Social Links Section -->
+          <!-- Social & Custom Links Section -->
           <div class="pt-4 border-t border-base-200/80 space-y-3">
-            <p class="text-[10px] font-black uppercase tracking-widest text-base-content/40">Media Sosial & Tautan</p>
-            <div class="flex flex-col gap-2">
+            <p class="text-[10px] font-black uppercase tracking-widest text-base-content/40">Media Sosial & Tautan Custom</p>
+            <div class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
               <a
                 v-if="selectedMember.github"
                 :href="selectedMember.github"
@@ -304,7 +337,22 @@ useSeoMeta({
                 <Icon name="mingcute:external-link-line" class="text-sm opacity-40 group-hover:opacity-100" />
               </a>
 
-              <div v-if="!selectedMember.github && !selectedMember.linkedin && !selectedMember.instagram && !selectedMember.email" class="text-xs opacity-40 italic py-2">
+              <!-- Custom Links -->
+              <a
+                v-for="(link, idx) in parseCustomLinks(selectedMember.customLinks)"
+                :key="idx"
+                :href="link.url"
+                target="_blank"
+                class="flex items-center gap-3 p-3 rounded-2xl bg-base-200 hover:bg-base-300 border border-base-300 transition-all font-semibold text-xs text-base-content group"
+              >
+                <div class="w-8 h-8 rounded-xl bg-base-300 group-hover:bg-primary group-hover:text-dark flex items-center justify-center text-primary transition-colors">
+                  <Icon :name="link.icon || 'mingcute:link-2-line'" class="text-lg" />
+                </div>
+                <span class="flex-1 text-left truncate">{{ link.label || 'Tautan Custom' }}</span>
+                <Icon name="mingcute:external-link-line" class="text-sm opacity-40 group-hover:opacity-100" />
+              </a>
+
+              <div v-if="!selectedMember.github && !selectedMember.linkedin && !selectedMember.instagram && !selectedMember.email && parseCustomLinks(selectedMember.customLinks).length === 0" class="text-xs opacity-40 italic py-2">
                 Tidak ada tautan kontak tambahan
               </div>
             </div>
