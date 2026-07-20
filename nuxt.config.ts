@@ -33,11 +33,16 @@ export default defineNuxtConfig({
     // exclude all URLs that start with /secret
     exclude: ['/monitor/**', '/fornaira', '/log/**'],
   },
+  routeRules: {
+    '/api/**': {
+      proxy: `${(process.env.NUXT_PUBLIC_API_BASE || 'https://gaskan-api.smtijogja.my.id').replace(/\/+$/, '')}/api/**`
+    }
+  },
   runtimeConfig: {
     sessionSecret: process.env.NUXT_SESSION_SECRET || process.env.SESSION_SECRET,
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://gaskan-api.smtijogja.my.id/',
-      wsBase: process.env.NUXT_PUBLIC_WS_BASE || 'wss://gaskan-api.smtijogja.my.id/',
+      apiBase: (process.env.NUXT_PUBLIC_API_BASE || 'https://gaskan-api.smtijogja.my.id').replace(/\/+$/, ''),
+      wsBase: (process.env.NUXT_PUBLIC_WS_BASE || 'wss://gaskan-api.smtijogja.my.id').replace(/\/+$/, ''),
       buildId: process.env.VERCEL_GIT_COMMIT_SHA || "development",
     },
   },

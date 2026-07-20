@@ -69,6 +69,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Override global $fetch everywhere
   globalThis.$fetch = customApiFetch;
+  nuxtApp.$fetch = customApiFetch;
 
   return {
     provide: {
