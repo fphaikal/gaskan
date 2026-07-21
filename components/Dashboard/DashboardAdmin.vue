@@ -122,9 +122,53 @@ const selectedClassFilter = ref('');
 const statusFilter = ref('ALL'); // ALL, HADIR, TERLAMBAT, IZIN_SAKIT, ALPHA
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
+const isFetchingAttendances = ref(false);
+
+const localAttendancesData = ref(props.count?.recentAttendances || []);
+const paginationMeta = ref(props.count?.pagination || null);
+
+watch(() => props.count, (newVal) => {
+  if (newVal) {
+    localAttendancesData.value = newVal.recentAttendances || [];
+    paginationMeta.value = newVal.pagination || null;
+  }
+}, { immediate: true });
+
+const fetchBackendAttendances = async () => {
+  try {
+    isFetchingAttendances.value = true;
+    const sessionFetch = $fetch;
+    const res = await sessionFetch('/api/count', {
+      query: {
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        search: searchQuery.value,
+        class: selectedClassFilter.value,
+        status: statusFilter.value,
+      }
+    });
+    if (res) {
+      localAttendancesData.value = res.recentAttendances || [];
+      paginationMeta.value = res.pagination || null;
+    }
+  } catch (err) {
+    console.error('Error fetching backend attendances:', err);
+  } finally {
+    isFetchingAttendances.value = false;
+  }
+};
+
+watch([currentPage, itemsPerPage], () => {
+  fetchBackendAttendances();
+});
+
+watch([searchQuery, selectedClassFilter, statusFilter], () => {
+  currentPage.value = 1;
+  fetchBackendAttendances();
+});
 
 const classList = computed(() => {
-  const list = props.count?.recentAttendances || [];
+  const list = props.count?.recentAttendances || localAttendancesData.value || [];
   const classes = new Set();
   list.forEach(a => {
     if (a.className) classes.add(a.className);
@@ -132,44 +176,18 @@ const classList = computed(() => {
   return Array.from(classes).sort();
 });
 
-const filteredAttendances = computed(() => {
-  let list = props.count?.recentAttendances || [];
-  
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase().trim();
-    list = list.filter(a =>
-      (a.studentName && a.studentName.toLowerCase().includes(q)) ||
-      (a.nis && a.nis.toString().toLowerCase().includes(q)) ||
-      (a.className && a.className.toLowerCase().includes(q))
-    );
-  }
-
-  if (selectedClassFilter.value) {
-    list = list.filter(a => a.className === selectedClassFilter.value);
-  }
-
-  if (statusFilter.value !== 'ALL') {
-    if (statusFilter.value === 'IZIN_SAKIT') {
-      list = list.filter(a => a.status === 'IZIN' || a.status === 'SAKIT');
-    } else if (statusFilter.value === 'ALPHA' || statusFilter.value === 'BELUM_ABSEN') {
-      list = list.filter(a => a.status === 'ALPHA' || a.status === 'BELUM_ABSEN');
-    } else {
-      list = list.filter(a => a.status === statusFilter.value);
-    }
-  }
-
-  return list;
+const totalCount = computed(() => {
+  if (paginationMeta.value?.total !== undefined) return paginationMeta.value.total;
+  return localAttendancesData.value.length;
 });
 
-const totalPages = computed(() => Math.ceil(filteredAttendances.value.length / itemsPerPage.value) || 1);
+const totalPages = computed(() => {
+  if (paginationMeta.value?.totalPages !== undefined) return paginationMeta.value.totalPages;
+  return Math.ceil(totalCount.value / itemsPerPage.value) || 1;
+});
 
 const paginatedAttendances = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  return filteredAttendances.value.slice(start, start + itemsPerPage.value);
-});
-
-watch([searchQuery, selectedClassFilter, statusFilter, itemsPerPage], () => {
-  currentPage.value = 1;
+  return localAttendancesData.value;
 });
 
 const activePreviewImage = ref(null);
@@ -308,11 +326,11 @@ onMounted(fetchAlumniStatus);
     </div>
 
     <!-- ROW 2: Table + Sidebar -->
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-12 gap-4 items-stretch">
 
       <!-- Activity Table -->
-      <div class="col-span-12 lg:col-span-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm flex flex-col overflow-hidden h-[540px]">
-        <div class="px-6 py-4 border-b border-base-200/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+      <div class="col-span-12 lg:col-span-8 bg-base-100 rounded-3xl border border-base-200/60 shadow-sm flex flex-col overflow-hidden h-[560px]">
+        <div class="px-6 py-3.5 border-b border-base-200/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
           <div class="flex items-center gap-6">
             <button 
               @click="activeTab = 'attendance'" 
@@ -320,7 +338,7 @@ onMounted(fetchAlumniStatus);
             >
               Aktivitas Absensi
               <div :class="['badge badge-sm border-0 font-black text-[9px]', activeTab === 'attendance' ? 'bg-orange-500/10 text-orange-500' : 'bg-base-200 text-base-content/40']">
-                {{ filteredAttendances.length }}
+                {{ totalCount }}
               </div>
             </button>
             <button 
@@ -339,7 +357,7 @@ onMounted(fetchAlumniStatus);
 
         <template v-if="activeTab === 'attendance'">
           <!-- Filter Toolbar -->
-          <div class="px-6 py-3 bg-base-200/30 border-b border-base-200/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div class="px-6 py-2.5 bg-base-200/30 border-b border-base-200/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
             <!-- Search input -->
             <div class="relative flex-1 min-w-[180px] max-w-xs">
               <Icon name="mingcute:search-line" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
@@ -439,7 +457,7 @@ onMounted(fetchAlumniStatus);
                   </div>
                 </div>
 
-                <div v-if="!filteredAttendances.length" class="flex flex-col items-center justify-center py-16 opacity-30">
+                <div v-if="!paginatedAttendances.length" class="flex flex-col items-center justify-center py-16 opacity-30">
                   <Icon name="mingcute:time-line" size="48" />
                   <p class="text-xs font-black uppercase mt-2 tracking-widest">Tidak ada data absensi sesuai filter</p>
                 </div>
@@ -447,8 +465,11 @@ onMounted(fetchAlumniStatus);
 
               <!-- Pagination Footer -->
               <div class="px-6 py-2.5 bg-base-200/20 border-t border-base-200/40 flex items-center justify-between gap-4 text-xs font-bold text-base-content/60 shrink-0">
-                <div class="text-[11px] font-bold text-base-content/50">
-                  Menampilkan {{ filteredAttendances.length ? ((currentPage - 1) * itemsPerPage) + 1 : 0 }} - {{ Math.min(currentPage * itemsPerPage, filteredAttendances.length) }} dari {{ filteredAttendances.length }} siswa
+                <div class="text-[11px] font-bold text-base-content/50 flex items-center gap-2">
+                  <span>
+                    Menampilkan {{ totalCount ? ((currentPage - 1) * itemsPerPage) + 1 : 0 }} - {{ Math.min(currentPage * itemsPerPage, totalCount) }} dari {{ totalCount }} siswa
+                  </span>
+                  <span v-if="isFetchingAttendances" class="loading loading-spinner loading-xs text-orange-500"></span>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -460,9 +481,9 @@ onMounted(fetchAlumniStatus);
                   </select>
 
                   <div class="join">
-                    <button class="join-item btn btn-xs rounded-l-lg font-black border-base-200" :disabled="currentPage <= 1" @click="currentPage--">«</button>
+                    <button class="join-item btn btn-xs rounded-l-lg font-black border-base-200" :disabled="currentPage <= 1 || isFetchingAttendances" @click="currentPage--">«</button>
                     <button class="join-item btn btn-xs font-black bg-base-200 border-base-200 pointer-events-none">Hal {{ currentPage }} / {{ totalPages }}</button>
-                    <button class="join-item btn btn-xs rounded-r-lg font-black border-base-200" :disabled="currentPage >= totalPages" @click="currentPage++">»</button>
+                    <button class="join-item btn btn-xs rounded-r-lg font-black border-base-200" :disabled="currentPage >= totalPages || isFetchingAttendances" @click="currentPage++">»</button>
                   </div>
                 </div>
               </div>
@@ -531,7 +552,7 @@ onMounted(fetchAlumniStatus);
       </div>
 
       <!-- RIGHT SIDEBAR -->
-      <div class="col-span-12 lg:col-span-4 flex flex-col gap-4">
+      <div class="col-span-12 lg:col-span-4 flex flex-col gap-4 h-[560px]">
 
         <!-- Quick Nav -->
         <div class="bg-base-100 rounded-3xl p-5 border border-base-200/60 shadow-sm shrink-0">
