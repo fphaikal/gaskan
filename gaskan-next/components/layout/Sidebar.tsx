@@ -48,7 +48,7 @@ const navGroups: NavGroup[] = [
     groupName: 'MENU UTAMA',
     items: [
       { title: 'Dashboard', href: '/home', icon: 'mingcute:classify-2-fill' },
-      { title: 'Realtime Monitor', href: '/monitor', icon: 'mingcute:activity-fill' },
+      { title: 'Workspace Teams', href: '/teams', icon: 'mingcute:group-3-fill' },
       { title: 'Profil Saya', href: '/profile', icon: 'mingcute:user-3-line' },
     ],
   },
@@ -57,24 +57,31 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'Daftar Siswa', href: '/siswa', icon: 'mingcute:user-3-fill' },
       { title: 'Manajemen Kelas', href: '/kelas', icon: 'mingcute:school-fill' },
-      { title: 'Manajemen Jurusan', href: '/jurusan', icon: 'mingcute:building-1-fill' },
       { title: 'Semester', href: '/semester', icon: 'mingcute:calendar-2-fill' },
+      { title: 'Reshuffle Kelas', href: '/reshuffle', icon: 'mingcute:transfer-4-line', roles: ['admin', 'developer'] },
+      { title: 'Manajemen User', href: '/admin', icon: 'mingcute:user-setting-fill', roles: ['admin', 'developer'] },
+      { title: 'Manajemen Tim', href: '/admin/team', icon: 'mingcute:group-fill', roles: ['admin', 'developer'] },
+      { title: 'Izin Profil Siswa', href: '/admin/field-permissions', icon: 'mingcute:user-setting-fill', roles: ['admin', 'developer'] },
     ],
   },
   {
     groupName: 'PRESENSI & KEHADIRAN',
     items: [
-      { title: 'Absensi Siswa', href: '/absensi', icon: 'mingcute:clipboard-fill' },
+      { title: 'Absensi', href: '/absensi', icon: 'mingcute:clipboard-fill' },
+      { title: 'Log Kehadiran', href: '/log', icon: 'mingcute:list-check-2-fill' },
+      { title: 'On Site', href: '/log/onsite', icon: 'mingcute:location-2-fill' },
       { title: 'Surat Izin', href: '/izin', icon: 'mingcute:document-2-fill' },
-      { title: 'Log Aktivitas', href: '/log', icon: 'mingcute:enter-door-fill' },
+      { title: 'Laporan Absensi', href: '/absensi/laporan', icon: 'mingcute:file-export-fill' },
     ],
   },
   {
-    groupName: 'ADMINISTRASI & MESIN',
+    groupName: 'SISTEM & LOG',
     items: [
-      { title: 'Manajemen Admin', href: '/admin', icon: 'mingcute:user-setting-fill', roles: ['admin', 'developer'] },
-      { title: 'Izin Profil Siswa', href: '/admin/field-permissions', icon: 'mingcute:key-2-fill', roles: ['admin', 'developer'] },
+      { title: 'Kelola Sistem', href: '/admin/system-manage', icon: 'mingcute:server-2-fill', roles: ['admin', 'developer'] },
+      { title: 'Explorer File', href: '/admin/file-explorer', icon: 'mingcute:folder-open-fill', roles: ['developer'] },
       { title: 'Konfigurasi Mesin', href: '/config/device', icon: 'mingcute:settings-6-fill', roles: ['admin', 'developer'] },
+      { title: 'Log Sistem', href: '/log/login', icon: 'mingcute:enter-door-fill', roles: ['admin', 'developer'] },
+      { title: 'Log Error', href: '/log/error', icon: 'mingcute:information-line', roles: ['developer'] },
     ],
   },
 ];
@@ -111,7 +118,7 @@ export function Sidebar() {
         return (
           <div key={group.groupName} className="flex flex-col gap-1">
             {!collapsed && (
-              <h2 className="px-3 text-[10px] font-black tracking-widest text-muted-foreground/70 uppercase mb-1">
+              <h2 className="px-3 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase mb-1">
                 {group.groupName}
               </h2>
             )}
@@ -124,20 +131,29 @@ export function Sidebar() {
                   href={item.href}
                   onClick={onItemClick}
                   className={cn(
-                    'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition-all duration-150',
+                    'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold transition-all duration-150 relative group',
                     active
-                      ? 'bg-primary text-primary-foreground font-black shadow-md shadow-primary/20'
-                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                      ? 'bg-primary/20 text-primary font-black'
+                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
                     collapsed && 'justify-center px-2'
                   )}
                   title={collapsed ? item.title : undefined}
                 >
-                  <Icon icon={item.icon} className={cn('text-lg shrink-0', active ? 'text-primary-foreground' : 'text-muted-foreground')} />
+                  <Icon
+                    icon={item.icon}
+                    className={cn(
+                      'text-lg shrink-0',
+                      active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                    )}
+                  />
                   {!collapsed && (
                     <span className="flex-1 truncate">{item.title}</span>
                   )}
-                  {!collapsed && item.badge && (
-                    <Badge variant={active ? 'secondary' : 'outline'} className="ml-auto text-[10px]">
+                  {!collapsed && active && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 ml-auto" />
+                  )}
+                  {!collapsed && item.badge && !active && (
+                    <Badge variant="outline" className="ml-auto text-[10px]">
                       {item.badge}
                     </Badge>
                   )}
@@ -174,7 +190,7 @@ export function Sidebar() {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {renderNavItems(isCollapsed)}
         </div>
 
