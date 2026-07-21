@@ -268,6 +268,18 @@ const hasFillOnceWarningInPlat = computed(() => {
   return getFieldPermissionMode('vehiclePlate') === 'FILL_ONCE' && !isValuePresent(user.value?.Plat_Nomor);
 });
 
+const hasFillOnceWarningInPhoto = computed(() => {
+  if (userRole.value !== 'SISWA') return false;
+  const hasPhoto = user.value?.url_picture && !user.value.url_picture.includes('ui-avatars.com');
+  return getFieldPermissionMode('photoUrl') === 'FILL_ONCE' && !hasPhoto;
+});
+
+const hasFillOnceWarningInFace = computed(() => {
+  if (userRole.value !== 'SISWA') return false;
+  return getFieldPermissionMode('faceUrl') === 'FILL_ONCE' && !isValuePresent(user.value?.faceUrl);
+});
+
+
 
 const handleError = (error) => {
   err.value = true;
@@ -1146,13 +1158,42 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
   <!-- Modal: Avatar Actions -->
   <dialog id="avatarActions" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-3xl sm:rounded-3xl p-6">
-      <h3 class="font-bold text-lg text-base-content mb-6 text-center sm:text-left">Foto Profil</h3>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg text-base-content">Foto Profil</h3>
+        <span v-if="getFieldBadge('photoUrl', user?.url_picture)" :class="['badge badge-sm font-bold px-2.5 py-1.5', getFieldBadge('photoUrl', user?.url_picture).color]">
+          {{ getFieldBadge('photoUrl', user?.url_picture).label }}
+        </span>
+      </div>
+
+      <!-- Attention Warning Banner for Photo Upload -->
+      <div v-if="userRole === 'SISWA'" class="space-y-2 mb-4">
+        <div v-if="hasFillOnceWarningInPhoto" role="alert" class="alert alert-warning rounded-2xl border border-amber-500/30 p-3 shadow-sm text-xs font-medium">
+          <Icon name="mingcute:warning-fill" size="22" class="text-amber-600 shrink-0" />
+          <div>
+            <p class="font-extrabold text-amber-900 dark:text-amber-300">⚠️ PERHATIAN PENTING (HANYA 1 KALI UNGGAN!)</p>
+            <p class="text-[11px] text-amber-800 dark:text-amber-200 mt-0.5">
+              Foto profil berstatus <strong>"Sekali Isi Jika Kosong"</strong>. Mohon unggah foto profil resmi, rapi, dan jelas karena begitu tersimpan, foto profil <strong>TIDAK DAPAT DIUBAH LAGI</strong>!
+            </p>
+          </div>
+        </div>
+
+        <div v-else-if="isFieldDisabled('photoUrl', user?.url_picture)" role="alert" class="alert alert-error rounded-2xl border border-rose-500/30 p-3 shadow-sm text-xs font-medium">
+          <Icon name="mingcute:lock-fill" size="20" class="text-rose-600 shrink-0" />
+          <div>
+            <p class="font-extrabold text-rose-900 dark:text-rose-300">🔒 FOTO PROFIL TERKUNCI</p>
+            <p class="text-[11px] text-rose-800 dark:text-rose-200 mt-0.5">
+              Foto profil Anda telah dikunci oleh pihak sekolah dan tidak dapat diubah atau dihapus.
+            </p>
+          </div>
+        </div>
+      </div>
       
       <div class="flex flex-col gap-3">
         <!-- Update Photo -->
         <button 
-          @click="closeModal('avatarActions'); $refs.fileInput.click()"
-          class="btn btn-ghost bg-base-200/50 hover:bg-primary/10 hover:text-primary rounded-2xl flex items-center justify-between px-6 h-16 transition-all"
+          @click="!isFieldDisabled('photoUrl', user?.url_picture) && (closeModal('avatarActions'), $refs.fileInput.click())"
+          :disabled="isFieldDisabled('photoUrl', user?.url_picture)"
+          class="btn btn-ghost bg-base-200/50 hover:bg-primary/10 hover:text-primary rounded-2xl flex items-center justify-between px-6 h-16 transition-all disabled:bg-base-200/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div class="flex items-center gap-4">
             <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -1169,8 +1210,8 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
         <!-- Samakan Foto Profil dengan Foto Wajah Absensi -->
         <button 
           @click="syncPhotos('FACE_TO_PROFILE')"
-          :disabled="isSyncingPhotos"
-          class="btn btn-ghost bg-base-200/50 hover:bg-info/10 hover:text-info rounded-2xl flex items-center justify-between px-6 h-16 transition-all"
+          :disabled="isSyncingPhotos || isFieldDisabled('photoUrl', user?.url_picture) || !user?.faceUrl"
+          class="btn btn-ghost bg-base-200/50 hover:bg-info/10 hover:text-info rounded-2xl flex items-center justify-between px-6 h-16 transition-all disabled:bg-base-200/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div class="flex items-center gap-4">
             <div class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center text-info">
@@ -1187,8 +1228,8 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
         <!-- Samakan Foto Wajah Absensi dengan Foto Profil -->
         <button 
           @click="syncPhotos('PROFILE_TO_FACE')"
-          :disabled="isSyncingPhotos"
-          class="btn btn-ghost bg-base-200/50 hover:bg-amber-500/10 hover:text-amber-500 rounded-2xl flex items-center justify-between px-6 h-16 transition-all"
+          :disabled="isSyncingPhotos || isFieldDisabled('faceUrl', user?.faceUrl) || !user?.url_picture || user.url_picture.includes('ui-avatars.com')"
+          class="btn btn-ghost bg-base-200/50 hover:bg-amber-500/10 hover:text-amber-500 rounded-2xl flex items-center justify-between px-6 h-16 transition-all disabled:bg-base-200/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div class="flex items-center gap-4">
             <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
@@ -1203,9 +1244,9 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
         </button>
 
 
-        <!-- Delete Photo (Only if custom photo exists) -->
+        <!-- Delete Photo (Only if custom photo exists & not locked) -->
         <button 
-          v-if="user && !user.url_picture.includes('ui-avatars.com')"
+          v-if="user && !user.url_picture.includes('ui-avatars.com') && !isFieldDisabled('photoUrl', user?.url_picture)"
           @click="closeModal('avatarActions'); showDeleteConfirm = true"
           class="btn btn-ghost bg-base-200/50 hover:bg-error/10 hover:text-error rounded-2xl flex items-center justify-between px-6 h-16 transition-all"
         >
@@ -1214,7 +1255,7 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
               <Icon name="mingcute:delete-2-fill" size="22" />
             </div>
             <div class="text-left">
-              <p class="font-bold text-sm">Hapus Foto</p>
+              <p class="font-bold text-sm">Hapus Foto Profil</p>
               <p class="text-xs text-base-content/50">Kembali ke foto profil default</p>
             </div>
           </div>
