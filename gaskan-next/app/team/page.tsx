@@ -244,59 +244,130 @@ export default function PublicTeamPage() {
       {/* MEMBER DETAIL MODAL */}
       {selectedMember && (
         <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
-          <DialogContent className="sm:max-w-md p-6 rounded-3xl bg-card border border-border space-y-6">
-            <DialogHeader className="p-0 border-none bg-transparent text-center">
-              <div className="w-24 h-24 mx-auto rounded-3xl overflow-hidden bg-muted border-2 border-primary/30 shrink-0 mb-3 shadow-md">
-                {resolvePhoto(selectedMember.photoUrl) ? (
+          <DialogContent className="sm:max-w-md p-6 sm:p-8 rounded-[2.5rem] bg-card border border-border space-y-5 relative overflow-hidden">
+            {/* Header Decorative Background Gradient */}
+            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-primary/15 to-transparent pointer-events-none" />
+
+            <DialogHeader className="p-0 border-none bg-transparent text-center space-y-3 relative z-10 pt-2">
+              {/* Large Avatar Frame with Glowing Siluet Border */}
+              <div className="w-28 h-28 rounded-3xl bg-primary/10 border-2 border-primary/40 shadow-2xl shadow-primary/20 flex items-center justify-center mx-auto overflow-hidden shrink-0">
+                {resolvePhoto(selectedMember.photoUrl) && !resolvePhoto(selectedMember.photoUrl)?.includes('0000') ? (
                   <img src={resolvePhoto(selectedMember.photoUrl)!} alt={selectedMember.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-black text-primary">
-                    {selectedMember.name?.charAt(0)}
-                  </div>
+                  <Icon icon="mingcute:user-4-fill" className="text-5xl text-primary/60" />
                 )}
               </div>
 
-              <DialogTitle className="text-xl font-black text-foreground">
-                {selectedMember.name}
-              </DialogTitle>
-              <div className="mt-1">
-                <Badge className={`px-3 py-1 rounded-xl text-xs font-black uppercase border ${roleColor(selectedMember.role)}`}>
+              {/* Name & Role */}
+              <div>
+                <DialogTitle className="text-2xl font-black text-foreground tracking-tight">
+                  {selectedMember.name}
+                </DialogTitle>
+                <p className={`text-sm font-bold mt-1 ${roleColor(selectedMember.role).split(' ')[0]}`}>
                   {selectedMember.role || 'Anggota Tim'}
-                </Badge>
+                </p>
+              </div>
+
+              {/* Period Badge */}
+              <div className="pt-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border border-border text-xs font-bold text-muted-foreground">
+                  <Icon icon="mingcute:time-line" className="text-primary text-sm" />
+                  <span>Periode {selectedMember.year || '2023 - Sekarang'}</span>
+                </div>
               </div>
             </DialogHeader>
 
+            {/* Bio Quote Box */}
             {selectedMember.bio && (
-              <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs text-muted-foreground font-semibold leading-relaxed whitespace-pre-line text-center">
-                "{selectedMember.bio}"
+              <div className="p-3.5 rounded-2xl bg-muted/50 border border-border text-xs text-muted-foreground leading-relaxed text-left italic relative">
+                <Icon icon="mingcute:quote-left-fill" className="text-primary/20 text-xl absolute top-2 left-2 pointer-events-none" />
+                <p className="relative z-10 pl-4 font-medium">{selectedMember.bio}</p>
               </div>
             )}
 
-            {/* Social Buttons */}
-            {getSocmed(selectedMember).length > 0 && (
-              <div className="space-y-2">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-center">Kontak & Tautan</p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {getSocmed(selectedMember).map((s, idx) => (
-                    <a
-                      key={idx}
-                      href={s.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-primary/10 hover:text-primary border border-border text-xs font-bold transition-all"
-                    >
-                      <Icon icon={s.icon} className="text-base" />
-                      <span>{s.name}</span>
-                    </a>
-                  ))}
-                </div>
+            {/* Social & Custom Links Section */}
+            <div className="pt-3 border-t border-border space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-center">
+                MEDIA SOSIAL & TAUTAN CUSTOM
+              </p>
+
+              <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                {selectedMember.github && (
+                  <a
+                    href={selectedMember.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 hover:bg-muted/80 border border-border transition-all font-bold text-xs text-foreground group"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-muted group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
+                      <Icon icon="mdi:github" className="text-lg" />
+                    </div>
+                    <span className="flex-1 text-left truncate">GitHub</span>
+                    <Icon icon="mingcute:external-link-line" className="text-sm text-muted-foreground/50 group-hover:text-foreground" />
+                  </a>
+                )}
+
+                {selectedMember.linkedin && (
+                  <a
+                    href={selectedMember.linkedin}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 hover:bg-muted/80 border border-border transition-all font-bold text-xs text-foreground group"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-muted group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center text-sky-400 transition-colors">
+                      <Icon icon="entypo-social:linkedin-with-circle" className="text-lg" />
+                    </div>
+                    <span className="flex-1 text-left truncate">LinkedIn</span>
+                    <Icon icon="mingcute:external-link-line" className="text-sm text-muted-foreground/50 group-hover:text-foreground" />
+                  </a>
+                )}
+
+                {selectedMember.instagram && (
+                  <a
+                    href={selectedMember.instagram}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 hover:bg-muted/80 border border-border transition-all font-bold text-xs text-foreground group"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-muted group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center text-rose-400 transition-colors">
+                      <Icon icon="mage:instagram-circle" className="text-lg" />
+                    </div>
+                    <span className="flex-1 text-left truncate">Instagram</span>
+                    <Icon icon="mingcute:external-link-line" className="text-sm text-muted-foreground/50 group-hover:text-foreground" />
+                  </a>
+                )}
+
+                {parseCustomLinks(selectedMember.customLinks).map((link: any, idx: number) => (
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 hover:bg-muted/80 border border-border transition-all font-bold text-xs text-foreground group"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-muted group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center text-primary transition-colors">
+                      <Icon icon={link.icon || 'mingcute:link-2-line'} className="text-lg" />
+                    </div>
+                    <span className="flex-1 text-left truncate">{link.label || 'Tautan Custom'}</span>
+                    <Icon icon="mingcute:external-link-line" className="text-sm text-muted-foreground/50 group-hover:text-foreground" />
+                  </a>
+                ))}
+
+                {!selectedMember.github &&
+                  !selectedMember.linkedin &&
+                  !selectedMember.instagram &&
+                  parseCustomLinks(selectedMember.customLinks).length === 0 && (
+                    <p className="text-xs text-muted-foreground/50 italic text-center py-2 font-medium">
+                      Tidak ada tautan kontak tambahan
+                    </p>
+                  )}
               </div>
-            )}
+            </div>
 
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => setSelectedMember(null)}
-              className="w-full rounded-2xl font-bold text-xs h-10"
+              className="w-full rounded-2xl font-bold text-xs h-10 opacity-70 hover:opacity-100"
             >
               Tutup
             </Button>

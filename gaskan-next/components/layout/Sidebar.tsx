@@ -49,7 +49,6 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'Dashboard', href: '/home', icon: 'mingcute:classify-2-fill' },
       { title: 'Workspace Teams', href: '/teams', icon: 'mingcute:group-3-fill' },
-      { title: 'Tim GASKAN', href: '/team', icon: 'mingcute:group-fill' },
       { title: 'Profil Saya', href: '/profile', icon: 'mingcute:user-3-line' },
     ],
   },
