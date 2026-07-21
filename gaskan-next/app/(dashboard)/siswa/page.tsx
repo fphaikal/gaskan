@@ -38,26 +38,29 @@ export default function SiswaPage() {
   const [devices, setDevices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Filters State matching Nuxt
+  // Filters State matching Nuxt index.vue
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('');
   const [filterStatus, setFilterStatus] = useState('AKTIF');
   const [filterPhoto, setFilterPhoto] = useState('ALL');
+  const [filterDeviceSync, setFilterDeviceSync] = useState('ALL');
+  const [sortBy, setSortBy] = useState('name-asc');
   const [showAdvanceFilters, setShowAdvanceFilters] = useState(false);
 
   // Selection & Bulk State
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   // Modals
   const [showFormModal, setShowFormModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteStudentItem, setDeleteStudentItem] = useState<any>(null);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
-  const [showDeviceSyncModal, setShowDeviceSyncModal] = useState(false);
+  const [showRegisterDeviceModal, setShowRegisterDeviceModal] = useState(false);
+  const [studentToRegister, setStudentToRegister] = useState<any>(null);
   const [selectedDevice, setSelectedDevice] = useState('ALL');
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -111,15 +114,23 @@ export default function SiswaPage() {
     fetchData();
   }, [fetchData]);
 
-  // Filtering Logic matching Nuxt index.vue
+  // Filtering & Sorting Logic matching Nuxt index.vue 1-to-1
   const filteredStudents = useMemo(() => {
-    return students.filter((s) => {
-      const nameMatch =
-        (s.name || s.Nama || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.nis || s.NIS || '').includes(searchQuery);
+    let result = students.filter((s) => {
+      const stdName = s.name || s.Nama || '';
+      const stdNis = s.nis || s.NIS || '';
+      const stdNisn = s.nisn || '';
 
-      const classMatch = !selectedClass || s.classId === selectedClass || s.className === selectedClass || s.kelasId === selectedClass;
-      const majorMatch = !selectedMajor || s.majorId === selectedMajor || s.majorAlias === selectedMajor;
+      const nameMatch =
+        stdName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        stdNis.includes(searchQuery) ||
+        stdNisn.includes(searchQuery);
+
+      const clsName = s.className || s.Kelas || s.class?.className || '';
+      const classMatch = !selectedClass || clsName === selectedClass || s.classId === selectedClass;
+
+      const mjrName = s.majorAlias || s.majorName || s.class?.major?.name || '';
+      const majorMatch = !selectedMajor || mjrName.toLowerCase().includes(selectedMajor.toLowerCase()) || s.majorId === selectedMajor;
 
       let statusMatch = true;
       if (filterStatus !== 'ALL') {
@@ -128,12 +139,29 @@ export default function SiswaPage() {
       }
 
       let photoMatch = true;
-      if (filterPhoto === 'ADA_FOTO') photoMatch = !!(s.photoUrl || s.url_picture || s.faceUrl);
-      if (filterPhoto === 'TANPA_FOTO') photoMatch = !(s.photoUrl || s.url_picture || s.faceUrl);
+      const hasPhoto = !!(s.photoUrl || s.url_picture || s.faceUrl);
+      if (filterPhoto === 'WITH_PHOTO') photoMatch = hasPhoto;
+      if (filterPhoto === 'WITHOUT_PHOTO') photoMatch = !hasPhoto;
 
-      return nameMatch && classMatch && majorMatch && statusMatch && photoMatch;
+      let syncMatch = true;
+      const isSynced = !!(s.faceToken || s.synced);
+      if (filterDeviceSync === 'SYNCED') syncMatch = isSynced;
+      if (filterDeviceSync === 'NOT_SYNCED') syncMatch = !isSynced;
+
+      return nameMatch && classMatch && majorMatch && statusMatch && photoMatch && syncMatch;
     });
-  }, [students, searchQuery, selectedClass, selectedMajor, filterStatus, filterPhoto]);
+
+    // Sorting
+    if (sortBy === 'name-asc') {
+      result.sort((a, b) => (a.name || a.Nama || '').localeCompare(b.name || b.Nama || ''));
+    } else if (sortBy === 'name-desc') {
+      result.sort((a, b) => (b.name || b.Nama || '').localeCompare(a.name || a.Nama || ''));
+    } else if (sortBy === 'newest') {
+      result.sort((a, b) => (b.id || 0) - (a.id || 0));
+    }
+
+    return result;
+  }, [students, searchQuery, selectedClass, selectedMajor, filterStatus, filterPhoto, filterDeviceSync, sortBy]);
 
   // Pagination
   const totalStudents = filteredStudents.length;
@@ -151,7 +179,7 @@ export default function SiswaPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedStudents.length === paginatedStudents.length) {
+    if (selectedStudents.length === paginatedStudents.length && paginatedStudents.length > 0) {
       setSelectedStudents([]);
     } else {
       setSelectedStudents(paginatedStudents.map((s) => String(s.id)));
@@ -198,7 +226,7 @@ export default function SiswaPage() {
 
   const saveStudent = async () => {
     if (!form.nis.trim() || !form.name.trim()) {
-      toast.error('NIS dan Nama Siswa wajib diisi');
+      toast.error('Nama, NIS, dan Kelas wajib diisi');
       return;
     }
     setIsSaving(true);
@@ -209,7 +237,7 @@ export default function SiswaPage() {
         toast.success('Data siswa berhasil diperbarui');
       } else {
         await api.post('/students', payload).catch(() => api.post('/siswa', payload));
-        toast.success('Siswa baru berhasil ditambahkan');
+        toast.success('Siswa berhasil ditambahkan');
       }
       setShowFormModal(false);
       await fetchData();
@@ -221,12 +249,12 @@ export default function SiswaPage() {
   };
 
   const handleDeleteSingle = async () => {
-    if (!deleteId) return;
+    if (!deleteStudentItem) return;
     setIsSaving(true);
     try {
-      await api.delete(`/students/${deleteId}`).catch(() => api.delete(`/siswa/${deleteId}`));
-      toast.success('Siswa berhasil dihapus');
-      setDeleteId(null);
+      await api.delete(`/students/${deleteStudentItem.id}`).catch(() => api.delete(`/siswa/${deleteStudentItem.id}`));
+      toast.success(`Siswa ${deleteStudentItem.name || deleteStudentItem.Nama} berhasil dihapus`);
+      setDeleteStudentItem(null);
       await fetchData();
     } catch (e: any) {
       toast.error(e?.response?.data?.message || 'Gagal menghapus siswa');
@@ -245,45 +273,55 @@ export default function SiswaPage() {
       setShowBulkDeleteModal(false);
       await fetchData();
     } catch (e: any) {
-      toast.error('Gagal menghapus siswa terpilih');
+      toast.error('Gagal menghapus siswa terpilih secara massal');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSyncToDevices = async () => {
-    if (selectedStudents.length === 0) return;
+  const openRegisterDevice = (std: any) => {
+    setStudentToRegister(std);
+    setSelectedDevice('ALL');
+    setShowRegisterDeviceModal(true);
+  };
+
+  const handleRegisterToDevice = async () => {
+    const stdIds = studentToRegister ? [studentToRegister.id] : selectedStudents;
+    if (stdIds.length === 0) return;
     setIsSyncing(true);
     try {
       await api.post('/students/bulk-register-device', {
-        studentIds: selectedStudents,
+        studentIds: stdIds,
         deviceId: selectedDevice,
       });
-      toast.success('Sinkronisasi ke perangkat mesin berhasil diproses');
-      setShowDeviceSyncModal(false);
+      toast.success(`Berhasil memproses sinkronisasi siswa ke mesin presensi!`);
+      setShowRegisterDeviceModal(false);
+      setStudentToRegister(null);
       setSelectedStudents([]);
+      await fetchData();
     } catch (e: any) {
-      toast.error('Gagal memproses sinkronisasi perangkat');
+      toast.error('Gagal mendaftarkan siswa ke mesin absensi.');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const avatarColors = [
-    'bg-primary/20 text-primary',
-    'bg-emerald-500/20 text-emerald-500',
-    'bg-amber-500/20 text-amber-500',
-    'bg-sky-500/20 text-sky-500',
-    'bg-rose-500/20 text-rose-500',
-  ];
-  const avatarColor = (name?: string) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
+  const classOptions = useMemo(() => {
+    const names = classes.map((c) => c.className || c.nama_kelas).filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [classes]);
+
+  const majorOptions = useMemo(() => {
+    const names = majors.map((m) => m.name || m.nama_jurusan || m.alias).filter(Boolean);
+    return Array.from(new Set(names)).sort();
+  }, [majors]);
 
   const exportData = filteredStudents.map((s) => ({
     nis: s.nis || s.NIS || '',
     nama: s.name || s.Nama || '',
     kelas: s.className || s.Kelas || '',
     jurusan: s.majorAlias || s.majorName || '',
-    gender: s.gender === 'L' ? 'Laki-Laki' : 'Perempuan',
+    gender: s.gender === 'P' ? 'Perempuan' : 'Laki-Laki',
     kontak: s.phone || s.Nomor || '',
     status: s.status || 'AKTIF',
   }));
@@ -308,160 +346,218 @@ export default function SiswaPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5 pb-12 animate-in fade-in duration-500">
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
+      {/* Header Bar matching Nuxt 1-to-1 */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            Direktori Siswa
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground mb-1">
+            Daftar Siswa
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-0.5">
-            Kelola data siswa, foto absensi, dan sinkronisasi ke mesin presensi
+          <p className="text-sm text-muted-foreground font-semibold">
+            Kelola dan lihat direktori data siswa secara menyeluruh
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={fetchData}
+            className="h-10 w-10 rounded-2xl border-border bg-card shadow-sm"
+            title="Refresh Data"
+          >
+            <Icon icon="mingcute:refresh-3-line" className="text-lg" />
+          </Button>
+
           <ExportButtons data={exportData} columns={exportColumns} fileName="direktori_siswa" title="Data Siswa" />
 
           {isAdmin && (
-            <>
-              <Button onClick={openCreate} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs shadow-lg shadow-primary/20">
-                <Icon icon="mingcute:add-circle-fill" className="text-lg" /> Tambah Siswa
-              </Button>
-            </>
+            <Button
+              onClick={openCreate}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs h-10 px-4 shadow-lg shadow-primary/20"
+            >
+              <Icon icon="mingcute:user-add-fill" className="text-lg" />
+              Tambah Siswa
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Filter & Toolbar matching Nuxt */}
-      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Search */}
-          <div className="relative sm:col-span-1">
-            <Icon icon="mingcute:search-line" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" />
+      {/* Filters Section matching Nuxt index.vue 1-to-1 */}
+      <div className="space-y-4">
+        <div className="flex flex-col lg:flex-row gap-3 bg-card p-4 rounded-3xl border border-border shadow-sm">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Icon icon="mingcute:search-line" className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg" />
             <Input
               type="text"
-              placeholder="Cari nama / NIS..."
+              placeholder="Cari nama, NIS, atau NISN..."
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="pl-9 bg-background border-border rounded-xl text-xs font-semibold"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-11 h-11 bg-muted/30 border-transparent rounded-2xl text-xs font-bold focus:border-primary transition-all"
             />
           </div>
 
-          {/* Class Filter */}
-          <select
-            value={selectedClass}
-            onChange={(e) => {
-              setSelectedClass(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
-          >
-            <option value="">Semua Kelas</option>
-            {classes.map((cls) => (
-              <option key={cls.id} value={cls.id || cls.className}>
-                {cls.className || cls.nama_kelas}
-              </option>
-            ))}
-          </select>
-
-          {/* Major Filter */}
-          <select
-            value={selectedMajor}
-            onChange={(e) => {
-              setSelectedMajor(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
-          >
-            <option value="">Semua Jurusan</option>
-            {majors.map((m) => (
-              <option key={m.id} value={m.id || m.alias}>
-                {m.name || m.nama_jurusan} ({m.alias})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Chip Filters & Toggle Advance */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {[
-              { id: 'AKTIF', label: 'AKTIF' },
-              { id: 'NONAKTIF', label: 'NON-AKTIF' },
-              { id: 'LULUS', label: 'LULUS' },
-              { id: 'ALL', label: 'SEMUA' },
-            ].map((st) => (
-              <button
-                key={st.id}
-                type="button"
-                onClick={() => {
-                  setFilterStatus(st.id);
-                  setCurrentPage(1);
-                }}
-                className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                  filterStatus === st.id
-                    ? 'bg-primary text-primary-foreground shadow-sm scale-105'
-                    : 'bg-muted/40 text-muted-foreground hover:bg-muted/80'
-                }`}
+          <div className="flex flex-wrap gap-2">
+            {/* Class Dropdown */}
+            <div className="relative flex-1 sm:flex-none sm:w-48">
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="w-full h-11 pl-4 pr-8 bg-muted/30 border-transparent border rounded-2xl font-bold text-xs focus:outline-none focus:border-primary cursor-pointer"
               >
-                {st.label}
-              </button>
-            ))}
-          </div>
+                <option value="">Semua Kelas</option>
+                {classOptions.map((cls) => (
+                  <option key={cls} value={cls}>
+                    {cls}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAdvanceFilters(!showAdvanceFilters)}
-            className="text-xs font-bold text-muted-foreground hover:text-primary gap-1"
-          >
-            <Icon icon="mingcute:filter-2-line" className="text-sm" />
-            {showAdvanceFilters ? 'Sembunyikan Filter' : 'Filter Lanjutan'}
-          </Button>
+            {/* Filter Lanjutan Toggle */}
+            <Button
+              variant={showAdvanceFilters ? 'default' : 'ghost'}
+              onClick={() => setShowAdvanceFilters(!showAdvanceFilters)}
+              className={`h-11 rounded-2xl gap-2 font-bold text-xs border ${
+                showAdvanceFilters ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-foreground border-border'
+              }`}
+            >
+              <Icon icon={showAdvanceFilters ? 'mingcute:settings-6-fill' : 'mingcute:settings-6-line'} className="text-base" />
+              <span className="hidden sm:inline">Filter Lanjutan</span>
+            </Button>
+          </div>
         </div>
 
-        {/* Advance Filters Bar */}
+        {/* Advance Filter Panel matching Nuxt */}
         {showAdvanceFilters && (
-          <div className="pt-3 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in duration-200">
-            <div>
-              <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-wider mb-1 block">
-                Filter Foto Profil
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 bg-muted/20 p-4 rounded-3xl border border-border shadow-inner animate-in fade-in duration-200">
+            {/* Status Filter */}
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                Status Keaktifan
+              </Label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
+              >
+                <option value="AKTIF">AKTIF (Normal)</option>
+                <option value="NONAKTIF">NONAKTIF (Alumni/Keluar)</option>
+                <option value="ALL">SEMUA STATUS</option>
+              </select>
+            </div>
+
+            {/* Major Filter */}
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                Filter Jurusan
+              </Label>
+              <select
+                value={selectedMajor}
+                onChange={(e) => setSelectedMajor(e.target.value)}
+                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
+              >
+                <option value="">Semua Jurusan</option>
+                {majorOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Photo Filter */}
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                Foto Profil / Wajah
               </Label>
               <select
                 value={filterPhoto}
                 onChange={(e) => setFilterPhoto(e.target.value)}
-                className="w-full px-3 py-1.5 bg-background border border-border rounded-xl text-xs font-semibold"
+                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
               >
-                <option value="ALL">Semua Siswa</option>
-                <option value="ADA_FOTO">Memiliki Foto Profil</option>
-                <option value="TANPA_FOTO">Belum Ada Foto Profil</option>
+                <option value="ALL">Semua</option>
+                <option value="WITH_PHOTO">Sudah Ada Foto</option>
+                <option value="WITHOUT_PHOTO">Belum Ada Foto</option>
               </select>
+            </div>
+
+            {/* Device Sync Filter */}
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                Status Sinkron Alat
+              </Label>
+              <select
+                value={filterDeviceSync}
+                onChange={(e) => setFilterDeviceSync(e.target.value)}
+                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
+              >
+                <option value="ALL">Semua</option>
+                <option value="SYNCED">Sudah Sinkron</option>
+                <option value="NOT_SYNCED">Belum Sinkron</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                Urutkan Berdasarkan
+              </Label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
+              >
+                <option value="name-asc">Nama (A - Z)</option>
+                <option value="name-desc">Nama (Z - A)</option>
+                <option value="newest">Data Terbaru</option>
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            <div className="flex items-end">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedClass('');
+                  setSelectedMajor('');
+                  setFilterStatus('AKTIF');
+                  setFilterPhoto('ALL');
+                  setFilterDeviceSync('ALL');
+                  setSortBy('name-asc');
+                }}
+                className="w-full h-10 rounded-xl font-bold text-xs gap-1 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
+              >
+                <Icon icon="mingcute:refresh-1-line" className="text-base" />
+                Reset Filter
+              </Button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Bulk Action Bar (when students are selected) */}
+      {/* Bulk Action Bar matching Nuxt */}
       {selectedStudents.length > 0 && isAdmin && (
-        <div className="bg-primary/10 border border-primary/20 p-3 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
+        <div className="bg-primary/10 border border-primary/20 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-2">
             <Badge className="bg-primary text-primary-foreground font-mono font-bold text-xs">
               {selectedStudents.length} Terpilih
             </Badge>
-            <span className="text-xs font-bold text-foreground">Siswa telah dipilih</span>
+            <span className="text-xs font-bold text-foreground">Siswa telah dipilih untuk aksi massal</span>
           </div>
 
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              onClick={() => setShowDeviceSyncModal(true)}
+              onClick={() => {
+                setStudentToRegister(null);
+                setShowRegisterDeviceModal(true);
+              }}
               className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold gap-1.5"
             >
-              <Icon icon="mingcute:sync-line" className="text-base" /> Daftarkan ke Mesin
+              <Icon icon="mingcute:fingerprint-fill" className="text-base" /> Daftarkan ke Perangkat
             </Button>
             <Button
               size="sm"
@@ -475,133 +571,229 @@ export default function SiswaPage() {
         </div>
       )}
 
-      {/* Table Container */}
-      <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden flex flex-col">
-        <div className="overflow-x-auto w-full">
-          <div className="min-w-[800px]">
-            {/* Table Header */}
-            <div className="grid grid-cols-12 items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground px-6 py-3 border-b border-border bg-muted/20">
-              <div className="col-span-1 flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedStudents.length > 0 && selectedStudents.length === paginatedStudents.length}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
-                />
-              </div>
-              <div className="col-span-4">Siswa</div>
-              <div className="col-span-2">NIS / NISN</div>
-              <div className="col-span-2">Kelas & Jurusan</div>
-              <div className="col-span-2">Kontak / Gender</div>
-              <div className="col-span-1 text-right">Aksi</div>
+      {/* List Container matching Nuxt 1-to-1 */}
+      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm flex flex-col">
+        {/* Top Summary Bar */}
+        <div className="px-6 py-3.5 bg-muted/20 border-b border-border flex justify-between items-center">
+          <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
+            Ditemukan {totalStudents} Siswa
+          </p>
+          {(filterStatus !== 'ALL' || selectedClass || selectedMajor || searchQuery) && (
+            <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground uppercase">
+              <Icon icon="mingcute:filter-fill" className="text-primary text-xs" />
+              Filter Aktif
             </div>
+          )}
+        </div>
 
-            {/* Table Rows */}
-            {paginatedStudents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/40 space-y-2">
-                <Icon icon="mingcute:user-search-line" className="text-5xl" />
-                <p className="text-xs font-black uppercase tracking-widest">Siswa tidak ditemukan</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {paginatedStudents.map((s: any) => {
-                  const sId = String(s.id);
-                  const isChecked = selectedStudents.includes(sId);
-                  const photoSrc = getImageUrl(s.photoUrl || s.url_picture || s.faceUrl);
-                  const stdName = s.name || s.Nama || 'Siswa';
-                  const stdNis = s.nis || s.NIS || '—';
-                  const stdClass = s.className || s.Kelas || '—';
-                  const stdMajor = s.majorAlias || s.majorName || 'Umum';
+        {/* Desktop List Header */}
+        <div className="hidden lg:grid grid-cols-12 px-6 py-3 border-b border-border text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground items-center">
+          <div className="col-span-5 flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={selectedStudents.length === paginatedStudents.length && paginatedStudents.length > 0}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+            />
+            <span>Informasi Siswa</span>
+          </div>
+          <div className="col-span-2">NIS / NISN</div>
+          <div className="col-span-3">Kelas / Jurusan</div>
+          <div className="col-span-2 text-right">Aksi</div>
+        </div>
 
-                  return (
-                    <div
-                      key={sId}
-                      className={`grid grid-cols-12 items-center px-6 py-3.5 hover:bg-primary/5 transition-colors ${
-                        isChecked ? 'bg-primary/10' : ''
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <div className="col-span-1 flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleSelectStudent(sId)}
-                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
-                        />
-                      </div>
+        {/* User Rows */}
+        {paginatedStudents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center px-4 space-y-3">
+            <div className="w-20 h-20 rounded-3xl bg-muted border border-border flex items-center justify-center text-muted-foreground/30">
+              <Icon icon="mingcute:user-search-fill" className="text-4xl" />
+            </div>
+            <h3 className="text-lg font-black text-foreground">Data Tidak Ditemukan</h3>
+            <p className="text-xs text-muted-foreground font-semibold max-w-sm">
+              Maaf, tidak ada data siswa yang cocok dengan filter aktif saat ini.
+            </p>
+            <Button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedClass('');
+                setSelectedMajor('');
+                setFilterStatus('AKTIF');
+              }}
+              className="rounded-2xl px-6 font-bold text-xs"
+            >
+              Tampilkan Semua Siswa
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-border relative">
+            {paginatedStudents.map((s: any) => {
+              const sId = String(s.id);
+              const isChecked = selectedStudents.includes(sId);
+              const photoSrc = getImageUrl(s.photoUrl || s.url_picture || s.faceUrl);
+              const stdName = s.name || s.Nama || 'Siswa';
+              const stdNis = s.nis || s.NIS || '—';
+              const stdNisn = s.nisn || '—';
+              const stdClass = s.className || s.Kelas || s.class?.className || 'N/A';
+              const stdMajor = s.majorAlias || s.majorName || s.class?.major?.name || '—';
+              const isSynced = !!(s.faceToken || s.synced || s.photoUrl || s.url_picture);
+              const isAktif = (s.status || 'AKTIF').toUpperCase() === 'AKTIF';
 
-                      {/* Student Avatar & Name */}
-                      <div className="col-span-4 flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-muted border border-border shrink-0 shadow-inner flex items-center justify-center">
+              return (
+                <div
+                  key={sId}
+                  className={`group relative hover:bg-muted/30 transition-all ${
+                    isChecked ? 'bg-primary/10' : ''
+                  }`}
+                >
+                  {/* Hover Left Accent Line matching Nuxt */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary scale-y-0 group-hover:scale-y-100 transition-transform origin-center duration-300 pointer-events-none" />
+
+                  {/* DESKTOP ROW (lg+) matching Nuxt screenshot */}
+                  <div className="hidden lg:grid grid-cols-12 items-center px-6 py-3.5">
+                    {/* Col 1-5: Bio (Checkbox, Avatar, Name & Badges) */}
+                    <div className="col-span-5 flex items-center gap-3.5 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleSelectStudent(sId)}
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer shrink-0"
+                      />
+
+                      <div className="relative shrink-0">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-muted border border-border group-hover:border-primary/40 transition-colors flex items-center justify-center">
                           {photoSrc ? (
                             <img src={photoSrc} alt={stdName} className="w-full h-full object-cover" />
                           ) : (
-                            <div className={`w-full h-full flex items-center justify-center font-bold text-xs ${avatarColor(stdName)}`}>
+                            <div className="w-full h-full flex items-center justify-center text-sm font-black bg-primary/20 text-primary">
                               {stdName.charAt(0)}
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm text-foreground truncate hover:text-primary transition-colors cursor-pointer">
-                            {stdName}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-semibold">
-                            {s.gender === 'P' ? 'Perempuan' : 'Laki-Laki'}
-                          </p>
+                      </div>
+
+                      <div className="min-w-0">
+                        <Link href={`/siswa/${stdNis}`} className="font-bold text-sm text-primary hover:underline truncate block">
+                          {stdName}
+                        </Link>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+                            isAktif ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                          }`}>
+                            {isAktif ? 'AKTIF' : 'NONAKTIF'}
+                          </span>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                            isSynced ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            <Icon icon={isSynced ? 'mingcute:face-line' : 'mingcute:face-fill'} className="text-xs" />
+                            {isSynced ? 'WAJAH SINKRON' : 'BELUM SINKRON'}
+                          </span>
                         </div>
                       </div>
-
-                      {/* NIS */}
-                      <div className="col-span-2">
-                        <p className="text-xs font-mono font-bold text-primary">{stdNis}</p>
-                        {s.nisn && <p className="text-[10px] font-mono text-muted-foreground">NISN: {s.nisn}</p>}
-                      </div>
-
-                      {/* Class & Major */}
-                      <div className="col-span-2 min-w-0">
-                        <p className="text-xs font-bold text-foreground truncate">{stdClass}</p>
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[9px] font-black uppercase mt-0.5">
-                          {stdMajor}
-                        </Badge>
-                      </div>
-
-                      {/* Phone / Contact */}
-                      <div className="col-span-2">
-                        <p className="text-xs font-mono font-bold text-foreground">{s.phone || s.Nomor || '—'}</p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="col-span-1 flex items-center justify-end gap-1">
-                        {isAdmin && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary rounded-full"
-                              onClick={() => openEdit(s)}
-                            >
-                              <Icon icon="mingcute:edit-2-fill" className="text-base" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-rose-500 rounded-full"
-                              onClick={() => setDeleteId(sId)}
-                            >
-                              <Icon icon="mingcute:delete-2-fill" className="text-base" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Footer Pagination */}
+                    {/* Col 6-7: NIS / NISN */}
+                    <div className="col-span-2">
+                      <p className="text-xs font-mono font-bold text-foreground">{stdNis}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground">{stdNisn !== '—' ? stdNisn : '-'}</p>
+                    </div>
+
+                    {/* Col 8-10: Class & Major */}
+                    <div className="col-span-3 min-w-0">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black px-2.5 py-0.5 rounded-lg">
+                        {stdClass}
+                      </Badge>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 truncate">
+                        {stdMajor}
+                      </p>
+                    </div>
+
+                    {/* Col 11-12: Action Icons matching Nuxt */}
+                    <div className="col-span-2 flex items-center justify-end gap-1">
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary/70 hover:text-primary hover:bg-primary/10 rounded-lg"
+                          title="Daftarkan ke Perangkat Absensi"
+                          onClick={() => openRegisterDevice(s)}
+                        >
+                          <Icon icon="mingcute:fingerprint-fill" className="text-base" />
+                        </Button>
+                      )}
+                      <Link href={`/siswa/${stdNis}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg"
+                          title="Lihat Detail Profil"
+                        >
+                          <Icon icon="mingcute:eye-2-line" className="text-base" />
+                        </Button>
+                      </Link>
+                      {isAdmin && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-sky-500 rounded-lg"
+                            title="Edit Siswa"
+                            onClick={() => openEdit(s)}
+                          >
+                            <Icon icon="mingcute:edit-4-line" className="text-base" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-rose-500 rounded-lg"
+                            title="Hapus Siswa"
+                            onClick={() => setDeleteStudentItem(s)}
+                          >
+                            <Icon icon="mingcute:delete-2-line" className="text-base" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* MOBILE ROW (< lg) */}
+                  <div className="flex lg:hidden items-center gap-3 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleSelectStudent(sId)}
+                      className="w-4 h-4 rounded border-border text-primary cursor-pointer shrink-0"
+                    />
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center">
+                      {photoSrc ? (
+                        <img src={photoSrc} alt={stdName} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-bold text-primary">{stdName.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-xs text-primary truncate">{stdName}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground">{stdNis} · {stdClass}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Link href={`/siswa/${stdNis}`}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Icon icon="mingcute:eye-2-line" className="text-sm" />
+                        </Button>
+                      </Link>
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500" onClick={() => setDeleteStudentItem(s)}>
+                          <Icon icon="mingcute:delete-2-line" className="text-sm" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Footer Pagination Bar */}
         <div className="px-6 py-3 border-t border-border bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <span className="text-muted-foreground font-semibold">
             Menampilkan {totalStudents > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{' '}
@@ -617,8 +809,8 @@ export default function SiswaPage() {
               }}
               className="px-2 py-1 bg-background border border-border rounded-lg text-xs font-semibold focus:outline-none"
             >
-              <option value={10}>10 / hal</option>
-              <option value={20}>20 / hal</option>
+              <option value={15}>15 / hal</option>
+              <option value={30}>30 / hal</option>
               <option value={50}>50 / hal</option>
             </select>
 
@@ -764,16 +956,16 @@ export default function SiswaPage() {
       </Dialog>
 
       {/* ═══ MODAL: SINGLE DELETE ═══ */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <Dialog open={!!deleteStudentItem} onOpenChange={(open) => !open && setDeleteStudentItem(null)}>
         <DialogContent className="rounded-3xl max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-lg font-black text-rose-500">Hapus Data Siswa?</DialogTitle>
           </DialogHeader>
           <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
-            Data siswa yang dihapus tidak dapat dikembalikan. Seluruh riwayat presensi terkait juga dapat terhapus.
+            Data siswa <strong className="text-foreground">{deleteStudentItem?.name || deleteStudentItem?.Nama}</strong> akan dihapus permanen dari sistem.
           </p>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setDeleteId(null)}>
+            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setDeleteStudentItem(null)}>
               Batal
             </Button>
             <Button variant="destructive" className="rounded-xl font-bold" disabled={isSaving} onClick={handleDeleteSingle}>
@@ -806,7 +998,7 @@ export default function SiswaPage() {
       </Dialog>
 
       {/* ═══ MODAL: DEVICE SYNC ═══ */}
-      <Dialog open={showDeviceSyncModal} onOpenChange={setShowDeviceSyncModal}>
+      <Dialog open={showRegisterDeviceModal} onOpenChange={setShowRegisterDeviceModal}>
         <DialogContent className="rounded-3xl max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-black">
@@ -815,7 +1007,7 @@ export default function SiswaPage() {
           </DialogHeader>
           <div className="space-y-4 py-2 text-xs sm:text-sm">
             <p className="text-muted-foreground font-semibold leading-relaxed">
-              Daftarkan {selectedStudents.length} siswa terpilih ke mesin scanner presensi sekolah secara otomatis.
+              Daftarkan {studentToRegister ? studentToRegister.name || studentToRegister.Nama : `${selectedStudents.length} siswa terpilih`} ke mesin scanner presensi sekolah secara otomatis.
             </p>
             <div className="space-y-1.5">
               <Label htmlFor="devSelect">Pilih Perangkat Mesin Tujuan</Label>
@@ -835,10 +1027,10 @@ export default function SiswaPage() {
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowDeviceSyncModal(false)}>
+            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowRegisterDeviceModal(false)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold bg-emerald-500 text-white hover:bg-emerald-600" disabled={isSyncing} onClick={handleSyncToDevices}>
+            <Button className="rounded-xl font-bold bg-emerald-500 text-white hover:bg-emerald-600" disabled={isSyncing} onClick={handleRegisterToDevice}>
               {isSyncing ? 'Proses Sinkronisasi...' : 'Mulai Sinkronisasi'}
             </Button>
           </DialogFooter>
