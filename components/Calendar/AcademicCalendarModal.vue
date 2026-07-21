@@ -7,6 +7,8 @@ import 'v-calendar/style.css';
 import { format, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 
+import { useThemeStore } from '~/store/useThemeStore';
+
 const props = defineProps({
   modelValue: {
     type: Boolean,
@@ -15,6 +17,9 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue', 'eventChanged']);
+
+const themeStore = useThemeStore();
+const { isDark } = storeToRefs(themeStore);
 
 const authStore = useAuthStore();
 const { role, userData } = storeToRefs(authStore);
@@ -312,6 +317,7 @@ const handleDelete = async (id: string) => {
               expanded 
               borderless
               transparent
+              :is-dark="isDark"
               locale="id"
               title-position="left"
               class="!bg-transparent w-full"
@@ -481,3 +487,43 @@ const handleDelete = async (id: string) => {
     </dialog>
   </Teleport>
 </template>
+
+<style scoped>
+:deep(.vc-container) {
+  font-family: inherit;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+:deep(.vc-title),
+:deep(.vc-weekday),
+:deep(.vc-header .vc-title),
+:deep(.vc-nav-title),
+:deep(.vc-nav-item),
+:deep(.vc-arrow) {
+  color: var(--fallback-bc, oklch(var(--bc))) !important;
+  font-weight: 800 !important;
+}
+
+:deep(.vc-day-content) {
+  color: var(--fallback-bc, oklch(var(--bc))) !important;
+  font-weight: 700 !important;
+}
+
+:deep(.vc-day-content:hover) {
+  background-color: rgba(249, 115, 22, 0.25) !important;
+  color: #f97316 !important;
+}
+
+:deep(.vc-day-content.is-disabled) {
+  opacity: 0.25 !important;
+}
+
+:deep(.vc-popover-content) {
+  background-color: var(--fallback-b1, oklch(var(--b1))) !important;
+  color: var(--fallback-bc, oklch(var(--bc))) !important;
+  border: 1px solid var(--fallback-b3, oklch(var(--b3))) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+</style>
