@@ -8,17 +8,12 @@ import {
   Clock,
   AlertCircle,
   XCircle,
-  FileSpreadsheet,
-  Filter,
   Pencil,
   Loader2,
   Users,
-  Percent,
 } from "lucide-react";
 import { toast } from "sonner";
-
 import api from "@/lib/api";
-import { Absensi } from "@/types";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ReusableDataTable } from "@/components/shared/ReusableDataTable";
 import { ExportButtons } from "@/components/shared/ExportButtons";
@@ -26,97 +21,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const MOCK_ABSENSI: Absensi[] = [
-  {
-    id: 1,
-    siswa_id: 1,
-    siswa: {
-      id: 1,
-      nis: "20241001",
-      nama: "Ahmad Fauzi",
-      kelas: { id: 1, nama_kelas: "X RPL 1" },
-    },
-    tanggal: new Date().toISOString().split("T")[0],
-    status: "hadir",
-    keterangan: "Tepat waktu",
-    waktu_masuk: "06:45:12",
-    waktu_keluar: "15:00:00",
-  },
-  {
-    id: 2,
-    siswa_id: 2,
-    siswa: {
-      id: 2,
-      nis: "20241002",
-      nama: "Siti Nurhaliza",
-      kelas: { id: 1, nama_kelas: "X RPL 1" },
-    },
-    tanggal: new Date().toISOString().split("T")[0],
-    status: "hadir",
-    keterangan: "Tepat waktu",
-    waktu_masuk: "06:50:30",
-    waktu_keluar: "15:00:00",
-  },
-  {
-    id: 3,
-    siswa_id: 3,
-    siswa: {
-      id: 3,
-      nis: "20241003",
-      nama: "Budi Santoso",
-      kelas: { id: 2, nama_kelas: "XI RPL 2" },
-    },
-    tanggal: new Date().toISOString().split("T")[0],
-    status: "izin",
-    keterangan: "Acara keluarga",
-    waktu_masuk: "-",
-    waktu_keluar: "-",
-  },
-  {
-    id: 4,
-    siswa_id: 4,
-    siswa: {
-      id: 4,
-      nis: "20241004",
-      nama: "Dewi Lestari",
-      kelas: { id: 3, nama_kelas: "X TKJ 1" },
-    },
-    tanggal: new Date().toISOString().split("T")[0],
-    status: "sakit",
-    keterangan: "Demam tinggi dengan surat dokter",
-    waktu_masuk: "-",
-    waktu_keluar: "-",
-  },
-  {
-    id: 5,
-    siswa_id: 5,
-    siswa: {
-      id: 5,
-      nis: "20241005",
-      nama: "Eko Prasetyo",
-      kelas: { id: 4, nama_kelas: "XII MM 1" },
-    },
-    tanggal: new Date().toISOString().split("T")[0],
-    status: "alpa",
-    keterangan: "Tanpa keterangan",
-    waktu_masuk: "-",
-    waktu_keluar: "-",
-  },
-];
+interface AttendanceRecord {
+  id: string | number;
+  siswa_id?: string | number;
+  siswa?: {
+    id?: string | number;
+    nis?: string;
+    nama?: string;
+    kelas?: { nama_kelas?: string };
+  };
+  tanggal: string;
+  status: string;
+  keterangan: string;
+  waktu_masuk: string;
+  waktu_keluar: string;
+}
 
 export default function AbsensiPage() {
-  const [data, setData] = useState<Absensi[]>([]);
+  const [data, setData] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filters state
@@ -127,7 +59,7 @@ export default function AbsensiPage() {
 
   // Edit modal state
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [selectedAbsensi, setSelectedAbsensi] = useState<Absensi | null>(null);
+  const [selectedAbsensi, setSelectedAbsensi] = useState<AttendanceRecord | null>(null);
   const [editStatus, setEditStatus] = useState<string>("hadir");
   const [editKeterangan, setEditKeterangan] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,36 +67,32 @@ export default function AbsensiPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      let res;
-      try {
-        res = await api.get(`/absensi?tanggal=${selectedDate}`);
-      } catch {
-        res = await api.get(`/api/attendance?date=${selectedDate}`);
-      }
+      const res = await api.get(`/attendance?date=${selectedDate}`).catch(() => api.get(`/absensi?tanggal=${selectedDate}`));
 
       const raw = res?.data?.data || res?.data || [];
-      if (Array.isArray(raw) && raw.length > 0) {
-        const mapped: Absensi[] = raw.map((item: any) => ({
+      if (Array.isArray(raw)) {
+        const mapped: AttendanceRecord[] = raw.map((item: any) => ({
           id: item.id,
-          siswa_id: item.siswa_id || item.studentId,
-          siswa: item.siswa || item.student ? {
-            id: item.siswa?.id || item.student?.id,
-            nis: item.siswa?.nis || item.student?.nis || item.student?.studentNumber || "-",
-            nama: item.siswa?.nama || item.student?.nama || item.student?.name || "Siswa",
-            kelas: item.siswa?.kelas || item.student?.kelas || { nama_kelas: item.kelas || "-" },
-          } : undefined,
-          tanggal: item.tanggal || item.date || selectedDate,
+          siswa_id: item.siswa_id || item.studentId || item.userId,
+          siswa: {
+            id: item.siswa?.id || item.student?.id || item.user?.id,
+            nis: item.siswa?.nis || item.student?.nis || item.user?.nis || item.nis || "-",
+            nama: item.siswa?.nama || item.student?.nama || item.student?.name || item.user?.name || item.studentName || "Siswa",
+            kelas: item.siswa?.kelas || item.student?.kelas || item.user?.class || { nama_kelas: item.className || item.kelas || "-" },
+          },
+          tanggal: item.tanggal || item.date || item.timestamp?.split("T")[0] || selectedDate,
           status: (item.status || "hadir").toLowerCase(),
-          keterangan: item.keterangan || item.notes || "-",
-          waktu_masuk: item.waktu_masuk || item.checkIn || "-",
-          waktu_keluar: item.waktu_keluar || item.checkOut || "-",
+          keterangan: item.keterangan || item.notes || item.method || "Hadir Tap Scanner",
+          waktu_masuk: item.waktu_masuk || item.checkIn || item.time || (item.timestamp ? new Date(item.timestamp).toLocaleTimeString("id-ID") : "-"),
+          waktu_keluar: item.waktu_keluar || item.checkOut || item.lastOutTime || "-",
         }));
         setData(mapped);
       } else {
-        setData(MOCK_ABSENSI);
+        setData([]);
       }
-    } catch {
-      setData(MOCK_ABSENSI);
+    } catch (e) {
+      console.error('Gagal mengambil data absensi:', e);
+      setData([]);
     } finally {
       setIsLoading(false);
     }
@@ -174,7 +102,6 @@ export default function AbsensiPage() {
     fetchData();
   }, [fetchData]);
 
-  // Filtered dataset
   const filteredData = data.filter((item) => {
     if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter.toLowerCase()) {
       return false;
@@ -182,70 +109,37 @@ export default function AbsensiPage() {
     return true;
   });
 
-  // Calculate Summary Statistics
-  const totalRecords = data.length;
-  const countHadir = data.filter((d) => d.status.toLowerCase() === "hadir").length;
-  const countIzin = data.filter((d) => d.status.toLowerCase() === "izin").length;
-  const countSakit = data.filter((d) => d.status.toLowerCase() === "sakit").length;
-  const countAlpa = data.filter((d) => d.status.toLowerCase() === "alpa").length;
+  const totalHadir = data.filter((d) => d.status === "hadir").length;
+  const totalIzin = data.filter((d) => d.status === "izin").length;
+  const totalSakit = data.filter((d) => d.status === "sakit").length;
+  const totalAlpa = data.filter((d) => d.status === "alpa" || d.status === "terlambat").length;
 
-  const percentageHadir = totalRecords > 0 ? Math.round((countHadir / totalRecords) * 100) : 0;
-
-  const handleOpenEdit = (item: Absensi) => {
+  const handleEditClick = (item: AttendanceRecord) => {
     setSelectedAbsensi(item);
     setEditStatus(item.status);
-    setEditKeterangan(item.keterangan || "");
+    setEditKeterangan(item.keterangan);
     setIsEditOpen(true);
   };
 
-  const handleSaveEdit = async (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAbsensi) return;
 
     setIsSubmitting(true);
-    const payload = {
-      status: editStatus,
-      keterangan: editKeterangan,
-    };
-
     try {
-      try {
-        await api.put(`/absensi/${selectedAbsensi.id}`, payload);
-      } catch {
-        await api.put(`/api/attendance/${selectedAbsensi.id}`, payload);
-      }
-      toast.success("Status absensi berhasil diperbarui");
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === selectedAbsensi.id
-            ? { ...item, status: editStatus, keterangan: editKeterangan }
-            : item
-        )
-      );
+      await api.put(`/attendance/${selectedAbsensi.id}`, {
+        status: editStatus.toUpperCase(),
+        notes: editKeterangan,
+      }).catch(() => api.put(`/absensi/${selectedAbsensi.id}`, { status: editStatus, keterangan: editKeterangan }));
+
+      toast.success(`Data absensi ${selectedAbsensi.siswa?.nama} berhasil diperbarui`);
       setIsEditOpen(false);
-    } catch {
-      // Fallback local update
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === selectedAbsensi.id
-            ? { ...item, status: editStatus, keterangan: editKeterangan }
-            : item
-        )
-      );
-      toast.success("Status absensi berhasil diperbarui");
-      setIsEditOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Gagal memperbarui data absensi");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   const renderStatusBadge = (status: string) => {
@@ -253,30 +147,27 @@ export default function AbsensiPage() {
     switch (s) {
       case "hadir":
         return (
-          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-100 gap-1">
-            <CheckCircle2 className="h-3 w-3" />
-            Hadir
+          <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 gap-1 font-bold">
+            <CheckCircle2 className="h-3 w-3" /> Hadir
           </Badge>
         );
       case "izin":
         return (
-          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-100 gap-1">
-            <Clock className="h-3 w-3" />
-            Izin
+          <Badge className="bg-sky-500/15 text-sky-500 border-sky-500/30 gap-1 font-bold">
+            <Clock className="h-3 w-3" /> Izin
           </Badge>
         );
       case "sakit":
         return (
-          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 hover:bg-blue-100 gap-1">
-            <AlertCircle className="h-3 w-3" />
-            Sakit
+          <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 gap-1 font-bold">
+            <AlertCircle className="h-3 w-3" /> Sakit
           </Badge>
         );
       case "alpa":
+      case "terlambat":
         return (
-          <Badge className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 hover:bg-rose-100 gap-1">
-            <XCircle className="h-3 w-3" />
-            Alpa
+          <Badge className="bg-rose-500/15 text-rose-500 border-rose-500/30 gap-1 font-bold">
+            <XCircle className="h-3 w-3" /> {s.toUpperCase()}
           </Badge>
         );
       default:
@@ -284,16 +175,7 @@ export default function AbsensiPage() {
     }
   };
 
-  const columns: ColumnDef<Absensi>[] = [
-    {
-      accessorKey: "tanggal",
-      header: "Tanggal",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium text-muted-foreground">
-          {row.original.tanggal}
-        </span>
-      ),
-    },
+  const columns: ColumnDef<AttendanceRecord>[] = [
     {
       id: "siswa",
       header: "Siswa",
@@ -301,16 +183,14 @@ export default function AbsensiPage() {
         const s = row.original.siswa;
         return (
           <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
-                {getInitials(s?.nama || "S")}
+            <Avatar className="h-8 w-8 border border-border">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                {s?.nama?.charAt(0) || "S"}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="font-medium text-foreground">{s?.nama || "Siswa"}</span>
-              <span className="text-xs font-mono text-muted-foreground">
-                NIS: {s?.nis || "-"}
-              </span>
+              <span className="font-bold text-foreground">{s?.nama || "Siswa"}</span>
+              <span className="text-xs font-mono text-muted-foreground">NIS: {s?.nis || "-"}</span>
             </div>
           </div>
         );
@@ -322,8 +202,26 @@ export default function AbsensiPage() {
       cell: ({ row }) => {
         const k = row.original.siswa?.kelas;
         const kName = typeof k === "object" ? k?.nama_kelas : k;
-        return <Badge variant="outline">{kName || "-"}</Badge>;
+        return <Badge variant="outline" className="font-bold">{kName || "-"}</Badge>;
       },
+    },
+    {
+      accessorKey: "tanggal",
+      header: "Tanggal",
+      cell: ({ row }) => (
+        <span className="text-xs font-mono font-bold">{row.original.tanggal}</span>
+      ),
+    },
+    {
+      id: "waktu",
+      header: "Jam Masuk / Pulang",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2 text-xs font-mono font-bold">
+          <span className="text-emerald-500">{row.original.waktu_masuk}</span>
+          <span>/</span>
+          <span className="text-muted-foreground">{row.original.waktu_keluar}</span>
+        </div>
+      ),
     },
     {
       accessorKey: "status",
@@ -331,20 +229,11 @@ export default function AbsensiPage() {
       cell: ({ row }) => renderStatusBadge(row.original.status),
     },
     {
-      accessorKey: "waktu_masuk",
-      header: "Waktu Masuk",
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">
-          {row.original.waktu_masuk || "-"}
-        </span>
-      ),
-    },
-    {
       accessorKey: "keterangan",
       header: "Keterangan",
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground max-w-[200px] truncate block">
-          {row.original.keterangan || "-"}
+        <span className="text-xs text-muted-foreground font-medium truncate max-w-[180px] block">
+          {row.original.keterangan}
         </span>
       ),
     },
@@ -353,245 +242,183 @@ export default function AbsensiPage() {
       header: "Aksi",
       cell: ({ row }) => (
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          onClick={() => handleOpenEdit(row.original)}
-          className="h-8 gap-1"
+          onClick={() => handleEditClick(row.original)}
+          className="h-8 w-8 p-0 rounded-lg hover:text-primary"
         >
-          <Pencil className="h-3.5 w-3.5" />
-          <span>Edit Status</span>
+          <Pencil className="h-4 w-4" />
         </Button>
       ),
     },
   ];
 
   const exportData = filteredData.map((item) => ({
-    tanggal: item.tanggal,
     nis: item.siswa?.nis || "-",
     nama: item.siswa?.nama || "-",
     kelas: typeof item.siswa?.kelas === "object" ? item.siswa?.kelas?.nama_kelas : item.siswa?.kelas || "-",
+    tanggal: item.tanggal,
+    waktu_masuk: item.waktu_masuk,
+    waktu_keluar: item.waktu_keluar,
     status: item.status.toUpperCase(),
-    waktu_masuk: item.waktu_masuk || "-",
-    waktu_keluar: item.waktu_keluar || "-",
-    keterangan: item.keterangan || "-",
+    keterangan: item.keterangan,
   }));
 
   const exportColumns = [
-    { header: "Tanggal", key: "tanggal" },
     { header: "NIS", key: "nis" },
     { header: "Nama Siswa", key: "nama" },
     { header: "Kelas", key: "kelas" },
-    { header: "Status", key: "status" },
+    { header: "Tanggal", key: "tanggal" },
     { header: "Waktu Masuk", key: "waktu_masuk" },
-    { header: "Waktu Keluar", key: "waktu_keluar" },
+    { header: "Waktu Pulang", key: "waktu_keluar" },
+    { header: "Status", key: "status" },
     { header: "Keterangan", key: "keterangan" },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-500">
       <PageHeader
-        title="Manajemen Absensi"
-        subtitle="Rekapitulasi dan pemantauan kehadiran harian siswa"
+        title="Daftar Presensi & Kehadiran"
+        subtitle="Pemantauan log kehadiran harian siswa secara langsung dari backend database"
         actions={
           <ExportButtons
             data={exportData}
             columns={exportColumns}
-            fileName={`absensi_${selectedDate}`}
-            title={`Rekap Absensi (${selectedDate})`}
+            fileName={`presensi_${selectedDate}`}
+            title="Laporan Presensi Siswa"
           />
         }
       />
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-        <Card className="shadow-xs">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center justify-between">
-              <span>Total Siswa</span>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold">{totalRecords}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-xs border-emerald-200 dark:border-emerald-900 bg-emerald-50/30 dark:bg-emerald-950/20">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-              <span>Hadir</span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
-              {countHadir}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card className="bg-card border-border rounded-3xl shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">Hadir</p>
+              <p className="text-2xl font-black text-foreground">{totalHadir}</p>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+              <CheckCircle2 className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs border-amber-200 dark:border-amber-900 bg-amber-50/30 dark:bg-amber-950/20">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center justify-between">
-              <span>Izin</span>
-              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-              {countIzin}
+        <Card className="bg-card border-border rounded-3xl shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase text-sky-500 tracking-wider">Izin</p>
+              <p className="text-2xl font-black text-foreground">{totalIzin}</p>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
+              <Clock className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/20">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center justify-between">
-              <span>Sakit</span>
-              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-              {countSakit}
+        <Card className="bg-card border-border rounded-3xl shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase text-amber-500 tracking-wider">Sakit</p>
+              <p className="text-2xl font-black text-foreground">{totalSakit}</p>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+              <AlertCircle className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-xs border-rose-200 dark:border-rose-900 bg-rose-50/30 dark:bg-rose-950/20">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center justify-between">
-              <span>Alpa</span>
-              <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">
-              {countAlpa}
+        <Card className="bg-card border-border rounded-3xl shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase text-rose-500 tracking-wider">Alpha / Terlambat</p>
+              <p className="text-2xl font-black text-foreground">{totalAlpa}</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-xs bg-primary/5 border-primary/20">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-xs font-medium text-primary flex items-center justify-between">
-              <span>Kehadiran</span>
-              <Percent className="h-4 w-4 text-primary" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-2xl font-bold text-primary">
-              {percentageHadir}%
+            <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold">
+              <XCircle className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Date Picker & Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-card p-4 rounded-lg border">
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-            <Label htmlFor="date-select" className="text-sm font-medium shrink-0">
-              Tanggal:
-            </Label>
-            <Input
-              id="date-select"
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full sm:w-auto h-9"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-            <Label htmlFor="status-filter" className="text-sm font-medium shrink-0">
-              Status:
-            </Label>
-            <select
-              id="status-filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex h-9 w-full sm:w-40 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="all">Semua Status</option>
-              <option value="hadir">Hadir</option>
-              <option value="izin">Izin</option>
-              <option value="sakit">Sakit</option>
-              <option value="alpa">Alpa</option>
-            </select>
-          </div>
+      {/* Date & Filter Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-card p-4 rounded-3xl border border-border shadow-sm">
+        <div className="flex items-center gap-3">
+          <Calendar className="h-4 w-4 text-primary" />
+          <span className="text-xs font-black uppercase tracking-wider text-foreground">Pilih Tanggal:</span>
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-auto h-9 text-xs font-bold rounded-xl bg-background"
+          />
         </div>
 
-        {statusFilter !== "all" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setStatusFilter("all")}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Reset Status Filter
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {["all", "hadir", "izin", "sakit", "alpa"].map((st) => (
+            <Button
+              key={st}
+              variant={statusFilter === st ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter(st)}
+              className="rounded-xl text-xs font-bold capitalize h-8"
+            >
+              {st}
+            </Button>
+          ))}
+        </div>
       </div>
 
-      <ReusableDataTable
-        columns={columns}
-        data={filteredData}
-        searchKey="tanggal"
-        searchPlaceholder="Filter berdasarkan data..."
-        isLoading={isLoading}
-      />
+      {/* Data Table */}
+      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
+        <ReusableDataTable
+          columns={columns}
+          data={filteredData}
+          searchKey="siswa"
+          searchPlaceholder="Cari siswa..."
+          isLoading={isLoading}
+        />
+      </div>
 
-      {/* Update Status Dialog */}
+      {/* Edit Status Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-3xl p-6">
           <DialogHeader>
-            <DialogTitle>Ubah Status Absensi</DialogTitle>
-            <DialogDescription>
-              Perbarui status kehadiran untuk {selectedAbsensi?.siswa?.nama || "Siswa"}.
-            </DialogDescription>
+            <DialogTitle className="text-xl font-black text-foreground">Edit Status Presensi</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSaveEdit} className="space-y-4">
+          <form onSubmit={handleEditSubmit} className="space-y-4 text-xs sm:text-sm">
             <div className="space-y-2">
-              <Label htmlFor="edit-status">Status Kehadiran *</Label>
+              <Label>Status Presensi</Label>
               <select
-                id="edit-status"
                 value={editStatus}
                 onChange={(e) => setEditStatus(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full h-11 px-3 rounded-2xl border border-border bg-background text-xs font-bold focus:outline-none"
               >
-                <option value="hadir">Hadir</option>
-                <option value="izin">Izin</option>
-                <option value="sakit">Sakit</option>
-                <option value="alpa">Alpa</option>
+                <option value="hadir">HADIR</option>
+                <option value="terlambat">TERLAMBAT</option>
+                <option value="izin">IZIN</option>
+                <option value="sakit">SAKIT</option>
+                <option value="alpa">ALPHA</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-keterangan">Keterangan / Catatan</Label>
+              <Label>Keterangan Catatan</Label>
               <Input
-                id="edit-keterangan"
-                placeholder="Catatan tambahan (opsional)"
                 value={editKeterangan}
                 onChange={(e) => setEditKeterangan(e.target.value)}
+                placeholder="Catatan manual..."
+                className="rounded-2xl h-11 text-xs font-bold"
               />
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditOpen(false)}
-                disabled={isSubmitting}
-              >
+            <DialogFooter className="gap-2 pt-2">
+              <Button type="button" variant="ghost" className="rounded-2xl font-bold" onClick={() => setIsEditOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan Perubahan
+              <Button type="submit" disabled={isSubmitting} className="rounded-2xl font-bold bg-primary text-primary-foreground">
+                {isSubmitting ? "Memproses..." : "Simpan Perubahan"}
               </Button>
             </DialogFooter>
           </form>
