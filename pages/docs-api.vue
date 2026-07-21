@@ -20,7 +20,7 @@ const fallbackSpec = {
   info: {
     title: 'GASKAN - Gerbang Akses Pintar dan Kehadiran API',
     version: '1.0.0',
-    description: 'Dokumentasi Terproteksi Resmi Backend API GASKAN (SMK SMTI Yogyakarta). Menyediakan endpoint presensi face recognition, manajemen siswa, kalender akademik, perangkat Hikvision, dan statistik real-time.'
+    description: 'Dokumentasi Terproteksi Resmi Backend API GASKAN (SMK SMTI Yogyakarta).'
   },
   servers: [
     { url: 'https://gaskan-api.smtijogja.my.id', description: 'Production API Server' },
@@ -104,6 +104,9 @@ const selectedTag = ref('ALL');
 const activeEndpointKey = ref('');
 const fetchError = ref<string | null>(null);
 
+// Mobile View Mode ('list' | 'detail')
+const mobileTab = ref<'list' | 'detail'>('list');
+
 // Execution state for "Try It Out"
 const selectedServer = ref('');
 const userToken = ref('');
@@ -145,7 +148,7 @@ const fetchSpec = async () => {
       spec.value = fallbackSpec;
     }
   } catch (err: any) {
-    console.warn('Using embedded OpenAPI fallback spec due to network error:', err);
+    console.warn('Using embedded OpenAPI fallback spec:', err);
     spec.value = fallbackSpec;
     fetchError.value = 'Mode Offline: Menggunakan spesifikasi API lokal.';
   } finally {
@@ -252,7 +255,7 @@ const activeEndpoint = computed(() => {
   return getFlattenedEndpoints.value.find(e => e.key === activeEndpointKey.value) || getFlattenedEndpoints.value[0] || null;
 });
 
-const selectEndpoint = (key: string) => {
+const selectEndpoint = (key: string, isUserClick = false) => {
   activeEndpointKey.value = key;
   executionResult.value = null;
   pathParams.value = {};
@@ -272,6 +275,11 @@ const selectEndpoint = (key: string) => {
         requestBodyJson.value = JSON.stringify(generateSampleFromSchema(content.schema), null, 2);
       }
     }
+  }
+
+  if (isUserClick) {
+    mobileTab.value = 'detail';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 };
 
@@ -408,31 +416,31 @@ const saveToken = () => {
 </script>
 
 <template>
-  <div class="space-y-5 pb-12">
+  <div class="space-y-4 sm:space-y-5 pb-12">
     
     <!-- PAGE HERO HEADER BANNER -->
-    <div class="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded-3xl p-6 sm:p-7 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-5">
+    <div class="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded-3xl p-5 sm:p-7 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5">
       <div class="relative z-10 max-w-xl">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-white/10 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-white/90 mb-2 border border-white/20">
+        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white/10 backdrop-blur-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/90 mb-2 border border-white/20">
           <Icon name="mingcute:code-fill" size="14" />
-          Interactive API Explorer & OpenAPI 3.0 Spec
+          Interactive API Explorer & OpenAPI 3.0
         </div>
-        <h1 class="text-2xl sm:text-3xl font-black leading-tight">Dokumentasi Backend API</h1>
-        <p class="text-xs sm:text-sm font-semibold text-white/80 mt-1.5 leading-relaxed">
+        <h1 class="text-xl sm:text-3xl font-black leading-tight">Dokumentasi Backend API</h1>
+        <p class="text-xs sm:text-sm font-semibold text-white/80 mt-1 leading-relaxed">
           Gerbang Akses Pintar dan Kehadiran · SMK SMTI Yogyakarta
         </p>
       </div>
 
-      <!-- Quick Action & Token Status -->
-      <div class="relative z-10 flex flex-wrap items-center gap-3">
+      <!-- Quick Action Buttons -->
+      <div class="relative z-10 flex flex-wrap items-center gap-2.5">
         <button @click="showTokenModal = true"
-                class="btn bg-white hover:bg-white/90 text-orange-600 border-0 rounded-2xl font-black text-xs shadow-lg gap-2">
+                class="btn btn-sm bg-white hover:bg-white/90 text-orange-600 border-0 rounded-2xl font-black text-xs shadow-md gap-1.5 flex-1 sm:flex-none">
           <Icon name="mingcute:key-2-fill" size="16" />
           {{ userToken ? '🔑 Token Set' : '🔑 Set JWT Token' }}
         </button>
 
         <a :href="`${config.public.apiBase}/docs`" target="_blank"
-           class="btn bg-black/20 hover:bg-black/30 text-white border border-white/20 rounded-2xl font-bold text-xs gap-1.5">
+           class="btn btn-sm bg-black/20 hover:bg-black/30 text-white border border-white/20 rounded-2xl font-bold text-xs gap-1.5 flex-1 sm:flex-none">
           Backend Direct UI ↗
         </a>
       </div>
@@ -442,14 +450,29 @@ const saveToken = () => {
       </div>
     </div>
 
+    <!-- MOBILE NAVIGATION TAB SWITCHER (Visible on Mobile Screen < 1024px) -->
+    <div v-if="!isLoadingSpec && spec" class="lg:hidden flex items-center gap-1.5 bg-base-200/60 p-1.5 rounded-2xl border border-base-200">
+      <button @click="mobileTab = 'list'"
+              :class="['flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5', mobileTab === 'list' ? 'bg-orange-500 text-white shadow-sm' : 'text-base-content/60 hover:text-base-content']">
+        <Icon name="mingcute:list-check-3-fill" size="14" />
+        Daftar Rute ({{ filteredEndpoints.length }})
+      </button>
+      
+      <button @click="mobileTab = 'detail'"
+              :class="['flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5', mobileTab === 'detail' ? 'bg-orange-500 text-white shadow-sm' : 'text-base-content/60 hover:text-base-content']">
+        <Icon name="mingcute:play-fill" size="14" />
+        Detail & Try It Out
+      </button>
+    </div>
+
     <!-- MAIN API EXPLORER LAYOUT -->
-    <div v-if="!isLoadingSpec && spec" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div v-if="!isLoadingSpec && spec" class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
       
       <!-- LEFT SIDEBAR: ENDPOINT LIST & SEARCH -->
-      <div class="lg:col-span-4 bg-base-100 rounded-3xl p-5 border border-base-200/80 shadow-sm flex flex-col gap-4 max-h-[85vh] sticky top-20 overflow-hidden">
+      <div :class="['lg:col-span-4 bg-base-100 rounded-3xl p-4 sm:p-5 border border-base-200/80 shadow-sm flex flex-col gap-3.5 lg:max-h-[85vh] lg:sticky lg:top-20 overflow-hidden', mobileTab === 'detail' ? 'hidden lg:flex' : 'flex']">
         
         <!-- Search & Filter Controls -->
-        <div class="space-y-3 shrink-0">
+        <div class="space-y-2.5 shrink-0">
           <div class="relative">
             <Icon name="mingcute:search-line" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
             <input v-model="searchQuery"
@@ -459,42 +482,42 @@ const saveToken = () => {
           </div>
 
           <!-- Tag Category Filter Pills -->
-          <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 text-[10px] font-bold">
+          <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1.5 text-[10px] font-bold">
             <button @click="selectedTag = 'ALL'"
-                    :class="['px-2.5 py-1 rounded-xl whitespace-nowrap transition-all uppercase font-black', selectedTag === 'ALL' ? 'bg-orange-500 text-white shadow-sm' : 'bg-base-200/50 text-base-content/50 hover:text-base-content']">
+                    :class="['px-2.5 py-1 rounded-xl whitespace-nowrap transition-all uppercase font-black shrink-0', selectedTag === 'ALL' ? 'bg-orange-500 text-white shadow-sm' : 'bg-base-200/50 text-base-content/50 hover:text-base-content']">
               Semua Tag ({{ getFlattenedEndpoints.length }})
             </button>
             <button v-for="tag in availableTags" :key="tag"
                     @click="selectedTag = tag"
-                    :class="['px-2.5 py-1 rounded-xl whitespace-nowrap transition-all uppercase font-black', selectedTag === tag ? 'bg-orange-500 text-white shadow-sm' : 'bg-base-200/50 text-base-content/50 hover:text-base-content']">
+                    :class="['px-2.5 py-1 rounded-xl whitespace-nowrap transition-all uppercase font-black shrink-0', selectedTag === tag ? 'bg-orange-500 text-white shadow-sm' : 'bg-base-200/50 text-base-content/50 hover:text-base-content']">
               {{ tag }}
             </button>
           </div>
         </div>
 
         <!-- Grouped Endpoint List -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-1 min-h-0">
+        <div class="flex-1 overflow-y-auto custom-scrollbar space-y-3.5 pr-0.5 min-h-0">
           <div v-for="(group, tagGroup) in groupedEndpoints" :key="tagGroup" class="space-y-1.5">
-            <div class="text-[9px] font-black uppercase tracking-widest text-base-content/30 px-2 flex items-center justify-between">
+            <div class="text-[9px] font-black uppercase tracking-widest text-base-content/40 px-1 flex items-center justify-between">
               <span>{{ tagGroup }}</span>
               <span class="badge badge-xs bg-base-200 border-0 font-bold">{{ group.length }}</span>
             </div>
 
             <div v-for="ep in group" :key="ep.key"
-                 @click="selectEndpoint(ep.key)"
-                 :class="['p-2.5 rounded-2xl border transition-all cursor-pointer flex flex-col gap-1', activeEndpointKey === ep.key ? 'bg-orange-500/10 border-orange-500/40 shadow-sm' : 'bg-base-200/30 border-transparent hover:bg-base-200/60']">
+                 @click="selectEndpoint(ep.key, true)"
+                 :class="['p-3 rounded-2xl border transition-all cursor-pointer flex flex-col gap-1 active:scale-[0.98]', activeEndpointKey === ep.key ? 'bg-orange-500/10 border-orange-500/40 shadow-sm' : 'bg-base-200/30 border-transparent hover:bg-base-200/60']">
               <div class="flex items-center gap-2">
-                <span :class="['px-1.5 py-0.5 rounded-md text-[8px] font-black border font-mono', methodBadge(ep.method).bg]">
+                <span :class="['px-1.5 py-0.5 rounded-md text-[8px] font-black border font-mono shrink-0', methodBadge(ep.method).bg]">
                   {{ ep.method }}
                 </span>
                 <span class="text-xs font-mono font-bold text-base-content truncate">{{ ep.path }}</span>
               </div>
-              <p class="text-[10px] text-base-content/60 font-medium truncate px-0.5">{{ ep.summary }}</p>
+              <p class="text-[10px] text-base-content/60 font-medium truncate px-0.5 leading-tight">{{ ep.summary }}</p>
             </div>
           </div>
 
-          <div v-if="!filteredEndpoints.length" class="flex flex-col items-center justify-center py-12 opacity-30">
-            <Icon name="mingcute:code-line" size="40" />
+          <div v-if="!filteredEndpoints.length" class="flex flex-col items-center justify-center py-10 opacity-30">
+            <Icon name="mingcute:code-line" size="36" />
             <p class="text-[10px] font-black uppercase tracking-widest mt-2">Endpoint tidak ditemukan</p>
           </div>
         </div>
@@ -502,17 +525,25 @@ const saveToken = () => {
       </div>
 
       <!-- RIGHT MAIN PANEL: ENDPOINT DETAILS & TRY IT OUT RUNNER -->
-      <div v-if="activeEndpoint" class="lg:col-span-8 space-y-6">
+      <div v-if="activeEndpoint" :class="['lg:col-span-8 space-y-5 sm:space-y-6', mobileTab === 'list' ? 'hidden lg:block' : 'block']">
         
+        <!-- Mobile Back Button -->
+        <div class="lg:hidden">
+          <button @click="mobileTab = 'list'" class="btn btn-xs bg-base-200 hover:bg-base-300 text-base-content border-0 rounded-xl font-bold gap-1">
+            <Icon name="mingcute:arrow-left-line" size="14" />
+            Kembali ke Daftar Rute API
+          </button>
+        </div>
+
         <!-- Endpoint Overview Card -->
-        <div class="bg-base-100 rounded-3xl p-6 border border-base-200/80 shadow-sm space-y-4">
+        <div class="bg-base-100 rounded-3xl p-5 sm:p-6 border border-base-200/80 shadow-sm space-y-4">
           
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-200/60 pb-4">
-            <div class="flex items-center gap-2.5">
-              <span :class="['px-3 py-1 rounded-xl text-xs font-black border font-mono shadow-sm', methodBadge(activeEndpoint.method).bg]">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-200/60 pb-3.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span :class="['px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-xl text-xs font-black border font-mono shadow-sm', methodBadge(activeEndpoint.method).bg]">
                 {{ activeEndpoint.method }}
               </span>
-              <span class="text-base sm:text-lg font-mono font-black text-base-content tracking-tight select-all">
+              <span class="text-xs sm:text-base font-mono font-black text-base-content tracking-tight select-all break-all">
                 {{ activeEndpoint.path }}
               </span>
               <button @click="copyToClipboard(activeEndpoint.path)" class="btn btn-xs btn-ghost btn-circle text-base-content/40 hover:text-orange-500" title="Salin Path">
@@ -520,18 +551,18 @@ const saveToken = () => {
               </button>
             </div>
 
-            <div class="flex items-center gap-2">
-              <span class="badge badge-sm bg-orange-500/10 text-orange-500 border-orange-500/20 font-black text-[10px] uppercase">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="badge badge-sm bg-orange-500/10 text-orange-500 border-orange-500/20 font-black text-[9px] uppercase">
                 {{ activeEndpoint.tag }}
               </span>
-              <span v-if="activeEndpoint.security?.length" class="badge badge-sm bg-emerald-500/10 text-emerald-500 border-emerald-500/20 font-black text-[10px] uppercase gap-1">
+              <span v-if="activeEndpoint.security?.length" class="badge badge-sm bg-emerald-500/10 text-emerald-500 border-emerald-500/20 font-black text-[9px] uppercase gap-1">
                 🔒 JWT Protected
               </span>
             </div>
           </div>
 
           <div>
-            <h2 class="text-lg font-black text-base-content leading-snug">{{ activeEndpoint.summary }}</h2>
+            <h2 class="text-base sm:text-lg font-black text-base-content leading-snug">{{ activeEndpoint.summary }}</h2>
             <p v-if="activeEndpoint.description" class="text-xs text-base-content/70 font-medium leading-relaxed mt-1">
               {{ activeEndpoint.description }}
             </p>
@@ -540,17 +571,17 @@ const saveToken = () => {
         </div>
 
         <!-- Request Parameters & Try It Out -->
-        <div class="bg-base-100 rounded-3xl p-6 border border-base-200/80 shadow-sm space-y-5">
+        <div class="bg-base-100 rounded-3xl p-5 sm:p-6 border border-base-200/80 shadow-sm space-y-4 sm:space-y-5">
           
-          <div class="flex items-center justify-between pb-3 border-b border-base-200/60">
-            <h3 class="text-sm font-black text-base-content flex items-center gap-2">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-base-200/60">
+            <h3 class="text-xs sm:text-sm font-black text-base-content flex items-center gap-2">
               <Icon name="mingcute:play-fill" class="text-orange-500" size="16" />
               Uji Coba Request (Try It Out)
             </h3>
 
             <button @click="executeRequest"
                     :disabled="isExecuting"
-                    class="btn btn-sm bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-2xl font-black gap-2 shadow-md">
+                    class="btn btn-sm bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-2xl font-black gap-1.5 shadow-md w-full sm:w-auto">
               <span v-if="isExecuting" class="loading loading-spinner loading-xs"></span>
               <Icon v-else name="mingcute:send-fill" size="14" />
               {{ isExecuting ? 'Mengeksekusi...' : 'Kirim Request' }}
@@ -558,7 +589,7 @@ const saveToken = () => {
           </div>
 
           <!-- Parameters Input Form -->
-          <div v-if="activeEndpoint.parameters?.length" class="space-y-3">
+          <div v-if="activeEndpoint.parameters?.length" class="space-y-2.5">
             <h4 class="text-[10px] font-black uppercase tracking-widest text-base-content/40">Parameters</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div v-for="p in activeEndpoint.parameters" :key="p.name" class="space-y-1">
@@ -587,9 +618,9 @@ const saveToken = () => {
               <span class="text-[10px] font-mono text-base-content/40">application/json</span>
             </div>
             <textarea v-model="requestBodyJson"
-                      rows="6"
+                      rows="5"
                       placeholder="{\n  &quot;key&quot;: &quot;value&quot;\n}"
-                      class="textarea w-full rounded-2xl bg-base-200/50 border-base-200 font-mono text-xs text-amber-500 focus:outline-none focus:border-orange-500"></textarea>
+                      class="textarea w-full rounded-2xl bg-base-200/50 border-base-200 font-mono text-xs text-amber-500 focus:outline-none focus:border-orange-500 leading-normal"></textarea>
           </div>
 
           <!-- Generated cURL snippet -->
@@ -601,18 +632,18 @@ const saveToken = () => {
                 Salin cURL
               </button>
             </div>
-            <pre class="p-3 bg-[#0d1117] text-gray-300 font-mono text-[11px] rounded-2xl overflow-x-auto border border-base-300 select-all leading-relaxed">{{ curlCommand }}</pre>
+            <pre class="p-3 bg-[#0d1117] text-gray-300 font-mono text-[10px] sm:text-[11px] rounded-2xl overflow-x-auto border border-base-300 select-all leading-relaxed custom-scrollbar max-w-full">{{ curlCommand }}</pre>
           </div>
 
         </div>
 
         <!-- EXECUTION RESULT PANEL -->
-        <div v-if="executionResult" class="bg-base-100 rounded-3xl p-6 border border-base-200/80 shadow-sm space-y-4">
+        <div v-if="executionResult" class="bg-base-100 rounded-3xl p-5 sm:p-6 border border-base-200/80 shadow-sm space-y-4">
           
-          <div class="flex items-center justify-between border-b border-base-200/60 pb-3">
-            <div class="flex items-center gap-3">
-              <h3 class="text-sm font-black text-base-content">Hasil Respon API</h3>
-              <span :class="['px-2.5 py-1 rounded-xl text-xs font-black font-mono', executionResult.status && executionResult.status < 300 ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-500 border border-rose-500/30']">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-base-200/60 pb-3">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h3 class="text-xs sm:text-sm font-black text-base-content">Hasil Respon API</h3>
+              <span :class="['px-2 py-0.5 rounded-xl text-xs font-black font-mono', executionResult.status && executionResult.status < 300 ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-500 border border-rose-500/30']">
                 {{ executionResult.status || 'ERR' }} {{ executionResult.statusText }}
               </span>
               <span class="text-xs font-mono text-base-content/50 font-bold">{{ executionResult.timeMs }} ms</span>
@@ -620,13 +651,13 @@ const saveToken = () => {
 
             <button @click="copyToClipboard(JSON.stringify(executionResult.data, null, 2))" class="btn btn-xs btn-ghost text-orange-500 font-bold gap-1">
               <Icon name="mingcute:copy-2-line" size="12" />
-              Salin JSON Respon
+              Salin Respon
             </button>
           </div>
 
           <!-- JSON Response View -->
           <div class="space-y-2">
-            <pre class="p-4 bg-[#0d1117] text-amber-400 font-mono text-xs rounded-2xl overflow-x-auto border border-base-300 max-h-96 custom-scrollbar leading-relaxed">{{ JSON.stringify(executionResult.data, null, 2) }}</pre>
+            <pre class="p-3 sm:p-4 bg-[#0d1117] text-amber-400 font-mono text-[11px] sm:text-xs rounded-2xl overflow-x-auto border border-base-300 max-h-96 custom-scrollbar leading-relaxed">{{ JSON.stringify(executionResult.data, null, 2) }}</pre>
           </div>
 
         </div>
@@ -636,7 +667,7 @@ const saveToken = () => {
     </div>
 
     <!-- Loading State -->
-    <div v-else class="flex flex-col items-center justify-center py-24 opacity-40">
+    <div v-else class="flex flex-col items-center justify-center py-20 opacity-40">
       <span class="loading loading-spinner loading-lg text-primary"></span>
       <p class="text-xs font-black uppercase tracking-widest mt-3">Memuat Spesifikasi API Backend...</p>
     </div>
@@ -644,9 +675,9 @@ const saveToken = () => {
     <!-- JWT Token Modal -->
     <Teleport to="body">
       <dialog :class="['modal z-[999]', { 'modal-open': showTokenModal }]">
-        <div class="modal-box bg-base-100 border border-base-200 p-6 rounded-3xl max-w-md shadow-2xl relative">
-          <h3 class="font-black text-base text-base-content mb-4 flex items-center gap-2">
-            🔑 Konfigurasi Token Authorization JWT
+        <div class="modal-box bg-base-100 border border-base-200 p-5 sm:p-6 rounded-3xl max-w-md shadow-2xl relative">
+          <h3 class="font-black text-base text-base-content mb-3 flex items-center gap-2">
+            🔑 Konfigurasi Token JWT
           </h3>
           
           <p class="text-xs text-base-content/60 font-medium mb-4 leading-relaxed">
