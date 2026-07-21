@@ -67,12 +67,15 @@ const methodLabel = (m) => {
 };
 
 const statusMap = {
-  HADIR:       { color: 'text-emerald-500', dot: 'bg-emerald-500', badge: 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500' },
-  TERLAMBAT:   { color: 'text-amber-500',   dot: 'bg-amber-500',   badge: 'bg-amber-500/10 border border-amber-500/30 text-amber-500' },
-  IZIN:        { color: 'text-sky-500',     dot: 'bg-sky-500',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-500' },
-  SAKIT:       { color: 'text-orange-400',  dot: 'bg-orange-400',  badge: 'bg-orange-400/10 border border-orange-400/30 text-orange-400' },
-  ALPHA:       { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500' },
-  BELUM_ABSEN: { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500' },
+  HADIR:       { color: 'text-emerald-500', dot: 'bg-emerald-500', badge: 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-500', label: 'Hadir' },
+  TERLAMBAT:   { color: 'text-amber-500',   dot: 'bg-amber-500',   badge: 'bg-amber-500/10 border border-amber-500/30 text-amber-500',     label: 'Lambat' },
+  PULANG:      { color: 'text-indigo-400',  dot: 'bg-indigo-400',  badge: 'bg-indigo-500/10 border border-indigo-500/30 text-indigo-400', label: 'Pulang' },
+  SCAN:        { color: 'text-sky-400',     dot: 'bg-sky-400',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-400',          label: 'Scan' },
+  LOG:         { color: 'text-sky-400',     dot: 'bg-sky-400',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-400',          label: 'Scan' },
+  IZIN:        { color: 'text-sky-500',     dot: 'bg-sky-500',     badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-500',          label: 'Izin' },
+  SAKIT:       { color: 'text-orange-400',  dot: 'bg-orange-400',  badge: 'bg-orange-400/10 border border-orange-400/30 text-orange-400', label: 'Sakit' },
+  ALPHA:       { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500',      label: 'Alpha' },
+  BELUM_ABSEN: { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500',      label: 'Belum Absen' },
 };
 const getStatus = (s) => statusMap[s] || statusMap.ALPHA;
 
@@ -706,7 +709,7 @@ onMounted(fetchAlumniStatus);
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-mono font-bold text-base-content">{{ formatTime(log.timestamp) }}</span>
                         <span :class="['px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider', getStatus(log.status).badge]">
-                          {{ log.status === 'TERLAMBAT' ? 'Lambat' : log.status }}
+                          {{ getStatus(log.status).label || (log.status === 'TERLAMBAT' ? 'Lambat' : log.status) }}
                         </span>
                       </div>
                       <p class="text-[9px] font-bold text-base-content/40 truncate mt-0.5" v-if="log.gate">
