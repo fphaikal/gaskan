@@ -30,43 +30,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const MOCK_ADMINS: Admin[] = [
-  {
-    id: 1,
-    username: "admin_super",
-    nama: "Fahreza Haikal",
-    email: "fahreza@gaskan.sch.id",
-    role: "superadmin",
-    created_at: "2024-01-10",
-  },
-  {
-    id: 2,
-    username: "admin_kurikulum",
-    nama: "Bambang Sudarsono",
-    email: "bambang@gaskan.sch.id",
-    role: "admin",
-    created_at: "2024-02-15",
-  },
-  {
-    id: 3,
-    username: "operator_absensi",
-    nama: "Rina Wijaya",
-    email: "rina@gaskan.sch.id",
-    role: "operator",
-    created_at: "2024-03-01",
-  },
-  {
-    id: 4,
-    username: "admin_kesiswaan",
-    nama: "Dedi Gunawan",
-    email: "dedi@gaskan.sch.id",
-    role: "admin",
-    created_at: "2024-04-12",
-  },
-];
-
 export default function AdminPage() {
-  const [admins, setAdmins] = useState<Admin[]>(MOCK_ADMINS);
+  const [admins, setAdmins] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Dialog State
@@ -89,14 +54,14 @@ export default function AdminPage() {
   const fetchAdmins = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await api.get("/admin");
-      if (res.data && Array.isArray(res.data)) {
-        setAdmins(res.data);
-      } else if (res.data && Array.isArray(res.data.data)) {
-        setAdmins(res.data.data);
+      // Primary backend route for user management is /api/users
+      const res = await api.get("/users").catch(() => api.get("/admin"));
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) {
+        setAdmins(data);
       }
     } catch (error) {
-      console.log("Using mock admins data:", error);
+      console.log("Error fetching users:", error);
     } finally {
       setIsLoading(false);
     }
@@ -118,8 +83,8 @@ export default function AdminPage() {
 
   const handleOpenEdit = (admin: Admin) => {
     setEditingAdmin(admin);
-    setUsername(admin.username || "");
-    setNama(admin.nama || "");
+    setUsername(admin.username || (admin as any).nis || "");
+    setNama(admin.nama || (admin as any).name || "");
     setEmail(admin.email || "");
     setRole(admin.role || "admin");
     setPassword("");
@@ -147,60 +112,23 @@ export default function AdminPage() {
     try {
       const payload = {
         username,
-        nama,
+        name: nama,
         email,
-        role,
+        role: role.toUpperCase(),
         ...(password ? { password } : {}),
       };
 
       if (editingAdmin) {
-        await api.put(`/admin/${editingAdmin.id}`, payload);
+        await api.put(`/users/${editingAdmin.id}`, payload).catch(() => api.put(`/admin/${editingAdmin.id}`, payload));
         toast.success("Data admin berhasil diperbarui");
-        setAdmins((prev) =>
-          prev.map((item) =>
-            item.id === editingAdmin.id
-              ? { ...item, username, nama, email, role }
-              : item
-          )
-        );
       } else {
-        const res = await api.post("/admin", payload);
-        const newAdmin: Admin = res.data?.data || {
-          id: Date.now(),
-          username,
-          nama,
-          email,
-          role,
-          created_at: new Date().toISOString().split("T")[0],
-        };
+        await api.post("/users", payload).catch(() => api.post("/admin", payload));
         toast.success("Akun admin baru berhasil ditambahkan");
-        setAdmins((prev) => [newAdmin, ...prev]);
       }
       setIsDialogOpen(false);
+      await fetchAdmins();
     } catch (error: any) {
-      console.log("Fallback mock submit admin:", error);
-      if (editingAdmin) {
-        setAdmins((prev) =>
-          prev.map((item) =>
-            item.id === editingAdmin.id
-              ? { ...item, username, nama, email, role }
-              : item
-          )
-        );
-        toast.success("Data admin berhasil diperbarui");
-      } else {
-        const newAdmin: Admin = {
-          id: Date.now(),
-          username,
-          nama,
-          email,
-          role,
-          created_at: new Date().toISOString().split("T")[0],
-        };
-        setAdmins((prev) => [newAdmin, ...prev]);
-        toast.success("Akun admin baru berhasil ditambahkan");
-      }
-      setIsDialogOpen(false);
+      toast.error(error?.response?.data?.message || "Gagal menyimpan akun admin");
     } finally {
       setIsSubmitting(false);
     }
@@ -210,13 +138,11 @@ export default function AdminPage() {
     if (!deletingAdmin) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/admin/${deletingAdmin.id}`);
-      setAdmins((prev) => prev.filter((item) => item.id !== deletingAdmin.id));
+      await api.delete(`/users/${deletingAdmin.id}`).catch(() => api.delete(`/admin/${deletingAdmin.id}`));
       toast.success("Akun admin berhasil dihapus");
-    } catch (error) {
-      console.log("Fallback mock delete admin:", error);
-      setAdmins((prev) => prev.filter((item) => item.id !== deletingAdmin.id));
-      toast.success("Akun admin berhasil dihapus");
+      await fetchAdmins();
+    } catch (error: any) {
+      toast.error("Gagal menghapus akun admin");
     } finally {
       setIsDeleting(false);
       setIsDeleteOpen(false);
@@ -227,21 +153,23 @@ export default function AdminPage() {
   const getRoleBadge = (roleName: string) => {
     switch (roleName?.toLowerCase()) {
       case "superadmin":
+      case "developer":
         return (
           <Badge className="bg-purple-500/15 text-purple-600 border-purple-500/30 text-xs font-bold">
-            Super Admin
+            {roleName.toUpperCase()}
           </Badge>
         );
       case "admin":
         return (
           <Badge className="bg-blue-500/15 text-blue-600 border-blue-500/30 text-xs font-bold">
-            Admin
+            ADMIN
           </Badge>
         );
       case "operator":
+      case "guru":
         return (
           <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-xs font-bold">
-            Operator
+            {roleName.toUpperCase()}
           </Badge>
         );
       default:
@@ -252,12 +180,12 @@ export default function AdminPage() {
   const columns: ColumnDef<Admin>[] = [
     {
       accessorKey: "username",
-      header: "Username",
+      header: "Username / ID",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <UserIcon className="h-4 w-4 text-muted-foreground" />
           <span className="font-bold text-foreground">
-            {row.original.username}
+            {row.original.username || (row.original as any).nis || "-"}
           </span>
         </div>
       ),
@@ -266,7 +194,7 @@ export default function AdminPage() {
       accessorKey: "nama",
       header: "Nama Lengkap",
       cell: ({ row }) => (
-        <span className="font-medium text-foreground">{row.original.nama}</span>
+        <span className="font-medium text-foreground">{row.original.nama || (row.original as any).name}</span>
       ),
     },
     {
@@ -332,7 +260,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-6 pb-8">
       <PageHeader
-        title="Kelola Akun Admin"
+        title="Kelola Akun Admin & Pengguna"
         subtitle="Manajemen akun administrator, staf operator, dan hak akses pengguna sistem"
         actionLabel="Tambah Admin"
         actionIcon={<Plus className="h-4 w-4" />}
@@ -368,7 +296,7 @@ export default function AdminPage() {
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">Username / NIS</Label>
                 <Input
                   id="username"
                   value={username}
@@ -410,6 +338,7 @@ export default function AdminPage() {
                     { value: "superadmin", label: "Super Admin" },
                     { value: "admin", label: "Admin" },
                     { value: "operator", label: "Operator" },
+                    { value: "guru", label: "Guru" },
                   ]}
                   value={role}
                   onChange={setRole}
@@ -464,7 +393,7 @@ export default function AdminPage() {
       <ConfirmModal
         open={isDeleteOpen}
         title="Hapus Akun Admin?"
-        description={`Apakah Anda yakin ingin menghapus akun admin "${deletingAdmin?.username}"? Tindakan ini tidak dapat dibatalkan.`}
+        description={`Apakah Anda yakin ingin menghapus akun admin "${deletingAdmin?.username || (deletingAdmin as any)?.name}"? Tindakan ini tidak dapat dibatalkan.`}
         confirmText="Hapus"
         cancelText="Batal"
         variant="destructive"

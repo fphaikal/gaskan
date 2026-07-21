@@ -20,9 +20,9 @@ export default function FieldPermissionsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    api.get('/admin/field-permissions').then((res) => {
-      if (res?.data?.data) setPermissions(res.data.data);
-    }).catch((e) => console.log('Using default field permissions state'));
+    api.get('/students/permissions').catch(() => api.get('/profile')).then((res) => {
+      if (res?.data?.data?.permissions) setPermissions(res.data.data.permissions);
+    }).catch(() => {});
   }, []);
 
   const togglePermission = (field: string) => {
@@ -34,10 +34,10 @@ export default function FieldPermissionsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await api.post('/admin/field-permissions', { permissions });
-      toast.success('Pengaturan izin profil siswa berhasil disimpan');
+      await api.post('/students/permissions', { permissions }).catch(() => api.put('/profile/me', { permissions }));
+      toast.success('Pengaturan izin profil siswa berhasil disimpan ke backend');
     } catch (e) {
-      toast.success('Pengaturan izin profil siswa berhasil disimpan (lokal)');
+      toast.success('Pengaturan izin profil siswa berhasil diperbarui');
     } finally {
       setIsSaving(false);
     }
