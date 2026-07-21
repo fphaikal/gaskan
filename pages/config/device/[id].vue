@@ -79,6 +79,25 @@ const streamIframeUrl = computed(() => {
   return `${go2rtcHost}/stream.html?src=${streamName}&mode=webrtc,mse,hls`;
 });
 
+const formatDeviceTimeStr = (tsStr) => {
+  if (!tsStr) return '-';
+  try {
+    const d = new Date(tsStr);
+    if (isNaN(d.getTime())) return tsStr;
+    return d.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return tsStr;
+  }
+};
+
+
 onMounted(() => {
   fetchDeviceDetails();
 });
@@ -249,8 +268,42 @@ onMounted(() => {
               <Icon name="mingcute:safe-shield-line" size="18" class="opacity-60" />
               <span>Status Perangkat: <span :class="['font-bold', device?.isActive ? 'text-success' : 'text-error']">{{ device?.isActive ? 'Aktif' : 'Non-Aktif' }}</span></span>
             </div>
+
+            <!-- Device Time & Offset Status Box -->
+            <div class="sm:col-span-2 bg-base-200/40 p-3.5 rounded-2xl border border-base-200/80 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Icon name="mingcute:time-fill" size="20" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-base-content/50">Waktu Perangkat (Device Time)</span>
+                  <span v-if="statsData?.timeInfo?.timeMode" class="badge badge-xs bg-base-300 font-bold text-[9px] uppercase">
+                    Mode: {{ statsData.timeInfo.timeMode }}
+                  </span>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mt-1">
+                  <span class="font-mono font-black text-sm text-base-content">
+                    {{ statsData?.timeInfo?.deviceTime ? formatDeviceTimeStr(statsData.timeInfo.deviceTime) : 'Memuat jam mesin...' }}
+                  </span>
+                  
+                  <!-- Offset Status Badge -->
+                  <span 
+                    v-if="statsData?.timeInfo" 
+                    :class="['badge badge-sm font-bold text-[10px] px-2.5 py-1', 
+                      statsData.timeInfo.status === 'PRESISE' ? 'badge-success text-white' : 
+                      statsData.timeInfo.status === 'FAST' ? 'badge-warning text-slate-900 font-extrabold animate-pulse' : 
+                      'badge-error text-white font-extrabold animate-pulse'
+                    ]"
+                  >
+                    <Icon :name="statsData.timeInfo.status === 'PRESISE' ? 'mingcute:check-fill' : 'mingcute:alert-fill'" class="mr-1" />
+                    Selisih Server: {{ statsData.timeInfo.offsetFormatted }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
 
         <!-- go2rtc Stream ID configuration box -->
         <div class="bg-base-100 border border-base-200/80 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
