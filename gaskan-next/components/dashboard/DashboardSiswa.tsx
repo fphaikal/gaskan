@@ -187,17 +187,20 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
     if (user.Kelas) return user.Kelas;
     if (typeof user.kelas === 'object' && user.kelas?.nama_kelas) return user.kelas.nama_kelas;
     if (typeof user.kelas === 'string' && user.kelas.trim()) return user.kelas;
+    if (user.class?.className) return user.class.className;
     if (user.className) return user.className;
-    return 'XII TINT 1';
+    return 'Siswa Active';
   }, [user]);
 
   const displayNis = useMemo(() => {
     if (!user) return '-';
     if (user.NIS) return user.NIS;
     if (user.nis) return user.nis;
+    if (user.nisn) return user.nisn;
     if (user.studentNis) return user.studentNis;
     if (user.nis_siswa) return user.nis_siswa;
-    return user.id && !String(user.id).startsWith('cmr') ? String(user.id) : '21.12345';
+    if (user.username) return user.username;
+    return user.id ? String(user.id) : '-';
   }, [user]);
 
   const bentoCard = "bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-center relative overflow-hidden";

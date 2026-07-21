@@ -35,12 +35,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const updatedUser: User = {
             ...u,
             id: String(u.id || u.nis || u.NIS || '1'),
-            name: u.nama || u.name || u.Nama || 'Pengguna',
-            email: u.email || '',
+            name: u.Nama || u.nama || u.name || 'Pengguna',
+            email: u.Email || u.email || '',
             role: String(u.role || 'siswa').toLowerCase() as any,
             avatar: u.url_picture || u.avatar,
-            nis: u.nis || u.NIS || u.nis_siswa || u.studentNis || '',
-            kelas: u.kelas?.nama_kelas || u.kelas || u.Kelas || u.className || '',
+            nis: u.NIS || u.nis || u.nisn || u.studentNis || '',
+            kelas: u.Kelas || u.class?.className || u.kelas?.nama_kelas || (typeof u.kelas === 'string' ? u.kelas : '') || u.className || '',
           };
           setUser(updatedUser);
           localStorage.setItem('auth_user', JSON.stringify(updatedUser));
@@ -97,8 +97,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const normalizedUser = {
       ...userData,
       role: String(userData.role || 'siswa').toLowerCase() as any,
-      nis: userData.nis || userData.NIS || (userData as any).nis_siswa || '',
-      kelas: typeof userData.kelas === 'object' ? userData.kelas?.nama_kelas : userData.kelas || (userData as any).Kelas || '',
+      nis: userData.nis || userData.NIS || (userData as any).nisn || (userData as any).studentNis || '',
+      kelas: (userData as any).Kelas || (userData as any).class?.className || (typeof userData.kelas === 'object' ? userData.kelas?.nama_kelas : userData.kelas) || '',
     };
     setToken(newToken);
     setUser(normalizedUser);
