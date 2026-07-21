@@ -35,11 +35,14 @@ export default function ReshufflePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [excelRows, setExcelRows] = useState<any[]>([]);
+  const [excelTargetClassId, setExcelTargetClassId] = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
-  // Confirmation & Progress Modals
+  // Modals State
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryList, setSummaryList] = useState<any[]>([]);
   const [progressPercent, setProgressPercent] = useState(0);
 
   const fetchClasses = useCallback(async () => {
@@ -90,7 +93,8 @@ export default function ReshufflePage() {
       (s) =>
         (s.name || s.Nama || '').toLowerCase().includes(q) ||
         (s.nis || s.NIS || '').includes(q) ||
-        (s.nisn || s.NISN || '').includes(q)
+        (s.nisn || s.NISN || '').includes(q) ||
+        (s.rombel || '').toLowerCase().includes(q)
     );
   }, [students, searchQuery]);
 
@@ -156,146 +160,225 @@ export default function ReshufflePage() {
         const targetClass = String(row.getCell(3).value || '').trim();
         const rombel = String(row.getCell(4).value || '').trim();
 
-        if (nis && targetClass) {
+        if (nis || name) {
           rows.push({ row: rowNumber, nis, name, targetClass, rombel, status: 'SIAP' });
         }
       });
 
       setExcelRows(rows);
-      toast.success(`Ditemukan ${rows.length} baris instruksi pemindahan kelas`);
+      toast.success(`Berhasil membaca ${rows.length} data siswa dari Excel`);
     } catch (e) {
-      toast.error('Gagal membaca file Excel');
+      toast.error('Gagal membaca file Excel. Pastikan format .xlsx valid.');
     }
+  };
+
+  const openWebConfirm = () => {
+    if (selectedStudentIds.length === 0) {
+      toast.error('Pilih minimal 1 siswa yang akan dipindahkan');
+      return;
+    }
+    if (!targetClassId) {
+      toast.error('Harap pilih Kelas Tujuan terlebih dahulu');
+      return;
+    }
+    setShowConfirmModal(true);
+  };
+
+  const openExcelConfirm = () => {
+    if (excelRows.length === 0) {
+      toast.error('Belum ada data Excel yang diunggah');
+      return;
+    }
+    if (!excelTargetClassId) {
+      toast.error('Harap pilih Kelas Tujuan terlebih dahulu');
+      return;
+    }
+    setShowConfirmModal(true);
   };
 
   const handleExecuteReshuffle = async () => {
     setIsProcessing(true);
     setShowConfirmModal(false);
     setShowProgressModal(true);
-    setProgressPercent(10);
+    setProgressPercent(20);
 
     try {
       if (activeTab === 'website') {
-        setProgressPercent(50);
+        setProgressPercent(60);
         await api.post('/classes/reshuffle', {
           sourceClassId,
           targetClassId,
           studentIds: selectedStudentIds,
           rombel: targetRombel,
         });
+
+        const targetObj = classes.find((c) => c.id === targetClassId);
+        const sourceObj = classes.find((c) => c.id === sourceClassId);
+        const summary = selectedStudentIds.map((id) => {
+          const st = students.find((s) => String(s.id) === id);
+          return {
+            nis: st?.nis || st?.NIS || '-',
+            name: st?.name || st?.Nama || '-',
+            fromClass: sourceObj?.className || 'Kelas Asal',
+            toClass: targetObj?.className || 'Kelas Tujuan',
+            rombel: targetRombel || '-',
+          };
+        });
+
         setProgressPercent(100);
-        toast.success(`Berhasil memindahkan ${selectedStudentIds.length} siswa!`);
+        setSummaryList(summary);
         setSelectedStudentIds([]);
         await fetchSourceStudents(sourceClassId);
       } else {
-        setProgressPercent(50);
-        await api.post('/classes/reshuffle/batch', { rows: excelRows });
+        setProgressPercent(60);
+        await api.post('/classes/reshuffle/batch', {
+          targetClassId: excelTargetClassId,
+          rows: excelRows,
+        });
+
+        const targetObj = classes.find((c) => c.id === excelTargetClassId);
+        const summary = excelRows.map((r) => ({
+          nis: r.nis,
+          name: r.name || 'Siswa',
+          fromClass: 'Kelas Asal',
+          toClass: targetObj?.className || r.targetClass || 'Kelas Tujuan',
+          rombel: r.rombel || '-',
+        }));
+
         setProgressPercent(100);
-        toast.success(`Berhasil memproses pemindahan ${excelRows.length} siswa via Excel!`);
+        setSummaryList(summary);
         setExcelRows([]);
         setExcelFile(null);
       }
+
+      setTimeout(() => {
+        setShowProgressModal(false);
+        setShowSummaryModal(true);
+      }, 400);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || 'Gagal memproses reshuffle kelas');
+      setShowProgressModal(false);
+      toast.error(e?.response?.data?.message || 'Gagal memproses reshuffle siswa');
     } finally {
       setIsProcessing(false);
-      setTimeout(() => setShowProgressModal(false), 500);
     }
   };
 
   const selectedTargetClassName = useMemo(() => {
-    const c = classes.find((item) => item.id === targetClassId);
+    const targetId = activeTab === 'website' ? targetClassId : excelTargetClassId;
+    const c = classes.find((item) => item.id === targetId);
     return c?.className || c?.nama_kelas || 'Kelas Tujuan';
-  }, [classes, targetClassId]);
+  }, [classes, targetClassId, excelTargetClassId, activeTab]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 pb-20 animate-in fade-in duration-500 max-w-7xl mx-auto">
+      {/* Top Header Card matching Nuxt 1-to-1 */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
         <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground/60 mb-1">
+            <Link href="/kelas" className="hover:text-primary transition-colors">
+              Manajemen Kelas
+            </Link>
+            <span>/</span>
+            <span className="text-primary font-black">Reshuffle & Acak Kelas</span>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            Reshuffle & Acak Kelas Siswa
+            Reshuffle & Penataan Kelas
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-0.5">
-            Pindahkan siswa antar kelas secara masal via antarmuka website atau file spreadsheet Excel
+          <p className="text-xs text-muted-foreground font-semibold mt-1">
+            Pindahkan siswa antar kelas dan atur rombel (rombongan belajar) untuk persiapan tahun ajaran baru.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/reshuffle/history">
-            <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs bg-card border-border">
-              <Icon icon="mingcute:history-line" className="text-base text-primary" /> Riwayat Audit Log
-            </Button>
+
+        {/* Tab Selection Toggle matching Nuxt */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center p-1.5 bg-muted/40 rounded-2xl border border-border shrink-0 gap-1.5 w-full sm:w-auto">
+          <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center">
+            <button
+              onClick={() => setActiveTab('website')}
+              className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'website'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon icon="mingcute:cursor-hand-line" className="text-base" />
+              <span>Pilih Langsung</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('excel')}
+              className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'excel'
+                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon icon="mingcute:file-import-fill" className="text-base" />
+              <span>Import Excel</span>
+            </button>
+          </div>
+
+          <Link
+            href="/reshuffle/history"
+            className="px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 text-sky-400 hover:text-white hover:bg-sky-500/20 border border-sky-500/20 w-full sm:w-auto shrink-0"
+          >
+            <Icon icon="mingcute:history-line" className="text-base" />
+            <span>Riwayat Audit Log</span>
           </Link>
         </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="flex bg-card p-1.5 rounded-2xl border border-border max-w-md">
-        <button
-          onClick={() => setActiveTab('website')}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'website'
-              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 font-black'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Icon icon="mingcute:web-line" className="text-base" /> Pilih via Website
-        </button>
-        <button
-          onClick={() => setActiveTab('excel')}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'excel'
-              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 font-black'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Icon icon="mingcute:file-export-line" className="text-base text-emerald-400" /> Pilih via Excel
-        </button>
       </div>
 
       {/* TAB 1: WEBSITE RESHUFFLE */}
       {activeTab === 'website' && (
         <div className="space-y-6">
-          {/* Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-3xl p-5 space-y-3 shadow-sm">
-              <label className="text-xs font-black uppercase text-primary tracking-wider">
-                1. Kelas Asal
+          {/* Control Panel matching Nuxt */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            {/* Source Class Select */}
+            <div className="md:col-span-4 bg-card p-5 rounded-3xl border border-border shadow-sm space-y-2">
+              <label className="text-xs font-black uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1.5">
+                <Icon icon="mingcute:logout-box-line" className="text-amber-500 text-base" />
+                1. Pilih Kelas Asal
               </label>
               <CustomSelect
-                options={classes.map((c) => ({ value: c.id, label: c.className || c.nama_kelas }))}
+                options={classes.map((c) => ({
+                  value: c.id,
+                  label: `${c.className || c.nama_kelas} (${c._count?.students || c.studentCount || 0} siswa)`,
+                }))}
                 value={sourceClassId}
                 onChange={setSourceClassId}
-                placeholder="Pilih Kelas Asal"
+                placeholder="-- Pilih Kelas Asal --"
               />
             </div>
 
-            <div className="bg-card border border-border rounded-3xl p-5 space-y-3 shadow-sm">
-              <label className="text-xs font-black uppercase text-primary tracking-wider">
-                2. Kelas Tujuan Baru
-              </label>
-              <CustomSelect
-                options={classes.map((c) => ({ value: c.id, label: c.className || c.nama_kelas }))}
-                value={targetClassId}
-                onChange={setTargetClassId}
-                placeholder="Pilih Kelas Tujuan"
-              />
-            </div>
+            {/* Target Class & Rombel */}
+            <div className="md:col-span-8 bg-card p-5 rounded-3xl border border-border shadow-sm grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+              <div className="sm:col-span-6 space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1.5">
+                  <Icon icon="mingcute:login-box-line" className="text-emerald-500 text-base" />
+                  2. Pilih Kelas Tujuan
+                </label>
+                <CustomSelect
+                  options={classes.map((c) => ({ value: c.id, label: c.className || c.nama_kelas }))}
+                  value={targetClassId}
+                  onChange={setTargetClassId}
+                  placeholder="-- Pilih Kelas Tujuan --"
+                />
+              </div>
 
-            <div className="bg-card border border-border rounded-3xl p-5 space-y-3 shadow-sm">
-              <label className="text-xs font-black uppercase text-primary tracking-wider">
-                3. Nomor Rombel (Opsional)
-              </label>
-              <Input
-                value={targetRombel}
-                onChange={(e) => setTargetRombel(e.target.value)}
-                placeholder="Contoh: 1, 2, atau A"
-                className="h-11 rounded-2xl bg-muted/30 font-bold text-xs"
-              />
+              <div className="sm:col-span-6 space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1.5">
+                  <Icon icon="mingcute:group-fill" className="text-sky-500 text-base" />
+                  Rombel Baru (Opsional)
+                </label>
+                <Input
+                  value={targetRombel}
+                  onChange={(e) => setTargetRombel(e.target.value)}
+                  placeholder="Contoh: Rombel A / 1"
+                  className="h-11 rounded-2xl bg-muted/30 font-bold text-xs"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Student Table */}
+          {/* Student Selector Table */}
           <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
             <div className="p-4 bg-muted/20 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -313,7 +396,7 @@ export default function ReshufflePage() {
               <div className="w-full sm:w-64">
                 <Input
                   type="text"
-                  placeholder="Cari siswa..."
+                  placeholder="Cari Nama / NIS / Rombel..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-9 rounded-xl text-xs bg-background"
@@ -327,7 +410,7 @@ export default function ReshufflePage() {
                   <Icon icon="mingcute:loading-fill" className="animate-spin text-lg" /> Memuat daftar siswa...
                 </div>
               ) : filteredStudents.length === 0 ? (
-                <div className="p-12 text-center text-xs font-bold text-muted-foreground">
+                <div className="p-12 text-center text-xs font-bold text-muted-foreground/40 italic">
                   Tidak ada siswa yang ditemukan di kelas asal
                 </div>
               ) : (
@@ -338,7 +421,7 @@ export default function ReshufflePage() {
                     <div
                       key={sId}
                       onClick={() => toggleSelectStudent(sId)}
-                      className={`px-6 py-3 flex items-center justify-between text-xs font-bold cursor-pointer transition-colors ${
+                      className={`px-6 py-3.5 flex items-center justify-between text-xs font-bold cursor-pointer transition-colors ${
                         isChecked ? 'bg-primary/10' : 'hover:bg-muted/30'
                       }`}
                     >
@@ -349,9 +432,12 @@ export default function ReshufflePage() {
                           onChange={() => {}}
                           className="w-4 h-4 rounded border-border text-primary"
                         />
-                        <span className="text-foreground">{std.name || std.Nama}</span>
+                        <span className="text-foreground text-sm font-black">{std.name || std.Nama}</span>
                       </div>
-                      <span className="font-mono text-muted-foreground">NIS: {std.nis || std.NIS}</span>
+                      <div className="flex items-center gap-4 text-muted-foreground">
+                        <span className="font-mono">NIS: {std.nis || std.NIS}</span>
+                        {std.rombel && <Badge variant="outline" className="text-[10px] font-bold">{std.rombel}</Badge>}
+                      </div>
                     </div>
                   );
                 })
@@ -361,10 +447,11 @@ export default function ReshufflePage() {
             <div className="p-6 border-t border-border bg-muted/10 flex justify-end">
               <Button
                 disabled={selectedStudentIds.length === 0 || !targetClassId}
-                onClick={() => setShowConfirmModal(true)}
-                className="rounded-2xl font-bold px-8 bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                onClick={openWebConfirm}
+                className="rounded-2xl font-bold px-8 bg-primary text-primary-foreground shadow-lg shadow-primary/20 h-12"
               >
-                Pindahkan {selectedStudentIds.length} Siswa ke {selectedTargetClassName}
+                <Icon icon="mingcute:transfer-4-line" className="text-base mr-2" />
+                <span>Pindahkan {selectedStudentIds.length} Siswa ke {selectedTargetClassName}</span>
               </Button>
             </div>
           </div>
@@ -385,7 +472,7 @@ export default function ReshufflePage() {
               }}
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all ${
-                isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 bg-muted/20'
+                isDragging ? 'border-amber-500 bg-amber-500/10' : 'border-border hover:border-amber-500/50 bg-muted/20'
               }`}
             >
               <input
@@ -395,8 +482,8 @@ export default function ReshufflePage() {
                 onChange={(e) => e.target.files && handleExcelParse(e.target.files[0])}
                 className="hidden"
               />
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-4">
-                <Icon icon="mingcute:file-export-line" className="text-3xl" />
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
+                <Icon icon="mingcute:file-import-fill" className="text-3xl" />
               </div>
               <h3 className="text-lg font-black text-foreground mb-1">
                 {excelFile ? `File: ${excelFile.name}` : 'Pilih atau Tarik File Excel Reshuffle'}
@@ -406,18 +493,33 @@ export default function ReshufflePage() {
               </p>
             </div>
 
-            <Button onClick={downloadTemplate} variant="outline" className="rounded-2xl gap-2 font-bold text-xs h-11 px-5">
-              <Icon icon="mingcute:download-2-line" className="text-base text-emerald-500" />
-              Unduh Template Excel Reshuffle Resmi
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button onClick={downloadTemplate} variant="outline" className="rounded-2xl gap-2 font-bold text-xs h-11 px-5 border-border">
+                <Icon icon="mingcute:download-2-line" className="text-base text-amber-500" />
+                Unduh Template Excel Reshuffle Resmi
+              </Button>
+            </div>
+          </div>
+
+          {/* Select Excel Target Class */}
+          <div className="bg-card border border-border rounded-3xl p-5 space-y-2 shadow-sm">
+            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground/60">
+              Pilih Kelas Tujuan untuk Import Excel
+            </label>
+            <CustomSelect
+              options={classes.map((c) => ({ value: c.id, label: c.className || c.nama_kelas }))}
+              value={excelTargetClassId}
+              onChange={setExcelTargetClassId}
+              placeholder="-- Pilih Kelas Tujuan --"
+            />
           </div>
 
           {/* Parsed Excel Rows */}
           {excelRows.length > 0 && (
             <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
               <div className="p-4 bg-muted/20 border-b border-border flex justify-between items-center">
-                <span className="text-xs font-black text-primary uppercase tracking-wider">
-                  Pratinjau ({excelRows.length} Instruksi Reshuffle)
+                <span className="text-xs font-black text-amber-500 uppercase tracking-wider">
+                  Pratinjau ({excelRows.length} Data Siswa dari Excel)
                 </span>
               </div>
               <div className="max-h-80 overflow-y-auto divide-y divide-border">
@@ -426,13 +528,18 @@ export default function ReshufflePage() {
                     <div className="col-span-1 text-muted-foreground font-mono">#{r.row}</div>
                     <div className="col-span-3 font-mono text-foreground">{r.nis}</div>
                     <div className="col-span-4 text-foreground">{r.name || 'Siswa'}</div>
-                    <div className="col-span-4 text-primary text-right font-black">Ke: {r.targetClass}</div>
+                    <div className="col-span-4 text-amber-500 text-right font-black">Ke: {selectedTargetClassName}</div>
                   </div>
                 ))}
               </div>
               <div className="p-6 border-t border-border bg-muted/10 flex justify-end">
-                <Button onClick={() => setShowConfirmModal(true)} className="rounded-2xl font-bold px-8 bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                  Jalankan Reshuffle Excel Sekarang
+                <Button
+                  disabled={!excelTargetClassId}
+                  onClick={openExcelConfirm}
+                  className="rounded-2xl font-bold px-8 bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 h-12"
+                >
+                  <Icon icon="mingcute:file-import-fill" className="text-base mr-2" />
+                  <span>Jalankan Reshuffle Excel Sekarang</span>
                 </Button>
               </div>
             </div>
@@ -440,7 +547,7 @@ export default function ReshufflePage() {
         </div>
       )}
 
-      {/* CONFIRMATION MODAL */}
+      {/* ═══ CONFIRMATION MODAL ═══ */}
       <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
         <DialogContent className="sm:max-w-md p-6 text-center">
           <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-3">
@@ -456,7 +563,7 @@ export default function ReshufflePage() {
             <span className="font-bold text-foreground">
               {activeTab === 'website' ? selectedStudentIds.length : excelRows.length} siswa
             </span>{' '}
-            ke kelas tujuan? Tindakan ini akan memperbarui status kelas siswa di database.
+            ke kelas <strong className="text-primary">"{selectedTargetClassName}"</strong>?
           </p>
           <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowConfirmModal(false)}>
@@ -469,7 +576,7 @@ export default function ReshufflePage() {
         </DialogContent>
       </Dialog>
 
-      {/* PROGRESS MODAL */}
+      {/* ═══ PROGRESS MODAL ═══ */}
       <Dialog open={showProgressModal} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-sm p-6 text-center">
           <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin mx-auto mb-3" />
@@ -482,6 +589,41 @@ export default function ReshufflePage() {
             <div className="bg-primary h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
           </div>
           <p className="text-xs font-bold text-primary">{progressPercent}% Selesai</p>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ SUMMARY MODAL ═══ */}
+      <Dialog open={showSummaryModal} onOpenChange={setShowSummaryModal}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card text-center">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-2">
+              <Icon icon="mingcute:check-circle-fill" className="text-2xl" />
+            </div>
+            <DialogTitle className="text-xl font-black text-foreground text-center">
+              Reshuffle Berhasil! {summaryList.length} Siswa Dipindahkan
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-2 text-xs font-semibold">
+            {summaryList.map((item, idx) => (
+              <div key={idx} className="p-3 bg-muted/30 border border-border rounded-2xl flex items-center justify-between">
+                <div>
+                  <p className="font-black text-foreground">{item.name}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono">NIS: {item.nis}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-muted-foreground">{item.fromClass}</span>
+                  <span className="text-primary font-bold"> &rarr; {item.toClass}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card">
+            <Button className="w-full rounded-2xl font-bold bg-primary text-primary-foreground" onClick={() => setShowSummaryModal(false)}>
+              Tutup Ringkasan
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
