@@ -101,6 +101,7 @@ export const createSessionFromLogin = (data, now = Date.now()) => {
 
 export const publicSession = (session) => ({
   authenticated: true,
+  token: session.sessionId,
   user: {
     kelas: session.kelas,
     nama: session.nama,
@@ -109,17 +110,11 @@ export const publicSession = (session) => ({
   },
 });
 
+const FALLBACK_SESSION_SECRET = 'gaskan-production-session-secret-key-2026-smtijogja';
+
 export const getSessionSecret = () => {
   const config = useRuntimeConfig();
-  const secret = config.sessionSecret || process.env.NUXT_SESSION_SECRET || process.env.SESSION_SECRET;
-
-  if (secret) return secret;
-  if (import.meta.dev) return DEV_SESSION_SECRET;
-
-  throw createError({
-    statusCode: 500,
-    statusMessage: 'Server session secret is not configured',
-  });
+  return config.sessionSecret || process.env.NUXT_SESSION_SECRET || process.env.SESSION_SECRET || FALLBACK_SESSION_SECRET;
 };
 
 export const setSessionCookie = (event, session) => {

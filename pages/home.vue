@@ -8,7 +8,7 @@ import DashboardSiswa from '~/components/Dashboard/DashboardSiswa.vue';
 
 const authStore = useAuthStore();
 const { nis, role: sessionRole } = storeToRefs(authStore);
-const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
+const sessionFetch = useRequestFetch();
 
 const currentRole = computed(() => sessionRole.value || 'siswa');
 const isAdminOrDev = computed(() => ['admin', 'developer', 'guru'].includes(currentRole.value));
@@ -16,48 +16,62 @@ const isDeveloper = computed(() => currentRole.value === 'developer');
 
 const { userData: user, userLoading } = storeToRefs(authStore);
 
-// Use centralized fetcher
-if (authStore.authenticated) {
-  await authStore.fetchUserData();
-} else {
-  const unwatch = watch(() => authStore.authenticated, async (newVal) => {
-    if (newVal) {
-      await authStore.fetchUserData();
-      unwatch();
-    }
-  });
-}
-
 const count = ref(null);
 const login = ref(null);
-
-if (isAdminOrDev.value) {
-  try { count.value = await sessionFetch('/api/count'); } catch {}
-  try { login.value = await sessionFetch('/api/log/login'); } catch {}
-}
-
 const system = ref(null);
-let systemInterval = null;
+
+const fetchAdminData = async () => {
+  if (!isAdminOrDev.value) return;
+  try {
+    const [countRes, loginRes] = await Promise.allSettled([
+      sessionFetch('/api/count'),
+      sessionFetch('/api/log/login')
+    ]);
+    if (countRes.status === 'fulfilled') count.value = countRes.value;
+    if (loginRes.status === 'fulfilled') login.value = loginRes.value;
+  } catch (err) {
+    console.error('Error fetching dashboard admin stats:', err);
+  }
+};
 
 const refreshSystem = async () => {
-  if (!isDeveloper.value) return;
+  if (!isAdminOrDev.value) return;
 
   try {
-    system.value = await sessionFetch('/api/dev/system');
+    const res = await sessionFetch('/api/system/metrics');
+    system.value = res?.data || res;
   } catch (error) {
     console.error('Error fetching system data:', error);
   }
 };
 
-onMounted(async () => {
-  if (isDeveloper.value) {
-    await refreshSystem();
-    systemInterval = setInterval(refreshSystem, 5000);
+const initHomeData = async () => {
+  if (authStore.authenticated) {
+    await authStore.fetchUserData();
+    if (isAdminOrDev.value) {
+      await fetchAdminData();
+    }
   }
-});
+};
 
-onBeforeUnmount(() => {
-  if (systemInterval) clearInterval(systemInterval);
+if (authStore.authenticated) {
+  await initHomeData();
+} else {
+  const unwatch = watch(() => authStore.authenticated, async (newVal) => {
+    if (newVal) {
+      await initHomeData();
+      unwatch();
+    }
+  });
+}
+
+onMounted(async () => {
+  if (!user.value && authStore.authenticated) {
+    await initHomeData();
+  }
+  if (isAdminOrDev.value) {
+    refreshSystem();
+  }
 });
 
 useSeoMeta({

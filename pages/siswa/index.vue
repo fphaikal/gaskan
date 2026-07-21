@@ -803,7 +803,13 @@ useSeoMeta({
           <Icon name="mingcute:pic-line" size="20" />
           Bulk Upload Foto
         </NuxtLink>
+        <NuxtLink to="/admin/field-permissions" class="btn btn-ghost bg-base-100 rounded-2xl gap-2 border-base-200 shadow-sm" title="Pengaturan Izin Profil Siswa">
+          <Icon name="mingcute:user-setting-line" size="20" class="text-primary" />
+          Izin Profil
+        </NuxtLink>
+
         <button @click="openAddModal" class="btn btn-primary rounded-2xl gap-2 shadow-lg shadow-primary/20">
+
           <Icon name="mingcute:user-add-fill" size="20" />
           Tambah Siswa
         </button>

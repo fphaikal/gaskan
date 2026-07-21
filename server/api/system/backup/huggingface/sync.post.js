@@ -1,13 +1,10 @@
-
 export default defineEventHandler(async (event) => {
-  const session = requireRole(event, ['admin', 'developer']);
+  const session = requireRole(event, ['developer']);
   const config = useRuntimeConfig();
 
-  const body = await readBody(event);
-  const res = await fetch(`${config.public.apiBase}/api/system/promote`, {
+  const res = await fetch(`${config.public.apiBase}/api/system/backup/huggingface/sync`, {
     method: 'POST',
     headers: getUpstreamAuthHeaders(session, { 'Content-Type': 'application/json' }),
-    body: JSON.stringify(body),
   });
   return readUpstreamJson(res);
 });

@@ -294,8 +294,8 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
                 </div>
 
                 <div class="flex items-center gap-1">
-                  <div :class="['w-2 h-2 rounded-full', user?.isActive ? 'bg-success' : 'bg-base-300']"></div>
-                  <span class="text-[9px] font-black uppercase tracking-wider text-base-content/40">{{ user?.isActive ? 'Aktif' : 'Nonaktif' }}</span>
+                  <div :class="['w-2 h-2 rounded-full', user?.status === 'ALUMNI' ? 'bg-amber-400' : user?.status === 'KELUAR' ? 'bg-rose-500' : user?.status === 'MUTASI' ? 'bg-sky-400' : user?.isActive ? 'bg-success' : 'bg-base-300']"></div>
+                  <span :class="['text-[9px] font-black uppercase tracking-wider', user?.status === 'ALUMNI' ? 'text-amber-400 font-bold' : 'text-base-content/40']">{{ user?.status || (user?.isActive ? 'Aktif' : 'Nonaktif') }}</span>
                 </div>
               </div>
 
@@ -349,8 +349,8 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 bor
               <!-- Col 8-9: Status -->
               <div class="col-span-2">
                 <div class="flex items-center gap-1.5">
-                  <div :class="['w-2 h-2 rounded-full', user?.isActive ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-base-300']"></div>
-                  <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/50">{{ user?.isActive ? 'Aktif' : 'Nonaktif' }}</span>
+                  <div :class="['w-2 h-2 rounded-full', user?.status === 'ALUMNI' ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]' : user?.status === 'KELUAR' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : user?.status === 'MUTASI' ? 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.5)]' : user?.isActive ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-base-300']"></div>
+                  <span :class="['text-[10px] font-black uppercase tracking-widest', user?.status === 'ALUMNI' ? 'text-amber-400 font-extrabold' : user?.status === 'KELUAR' ? 'text-rose-400 font-extrabold' : user?.status === 'MUTASI' ? 'text-sky-400 font-extrabold' : 'text-base-content/50']">{{ user?.status || (user?.isActive ? 'AKTIF' : 'NONAKTIF') }}</span>
                 </div>
               </div>
 

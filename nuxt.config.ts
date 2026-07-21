@@ -7,6 +7,22 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/tailwind.css'],
 
+  routeRules: {
+    '/home': { ssr: false },
+    '/admin/**': { ssr: false },
+    '/absensi/**': { ssr: false },
+    '/siswa/**': { ssr: false },
+    '/izin/**': { ssr: false },
+    '/kelas/**': { ssr: false },
+    '/semester/**': { ssr: false },
+    '/jurusan/**': { ssr: false },
+    '/log/**': { ssr: false },
+    '/config/**': { ssr: false },
+    '/reshuffle/**': { ssr: false },
+    '/profile': { ssr: false },
+    '/monitor/**': { ssr: false },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
@@ -36,8 +52,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     sessionSecret: process.env.NUXT_SESSION_SECRET || process.env.SESSION_SECRET,
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE,
-      wsBase: process.env.NUXT_PUBLIC_WS_BASE || 'wss://api.tierkun.my.id',
+      apiBase: (process.env.NUXT_PUBLIC_API_BASE || 'https://gaskan-api.smtijogja.my.id').replace(/\/+$/, ''),
+      wsBase: (process.env.NUXT_PUBLIC_WS_BASE || 'wss://gaskan-api.smtijogja.my.id').replace(/\/+$/, ''),
       buildId: process.env.VERCEL_GIT_COMMIT_SHA || "development",
     },
   },

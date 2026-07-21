@@ -19,6 +19,16 @@ const isDeveloper = computed(() => {
   return r === 'developer';
 });
 
+const useProxy = computed(() => authStore.useProxy);
+const toggleProxyMode = async () => {
+  const isNowProxy = await authStore.toggleProxy();
+  if (isNowProxy) {
+    $toast.info('Mode API Global diubah ke: Nitro Proxy Server (ON)');
+  } else {
+    $toast.success('Mode API Global diubah ke: Direct Real API (OFF ⚡)');
+  }
+};
+
 const loading = ref(true);
 const refreshing = ref(false);
 const autoRefresh = ref(true);
@@ -49,11 +59,13 @@ const backupConfig = ref({
   gdClientSecret: '',
   gdRefreshToken: '',
   gdFolderId: '',
+  gdConcurrency: 12,
   hfEnabled: false,
   hfAutoDeleteLocal: false,
   hfThresholdGB: 40,
   hfRepoId: '',
   hfToken: '',
+  hfBatchSize: 100,
 });
 const backupProgress = ref(null);
 const gdriveCount = ref(0);
@@ -192,6 +204,27 @@ const purgeLocalFilesNow = async () => {
   }
 };
 
+const isSyncingHfRemote = ref(false);
+const syncHuggingFaceRemoteNow = async () => {
+  isSyncingHfRemote.value = true;
+  try {
+    const res = await $fetch('/api/system/backup/huggingface/sync', {
+      method: 'POST'
+    });
+    if (res?.success) {
+      $toast.success(res.message);
+      await fetchBackupStatus();
+    } else {
+      $toast.error(res?.message || 'Gagal menyingkronkan Hugging Face Hub');
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || 'Gagal menyingkronkan data Hugging Face');
+  } finally {
+    isSyncingHfRemote.value = false;
+  }
+};
+
+
 const togglingPause = ref(false);
 const cancelling = ref(false);
 
@@ -252,6 +285,8 @@ const cancelBackup = async (provider) => {
 onMounted(() => {
   fetchMetrics();
   fetchBackupStatus();
+
+
 
   const route = useRoute();
   if (route.query.gd_auth === 'success') {
@@ -642,6 +677,7 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
         </div>
 
         <!-- Sistem Dual Auto Backup CDN & Cloud Storage (Khusus Akun Developer) -->
+
         <div v-if="isDeveloper" :class="bentoCard" class="space-y-6 md:col-span-2">
           <div class="border-b border-base-200/80 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="text-left">
@@ -851,6 +887,20 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                       class="input input-sm input-bordered w-full rounded-xl font-mono text-xs"
                     />
                   </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest opacity-50">Koneksi Upload Simultan (Concurrency 1-50)</label>
+                    <div class="flex items-center gap-2">
+                      <input 
+                        v-model.number="backupConfig.gdConcurrency" 
+                        type="number" 
+                        min="1" 
+                        max="50" 
+                        class="input input-sm input-bordered w-full rounded-xl font-bold text-xs"
+                      />
+                      <span class="text-xs font-black opacity-60">Parallel</span>
+                    </div>
+                  </div>
                   <!-- Google Drive Progress Bar (When Active) -->
                   <div v-if="backupProgress?.gdrive?.active" class="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5">
                     <div class="flex flex-wrap justify-between items-center text-[11px] font-bold gap-2">
@@ -987,6 +1037,20 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                       </button>
                     </div>
                   </div>
+
+                  <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase tracking-widest opacity-50">Batch Size Upload Foto (10 - 500 Foto / Batch)</label>
+                    <div class="flex items-center gap-2">
+                      <input 
+                        v-model.number="backupConfig.hfBatchSize" 
+                        type="number" 
+                        min="10" 
+                        max="500" 
+                        class="input input-sm input-bordered w-full rounded-xl font-bold text-xs"
+                      />
+                      <span class="text-xs font-black opacity-60">Foto/Commit</span>
+                    </div>
+                  </div>
                   <!-- Hugging Face Progress Bar (When Active) -->
                   <div v-if="backupProgress?.huggingface?.active" class="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5">
                     <div class="flex flex-wrap justify-between items-center text-[11px] font-bold gap-2">
@@ -1039,17 +1103,31 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                 </div>
               </div>
 
-              <button 
-                @click="triggerBackupNow('HUGGINGFACE')" 
-                :disabled="startingBackupProvider === 'HUGGINGFACE' || backupProgress?.huggingface?.active" 
-                class="btn bg-sky-500 hover:bg-sky-600 text-white border-0 btn-sm rounded-xl font-bold w-full mt-4 shadow-md shadow-sky-500/20"
-              >
-                <span v-if="startingBackupProvider === 'HUGGINGFACE'" class="loading loading-spinner loading-xs mr-1"></span>
-                <Icon v-else name="mingcute:upload-3-fill" class="mr-1" />
-                Upload Manual ke Hugging Face Sekarang
-              </button>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                <button 
+                  @click="triggerBackupNow('HUGGINGFACE')" 
+                  :disabled="startingBackupProvider === 'HUGGINGFACE' || backupProgress?.huggingface?.active" 
+                  class="btn bg-sky-500 hover:bg-sky-600 text-white border-0 btn-sm rounded-xl font-bold shadow-md shadow-sky-500/20"
+                >
+                  <span v-if="startingBackupProvider === 'HUGGINGFACE'" class="loading loading-spinner loading-xs mr-1"></span>
+                  <Icon v-else name="mingcute:upload-3-fill" class="mr-1" />
+                  Upload Manual HF
+                </button>
+
+                <button 
+                  type="button"
+                  @click="syncHuggingFaceRemoteNow" 
+                  :disabled="isSyncingHfRemote" 
+                  class="btn btn-outline btn-sm rounded-xl font-bold border-sky-500 text-sky-400 hover:bg-sky-500 hover:text-white"
+                >
+                  <span v-if="isSyncingHfRemote" class="loading loading-spinner loading-xs mr-1"></span>
+                  <Icon v-else name="mingcute:sync-fill" class="mr-1" />
+                  Sync DB dari HF Hub
+                </button>
+              </div>
             </div>
           </div>
+
 
           <!-- Bottom Action Buttons: Save Config & Purge Storage -->
           <div class="pt-4 border-t border-base-200/80 flex flex-col sm:flex-row justify-between gap-3">

@@ -6,7 +6,7 @@ import { useAuthStore } from '~/store/useAuthStore';
 
 const { role } = storeToRefs(useAuthStore());
 const isAdminOrDev = computed(() => ['admin', 'developer'].includes(role.value));
-const sessionFetch = import.meta.server ? useRequestFetch() : $fetch;
+const sessionFetch = $fetch;
 
 const errorResponse = ref(null);
 let errInterval = null;
