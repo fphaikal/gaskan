@@ -1,145 +1,66 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useCallback } from "react";
-import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Pencil, Trash2, Loader2, GraduationCap } from "lucide-react";
-import { toast } from "sonner";
-
-import api from "@/lib/api";
-import { Kelas, Jurusan } from "@/types";
-import { PageHeader } from "@/components/shared/PageHeader";
-import { ReusableDataTable } from "@/components/shared/ReusableDataTable";
-import { ConfirmModal } from "@/components/shared/ConfirmModal";
-import { ExportButtons } from "@/components/shared/ExportButtons";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { Icon } from '@iconify/react';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-
-const MOCK_JURUSAN: Jurusan[] = [
-  { id: 1, nama_jurusan: "Teknik Komputer dan Jaringan", kode_jurusan: "TKJ" },
-  { id: 2, nama_jurusan: "Rekayasa Perangkat Lunak", kode_jurusan: "RPL" },
-  { id: 3, nama_jurusan: "Multimedia / DKV", kode_jurusan: "MM" },
-  { id: 4, nama_jurusan: "Teknik Kendaraan Ringan", kode_jurusan: "TKR" },
-];
-
-const MOCK_KELAS: Kelas[] = [
-  {
-    id: 1,
-    nama_kelas: "X RPL 1",
-    jurusan_id: 2,
-    jurusan: { id: 2, nama_jurusan: "Rekayasa Perangkat Lunak", kode_jurusan: "RPL" },
-    created_at: "2024-01-10",
-  },
-  {
-    id: 2,
-    nama_kelas: "X TKJ 1",
-    jurusan_id: 1,
-    jurusan: { id: 1, nama_jurusan: "Teknik Komputer dan Jaringan", kode_jurusan: "TKJ" },
-    created_at: "2024-01-10",
-  },
-  {
-    id: 3,
-    nama_kelas: "XI RPL 2",
-    jurusan_id: 2,
-    jurusan: { id: 2, nama_jurusan: "Rekayasa Perangkat Lunak", kode_jurusan: "RPL" },
-    created_at: "2024-01-10",
-  },
-  {
-    id: 4,
-    nama_kelas: "XII MM 1",
-    jurusan_id: 3,
-    jurusan: { id: 3, nama_jurusan: "Multimedia / DKV", kode_jurusan: "MM" },
-    created_at: "2024-01-10",
-  },
-];
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function KelasPage() {
-  const [data, setData] = useState<Kelas[]>([]);
-  const [jurusanList, setJurusanList] = useState<Jurusan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const role = (user?.role || 'siswa').toLowerCase();
+  const isAdmin = ['admin', 'developer'].includes(role);
 
-  // Form dialog state
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<{
-    id: number | string | null;
-    nama_kelas: string;
-    jurusan_id: number | string;
-  }>({
-    id: null,
-    nama_kelas: "",
-    jurusan_id: "",
+  const [classes, setClasses] = useState<any[]>([]);
+  const [majors, setMajors] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [editMode, setEditMode] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('');
+  const [selectedMajor, setSelectedMajor] = useState('');
+
+  // Form State
+  const [form, setForm] = useState({
+    id: '',
+    majorId: '',
+    grade: 10,
+    section: '',
+    isActive: true,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Delete modal state
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      let kelasRes;
-      let jurusanRes;
+      const [classRes, majorRes] = await Promise.allSettled([
+        api.get('/classes'),
+        api.get('/classes/majors').catch(() => api.get('/jurusan')),
+      ]);
 
-      try {
-        [kelasRes, jurusanRes] = await Promise.all([
-          api.get("/kelas"),
-          api.get("/jurusan"),
-        ]);
-      } catch {
-        [kelasRes, jurusanRes] = await Promise.all([
-          api.get("/api/classes"),
-          api.get("/api/classes/majors"),
-        ]);
+      if (classRes.status === 'fulfilled' && classRes.value?.data) {
+        setClasses(classRes.value.data.data || classRes.value.data || []);
       }
-
-      const rawJurusan = jurusanRes?.data?.data || jurusanRes?.data || [];
-      const parsedJurusan: Jurusan[] = Array.isArray(rawJurusan) && rawJurusan.length > 0
-        ? rawJurusan.map((j: any) => ({
-            id: j.id,
-            nama_jurusan: j.nama_jurusan || j.name || "",
-            kode_jurusan: j.kode_jurusan || j.alias || "",
-          }))
-        : MOCK_JURUSAN;
-
-      setJurusanList(parsedJurusan);
-
-      const rawKelas = kelasRes?.data?.data || kelasRes?.data || [];
-      if (Array.isArray(rawKelas) && rawKelas.length > 0) {
-        const mapped: Kelas[] = rawKelas.map((item: any) => {
-          const jId = item.jurusan_id || item.majorId || item.major?.id;
-          const foundJ = parsedJurusan.find((j) => String(j.id) === String(jId)) || item.jurusan || item.major;
-          return {
-            id: item.id,
-            nama_kelas: item.nama_kelas || item.className || item.name || "",
-            jurusan_id: jId || "",
-            jurusan: foundJ
-              ? {
-                  id: foundJ.id,
-                  nama_jurusan: foundJ.nama_jurusan || foundJ.name || "",
-                  kode_jurusan: foundJ.kode_jurusan || foundJ.alias || "",
-                }
-              : undefined,
-            created_at: item.created_at ? new Date(item.created_at).toLocaleDateString("id-ID") : "-",
-          };
-        });
-        setData(mapped);
-      } else {
-        setData(MOCK_KELAS);
+      if (majorRes.status === 'fulfilled' && majorRes.value?.data) {
+        setMajors(majorRes.value.data.data || majorRes.value.data || []);
       }
-    } catch {
-      setJurusanList(MOCK_JURUSAN);
-      setData(MOCK_KELAS);
+    } catch (e) {
+      console.error('Failed to fetch classes/majors:', e);
     } finally {
       setIsLoading(false);
     }
@@ -149,315 +70,364 @@ export default function KelasPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleOpenCreate = () => {
-    setIsEditing(false);
-    setFormData({
-      id: null,
-      nama_kelas: "",
-      jurusan_id: jurusanList.length > 0 ? String(jurusanList[0].id) : "",
+  // Automatic computed class name matching Nuxt
+  const computedClassName = useMemo(() => {
+    if (!form.grade || !form.majorId || !form.section) return '';
+    const romanGrades: Record<number, string> = { 10: 'X', 11: 'XI', 12: 'XII' };
+    const major = majors.find((m) => m.id === form.majorId);
+    if (!major) return '';
+    return `${romanGrades[form.grade] || 'X'} ${major.alias || ''} ${form.section.toUpperCase()}`;
+  }, [form.grade, form.majorId, form.section, majors]);
+
+  const isDuplicate = useMemo(() => {
+    if (!computedClassName) return false;
+    return classes.some((cls) => cls.className === computedClassName && cls.id !== form.id);
+  }, [computedClassName, form.id, classes]);
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter((cls) => {
+      const clsName = cls.className || `${cls.grade} ${cls.major?.alias || ''} ${cls.section || ''}`;
+      const matchesSearch =
+        clsName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (cls.major?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesGrade = !selectedGrade || cls.grade === parseInt(selectedGrade);
+      const matchesMajor = !selectedMajor || cls.majorId === selectedMajor;
+      return matchesSearch && matchesGrade && matchesMajor;
     });
-    setIsFormOpen(true);
+  }, [classes, searchQuery, selectedGrade, selectedMajor]);
+
+  const openCreate = () => {
+    setEditMode(false);
+    setForm({
+      id: '',
+      majorId: majors[0]?.id || '',
+      grade: 10,
+      section: '',
+      isActive: true,
+    });
+    setShowModal(true);
   };
 
-  const handleOpenEdit = (item: Kelas) => {
-    setIsEditing(true);
-    setFormData({
-      id: item.id,
-      nama_kelas: item.nama_kelas,
-      jurusan_id: item.jurusan_id ? String(item.jurusan_id) : (item.jurusan?.id ? String(item.jurusan.id) : ""),
+  const openEdit = (cls: any) => {
+    setEditMode(true);
+    setForm({
+      id: cls.id,
+      majorId: cls.majorId || '',
+      grade: cls.grade || 10,
+      section: cls.section || '',
+      isActive: cls.isActive !== false,
     });
-    setIsFormOpen(true);
+    setShowModal(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.nama_kelas.trim()) {
-      toast.error("Nama kelas wajib diisi");
+  const saveClass = async () => {
+    if (!form.majorId || !form.section.trim()) {
+      toast.error('Jurusan dan Nama Rombel (Section) wajib diisi');
+      return;
+    }
+    if (isDuplicate) {
+      toast.error('Kelas ini sudah terdaftar!');
       return;
     }
 
-    setIsSubmitting(true);
-    const selectedJurusan = jurusanList.find(
-      (j) => String(j.id) === String(formData.jurusan_id)
-    );
-
-    const payload = {
-      nama_kelas: formData.nama_kelas,
-      className: formData.nama_kelas,
-      jurusan_id: formData.jurusan_id,
-      majorId: formData.jurusan_id,
-    };
-
+    setIsSaving(true);
     try {
-      if (isEditing && formData.id) {
-        try {
-          await api.put(`/kelas/${formData.id}`, payload);
-        } catch {
-          await api.put(`/api/classes/${formData.id}`, payload);
-        }
-        toast.success("Kelas berhasil diperbarui");
-        setData((prev) =>
-          prev.map((item) =>
-            item.id === formData.id
-              ? {
-                  ...item,
-                  nama_kelas: formData.nama_kelas,
-                  jurusan_id: formData.jurusan_id,
-                  jurusan: selectedJurusan || item.jurusan,
-                }
-              : item
-          )
-        );
+      const payload = {
+        majorId: form.majorId,
+        grade: form.grade,
+        section: form.section.toUpperCase(),
+        isActive: form.isActive,
+      };
+
+      if (editMode && form.id) {
+        await api.put(`/classes/${form.id}`, payload);
+        toast.success('Kelas berhasil diperbarui');
       } else {
-        let newId = Date.now();
-        try {
-          const res = await api.post("/kelas", payload);
-          if (res?.data?.data?.id) newId = res.data.data.id;
-        } catch {
-          try {
-            const res = await api.post("/api/classes", payload);
-            if (res?.data?.data?.id) newId = res.data.data.id;
-          } catch {
-            // Local state fallback
-          }
-        }
-        toast.success("Kelas berhasil ditambahkan");
-        const newItem: Kelas = {
-          id: newId,
-          nama_kelas: formData.nama_kelas,
-          jurusan_id: formData.jurusan_id,
-          jurusan: selectedJurusan,
-          created_at: new Date().toLocaleDateString("id-ID"),
-        };
-        setData((prev) => [newItem, ...prev]);
+        await api.post('/classes', payload);
+        toast.success('Kelas berhasil ditambahkan');
       }
-      setIsFormOpen(false);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gagal menyimpan kelas");
+      setShowModal(false);
+      await fetchData();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Gagal menyimpan kelas');
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
 
-  const handleOpenDelete = (id: number | string) => {
-    setDeletingId(id);
-    setIsDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deletingId) return;
-    setIsDeleting(true);
+  const handleDeleteClass = async () => {
+    if (!deleteId) return;
+    setIsSaving(true);
     try {
-      try {
-        await api.delete(`/kelas/${deletingId}`);
-      } catch {
-        await api.delete(`/api/classes/${deletingId}`);
-      }
-      toast.success("Kelas berhasil dihapus");
-      setData((prev) => prev.filter((item) => item.id !== deletingId));
-    } catch {
-      setData((prev) => prev.filter((item) => item.id !== deletingId));
-      toast.success("Kelas berhasil dihapus");
+      await api.delete(`/classes/${deleteId}`);
+      toast.success('Kelas berhasil dihapus');
+      setDeleteId(null);
+      await fetchData();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Gagal menghapus kelas');
     } finally {
-      setIsDeleting(false);
-      setIsDeleteOpen(false);
-      setDeletingId(null);
+      setIsSaving(false);
     }
   };
 
-  const columns: ColumnDef<Kelas>[] = [
-    {
-      accessorKey: "nama_kelas",
-      header: "Nama Kelas",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <GraduationCap className="h-4 w-4 text-primary shrink-0" />
-          <span className="font-semibold">{row.original.nama_kelas}</span>
-        </div>
-      ),
-    },
-    {
-      id: "jurusan",
-      header: "Jurusan",
-      cell: ({ row }) => {
-        const j = row.original.jurusan;
-        const jName = typeof j === "object" ? j?.nama_jurusan || (j as any)?.name : j;
-        const jKode = typeof j === "object" ? j?.kode_jurusan || (j as any)?.alias : "";
-        return (
-          <div className="flex items-center gap-1.5">
-            {jKode && (
-              <span className="inline-block rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
-                {jKode}
-              </span>
-            )}
-            <span className="text-sm font-medium text-muted-foreground">
-              {jName || "-"}
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "created_at",
-      header: "Tanggal Dibuat",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground text-sm">
-          {row.original.created_at || "-"}
-        </span>
-      ),
-    },
-    {
-      id: "actions",
-      header: "Aksi",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleOpenEdit(row.original)}
-            className="h-8 w-8 p-0"
-            title="Edit"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleOpenDelete(row.original.id)}
-            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-            title="Hapus"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
-  const exportData = data.map((item) => ({
-    id: item.id,
-    nama_kelas: item.nama_kelas,
-    nama_jurusan:
-      typeof item.jurusan === "object"
-        ? item.jurusan?.nama_jurusan || (item.jurusan as any)?.name
-        : item.jurusan || "-",
-    created_at: item.created_at || "-",
-  }));
-
-  const exportColumns = [
-    { header: "ID", key: "id" },
-    { header: "Nama Kelas", key: "nama_kelas" },
-    { header: "Jurusan", key: "nama_jurusan" },
-    { header: "Tanggal Dibuat", key: "created_at" },
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
+        <p className="text-xs font-semibold text-muted-foreground">Memuat data kelas...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Manajemen Kelas"
-        subtitle="Kelola data kelas dan pemetaan jurusan"
-        onAction={handleOpenCreate}
-        actionLabel="Tambah Kelas"
-        actionIcon={<Plus className="h-4 w-4" />}
-        actions={
-          <ExportButtons
-            data={exportData}
-            columns={exportColumns}
-            fileName="data_kelas"
-            title="Data Kelas"
+    <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            Manajemen Kelas
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-0.5">
+            Kelola daftar kelas dan rombel siswa
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/jurusan">
+            <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs">
+              <Icon icon="mingcute:building-2-fill" className="text-base" /> Kelola Jurusan
+            </Button>
+          </Link>
+          {isAdmin && (
+            <Button
+              onClick={openCreate}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs shadow-lg shadow-primary/20"
+            >
+              <Icon icon="mingcute:add-circle-fill" className="text-lg" /> Tambah Kelas
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Filters Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 bg-card p-4 rounded-3xl border border-border shadow-sm">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Icon icon="mingcute:search-line" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-base" />
+          <Input
+            type="text"
+            placeholder="Cari nama kelas..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-background border-border rounded-xl text-xs font-semibold"
           />
-        }
-      />
+        </div>
 
-      <ReusableDataTable
-        columns={columns}
-        data={data}
-        searchKey="nama_kelas"
-        searchPlaceholder="Cari nama kelas..."
-        isLoading={isLoading}
-      />
+        {/* Grade Filter */}
+        <select
+          value={selectedGrade}
+          onChange={(e) => setSelectedGrade(e.target.value)}
+          className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+        >
+          <option value="">Semua Tingkat</option>
+          <option value="10">Kelas 10</option>
+          <option value="11">Kelas 11</option>
+          <option value="12">Kelas 12</option>
+        </select>
 
-      {/* Form Modal */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-md">
+        {/* Major Filter */}
+        <select
+          value={selectedMajor}
+          onChange={(e) => setSelectedMajor(e.target.value)}
+          className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+        >
+          <option value="">Semua Jurusan</option>
+          {majors.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.alias || m.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Bento Grid of Classes matching Nuxt */}
+      {filteredClasses.length === 0 ? (
+        <div className="bg-card border border-border rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-3">
+          <Icon icon="mingcute:school-line" className="text-5xl text-muted-foreground/30" />
+          <p className="text-sm font-bold text-muted-foreground">Tidak ada kelas yang ditemukan</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredClasses.map((cls: any) => {
+            const majorAlias = cls.major?.alias || cls.majorAlias || 'UMUM';
+            const majorIcon = cls.major?.icon || 'mingcute:school-fill';
+            const clsName = cls.className || `${cls.grade === 10 ? 'X' : cls.grade === 11 ? 'XI' : 'XII'} ${majorAlias} ${cls.section || ''}`;
+
+            return (
+              <div
+                key={cls.id}
+                className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-md transition-all group flex flex-col justify-between"
+              >
+                <div>
+                  {/* Top Bar */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+                        <Icon icon={majorIcon} className="text-xl" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                          Kelas {cls.grade}
+                        </p>
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[9px] font-black uppercase">
+                          {majorAlias}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {isAdmin && (
+                      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary rounded-full"
+                          onClick={() => openEdit(cls)}
+                        >
+                          <Icon icon="mingcute:edit-2-fill" className="text-sm" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-rose-500 rounded-full"
+                          onClick={() => setDeleteId(cls.id)}
+                        >
+                          <Icon icon="mingcute:delete-2-fill" className="text-sm" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Main Class Name */}
+                  <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors my-2">
+                    {clsName}
+                  </h3>
+                </div>
+
+                {/* Bottom Row */}
+                <div className="pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <Icon icon="mingcute:group-line" className="text-primary text-base" />
+                    <span>{cls.totalStudents || cls._count?.students || 0} Siswa</span>
+                  </div>
+                  <Badge className={cls.isActive !== false ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[9px]' : 'bg-muted text-muted-foreground text-[9px]'}>
+                    {cls.isActive !== false ? 'Aktif' : 'Non-aktif'}
+                  </Badge>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ═══ CREATE / EDIT MODAL ═══ */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="rounded-3xl max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Edit Kelas" : "Tambah Kelas Baru"}
+            <DialogTitle className="text-xl font-black">
+              {editMode ? 'Edit Data Kelas' : 'Tambah Kelas Baru'}
             </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "Perbarui informasi kelas di bawah ini."
-                : "Masukkan detail kelas baru dan pilih jurusan."}
-            </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nama_kelas">Nama Kelas *</Label>
-              <Input
-                id="nama_kelas"
-                placeholder="Contoh: X RPL 1, XII TKJ 2"
-                value={formData.nama_kelas}
-                onChange={(e) =>
-                  setFormData({ ...formData, nama_kelas: e.target.value })
-                }
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="jurusan_id">Pilih Jurusan</Label>
+          <div className="space-y-4 py-2 text-xs sm:text-sm">
+            {/* Jurusan Dropdown */}
+            <div className="space-y-1.5">
+              <Label htmlFor="majorSelect">Jurusan</Label>
               <select
-                id="jurusan_id"
-                value={formData.jurusan_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, jurusan_id: e.target.value })
-                }
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                id="majorSelect"
+                value={form.majorId}
+                onChange={(e) => setForm({ ...form, majorId: e.target.value })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
               >
-                <option value="">-- Pilih Jurusan --</option>
-                {jurusanList.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.kode_jurusan ? `[${j.kode_jurusan}] ` : ""}
-                    {j.nama_jurusan}
+                <option value="">Pilih Jurusan</option>
+                {majors.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.alias})
                   </option>
                 ))}
               </select>
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsFormOpen(false)}
-                disabled={isSubmitting}
+            {/* Grade Level */}
+            <div className="space-y-1.5">
+              <Label htmlFor="gradeSelect">Tingkat Kelas</Label>
+              <select
+                id="gradeSelect"
+                value={form.grade}
+                onChange={(e) => setForm({ ...form, grade: parseInt(e.target.value) })}
+                className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
               >
-                Batal
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? "Simpan Perubahan" : "Tambah Kelas"}
-              </Button>
-            </DialogFooter>
-          </form>
+                <option value={10}>Kelas 10 (X)</option>
+                <option value={11}>Kelas 11 (XI)</option>
+                <option value={12}>Kelas 12 (XII)</option>
+              </select>
+            </div>
+
+            {/* Rombel / Section */}
+            <div className="space-y-1.5">
+              <Label htmlFor="sectionInput">Nomor Rombel / Section</Label>
+              <Input
+                id="sectionInput"
+                value={form.section}
+                onChange={(e) => setForm({ ...form, section: e.target.value })}
+                placeholder="Contoh: 1 (menjadi X AK 1)"
+              />
+            </div>
+
+            {/* Computed Preview */}
+            {computedClassName && (
+              <div className="p-3 bg-muted/40 border border-border rounded-2xl flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-semibold">Nama Kelas Dihasilkan:</span>
+                <span className="text-sm font-black text-primary">{computedClassName}</span>
+              </div>
+            )}
+            {isDuplicate && (
+              <p className="text-[11px] text-rose-500 font-bold">Kelas {computedClassName} sudah ada di sistem!</p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowModal(false)}>
+              Batal
+            </Button>
+            <Button
+              className="rounded-xl font-bold bg-primary text-primary-foreground"
+              disabled={isSaving || isDuplicate}
+              onClick={saveClass}
+            >
+              {isSaving ? 'Memproses...' : editMode ? 'Simpan Perubahan' : 'Tambah Kelas'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        open={isDeleteOpen}
-        title="Hapus Kelas"
-        description="Apakah Anda yakin ingin menghapus kelas ini? Tindakan ini tidak dapat dibatalkan."
-        confirmText="Hapus"
-        cancelText="Batal"
-        variant="destructive"
-        isLoading={isDeleting}
-        onConfirm={handleConfirmDelete}
-        onClose={() => {
-          setIsDeleteOpen(false);
-          setDeletingId(null);
-        }}
-      />
+      {/* ═══ CONFIRM DELETE MODAL ═══ */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="rounded-3xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black text-rose-500">Hapus Kelas?</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+            Data kelas ini akan dihapus dari sistem. Pastikan siswa di dalamnya telah dialokasikan ulang.
+          </p>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setDeleteId(null)}>
+              Batal
+            </Button>
+            <Button variant="destructive" className="rounded-xl font-bold" disabled={isSaving} onClick={handleDeleteClass}>
+              {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
