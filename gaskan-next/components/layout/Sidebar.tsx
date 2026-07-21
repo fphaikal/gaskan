@@ -56,8 +56,6 @@ const navGroups: NavGroup[] = [
     groupName: 'DATA MASTER',
     items: [
       { title: 'Daftar Siswa', href: '/siswa', icon: 'mingcute:user-3-fill' },
-      { title: 'Import Excel Siswa', href: '/siswa/import', icon: 'mingcute:file-import-line', roles: ['admin', 'developer', 'guru'] },
-      { title: 'Bulk Upload Foto', href: '/siswa/import-foto', icon: 'mingcute:pic-line', roles: ['admin', 'developer', 'guru'] },
       { title: 'Manajemen Kelas', href: '/kelas', icon: 'mingcute:school-fill' },
       { title: 'Manajemen Jurusan', href: '/jurusan', icon: 'mingcute:building-1-fill' },
       { title: 'Semester', href: '/semester', icon: 'mingcute:calendar-2-fill' },
@@ -103,7 +101,6 @@ export function Sidebar() {
   const renderNavItems = (collapsed: boolean, onItemClick?: () => void) => (
     <div className="flex flex-col gap-5 p-3">
       {navGroups.map((group) => {
-        // Filter items by role if specified
         const visibleItems = group.items.filter((item) => {
           if (!item.roles) return true;
           return item.roles.includes(userRole) || ['admin', 'developer'].includes(userRole);
