@@ -200,10 +200,35 @@
   }
 }
 
-/* ===== Base Styles ===== */
 body {
   background-color: var(--color-dark2);
   color: var(--color-white);
+}
+
+/* ===== GLOBAL FIX FOR NATIVE SELECT & OPTION DROPDOWNS ===== */
+select option,
+.select option,
+select.select option,
+.select-xs option,
+.select-sm option,
+.select-md option,
+.select-lg option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+  padding: 8px 12px !important;
+}
+
+[data-theme="light"] select option,
+[data-theme="light"] .select option,
+[data-theme="light"] select.select option,
+[data-theme="light"] .select-xs option,
+[data-theme="light"] .select-sm option,
+[data-theme="light"] .select-md option,
+[data-theme="light"] .select-lg option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
 }
 
 body {

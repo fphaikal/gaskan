@@ -96,6 +96,9 @@ const methodLabel = (m) => {
 const statusConfig = {
   HADIR: { color: 'text-success', bg: 'bg-success/10', badge: 'badge-success', icon: 'mingcute:check-circle-fill', label: 'Hadir' },
   TERLAMBAT: { color: 'text-warning', bg: 'bg-warning/10', badge: 'badge-warning', icon: 'mingcute:time-fill', label: 'Terlambat' },
+  PULANG: { color: 'text-indigo-400', bg: 'bg-indigo-500/10', badge: 'bg-indigo-500/10 border border-indigo-500/30 text-indigo-400', icon: 'mingcute:exit-line', label: 'Pulang' },
+  SCAN: { color: 'text-info', bg: 'bg-info/10', badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-400', icon: 'mingcute:history-fill', label: 'Scan' },
+  LOG: { color: 'text-info', bg: 'bg-info/10', badge: 'bg-sky-500/10 border border-sky-500/30 text-sky-400', icon: 'mingcute:history-fill', label: 'Scan' },
   IZIN: { color: 'text-info', bg: 'bg-info/10', badge: 'badge-info', icon: 'mingcute:document-fill', label: 'Izin' },
   SAKIT: { color: 'text-orange-400', bg: 'bg-orange-400/10', badge: 'badge-warning', icon: 'mingcute:heart-fill', label: 'Sakit' },
   ALPHA: { color: 'text-error', bg: 'bg-error/10', badge: 'badge-error', icon: 'mingcute:close-circle-fill', label: 'Alpha' },

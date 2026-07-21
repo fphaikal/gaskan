@@ -1,8 +1,10 @@
 export default defineEventHandler(async (event) => {
     const session = requireRole(event, ['admin', 'developer', 'guru']);
-    const config = useRuntimeConfig(); // get runtime config
-  
-    const res = await fetch(config.public.apiBase + '/api/dashboard/stats', {
+    const config = useRuntimeConfig();
+    const query = getQuery(event);
+    const params = new URLSearchParams(query);
+
+    const res = await fetch(config.public.apiBase + '/api/dashboard/stats?' + params.toString(), {
       headers: getUpstreamAuthHeaders(session),
     });
     
@@ -25,6 +27,7 @@ export default defineEventHandler(async (event) => {
       recentAttendances: data.recentAttendances,
       recentLogs: data.recentLogs,
       recentFaceFailures: data.recentFaceFailures || [],
+      pagination: data.pagination || null,
       onsite_siswa: (data.today?.present || 0) + (data.today?.late || 0)
     };
   });
