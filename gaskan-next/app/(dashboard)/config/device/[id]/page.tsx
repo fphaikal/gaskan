@@ -25,6 +25,7 @@ export default function DeviceDetailPage() {
   const router = useRouter();
   const id = params?.id as string;
 
+  const [isMounted, setIsMounted] = useState(false);
   const [device, setDevice] = useState<any>({
     id: id || '1',
     name: 'Samping bengkel 1',
@@ -38,6 +39,10 @@ export default function DeviceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [sendingDoorCmd, setSendingDoorCmd] = useState(false);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const fetchDeviceDetails = useCallback(async () => {
     setLoading(true);
     try {
@@ -49,7 +54,6 @@ export default function DeviceDetailPage() {
       if (current) {
         setDevice(current);
       } else {
-        // Fetch specific device by ID
         const singleRes = await api.get(`/device/${id}`).catch(() => null);
         if (singleRes?.data) setDevice(singleRes.data);
       }
@@ -82,8 +86,7 @@ export default function DeviceDetailPage() {
   };
 
   const streamIframeUrl = useMemo(() => {
-    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    const go2rtcHost = isLocal ? 'http://localhost:1984' : 'https://stream-gaskan.smtijogja.my.id';
+    const go2rtcHost = process.env.NEXT_PUBLIC_STREAM_BASE || 'https://stream-gaskan.smtijogja.my.id';
     const streamName = slugify(device?.name || 'samping_bengkel_1');
     return `${go2rtcHost}/stream.html?src=${streamName}&mode=webrtc,mse,hls`;
   }, [device]);
@@ -105,6 +108,10 @@ export default function DeviceDetailPage() {
       return tsStr;
     }
   };
+
+  const initialTimeStr = useMemo(() => {
+    return '21 Jul 2026, 19.07.23';
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
@@ -160,12 +167,19 @@ export default function DeviceDetailPage() {
             </div>
 
             <div className="relative aspect-video w-full rounded-2xl border border-border overflow-hidden bg-black flex items-center justify-center shadow-inner">
-              <iframe
-                src={streamIframeUrl}
-                className="w-full h-full border-none"
-                allow="autoplay; fullscreen"
-                title="Live Stream Camera"
-              />
+              {isMounted ? (
+                <iframe
+                  src={streamIframeUrl}
+                  className="w-full h-full border-none"
+                  allow="autoplay; fullscreen"
+                  title="Live Stream Camera"
+                />
+              ) : (
+                <div className="flex flex-col items-center text-muted-foreground/40 gap-2">
+                  <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
+                  <span className="text-xs font-semibold">Memuat Live Stream...</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -301,7 +315,9 @@ export default function DeviceDetailPage() {
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mt-1">
                     <span className="font-mono font-black text-sm text-foreground">
-                      {formatDeviceTimeStr(statsData?.timeInfo?.deviceTime || new Date().toISOString())}
+                      {isMounted && statsData?.timeInfo?.deviceTime
+                        ? formatDeviceTimeStr(statsData.timeInfo.deviceTime)
+                        : initialTimeStr}
                     </span>
                     <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-bold">
                       ✓ Selisih Server Sesuai (Presisi 0s)
