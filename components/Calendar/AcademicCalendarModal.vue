@@ -425,33 +425,33 @@ const handleDelete = async (id: string) => {
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-[10px] font-black uppercase tracking-widest text-base-content/40 block mb-1">Tipe Agenda</label>
-              <select v-model="form.type" class="select select-sm w-full rounded-xl bg-base-200/40 border-base-200 text-xs font-bold">
-                <option v-for="t in typeOptions" :key="t.value" :value="t.value">{{ t.label }}</option>
+              <label class="text-[10px] font-black uppercase tracking-widest text-base-content/60 block mb-1">Tipe Agenda</label>
+              <select v-model="form.type" class="select select-sm w-full rounded-xl bg-base-200 border-base-300 text-xs font-bold text-base-content">
+                <option v-for="t in typeOptions" :key="t.value" :value="t.value" class="bg-base-100 text-base-content font-bold">{{ t.label }}</option>
               </select>
             </div>
             <div>
-              <label class="text-[10px] font-black uppercase tracking-widest text-base-content/40 block mb-1">Cakupan (Scope)</label>
-              <select v-model="form.scope" class="select select-sm w-full rounded-xl bg-base-200/40 border-base-200 text-xs font-bold">
-                <option v-for="s in scopeOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
+              <label class="text-[10px] font-black uppercase tracking-widest text-base-content/60 block mb-1">Cakupan (Scope)</label>
+              <select v-model="form.scope" class="select select-sm w-full rounded-xl bg-base-200 border-base-300 text-xs font-bold text-base-content">
+                <option v-for="s in scopeOptions" :key="s.value" :value="s.value" class="bg-base-100 text-base-content font-bold">{{ s.label }}</option>
               </select>
             </div>
           </div>
 
           <!-- Target Major / Class Select -->
           <div v-if="form.scope === 'MAJOR'">
-            <label class="text-[10px] font-black uppercase tracking-widest text-base-content/40 block mb-1">Pilih Jurusan</label>
-            <select v-model="form.majorId" class="select select-sm w-full rounded-xl bg-base-200/40 border-base-200 text-xs font-bold">
-              <option value="">-- Pilih Jurusan --</option>
-              <option v-for="m in majors" :key="m.id" :value="m.id">{{ m.name }} ({{ m.alias }})</option>
+            <label class="text-[10px] font-black uppercase tracking-widest text-base-content/60 block mb-1">Pilih Jurusan</label>
+            <select v-model="form.majorId" class="select select-sm w-full rounded-xl bg-base-200 border-base-300 text-xs font-bold text-base-content">
+              <option value="" class="bg-base-100 text-base-content font-bold">-- Pilih Jurusan --</option>
+              <option v-for="m in majors" :key="m.id" :value="m.id" class="bg-base-100 text-base-content font-bold">{{ m.name }} ({{ m.alias }})</option>
             </select>
           </div>
 
           <div v-if="form.scope === 'CLASS'">
-            <label class="text-[10px] font-black uppercase tracking-widest text-base-content/40 block mb-1">Pilih Kelas</label>
-            <select v-model="form.classId" class="select select-sm w-full rounded-xl bg-base-200/40 border-base-200 text-xs font-bold">
-              <option value="">-- Pilih Kelas --</option>
-              <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.className }}</option>
+            <label class="text-[10px] font-black uppercase tracking-widest text-base-content/60 block mb-1">Pilih Kelas</label>
+            <select v-model="form.classId" class="select select-sm w-full rounded-xl bg-base-200 border-base-300 text-xs font-bold text-base-content">
+              <option value="" class="bg-base-100 text-base-content font-bold">-- Pilih Kelas --</option>
+              <option v-for="c in classes" :key="c.id" :value="c.id" class="bg-base-100 text-base-content font-bold">{{ c.className }}</option>
             </select>
           </div>
 
