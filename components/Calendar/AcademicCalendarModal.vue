@@ -271,11 +271,14 @@ const handleDelete = async (id: string) => {
           </div>
 
           <div class="flex items-center gap-2">
+            <NuxtLink to="/kalender" @click="showModal = false" class="btn btn-xs btn-ghost text-orange-500 hover:bg-orange-500/10 rounded-xl font-bold gap-1 text-[10px]">
+              Halaman Lengkap ↗
+            </NuxtLink>
             <button v-if="canManage"
                     @click="openCreateModal"
                     class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl font-black gap-1 shadow-sm">
               <Icon name="mingcute:add-fill" size="14" />
-              + Agenda
+              Agenda Baru
             </button>
             <button @click="showModal = false" class="btn btn-ghost btn-xs btn-circle rounded-xl">
               <Icon name="mingcute:close-line" size="18" />

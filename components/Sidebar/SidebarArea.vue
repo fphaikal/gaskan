@@ -161,6 +161,12 @@ const menuGroups = [
     name: 'PRESENSI & KEHADIRAN',
     menuItems: [
       {
+        icon: 'mingcute:calendar-month-fill',
+        role: ['all'],
+        label: 'Kalender Akademik',
+        route: '/kalender',
+      },
+      {
         icon: 'mingcute:clipboard-fill',
         role: ['admin', 'developer', 'guru'],
         label: 'Absensi',
