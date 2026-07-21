@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { CustomSelect } from '@/components/shared/CustomSelect';
 import {
   Dialog,
   DialogContent,
@@ -349,82 +350,81 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 1: ADD / EDIT SEMESTER ═══ */}
       <Dialog open={showSemesterModal} onOpenChange={setShowSemesterModal}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black">
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">
               {editMode ? 'Edit Semester' : 'Tambah Semester Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs sm:text-sm">
-            <div className="space-y-1.5">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+            <div className="space-y-2">
               <Label htmlFor="semName">Nama Semester</Label>
               <Input
                 id="semName"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Contoh: Ganjil 2025/2026"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="aySelect">Tahun Ajaran</Label>
-              <select
-                id="aySelect"
+            <div className="space-y-2">
+              <Label>Tahun Ajaran</Label>
+              <CustomSelect
+                options={academicYears.map((ay) => ({
+                  value: ay.id,
+                  label: `${ay.year} ${ay.isActive ? '(Aktif)' : ''}`,
+                }))}
                 value={form.academicYearId}
-                onChange={(e) => setForm({ ...form, academicYearId: e.target.value })}
-                className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-              >
-                <option value="">Pilih Tahun Ajaran</option>
-                {academicYears.map((ay) => (
-                  <option key={ay.id} value={ay.id}>
-                    {ay.year} {ay.isActive ? '(Aktif)' : ''}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setForm({ ...form, academicYearId: val })}
+                placeholder="Pilih Tahun Ajaran"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="startDate">Tanggal Mulai</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={form.startDate}
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="endDate">Tanggal Berakhir</Label>
                 <Input
                   id="endDate"
                   type="date"
                   value={form.endDate}
                   onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2.5 pt-2">
               <input
                 type="checkbox"
                 id="isActiveCheck"
                 checked={form.isActive}
                 onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
               />
-              <Label htmlFor="isActiveCheck" className="cursor-pointer">
+              <Label htmlFor="isActiveCheck" className="cursor-pointer mb-0">
                 Set sebagai semester aktif sekarang
               </Label>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowSemesterModal(false)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowSemesterModal(false)}>
               Batal
             </Button>
             <Button
-              className="rounded-xl font-bold bg-primary text-primary-foreground"
+              className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20"
               disabled={isSaving}
               onClick={saveSemester}
             >
@@ -436,26 +436,27 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 2: ADD ACADEMIC YEAR ═══ */}
       <Dialog open={showAYModal} onOpenChange={setShowAYModal}>
-        <DialogContent className="rounded-3xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black">Tambah Tahun Ajaran</DialogTitle>
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">Tambah Tahun Ajaran</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1">
-            <div className="space-y-1.5">
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
               <Label htmlFor="ayInput">Tahun Ajaran (Tahun/Tahun)</Label>
               <Input
                 id="ayInput"
                 value={ayYear}
                 onChange={(e) => setAyYear(e.target.value)}
                 placeholder="Contoh: 2025/2026"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowAYModal(false)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowAYModal(false)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold" disabled={isSaving} onClick={saveAcademicYear}>
+            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground" disabled={isSaving} onClick={saveAcademicYear}>
               {isSaving ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
@@ -464,39 +465,35 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 3: PROMOTION PROCESS ═══ */}
       <Dialog open={showPromotionModal} onOpenChange={setShowPromotionModal}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
             <DialogTitle className="text-xl font-black text-amber-500">
               Proses Kenaikan Kelas & Kelulusan
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1 text-xs sm:text-sm">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
             <p className="text-muted-foreground font-semibold leading-relaxed">
               Proses ini akan memindahkan siswa tingkat X ke XI, XI ke XII, dan meluluskan siswa tingkat XII ke semester tujuan yang dipilih.
             </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="targetSemSelect">Semester Tujuan Baru</Label>
-              <select
-                id="targetSemSelect"
+            <div className="space-y-2">
+              <Label>Semester Tujuan Baru</Label>
+              <CustomSelect
+                options={semesters.map((s) => ({
+                  value: s.id,
+                  label: `${s.name} (${s.academicYear?.year || '—'})`,
+                }))}
                 value={targetSemesterId}
-                onChange={(e) => setTargetSemesterId(e.target.value)}
-                className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-              >
-                <option value="">Pilih Semester Tujuan</option>
-                {semesters.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.academicYear?.year || '—'})
-                  </option>
-                ))}
-              </select>
+                onChange={setTargetSemesterId}
+                placeholder="Pilih Semester Tujuan"
+              />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowPromotionModal(false)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowPromotionModal(false)}>
               Batal
             </Button>
             <Button
-              className="rounded-xl font-bold bg-amber-500 text-white hover:bg-amber-600"
+              className="rounded-2xl flex-1 font-bold bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20"
               disabled={isSaving || !targetSemesterId}
               onClick={runPromotion}
             >
@@ -508,18 +505,23 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 4: CONFIRM DELETE ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="rounded-3xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-rose-500">Hapus Semester?</DialogTitle>
+        <DialogContent className="sm:max-w-md p-6 text-center">
+          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+          </div>
+          <DialogHeader className="p-0 border-none bg-transparent">
+            <DialogTitle className="text-2xl font-black text-foreground text-center">
+              Hapus Semester?
+            </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
             Data semester ini akan dihapus. Perubahan ini dapat mempengaruhi histori absensi siswa.
           </p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setDeleteId(null)}>
+          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteId(null)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-xl font-bold" disabled={isSaving} onClick={handleDeleteSemester}>
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteSemester}>
               {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
             </Button>
           </DialogFooter>

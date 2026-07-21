@@ -6,9 +6,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  UserCheck,
-  Shield,
-  Loader2,
   Mail,
   User as UserIcon,
 } from "lucide-react";
@@ -20,21 +17,14 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { ReusableDataTable } from "@/components/shared/ReusableDataTable";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { ExportButtons } from "@/components/shared/ExportButtons";
+import { CustomSelect } from "@/components/shared/CustomSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -238,19 +228,19 @@ export default function AdminPage() {
     switch (roleName?.toLowerCase()) {
       case "superadmin":
         return (
-          <Badge className="bg-purple-500/15 text-purple-600 hover:bg-purple-500/25 border-purple-200 dark:border-purple-800">
+          <Badge className="bg-purple-500/15 text-purple-600 border-purple-500/30 text-xs font-bold">
             Super Admin
           </Badge>
         );
       case "admin":
         return (
-          <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/25 border-blue-200 dark:border-blue-800">
+          <Badge className="bg-blue-500/15 text-blue-600 border-blue-500/30 text-xs font-bold">
             Admin
           </Badge>
         );
       case "operator":
         return (
-          <Badge className="bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 border-amber-200 dark:border-amber-800">
+          <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-xs font-bold">
             Operator
           </Badge>
         );
@@ -266,7 +256,7 @@ export default function AdminPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <UserIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="font-semibold text-foreground">
+          <span className="font-bold text-foreground">
             {row.original.username}
           </span>
         </div>
@@ -298,7 +288,7 @@ export default function AdminPage() {
       accessorKey: "created_at",
       header: "Tanggal Dibuat",
       cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground font-mono">
           {row.original.created_at || "-"}
         </span>
       ),
@@ -310,19 +300,21 @@ export default function AdminPage() {
         <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-sky-500"
             onClick={() => handleOpenEdit(row.original)}
             title="Edit Admin"
           >
-            <Pencil className="h-4 w-4 text-blue-500" />
+            <Pencil className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-rose-500"
             onClick={() => handleOpenDelete(row.original)}
             title="Hapus Admin"
           >
-            <Trash2 className="h-4 w-4 text-rose-500" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -366,96 +358,102 @@ export default function AdminPage() {
 
       {/* Add / Edit Admin Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">
               {editingAdmin ? "Edit Akun Admin" : "Tambah Admin Baru"}
             </DialogTitle>
-            <DialogDescription>
-              Isi data akun administrator di bawah ini.
-            </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="contoh: admin_kesiswaan"
-                required
-              />
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="contoh: admin_kesiswaan"
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="nama">Nama Lengkap</Label>
+                <Input
+                  id="nama"
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                  placeholder="Masukkan nama lengkap"
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@gaskan.sch.id"
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Role / Peran</Label>
+                <CustomSelect
+                  options={[
+                    { value: "superadmin", label: "Super Admin" },
+                    { value: "admin", label: "Admin" },
+                    { value: "operator", label: "Operator" },
+                  ]}
+                  value={role}
+                  onChange={setRole}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  {editingAdmin
+                    ? "Password Baru (Opsional)"
+                    : "Password Akun"}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={
+                    editingAdmin
+                      ? "Kosongkan jika tidak ingin mengubah"
+                      : "Masukkan password"
+                  }
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
+                  required={!editingAdmin}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="nama">Nama Lengkap</Label>
-              <Input
-                id="nama"
-                value={nama}
-                onChange={(e) => setNama(e.target.value)}
-                placeholder="Masukkan nama lengkap"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@gaskan.sch.id"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="role">Role / Peran</Label>
-              <Select value={role} onValueChange={(val) => setRole(val || "admin")}>
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Pilih Role" />
-                </SelectTrigger>
-                <SelectContent side="bottom">
-                  <SelectItem value="superadmin">Super Admin</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="operator">Operator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">
-                {editingAdmin
-                  ? "Password Baru (Opsional)"
-                  : "Password Akun"}
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={
-                  editingAdmin
-                    ? "Kosongkan jika tidak ingin mengubah"
-                    : "Masukkan password"
-                }
-                required={!editingAdmin}
-              />
-            </div>
-
-            <DialogFooter className="pt-4">
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
+                className="rounded-2xl flex-1 font-bold"
                 onClick={() => setIsDialogOpen(false)}
                 disabled={isSubmitting}
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingAdmin ? "Simpan Perubahan" : "Tambah Admin"}
+              <Button
+                type="submit"
+                className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Memproses..." : editingAdmin ? "Simpan Perubahan" : "Tambah Admin"}
               </Button>
             </DialogFooter>
           </form>

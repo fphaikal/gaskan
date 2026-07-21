@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { CustomSelect } from '@/components/shared/CustomSelect';
 import {
   Dialog,
   DialogContent,
@@ -218,35 +219,35 @@ export default function KelasPage() {
             placeholder="Cari nama kelas..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-background border-border rounded-xl text-xs font-semibold"
+            className="pl-9 h-11 bg-background border-border rounded-2xl text-xs font-bold"
           />
         </div>
 
         {/* Grade Filter */}
-        <select
-          value={selectedGrade}
-          onChange={(e) => setSelectedGrade(e.target.value)}
-          className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
-        >
-          <option value="">Semua Tingkat</option>
-          <option value="10">Kelas 10</option>
-          <option value="11">Kelas 11</option>
-          <option value="12">Kelas 12</option>
-        </select>
+        <div className="w-full sm:w-44">
+          <CustomSelect
+            options={[
+              { value: '', label: 'Semua Tingkat' },
+              { value: '10', label: 'Kelas 10 (X)' },
+              { value: '11', label: 'Kelas 11 (XI)' },
+              { value: '12', label: 'Kelas 12 (XII)' },
+            ]}
+            value={selectedGrade}
+            onChange={setSelectedGrade}
+          />
+        </div>
 
         {/* Major Filter */}
-        <select
-          value={selectedMajor}
-          onChange={(e) => setSelectedMajor(e.target.value)}
-          className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
-        >
-          <option value="">Semua Jurusan</option>
-          {majors.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.alias || m.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-full sm:w-48">
+          <CustomSelect
+            options={[
+              { value: '', label: 'Semua Jurusan' },
+              ...majors.map((m) => ({ value: m.id, label: m.alias || m.name })),
+            ]}
+            value={selectedMajor}
+            onChange={setSelectedMajor}
+          />
+        </div>
       </div>
 
       {/* Bento Grid of Classes matching Nuxt */}
@@ -330,55 +331,48 @@ export default function KelasPage() {
 
       {/* ═══ CREATE / EDIT MODAL ═══ */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black">
+        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">
               {editMode ? 'Edit Data Kelas' : 'Tambah Kelas Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs sm:text-sm">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
             {/* Jurusan Dropdown */}
-            <div className="space-y-1.5">
-              <Label htmlFor="majorSelect">Jurusan</Label>
-              <select
-                id="majorSelect"
+            <div className="space-y-2">
+              <Label>Jurusan</Label>
+              <CustomSelect
+                options={majors.map((m) => ({ value: m.id, label: `${m.name} (${m.alias})` }))}
                 value={form.majorId}
-                onChange={(e) => setForm({ ...form, majorId: e.target.value })}
-                className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-              >
-                <option value="">Pilih Jurusan</option>
-                {majors.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.alias})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setForm({ ...form, majorId: val })}
+                placeholder="Pilih Jurusan"
+              />
             </div>
 
             {/* Grade Level */}
-            <div className="space-y-1.5">
-              <Label htmlFor="gradeSelect">Tingkat Kelas</Label>
-              <select
-                id="gradeSelect"
-                value={form.grade}
-                onChange={(e) => setForm({ ...form, grade: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-              >
-                <option value={10}>Kelas 10 (X)</option>
-                <option value={11}>Kelas 11 (XI)</option>
-                <option value={12}>Kelas 12 (XII)</option>
-              </select>
+            <div className="space-y-2">
+              <Label>Tingkat Kelas</Label>
+              <CustomSelect
+                options={[
+                  { value: '10', label: 'Kelas 10 (X)' },
+                  { value: '11', label: 'Kelas 11 (XI)' },
+                  { value: '12', label: 'Kelas 12 (XII)' },
+                ]}
+                value={String(form.grade)}
+                onChange={(val) => setForm({ ...form, grade: parseInt(val) })}
+              />
             </div>
 
             {/* Rombel / Section */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="sectionInput">Nomor Rombel / Section</Label>
               <Input
                 id="sectionInput"
                 value={form.section}
                 onChange={(e) => setForm({ ...form, section: e.target.value })}
                 placeholder="Contoh: 1 (menjadi X AK 1)"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
 
@@ -394,12 +388,12 @@ export default function KelasPage() {
             )}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowModal(false)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowModal(false)}>
               Batal
             </Button>
             <Button
-              className="rounded-xl font-bold bg-primary text-primary-foreground"
+              className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20"
               disabled={isSaving || isDuplicate}
               onClick={saveClass}
             >
@@ -411,18 +405,23 @@ export default function KelasPage() {
 
       {/* ═══ CONFIRM DELETE MODAL ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="rounded-3xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-rose-500">Hapus Kelas?</DialogTitle>
+        <DialogContent className="sm:max-w-md p-6 text-center">
+          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+          </div>
+          <DialogHeader className="p-0 border-none bg-transparent">
+            <DialogTitle className="text-2xl font-black text-foreground text-center">
+              Hapus Kelas?
+            </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
             Data kelas ini akan dihapus dari sistem. Pastikan siswa di dalamnya telah dialokasikan ulang.
           </p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setDeleteId(null)}>
+          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteId(null)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-xl font-bold" disabled={isSaving} onClick={handleDeleteClass}>
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteClass}>
               {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
             </Button>
           </DialogFooter>
