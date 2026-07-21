@@ -181,6 +181,94 @@ const closeAndRefresh = async (modalId, successMsg = 'Berhasil diperbarui') => {
   $toast.success(successMsg);
 };
 
+// ── Student Field Permissions State ──────────────────────────
+const fieldPermissionsMap = ref({});
+
+const fetchFieldPermissions = async () => {
+  try {
+    const res = await $fetch('/api/profile/field-permissions');
+    if (res?.success && res.data) {
+      const map = {};
+      res.data.forEach(p => {
+        map[p.fieldName] = p.mode;
+      });
+      fieldPermissionsMap.value = map;
+    }
+  } catch (err) {
+    console.error('Failed to fetch profile field permissions:', err);
+  }
+};
+
+onMounted(() => {
+  fetchFieldPermissions();
+});
+
+const userRole = computed(() => (user.value?.role || 'SISWA').toUpperCase());
+
+const getFieldPermissionMode = (fieldName) => {
+  return fieldPermissionsMap.value[fieldName] || 'FREELY_EDITABLE';
+};
+
+const isValuePresent = (val) => {
+  if (val === null || val === undefined) return false;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    return trimmed !== '' && trimmed !== '-';
+  }
+  if (val instanceof Date) return true;
+  return Boolean(val);
+};
+
+const isFieldDisabled = (fieldName, currentValue) => {
+  if (userRole.value !== 'SISWA') return false;
+  const mode = getFieldPermissionMode(fieldName);
+  if (mode === 'LOCKED') return true;
+  if (mode === 'FILL_ONCE') {
+    return isValuePresent(currentValue);
+  }
+  return false;
+};
+
+const getFieldBadge = (fieldName, currentValue) => {
+  if (userRole.value !== 'SISWA') return null;
+  const mode = getFieldPermissionMode(fieldName);
+  if (mode === 'LOCKED') {
+    return { label: 'Terkunci', color: 'badge-error text-white font-bold', icon: 'mingcute:lock-fill' };
+  }
+  if (mode === 'FILL_ONCE') {
+    if (isValuePresent(currentValue)) {
+      return { label: 'Sekali Isi (Terisi)', color: 'badge-ghost bg-base-300 text-base-content/70 font-bold', icon: 'mingcute:lock-fill' };
+    } else {
+      return { label: '⚠️ Sekali Isi (Kosong)', color: 'badge-warning text-slate-900 font-extrabold animate-pulse', icon: 'mingcute:alert-fill' };
+    }
+  }
+  return { label: 'Bebas Diedit', color: 'badge-success text-white font-bold', icon: 'mingcute:check-fill' };
+};
+
+const hasFillOnceWarningInPersonal = computed(() => {
+  if (userRole.value !== 'SISWA') return false;
+  const fields = [
+    { name: 'birthPlace', val: user.value?.TempatLahir },
+    { name: 'birthDate', val: user.value?.TanggalLahir },
+    { name: 'gender', val: user.value?.gender },
+    { name: 'religion', val: user.value?.religion },
+    { name: 'email', val: user.value?.Email },
+    { name: 'address', val: user.value?.Alamat },
+  ];
+  return fields.some(f => getFieldPermissionMode(f.name) === 'FILL_ONCE' && !isValuePresent(f.val));
+});
+
+const hasFillOnceWarningInPhone = computed(() => {
+  if (userRole.value !== 'SISWA') return false;
+  return getFieldPermissionMode('phone') === 'FILL_ONCE' && !isValuePresent(user.value?.Nomor);
+});
+
+const hasFillOnceWarningInPlat = computed(() => {
+  if (userRole.value !== 'SISWA') return false;
+  return getFieldPermissionMode('vehiclePlate') === 'FILL_ONCE' && !isValuePresent(user.value?.Plat_Nomor);
+});
+
+
 const handleError = (error) => {
   err.value = true;
   isSaving.value = false;
@@ -735,7 +823,20 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
   <!-- Modal: Edit Informasi Pribadi -->
   <dialog id="editPersonal" class="modal">
     <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-3xl p-6 sm:p-8 max-w-lg overflow-visible">
-      <h3 class="font-bold text-xl text-base-content mb-6">Edit Informasi Pribadi</h3>
+      <h3 class="font-bold text-xl text-base-content mb-4">Edit Informasi Pribadi</h3>
+
+      <!-- Attention Warning Banner for Students -->
+      <div v-if="userRole === 'SISWA'" class="space-y-2 mb-4">
+        <div v-if="hasFillOnceWarningInPersonal" role="alert" class="alert alert-warning rounded-2xl border border-amber-500/30 p-3 shadow-sm text-xs font-medium">
+          <Icon name="mingcute:warning-fill" size="22" class="text-amber-600 shrink-0" />
+          <div>
+            <p class="font-extrabold text-amber-900 dark:text-amber-300">⚠️ PERHATIAN PENTING (HANYA 1 KALI ISI!)</p>
+            <p class="text-[11px] text-amber-800 dark:text-amber-200 mt-0.5">
+              Field bertanda <strong>"Sekali Isi"</strong> hanya dapat diisi <strong>SEKALI</strong>. Mohon periksa kembali dan isi dengan <strong>sungguh-sungguh &amp; benar</strong> karena begitu Anda klik Simpan, data tidak dapat diubah lagi!
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div v-if="err" role="alert" class="alert alert-error rounded-xl mb-4 shadow-sm">
         <Icon name="mingcute:warning-fill" size="20" class="shrink-0" />
@@ -747,18 +848,38 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
         <!-- Tempat & Tanggal Lahir -->
         <div class="flex flex-col sm:flex-row gap-3">
           <div class="flex flex-col gap-1.5 flex-1">
-            <label class="text-sm font-semibold text-base-content/70">Tempat Lahir</label>
-            <input v-model="editForm.birthPlace" type="text" placeholder="Jakarta"
-              class="input input-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40" />
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-base-content/70">Tempat Lahir</label>
+              <span v-if="getFieldBadge('birthPlace', user?.TempatLahir)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('birthPlace', user?.TempatLahir).color]">
+                {{ getFieldBadge('birthPlace', user?.TempatLahir).label }}
+              </span>
+            </div>
+            <input 
+              v-model="editForm.birthPlace" 
+              type="text" 
+              placeholder="Jakarta"
+              :disabled="isFieldDisabled('birthPlace', user?.TempatLahir)"
+              class="input input-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:bg-base-200/60 disabled:text-base-content/60 disabled:cursor-not-allowed" 
+            />
           </div>
+
           <div class="flex flex-col gap-1.5 flex-1 relative">
-            <label class="text-sm font-semibold text-base-content/70">Tanggal Lahir</label>
-            <button @click="showDatePicker = !showDatePicker"
-              class="input input-bordered w-full bg-base-100 rounded-xl flex items-center justify-start text-left">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-base-content/70">Tanggal Lahir</label>
+              <span v-if="getFieldBadge('birthDate', user?.TanggalLahir)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('birthDate', user?.TanggalLahir).color]">
+                {{ getFieldBadge('birthDate', user?.TanggalLahir).label }}
+              </span>
+            </div>
+            <button 
+              type="button"
+              @click="!isFieldDisabled('birthDate', user?.TanggalLahir) && (showDatePicker = !showDatePicker)"
+              :disabled="isFieldDisabled('birthDate', user?.TanggalLahir)"
+              class="input input-bordered w-full bg-base-100 rounded-xl flex items-center justify-start text-left disabled:bg-base-200/60 disabled:text-base-content/60 disabled:cursor-not-allowed"
+            >
               <span v-if="editForm.birthDate" class="text-base-content">{{ format(editForm.birthDate, 'dd MMMM yyyy') }}</span>
               <span v-else class="text-base-content/40">Pilih tanggal</span>
             </button>
-            <div v-if="showDatePicker" class="absolute top-full left-0 z-[100] mt-2 shadow-2xl rounded-2xl border border-base-200 bg-base-100">
+            <div v-if="showDatePicker && !isFieldDisabled('birthDate', user?.TanggalLahir)" class="absolute top-full left-0 z-[100] mt-2 shadow-2xl rounded-2xl border border-base-200 bg-base-100">
               <ClientOnly>
                 <DatePicker v-model="editForm.birthDate" mode="date" @dayclick="showDatePicker = false" />
               </ClientOnly>
@@ -768,16 +889,31 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
 
         <!-- Gender -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-base-content/70">Jenis Kelamin</label>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-semibold text-base-content/70">Jenis Kelamin</label>
+            <span v-if="getFieldBadge('gender', user?.gender)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('gender', user?.gender).color]">
+              {{ getFieldBadge('gender', user?.gender).label }}
+            </span>
+          </div>
           <div class="flex gap-3">
-            <label class="flex items-center gap-2 cursor-pointer flex-1 border border-base-300 rounded-xl p-3 hover:border-primary/50 transition-colors"
-              :class="editForm.gender === 'L' ? 'border-primary bg-primary/5' : ''">
-              <input type="radio" v-model="editForm.gender" value="L" class="radio radio-primary radio-sm" />
+            <label 
+              class="flex items-center gap-2 cursor-pointer flex-1 border border-base-300 rounded-xl p-3 hover:border-primary/50 transition-colors"
+              :class="[
+                editForm.gender === 'L' ? 'border-primary bg-primary/5' : '',
+                isFieldDisabled('gender', user?.gender) ? 'opacity-50 pointer-events-none bg-base-200/40' : ''
+              ]"
+            >
+              <input type="radio" v-model="editForm.gender" value="L" :disabled="isFieldDisabled('gender', user?.gender)" class="radio radio-primary radio-sm" />
               <span class="font-medium">Laki-Laki</span>
             </label>
-            <label class="flex items-center gap-2 cursor-pointer flex-1 border border-base-300 rounded-xl p-3 hover:border-primary/50 transition-colors"
-              :class="editForm.gender === 'P' ? 'border-primary bg-primary/5' : ''">
-              <input type="radio" v-model="editForm.gender" value="P" class="radio radio-primary radio-sm" />
+            <label 
+              class="flex items-center gap-2 cursor-pointer flex-1 border border-base-300 rounded-xl p-3 hover:border-primary/50 transition-colors"
+              :class="[
+                editForm.gender === 'P' ? 'border-primary bg-primary/5' : '',
+                isFieldDisabled('gender', user?.gender) ? 'opacity-50 pointer-events-none bg-base-200/40' : ''
+              ]"
+            >
+              <input type="radio" v-model="editForm.gender" value="P" :disabled="isFieldDisabled('gender', user?.gender)" class="radio radio-primary radio-sm" />
               <span class="font-medium">Perempuan</span>
             </label>
           </div>
@@ -785,8 +921,17 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
 
         <!-- Agama -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-base-content/70">Agama</label>
-          <select v-model="editForm.religion" class="select select-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-semibold text-base-content/70">Agama</label>
+            <span v-if="getFieldBadge('religion', user?.religion)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('religion', user?.religion).color]">
+              {{ getFieldBadge('religion', user?.religion).label }}
+            </span>
+          </div>
+          <select 
+            v-model="editForm.religion" 
+            :disabled="isFieldDisabled('religion', user?.religion)"
+            class="select select-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:bg-base-200/60 disabled:text-base-content/60 disabled:cursor-not-allowed"
+          >
             <option value="">-- Pilih Agama --</option>
             <option v-for="opt in religionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
@@ -794,16 +939,36 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
 
         <!-- Email -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-base-content/70">Email</label>
-          <input v-model="editForm.email" type="email" placeholder="nama@email.com"
-            class="input input-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40" />
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-semibold text-base-content/70">Email</label>
+            <span v-if="getFieldBadge('email', user?.Email)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('email', user?.Email).color]">
+              {{ getFieldBadge('email', user?.Email).label }}
+            </span>
+          </div>
+          <input 
+            v-model="editForm.email" 
+            type="email" 
+            placeholder="nama@email.com"
+            :disabled="isFieldDisabled('email', user?.Email)"
+            class="input input-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:bg-base-200/60 disabled:text-base-content/60 disabled:cursor-not-allowed" 
+          />
         </div>
 
         <!-- Alamat -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-base-content/70">Alamat</label>
-          <textarea v-model="editForm.address" rows="3" placeholder="Jl. Contoh No. 1, Kota"
-            class="textarea textarea-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"></textarea>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-semibold text-base-content/70">Alamat</label>
+            <span v-if="getFieldBadge('address', user?.Alamat)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('address', user?.Alamat).color]">
+              {{ getFieldBadge('address', user?.Alamat).label }}
+            </span>
+          </div>
+          <textarea 
+            v-model="editForm.address" 
+            rows="3" 
+            placeholder="Jl. Contoh No. 1, Kota"
+            :disabled="isFieldDisabled('address', user?.Alamat)"
+            class="textarea textarea-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none disabled:bg-base-200/60 disabled:text-base-content/60 disabled:cursor-not-allowed"
+          ></textarea>
         </div>
 
       </div>
@@ -822,11 +987,23 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
     <form method="dialog" class="modal-backdrop"><button @click="showDatePicker = false; err = false">close</button></form>
   </dialog>
 
+
   <!-- Modal: Edit Nomor -->
   <dialog id="editNomor" class="modal">
     <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-3xl p-6 sm:p-8">
       <h3 class="font-bold text-xl text-base-content mb-2">Ganti Nomor Kontak</h3>
-      <p class="text-sm text-base-content/60 mb-6">Nomor ini digunakan untuk verifikasi dan komunikasi penting.</p>
+      <p class="text-sm text-base-content/60 mb-4">Nomor ini digunakan untuk verifikasi dan komunikasi penting.</p>
+
+      <!-- Attention Warning Banner for Students -->
+      <div v-if="userRole === 'SISWA' && hasFillOnceWarningInPhone" role="alert" class="alert alert-warning rounded-2xl border border-amber-500/30 p-3 shadow-sm text-xs font-medium mb-4">
+        <Icon name="mingcute:warning-fill" size="22" class="text-amber-600 shrink-0" />
+        <div>
+          <p class="font-extrabold text-amber-900 dark:text-amber-300">⚠️ PERHATIAN PENTING (HANYA 1 KALI ISI!)</p>
+          <p class="text-[11px] text-amber-800 dark:text-amber-200 mt-0.5">
+            Field Nomor Telepon hanya dapat diisi <strong>SEKALI</strong>. Mohon periksa kembali dan pastikan nomor aktif &amp; benar karena setelah disimpan tidak dapat diubah lagi!
+          </p>
+        </div>
+      </div>
 
       <div v-if="err" role="alert" class="alert alert-error rounded-xl mb-4 shadow-sm">
         <Icon name="mingcute:warning-fill" size="20" class="shrink-0" />
@@ -834,12 +1011,21 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-semibold text-base-content/70">WhatsApp / Telepon</label>
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-semibold text-base-content/70">WhatsApp / Telepon</label>
+          <span v-if="getFieldBadge('phone', user?.Nomor)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('phone', user?.Nomor).color]">
+            {{ getFieldBadge('phone', user?.Nomor).label }}
+          </span>
+        </div>
         <div class="relative">
           <span class="absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-base-content/50">+62</span>
-          <input type="tel" v-model="editForm.phone"
-            class="input input-bordered w-full bg-base-100 rounded-xl pl-12 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            placeholder="81234567890" />
+          <input 
+            type="tel" 
+            v-model="editForm.phone"
+            :disabled="isFieldDisabled('phone', user?.Nomor)"
+            class="input input-bordered w-full bg-base-100 rounded-xl pl-12 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:bg-base-200/60 disabled:text-base-content/60 disabled:cursor-not-allowed"
+            placeholder="81234567890" 
+          />
         </div>
         <p class="text-xs text-base-content/50 mt-1 ml-1">Jangan sertakan angka 0 di awal. Contoh: 81234...</p>
       </div>
@@ -847,7 +1033,7 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
       <div class="modal-action mt-8">
         <form method="dialog" class="flex gap-3 w-full">
           <button class="btn btn-ghost rounded-xl flex-1" @click="err = false">Batal</button>
-          <button type="button" @click="editNomor" :disabled="isSaving" class="btn btn-primary rounded-xl flex-1 px-8">
+          <button type="button" @click="editNomor" :disabled="isSaving || isFieldDisabled('phone', user?.Nomor)" class="btn btn-primary rounded-xl flex-1 px-8">
             <Icon v-if="isSaving" name="mingcute:loading-3-line" class="animate-spin mr-1" />
             Simpan
           </button>
@@ -860,7 +1046,18 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
   <!-- Modal: Edit Plat Nomor -->
   <dialog id="editPlat" class="modal">
     <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-3xl p-6 sm:p-8">
-      <h3 class="font-bold text-xl text-base-content mb-6">Ganti Plat Nomor</h3>
+      <h3 class="font-bold text-xl text-base-content mb-4">Ganti Plat Nomor</h3>
+
+      <!-- Attention Warning Banner for Students -->
+      <div v-if="userRole === 'SISWA' && hasFillOnceWarningInPlat" role="alert" class="alert alert-warning rounded-2xl border border-amber-500/30 p-3 shadow-sm text-xs font-medium mb-4">
+        <Icon name="mingcute:warning-fill" size="22" class="text-amber-600 shrink-0" />
+        <div>
+          <p class="font-extrabold text-amber-900 dark:text-amber-300">⚠️ PERHATIAN PENTING (HANYA 1 KALI ISI!)</p>
+          <p class="text-[11px] text-amber-800 dark:text-amber-200 mt-0.5">
+            Plat Nomor Kendaraan hanya dapat diisi <strong>SEKALI</strong>. Mohon periksa kembali dan pastikan plat nomor kendaraan Anda sudah benar!
+          </p>
+        </div>
+      </div>
 
       <div v-if="err" role="alert" class="alert alert-error rounded-xl mb-4 shadow-sm">
         <Icon name="mingcute:warning-fill" size="20" class="shrink-0" />
@@ -868,16 +1065,25 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-semibold text-base-content/70">Plat Kendaraan</label>
-        <input type="text" v-model="editForm.vehiclePlate"
-          class="input input-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase font-mono tracking-widest"
-          placeholder="AB 1234 CD" />
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-semibold text-base-content/70">Plat Kendaraan</label>
+          <span v-if="getFieldBadge('vehiclePlate', user?.Plat_Nomor)" :class="['badge badge-xs text-[9px] px-2 py-1', getFieldBadge('vehiclePlate', user?.Plat_Nomor).color]">
+            {{ getFieldBadge('vehiclePlate', user?.Plat_Nomor).label }}
+          </span>
+        </div>
+        <input 
+          type="text" 
+          v-model="editForm.vehiclePlate"
+          :disabled="isFieldDisabled('vehiclePlate', user?.Plat_Nomor)"
+          class="input input-bordered w-full bg-base-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase font-mono tracking-widest disabled:bg-base-200/60 disabled:text-base-content/60 disabled:cursor-not-allowed"
+          placeholder="AB 1234 CD" 
+        />
       </div>
 
       <div class="modal-action mt-8">
         <form method="dialog" class="flex gap-3 w-full">
           <button class="btn btn-ghost rounded-xl flex-1" @click="err = false">Batal</button>
-          <button type="button" @click="editPlat" :disabled="isSaving" class="btn btn-primary rounded-xl flex-1 px-8">
+          <button type="button" @click="editPlat" :disabled="isSaving || isFieldDisabled('vehiclePlate', user?.Plat_Nomor)" class="btn btn-primary rounded-xl flex-1 px-8">
             <Icon v-if="isSaving" name="mingcute:loading-3-line" class="animate-spin mr-1" />
             Simpan
           </button>
@@ -886,6 +1092,7 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
     </div>
     <form method="dialog" class="modal-backdrop"><button @click="err = false">close</button></form>
   </dialog>
+
 
   <!-- Modal: Ganti Password -->
   <dialog id="changePass" class="modal">
