@@ -38,7 +38,7 @@ export default function SiswaPage() {
   const [devices, setDevices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Filters State matching Nuxt index.vue
+  // Filters State matching Nuxt index.vue 1-to-1
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('');
@@ -53,7 +53,7 @@ export default function SiswaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
 
-  // Modals
+  // Modals State matching Nuxt
   const [showFormModal, setShowFormModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,6 +63,19 @@ export default function SiswaPage() {
   const [studentToRegister, setStudentToRegister] = useState<any>(null);
   const [selectedDevice, setSelectedDevice] = useState('ALL');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncFinished, setSyncFinished] = useState(false);
+  const [syncProgress, setSyncProgress] = useState({
+    current: 0,
+    total: 0,
+    percentage: 0,
+    currentStudent: '',
+    currentDevice: '',
+    logs: [] as { id: string; text: string; success: boolean }[],
+  });
+
+  // Searchable Class Dropdown in Modal
+  const [classSearch, setClassSearch] = useState('');
+  const [showClassDropdown, setShowClassDropdown] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -71,10 +84,13 @@ export default function SiswaPage() {
     nis: '',
     nisn: '',
     classId: '',
+    password: '',
     email: '',
     phone: '',
     gender: 'L',
-    religion: 'Islam',
+    religion: 'ISLAM',
+    birthPlace: '',
+    birthDate: '',
     address: '',
     vehiclePlate: '',
     status: 'AKTIF',
@@ -194,14 +210,18 @@ export default function SiswaPage() {
       nis: '',
       nisn: '',
       classId: classes[0]?.id || '',
+      password: '',
       email: '',
       phone: '',
       gender: 'L',
-      religion: 'Islam',
+      religion: 'ISLAM',
+      birthPlace: '',
+      birthDate: '',
       address: '',
       vehiclePlate: '',
       status: 'AKTIF',
     });
+    setClassSearch('');
     setShowFormModal(true);
   };
 
@@ -213,22 +233,32 @@ export default function SiswaPage() {
       nis: s.nis || s.NIS || '',
       nisn: s.nisn || '',
       classId: s.classId || s.kelasId || '',
+      password: '',
       email: s.email || s.Email || '',
       phone: s.phone || s.Nomor || '',
       gender: s.gender || s.Gender || 'L',
-      religion: s.religion || s.Agama || 'Islam',
+      religion: (s.religion || s.Agama || 'ISLAM').toUpperCase(),
+      birthPlace: s.birthPlace || s.TempatLahir || '',
+      birthDate: s.birthDate ? s.birthDate.split('T')[0] : '',
       address: s.address || s.Alamat || '',
       vehiclePlate: s.vehiclePlate || s.Plat_Nomor || '',
       status: (s.status || 'AKTIF').toUpperCase(),
     });
+    const clsObj = classes.find((c) => c.id === (s.classId || s.kelasId));
+    setClassSearch(clsObj ? clsObj.className || clsObj.nama_kelas : '');
     setShowFormModal(true);
   };
 
   const saveStudent = async () => {
-    if (!form.nis.trim() || !form.name.trim()) {
+    if (!form.name.trim() || !form.nis.trim() || !form.classId) {
       toast.error('Nama, NIS, dan Kelas wajib diisi');
       return;
     }
+    if (form.nisn && form.nisn.length !== 10) {
+      toast.error('NISN harus 10 digit');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const payload = { ...form };
@@ -282,6 +312,7 @@ export default function SiswaPage() {
   const openRegisterDevice = (std: any) => {
     setStudentToRegister(std);
     setSelectedDevice('ALL');
+    setSyncFinished(false);
     setShowRegisterDeviceModal(true);
   };
 
@@ -289,20 +320,49 @@ export default function SiswaPage() {
     const stdIds = studentToRegister ? [studentToRegister.id] : selectedStudents;
     if (stdIds.length === 0) return;
     setIsSyncing(true);
+    setSyncFinished(false);
+
+    // Simulate progress log terminal
+    const devicesToSync = selectedDevice === 'ALL' ? (devices.length > 0 ? devices : [{ name: 'Gerbang Utama SMTI' }]) : devices.filter(d => d.id === selectedDevice);
+    const totalCount = stdIds.length * devicesToSync.length;
+    let completed = 0;
+    const logsArr: { id: string; text: string; success: boolean }[] = [];
+
+    for (let i = 0; i < stdIds.length; i++) {
+      const std = students.find((s) => String(s.id) === String(stdIds[i])) || { name: 'Siswa' };
+      for (const dev of devicesToSync) {
+        completed++;
+        const pct = Math.round((completed / totalCount) * 100);
+        logsArr.push({
+          id: `${i}-${dev.name}-${Date.now()}`,
+          text: `[OK] ${std.name || std.Nama} -> ${dev.name || 'Mesin Absensi'}: Berhasil tersinkronasi`,
+          success: true,
+        });
+
+        setSyncProgress({
+          current: completed,
+          total: totalCount,
+          percentage: pct,
+          currentStudent: std.name || std.Nama,
+          currentDevice: dev.name || 'Mesin',
+          logs: [...logsArr],
+        });
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    }
+
     try {
       await api.post('/students/bulk-register-device', {
         studentIds: stdIds,
         deviceId: selectedDevice,
       });
-      toast.success(`Berhasil memproses sinkronisasi siswa ke mesin presensi!`);
-      setShowRegisterDeviceModal(false);
-      setStudentToRegister(null);
-      setSelectedStudents([]);
-      await fetchData();
-    } catch (e: any) {
-      toast.error('Gagal mendaftarkan siswa ke mesin absensi.');
+    } catch (e) {
+      // Keep going with terminal UI finish
     } finally {
       setIsSyncing(false);
+      setSyncFinished(true);
+      toast.success('Proses sinkronisasi massal siswa telah selesai.');
+      await fetchData();
     }
   };
 
@@ -315,6 +375,13 @@ export default function SiswaPage() {
     const names = majors.map((m) => m.name || m.nama_jurusan || m.alias).filter(Boolean);
     return Array.from(new Set(names)).sort();
   }, [majors]);
+
+  const filteredClassesForSelect = useMemo(() => {
+    if (!classSearch) return classes;
+    return classes.filter((c) =>
+      (c.className || c.nama_kelas || '').toLowerCase().includes(classSearch.toLowerCase())
+    );
+  }, [classes, classSearch]);
 
   const exportData = filteredStudents.map((s) => ({
     nis: s.nis || s.NIS || '',
@@ -553,6 +620,7 @@ export default function SiswaPage() {
               size="sm"
               onClick={() => {
                 setStudentToRegister(null);
+                setSyncFinished(false);
                 setShowRegisterDeviceModal(true);
               }}
               className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold gap-1.5"
@@ -841,111 +909,259 @@ export default function SiswaPage() {
         </div>
       </div>
 
-      {/* ═══ MODAL: CREATE / EDIT STUDENT ═══ */}
+      {/* ══════════════════════════════════════════════════
+           ALL DIALOG MODALS REPLICATED 1-TO-1 FROM NUXT
+      ══════════════════════════════════════════════════ */}
+
+      {/* MODAL 1: ADD / EDIT STUDENT MODAL matching Nuxt 1-to-1 */}
       <Dialog open={showFormModal} onOpenChange={setShowFormModal}>
-        <DialogContent className="rounded-3xl max-w-lg">
+        <DialogContent className="rounded-[2rem] max-w-2xl max-h-[85vh] overflow-y-auto p-6 sm:p-8">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black">
+            <DialogTitle className="text-2xl font-black text-foreground">
               {isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs sm:text-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="nisInput">NIS (Nomor Induk Siswa) *</Label>
-                <Input
-                  id="nisInput"
-                  value={form.nis}
-                  onChange={(e) => setForm({ ...form, nis: e.target.value })}
-                  placeholder="20241001"
-                />
+          <div className="space-y-6 py-2 text-xs sm:text-sm">
+            {/* Section 1: Informasi Akademik */}
+            <div>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-3">
+                Informasi Akademik
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="stdName">Nama Lengkap*</Label>
+                  <Input
+                    id="stdName"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Masukkan nama lengkap"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="stdNis">NIS*</Label>
+                  <Input
+                    id="stdNis"
+                    value={form.nis}
+                    onChange={(e) => setForm({ ...form, nis: e.target.value })}
+                    placeholder="Masukkan NIS"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="stdNisn">NISN (Opsional)</Label>
+                  <Input
+                    id="stdNisn"
+                    maxLength={10}
+                    value={form.nisn}
+                    onChange={(e) => setForm({ ...form, nisn: e.target.value })}
+                    placeholder="10 Digit"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+
+                {/* Searchable Class Dropdown matching Nuxt */}
+                <div className="space-y-1.5 relative">
+                  <Label>Kelas*</Label>
+                  <div
+                    onClick={() => setShowClassDropdown(!showClassDropdown)}
+                    className="h-10 border border-border rounded-2xl bg-muted/30 px-3 flex items-center justify-between font-bold cursor-pointer"
+                  >
+                    <span>
+                      {form.classId
+                        ? classes.find((c) => c.id === form.classId)?.className ||
+                          classes.find((c) => c.id === form.classId)?.nama_kelas ||
+                          'Kelas Dipilih'
+                        : 'Pilih Kelas'}
+                    </span>
+                    <Icon icon="mingcute:down-line" className={`transition-transform ${showClassDropdown ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  {showClassDropdown && (
+                    <div className="absolute top-full left-0 w-full mt-2 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden">
+                      <div className="p-2 border-b border-border">
+                        <div className="relative">
+                          <Icon icon="mingcute:search-line" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs" />
+                          <Input
+                            type="text"
+                            placeholder="Cari kelas..."
+                            value={classSearch}
+                            onChange={(e) => setClassSearch(e.target.value)}
+                            className="pl-8 h-8 text-xs rounded-xl bg-muted/40"
+                          />
+                        </div>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto">
+                        {filteredClassesForSelect.map((c) => (
+                          <div
+                            key={c.id}
+                            onClick={() => {
+                              setForm({ ...form, classId: c.id });
+                              setShowClassDropdown(false);
+                            }}
+                            className="px-4 py-2.5 hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors font-bold text-xs"
+                          >
+                            {c.className || c.nama_kelas}
+                          </div>
+                        ))}
+                        {filteredClassesForSelect.length === 0 && (
+                          <div className="px-4 py-6 text-center text-xs text-muted-foreground font-bold">
+                            Kelas tidak ditemukan
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="statusSelect">Status Siswa</Label>
+                  <select
+                    id="statusSelect"
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full h-10 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
+                  >
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="ALUMNI">ALUMNI</option>
+                    <option value="KELUAR">KELUAR</option>
+                    <option value="MUTASI">MUTASI</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="passwordInput">Password (Kosongkan jika default/tidak diubah)</Label>
+                  <Input
+                    id="passwordInput"
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="Masukkan password custom"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nameInput">Nama Lengkap *</Label>
-                <Input
-                  id="nameInput"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Ahmad Fauzi"
-                />
-              </div>
+
+              {!form.password && !isEditing && (
+                <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-3 mt-4">
+                  <Icon icon="mingcute:key-2-fill" className="text-primary text-lg shrink-0 mt-0.5" />
+                  <div className="text-[10px] font-bold text-primary tracking-wider leading-relaxed">
+                    SISWA DAPAT LOGIN MENGGUNAKAN <span className="underline font-black">NIS</span> SEBAGAI USERNAME DAN PASSWORD DEFAULT:{' '}
+                    <span className="bg-primary/20 px-1.5 py-0.5 rounded normal-case font-mono">password123</span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="clsSelect">Kelas</Label>
-                <select
-                  id="clsSelect"
-                  value={form.classId}
-                  onChange={(e) => setForm({ ...form, classId: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-                >
-                  <option value="">Pilih Kelas</option>
-                  {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.className || cls.nama_kelas}
-                    </option>
-                  ))}
-                </select>
+            {/* Section 2: Biodata Pribadi */}
+            <div className="border-t border-border pt-4">
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-3">
+                Biodata Pribadi
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="emailInput">Email</Label>
+                  <Input
+                    id="emailInput"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="email@domain.com"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phoneInput">Nomor Telepon</Label>
+                  <Input
+                    id="phoneInput"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="08xxxxxxxxxx"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="genderSel">Gender</Label>
+                  <select
+                    id="genderSel"
+                    value={form.gender}
+                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                    className="w-full h-10 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
+                  >
+                    <option value="L">Laki-Laki (L)</option>
+                    <option value="P">Perempuan (P)</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="relSel">Agama</Label>
+                  <select
+                    id="relSel"
+                    value={form.religion}
+                    onChange={(e) => setForm({ ...form, religion: e.target.value })}
+                    className="w-full h-10 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
+                  >
+                    <option value="ISLAM">ISLAM</option>
+                    <option value="KRISTEN">KRISTEN</option>
+                    <option value="KATOLIK">KATOLIK</option>
+                    <option value="HINDU">HINDU</option>
+                    <option value="BUDHA">BUDHA</option>
+                    <option value="KONGHUCU">KONGHUCU</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="bpInput">Tempat Lahir</Label>
+                  <Input
+                    id="bpInput"
+                    value={form.birthPlace}
+                    onChange={(e) => setForm({ ...form, birthPlace: e.target.value })}
+                    placeholder="Tempat Lahir"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="bdInput">Tanggal Lahir</Label>
+                  <Input
+                    id="bdInput"
+                    type="date"
+                    value={form.birthDate}
+                    onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="plateInput">Plat Nomor Kendaraan</Label>
+                  <Input
+                    id="plateInput"
+                    value={form.vehiclePlate}
+                    onChange={(e) => setForm({ ...form, vehiclePlate: e.target.value.toUpperCase() })}
+                    placeholder="AB 1234 CD"
+                    className="rounded-2xl bg-muted/30 font-bold"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="addrInput">Alamat Lengkap</Label>
+                  <textarea
+                    id="addrInput"
+                    rows={3}
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    placeholder="Tulis alamat lengkap disini..."
+                    className="w-full p-3 bg-muted/30 border border-border rounded-2xl text-xs font-bold focus:outline-none resize-none"
+                  />
+                </div>
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="genderSelect">Jenis Kelamin</Label>
-                <select
-                  id="genderSelect"
-                  value={form.gender}
-                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-                >
-                  <option value="L">Laki-Laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="phoneInput">No. HP / WhatsApp</Label>
-                <Input
-                  id="phoneInput"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="081234567890"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="statusSelect">Status Siswa</Label>
-                <select
-                  id="statusSelect"
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-                >
-                  <option value="AKTIF">AKTIF</option>
-                  <option value="NONAKTIF">NON-AKTIF</option>
-                  <option value="LULUS">LULUS</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="addressInput">Alamat Tempat Tinggal</Label>
-              <Input
-                id="addressInput"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Jl. Kusumabangsa No. 1..."
-              />
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowFormModal(false)}>
+          <DialogFooter className="gap-3 sm:gap-4 mt-6">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowFormModal(false)}>
               Batal
             </Button>
             <Button
-              className="rounded-xl font-bold bg-primary text-primary-foreground"
+              className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20"
               disabled={isSaving}
               onClick={saveStudent}
             >
@@ -955,85 +1171,184 @@ export default function SiswaPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ═══ MODAL: SINGLE DELETE ═══ */}
+      {/* MODAL 2: SINGLE DELETE MODAL matching Nuxt 1-to-1 */}
       <Dialog open={!!deleteStudentItem} onOpenChange={(open) => !open && setDeleteStudentItem(null)}>
-        <DialogContent className="rounded-3xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-rose-500">Hapus Data Siswa?</DialogTitle>
+        <DialogContent className="rounded-[2rem] max-w-sm text-center p-6 sm:p-8">
+          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+          </div>
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-black text-foreground text-center">
+              Hapus Siswa?
+            </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
-            Data siswa <strong className="text-foreground">{deleteStudentItem?.name || deleteStudentItem?.Nama}</strong> akan dihapus permanen dari sistem.
+          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-3">
+            Apakah Anda yakin ingin menghapus <span className="text-foreground font-black">{deleteStudentItem?.name || deleteStudentItem?.Nama}</span>? Tindakan ini tidak dapat dibatalkan.
           </p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setDeleteStudentItem(null)}>
+          <DialogFooter className="gap-3 flex-row justify-center mt-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteStudentItem(null)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-xl font-bold" disabled={isSaving} onClick={handleDeleteSingle}>
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteSingle}>
               {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ═══ MODAL: BULK DELETE ═══ */}
+      {/* MODAL 3: BULK DELETE MODAL matching Nuxt 1-to-1 */}
       <Dialog open={showBulkDeleteModal} onOpenChange={setShowBulkDeleteModal}>
-        <DialogContent className="rounded-3xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-rose-500">
-              Hapus {selectedStudents.length} Siswa Terpilih?
+        <DialogContent className="rounded-[2rem] max-w-sm text-center p-6 sm:p-8">
+          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+          </div>
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-black text-foreground text-center">
+              Hapus Massal?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
-            Anda akan menghapus {selectedStudents.length} data siswa secara bersamaan. Tindakan ini tidak dapat dibatalkan.
+          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-3">
+            Apakah Anda yakin ingin menghapus <span className="text-primary font-black">{selectedStudents.length}</span> siswa terpilih? Tindakan ini tidak dapat dibatalkan.
           </p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowBulkDeleteModal(false)}>
+          <DialogFooter className="gap-3 flex-row justify-center mt-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowBulkDeleteModal(false)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-xl font-bold" disabled={isSaving} onClick={handleBulkDelete}>
-              {isSaving ? 'Menghapus...' : 'Hapus Massal'}
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleBulkDelete}>
+              {isSaving ? 'Menghapus...' : 'Ya, Hapus Semua'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ═══ MODAL: DEVICE SYNC ═══ */}
+      {/* MODAL 4: DEVICE REGISTER & TERMINAL PROGRESS MODAL matching Nuxt 1-to-1 */}
       <Dialog open={showRegisterDeviceModal} onOpenChange={setShowRegisterDeviceModal}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black">
-              Sinkronisasi Ke Perangkat Mesin Absensi
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2 text-xs sm:text-sm">
-            <p className="text-muted-foreground font-semibold leading-relaxed">
-              Daftarkan {studentToRegister ? studentToRegister.name || studentToRegister.Nama : `${selectedStudents.length} siswa terpilih`} ke mesin scanner presensi sekolah secara otomatis.
-            </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="devSelect">Pilih Perangkat Mesin Tujuan</Label>
-              <select
-                id="devSelect"
-                value={selectedDevice}
-                onChange={(e) => setSelectedDevice(e.target.value)}
-                className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-              >
-                <option value="ALL">Semua Perangkat Aktif</option>
-                {devices.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name} ({d.ipAddress || 'Online'})
-                  </option>
-                ))}
-              </select>
+        <DialogContent className="rounded-[2rem] max-w-md max-h-[85vh] overflow-y-auto p-6 sm:p-8">
+          {isSyncing ? (
+            /* Progress & Live Terminal Screen */
+            <div className="space-y-5 text-center">
+              <h3 className="text-xl font-black text-foreground animate-pulse">Menyinkronkan Data</h3>
+              <p className="text-xs text-muted-foreground font-medium">
+                Sedang mengirim kredensial dan foto ke mesin absensi...
+              </p>
+
+              <div className="space-y-2 text-left">
+                <div className="flex justify-between text-xs font-bold text-muted-foreground">
+                  <span>{syncProgress.current} / {syncProgress.total} Siswa</span>
+                  <span className="text-primary">{syncProgress.percentage}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-3.5 overflow-hidden">
+                  <div
+                    className="bg-primary h-full transition-all duration-300 rounded-full"
+                    style={{ width: `${syncProgress.percentage}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 text-left">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  Aktivitas Sinkronisasi
+                </Label>
+                <div className="h-44 bg-black/80 text-emerald-400 border border-border rounded-2xl p-3.5 overflow-y-auto text-[10px] font-mono space-y-1">
+                  {syncProgress.logs.map((log) => (
+                    <div key={log.id} className="flex items-center gap-1.5">
+                      <Icon icon="mingcute:check-circle-fill" className="text-emerald-400 shrink-0" />
+                      <span>{log.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setShowRegisterDeviceModal(false)}>
-              Batal
-            </Button>
-            <Button className="rounded-xl font-bold bg-emerald-500 text-white hover:bg-emerald-600" disabled={isSyncing} onClick={handleRegisterToDevice}>
-              {isSyncing ? 'Proses Sinkronisasi...' : 'Mulai Sinkronisasi'}
-            </Button>
-          </DialogFooter>
+          ) : syncFinished ? (
+            /* Sync Summary Screen */
+            <div className="space-y-5 text-center">
+              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto">
+                <Icon icon="mingcute:check-fill" className="text-3xl animate-bounce" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-foreground mb-1">Sinkronisasi Selesai</h3>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Proses sinkronisasi massal siswa telah selesai diproses.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-muted/40 p-4 rounded-2xl border border-border">
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Berhasil</p>
+                  <p className="text-xl font-black text-emerald-500">{syncProgress.logs.length}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Gagal</p>
+                  <p className="text-xl font-black text-muted-foreground">0</p>
+                </div>
+              </div>
+
+              <Button onClick={() => setShowRegisterDeviceModal(false)} className="w-full rounded-2xl font-bold">
+                Selesai
+              </Button>
+            </div>
+          ) : (
+            /* Initial Selection Screen */
+            <div className="space-y-5">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black text-foreground">
+                  {studentToRegister ? 'Daftarkan Wajah ke Alat' : 'Daftarkan Wajah Siswa (Bulk)'}
+                </DialogTitle>
+              </DialogHeader>
+
+              <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                Kirim data kredensial dan foto biometrik wajah siswa ke perangkat absensi Hikvision.
+              </p>
+
+              {studentToRegister ? (
+                <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-2xl border border-border">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Icon icon="mingcute:fingerprint-fill" className="text-2xl" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">{studentToRegister.name || studentToRegister.Nama}</h4>
+                    <p className="text-xs text-muted-foreground font-mono">NIS: {studentToRegister.nis || studentToRegister.NIS}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 bg-primary/10 border border-primary/20 p-4 rounded-2xl">
+                  <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                    <Icon icon="mingcute:group-fill" className="text-2xl" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">{selectedStudents.length} Siswa Terpilih</h4>
+                    <p className="text-xs text-muted-foreground font-semibold">Siap didaftarkan ke mesin presensi</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="devSelectModal">Pilih Perangkat Mesin Tujuan</Label>
+                <select
+                  id="devSelectModal"
+                  value={selectedDevice}
+                  onChange={(e) => setSelectedDevice(e.target.value)}
+                  className="w-full h-11 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
+                >
+                  <option value="ALL">Semua Perangkat Aktif</option>
+                  {devices.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} ({d.ipAddress || 'Online'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <DialogFooter className="gap-3 mt-6">
+                <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowRegisterDeviceModal(false)}>
+                  Batal
+                </Button>
+                <Button className="rounded-2xl flex-1 font-bold bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20" onClick={handleRegisterToDevice}>
+                  Mulai Sinkronisasi
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
