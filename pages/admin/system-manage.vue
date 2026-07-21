@@ -204,6 +204,27 @@ const purgeLocalFilesNow = async () => {
   }
 };
 
+const isSyncingHfRemote = ref(false);
+const syncHuggingFaceRemoteNow = async () => {
+  isSyncingHfRemote.value = true;
+  try {
+    const res = await $fetch('/api/system/backup/huggingface/sync', {
+      method: 'POST'
+    });
+    if (res?.success) {
+      $toast.success(res.message);
+      await fetchBackupStatus();
+    } else {
+      $toast.error(res?.message || 'Gagal menyingkronkan Hugging Face Hub');
+    }
+  } catch (err) {
+    $toast.error(err.data?.message || 'Gagal menyingkronkan data Hugging Face');
+  } finally {
+    isSyncingHfRemote.value = false;
+  }
+};
+
+
 const togglingPause = ref(false);
 const cancelling = ref(false);
 
@@ -1082,17 +1103,31 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
                 </div>
               </div>
 
-              <button 
-                @click="triggerBackupNow('HUGGINGFACE')" 
-                :disabled="startingBackupProvider === 'HUGGINGFACE' || backupProgress?.huggingface?.active" 
-                class="btn bg-sky-500 hover:bg-sky-600 text-white border-0 btn-sm rounded-xl font-bold w-full mt-4 shadow-md shadow-sky-500/20"
-              >
-                <span v-if="startingBackupProvider === 'HUGGINGFACE'" class="loading loading-spinner loading-xs mr-1"></span>
-                <Icon v-else name="mingcute:upload-3-fill" class="mr-1" />
-                Upload Manual ke Hugging Face Sekarang
-              </button>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                <button 
+                  @click="triggerBackupNow('HUGGINGFACE')" 
+                  :disabled="startingBackupProvider === 'HUGGINGFACE' || backupProgress?.huggingface?.active" 
+                  class="btn bg-sky-500 hover:bg-sky-600 text-white border-0 btn-sm rounded-xl font-bold shadow-md shadow-sky-500/20"
+                >
+                  <span v-if="startingBackupProvider === 'HUGGINGFACE'" class="loading loading-spinner loading-xs mr-1"></span>
+                  <Icon v-else name="mingcute:upload-3-fill" class="mr-1" />
+                  Upload Manual HF
+                </button>
+
+                <button 
+                  type="button"
+                  @click="syncHuggingFaceRemoteNow" 
+                  :disabled="isSyncingHfRemote" 
+                  class="btn btn-outline btn-sm rounded-xl font-bold border-sky-500 text-sky-400 hover:bg-sky-500 hover:text-white"
+                >
+                  <span v-if="isSyncingHfRemote" class="loading loading-spinner loading-xs mr-1"></span>
+                  <Icon v-else name="mingcute:sync-fill" class="mr-1" />
+                  Sync DB dari HF Hub
+                </button>
+              </div>
             </div>
           </div>
+
 
           <!-- Bottom Action Buttons: Save Config & Purge Storage -->
           <div class="pt-4 border-t border-base-200/80 flex flex-col sm:flex-row justify-between gap-3">
