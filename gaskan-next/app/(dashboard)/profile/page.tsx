@@ -519,7 +519,7 @@ export default function ProfilePage() {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2.5">
                 <Label htmlFor="birthPlace">Tempat Lahir</Label>
                 <Input
                   id="birthPlace"
@@ -529,7 +529,7 @@ export default function ProfilePage() {
                   className="rounded-2xl bg-muted/30 font-bold h-11"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2.5">
                 <Label htmlFor="birthDate">Tanggal Lahir</Label>
                 <Input
                   id="birthDate"
@@ -542,7 +542,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2.5">
                 <Label>Jenis Kelamin</Label>
                 <CustomSelect
                   options={[
@@ -553,7 +553,7 @@ export default function ProfilePage() {
                   onChange={setGender}
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2.5">
                 <Label>Agama</Label>
                 <CustomSelect
                   options={[
@@ -570,7 +570,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -582,7 +582,7 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <Label htmlFor="address">Alamat Tempat Tinggal</Label>
               <textarea
                 id="address"
@@ -613,7 +613,7 @@ export default function ProfilePage() {
             <DialogTitle className="text-xl font-black text-foreground">Edit Nomor Kontak</DialogTitle>
           </DialogHeader>
           <div className="p-6 space-y-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <Label htmlFor="phone">Nomor WhatsApp / Telp</Label>
               <Input
                 id="phone"
@@ -642,7 +642,7 @@ export default function ProfilePage() {
             <DialogTitle className="text-xl font-black text-foreground">Edit Plat Kendaraan</DialogTitle>
           </DialogHeader>
           <div className="p-6 space-y-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <Label htmlFor="vehiclePlate">Plat Nomor Kendaraan</Label>
               <Input
                 id="vehiclePlate"
@@ -739,7 +739,7 @@ export default function ProfilePage() {
             <DialogTitle className="text-xl font-black text-foreground">Ganti Password</DialogTitle>
           </DialogHeader>
           <div className="p-6 space-y-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <Label htmlFor="currPass">Password Saat Ini</Label>
               <Input
                 id="currPass"
@@ -750,7 +750,7 @@ export default function ProfilePage() {
                 className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <Label htmlFor="newPass">Password Baru</Label>
               <Input
                 id="newPass"
@@ -761,7 +761,7 @@ export default function ProfilePage() {
                 className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <Label htmlFor="confPass">Konfirmasi Password Baru</Label>
               <Input
                 id="confPass"

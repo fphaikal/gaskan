@@ -955,7 +955,7 @@ export default function SiswaPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label htmlFor="stdNis">NIS*</Label>
                   <Input
                     id="stdNis"
@@ -966,7 +966,7 @@ export default function SiswaPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label htmlFor="stdNisn">NISN (Opsional)</Label>
                   <Input
                     id="stdNisn"
@@ -1035,7 +1035,7 @@ export default function SiswaPage() {
                   )}
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label>Status Siswa</Label>
                   <CustomSelect
                     options={[
@@ -1079,7 +1079,7 @@ export default function SiswaPage() {
                 Biodata Pribadi
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label htmlFor="emailInput">Email</Label>
                   <Input
                     id="emailInput"
@@ -1090,7 +1090,7 @@ export default function SiswaPage() {
                     className="rounded-2xl bg-muted/30 font-bold"
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label htmlFor="phoneInput">Nomor Telepon</Label>
                   <Input
                     id="phoneInput"
@@ -1100,7 +1100,7 @@ export default function SiswaPage() {
                     className="rounded-2xl bg-muted/30 font-bold"
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label>Gender</Label>
                   <CustomSelect
                     options={[
@@ -1111,7 +1111,7 @@ export default function SiswaPage() {
                     onChange={(val) => setForm({ ...form, gender: val })}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label>Agama</Label>
                   <CustomSelect
                     options={[
@@ -1126,7 +1126,7 @@ export default function SiswaPage() {
                     onChange={(val) => setForm({ ...form, religion: val })}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label htmlFor="bpInput">Tempat Lahir</Label>
                   <Input
                     id="bpInput"
@@ -1136,7 +1136,7 @@ export default function SiswaPage() {
                     className="rounded-2xl bg-muted/30 font-bold"
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label htmlFor="bdInput">Tanggal Lahir</Label>
                   <Input
                     id="bdInput"
@@ -1335,7 +1335,7 @@ export default function SiswaPage() {
                   </div>
                 )}
 
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <Label>Pilih Perangkat Mesin Tujuan</Label>
                   <CustomSelect
                     options={[
