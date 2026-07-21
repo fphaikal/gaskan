@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ExportButtons } from '@/components/shared/ExportButtons';
+import { CustomSelect } from '@/components/shared/CustomSelect';
 import {
   Dialog,
   DialogContent,
@@ -464,7 +465,7 @@ export default function SiswaPage() {
         </div>
       </div>
 
-      {/* Filters Section matching Nuxt index.vue 1-to-1 */}
+      {/* Filters Section with CustomSelect */}
       <div className="space-y-4">
         <div className="flex flex-col lg:flex-row gap-3 bg-card p-4 rounded-3xl border border-border shadow-sm">
           {/* Search Input */}
@@ -480,20 +481,18 @@ export default function SiswaPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {/* Class Dropdown */}
-            <div className="relative flex-1 sm:flex-none sm:w-48">
-              <select
+            {/* Custom Class Select */}
+            <div className="w-full sm:w-48">
+              <CustomSelect
+                options={[
+                  { value: '', label: 'Semua Kelas' },
+                  ...classOptions.map((cls) => ({ value: cls, label: cls })),
+                ]}
                 value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full h-11 pl-4 pr-8 bg-muted/30 border-transparent border rounded-2xl font-bold text-xs focus:outline-none focus:border-primary cursor-pointer"
-              >
-                <option value="">Semua Kelas</option>
-                {classOptions.map((cls) => (
-                  <option key={cls} value={cls}>
-                    {cls}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedClass}
+                placeholder="Semua Kelas"
+                icon="mingcute:filter-2-line"
+              />
             </div>
 
             {/* Filter Lanjutan Toggle */}
@@ -501,7 +500,7 @@ export default function SiswaPage() {
               variant={showAdvanceFilters ? 'default' : 'ghost'}
               onClick={() => setShowAdvanceFilters(!showAdvanceFilters)}
               className={`h-11 rounded-2xl gap-2 font-bold text-xs border ${
-                showAdvanceFilters ? 'bg-primary text-primary-foreground' : 'bg-muted/30 text-foreground border-border'
+                showAdvanceFilters ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground border-border'
               }`}
             >
               <Icon icon={showAdvanceFilters ? 'mingcute:settings-6-fill' : 'mingcute:settings-6-line'} className="text-base" />
@@ -510,7 +509,7 @@ export default function SiswaPage() {
           </div>
         </div>
 
-        {/* Advance Filter Panel matching Nuxt */}
+        {/* Advance Filter Panel with CustomSelect */}
         {showAdvanceFilters && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 bg-muted/20 p-4 rounded-3xl border border-border shadow-inner animate-in fade-in duration-200">
             {/* Status Filter */}
@@ -518,15 +517,15 @@ export default function SiswaPage() {
               <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
                 Status Keaktifan
               </Label>
-              <select
+              <CustomSelect
+                options={[
+                  { value: 'AKTIF', label: 'AKTIF (Normal)' },
+                  { value: 'NONAKTIF', label: 'NONAKTIF (Alumni/Keluar)' },
+                  { value: 'ALL', label: 'SEMUA STATUS' },
+                ]}
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
-              >
-                <option value="AKTIF">AKTIF (Normal)</option>
-                <option value="NONAKTIF">NONAKTIF (Alumni/Keluar)</option>
-                <option value="ALL">SEMUA STATUS</option>
-              </select>
+                onChange={setFilterStatus}
+              />
             </div>
 
             {/* Major Filter */}
@@ -534,18 +533,15 @@ export default function SiswaPage() {
               <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
                 Filter Jurusan
               </Label>
-              <select
+              <CustomSelect
+                options={[
+                  { value: '', label: 'Semua Jurusan' },
+                  ...majorOptions.map((m) => ({ value: m, label: m })),
+                ]}
                 value={selectedMajor}
-                onChange={(e) => setSelectedMajor(e.target.value)}
-                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
-              >
-                <option value="">Semua Jurusan</option>
-                {majorOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedMajor}
+                placeholder="Semua Jurusan"
+              />
             </div>
 
             {/* Photo Filter */}
@@ -553,15 +549,15 @@ export default function SiswaPage() {
               <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
                 Foto Profil / Wajah
               </Label>
-              <select
+              <CustomSelect
+                options={[
+                  { value: 'ALL', label: 'Semua' },
+                  { value: 'WITH_PHOTO', label: 'Sudah Ada Foto' },
+                  { value: 'WITHOUT_PHOTO', label: 'Belum Ada Foto' },
+                ]}
                 value={filterPhoto}
-                onChange={(e) => setFilterPhoto(e.target.value)}
-                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
-              >
-                <option value="ALL">Semua</option>
-                <option value="WITH_PHOTO">Sudah Ada Foto</option>
-                <option value="WITHOUT_PHOTO">Belum Ada Foto</option>
-              </select>
+                onChange={setFilterPhoto}
+              />
             </div>
 
             {/* Device Sync Filter */}
@@ -569,15 +565,15 @@ export default function SiswaPage() {
               <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
                 Status Sinkron Alat
               </Label>
-              <select
+              <CustomSelect
+                options={[
+                  { value: 'ALL', label: 'Semua' },
+                  { value: 'SYNCED', label: 'Sudah Sinkron' },
+                  { value: 'NOT_SYNCED', label: 'Belum Sinkron' },
+                ]}
                 value={filterDeviceSync}
-                onChange={(e) => setFilterDeviceSync(e.target.value)}
-                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
-              >
-                <option value="ALL">Semua</option>
-                <option value="SYNCED">Sudah Sinkron</option>
-                <option value="NOT_SYNCED">Belum Sinkron</option>
-              </select>
+                onChange={setFilterDeviceSync}
+              />
             </div>
 
             {/* Sort By */}
@@ -585,15 +581,15 @@ export default function SiswaPage() {
               <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
                 Urutkan Berdasarkan
               </Label>
-              <select
+              <CustomSelect
+                options={[
+                  { value: 'name-asc', label: 'Nama (A - Z)' },
+                  { value: 'name-desc', label: 'Nama (Z - A)' },
+                  { value: 'newest', label: 'Data Terbaru' },
+                ]}
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full h-10 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none"
-              >
-                <option value="name-asc">Nama (A - Z)</option>
-                <option value="name-desc">Nama (Z - A)</option>
-                <option value="newest">Data Terbaru</option>
-              </select>
+                onChange={setSortBy}
+              />
             </div>
 
             {/* Reset Button */}
@@ -609,7 +605,7 @@ export default function SiswaPage() {
                   setFilterDeviceSync('ALL');
                   setSortBy('name-asc');
                 }}
-                className="w-full h-10 rounded-xl font-bold text-xs gap-1 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
+                className="w-full h-11 rounded-2xl font-bold text-xs gap-1 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-border bg-card"
               >
                 <Icon icon="mingcute:refresh-1-line" className="text-base" />
                 Reset Filter
@@ -883,18 +879,21 @@ export default function SiswaPage() {
           </span>
 
           <div className="flex items-center gap-4">
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="px-2 py-1 bg-background border border-border rounded-lg text-xs font-semibold focus:outline-none"
-            >
-              <option value={15}>15 / hal</option>
-              <option value={30}>30 / hal</option>
-              <option value={50}>50 / hal</option>
-            </select>
+            <div className="w-28">
+              <CustomSelect
+                options={[
+                  { value: '15', label: '15 / hal' },
+                  { value: '30', label: '30 / hal' },
+                  { value: '50', label: '50 / hal' },
+                ]}
+                value={String(itemsPerPage)}
+                onChange={(val) => {
+                  setItemsPerPage(Number(val));
+                  setCurrentPage(1);
+                }}
+                triggerClassName="h-8 rounded-xl px-2 text-[11px]"
+              />
+            </div>
 
             <div className="flex items-center gap-1">
               <Button
@@ -924,10 +923,10 @@ export default function SiswaPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════
-           ALL DIALOG MODALS WITH FIXED HEADER/FOOTER & INTERNAL SCROLL
+           ALL DIALOG MODALS WITH CUSTOM SELECT DROPDOWNS
       ══════════════════════════════════════════════════ */}
 
-      {/* MODAL 1: ADD / EDIT STUDENT MODAL (Wide max-w-3xl, Fixed Header & Footer, Inner Scroll) */}
+      {/* MODAL 1: ADD / EDIT STUDENT MODAL */}
       <Dialog open={showFormModal} onOpenChange={setShowFormModal}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
           {/* Sticky Header */}
@@ -937,7 +936,7 @@ export default function SiswaPage() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Scrollable Body - Scrollbar is strictly INSIDE the modal body */}
+          {/* Scrollable Body */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs sm:text-sm">
             {/* Section 1: Informasi Akademik */}
             <div>
@@ -979,12 +978,12 @@ export default function SiswaPage() {
                   />
                 </div>
 
-                {/* Searchable Class Dropdown matching Nuxt */}
+                {/* Searchable Class Dropdown */}
                 <div className="space-y-1.5 relative">
                   <Label>Kelas*</Label>
                   <div
                     onClick={() => setShowClassDropdown(!showClassDropdown)}
-                    className="h-10 border border-border rounded-2xl bg-muted/30 px-3 flex items-center justify-between font-bold cursor-pointer"
+                    className="h-11 border border-border rounded-2xl bg-muted/30 px-3.5 flex items-center justify-between font-bold cursor-pointer hover:bg-muted/50 transition-colors"
                   >
                     <span>
                       {form.classId
@@ -993,11 +992,11 @@ export default function SiswaPage() {
                           'Kelas Dipilih'
                         : 'Pilih Kelas'}
                     </span>
-                    <Icon icon="mingcute:down-line" className={`transition-transform ${showClassDropdown ? 'rotate-180' : ''}`} />
+                    <Icon icon="mingcute:down-line" className={`transition-transform ${showClassDropdown ? 'rotate-180 text-primary' : ''}`} />
                   </div>
 
                   {showClassDropdown && (
-                    <div className="absolute top-full left-0 w-full mt-2 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden">
+                    <div className="absolute top-full left-0 w-full mt-2 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in duration-150">
                       <div className="p-2 border-b border-border">
                         <div className="relative">
                           <Icon icon="mingcute:search-line" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs" />
@@ -1010,7 +1009,7 @@ export default function SiswaPage() {
                           />
                         </div>
                       </div>
-                      <div className="max-h-48 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto p-1 space-y-0.5">
                         {filteredClassesForSelect.map((c) => (
                           <div
                             key={c.id}
@@ -1018,9 +1017,12 @@ export default function SiswaPage() {
                               setForm({ ...form, classId: c.id });
                               setShowClassDropdown(false);
                             }}
-                            className="px-4 py-2.5 hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors font-bold text-xs"
+                            className={`px-3 py-2 rounded-xl cursor-pointer transition-colors font-bold text-xs flex items-center justify-between ${
+                              form.classId === c.id ? 'bg-primary/15 text-primary' : 'hover:bg-muted hover:text-primary'
+                            }`}
                           >
-                            {c.className || c.nama_kelas}
+                            <span>{c.className || c.nama_kelas}</span>
+                            {form.classId === c.id && <Icon icon="mingcute:check-fill" className="text-primary text-sm" />}
                           </div>
                         ))}
                         {filteredClassesForSelect.length === 0 && (
@@ -1034,18 +1036,17 @@ export default function SiswaPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="statusSelect">Status Siswa</Label>
-                  <select
-                    id="statusSelect"
+                  <Label>Status Siswa</Label>
+                  <CustomSelect
+                    options={[
+                      { value: 'AKTIF', label: 'AKTIF' },
+                      { value: 'ALUMNI', label: 'ALUMNI' },
+                      { value: 'KELUAR', label: 'KELUAR' },
+                      { value: 'MUTASI', label: 'MUTASI' },
+                    ]}
                     value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full h-10 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
-                  >
-                    <option value="AKTIF">AKTIF</option>
-                    <option value="ALUMNI">ALUMNI</option>
-                    <option value="KELUAR">KELUAR</option>
-                    <option value="MUTASI">MUTASI</option>
-                  </select>
+                    onChange={(val) => setForm({ ...form, status: val })}
+                  />
                 </div>
 
                 <div className="space-y-1.5 sm:col-span-2">
@@ -1100,32 +1101,30 @@ export default function SiswaPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="genderSel">Gender</Label>
-                  <select
-                    id="genderSel"
+                  <Label>Gender</Label>
+                  <CustomSelect
+                    options={[
+                      { value: 'L', label: 'Laki-Laki (L)' },
+                      { value: 'P', label: 'Perempuan (P)' },
+                    ]}
                     value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                    className="w-full h-10 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
-                  >
-                    <option value="L">Laki-Laki (L)</option>
-                    <option value="P">Perempuan (P)</option>
-                  </select>
+                    onChange={(val) => setForm({ ...form, gender: val })}
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="relSel">Agama</Label>
-                  <select
-                    id="relSel"
+                  <Label>Agama</Label>
+                  <CustomSelect
+                    options={[
+                      { value: 'ISLAM', label: 'ISLAM' },
+                      { value: 'KRISTEN', label: 'KRISTEN' },
+                      { value: 'KATOLIK', label: 'KATOLIK' },
+                      { value: 'HINDU', label: 'HINDU' },
+                      { value: 'BUDHA', label: 'BUDHA' },
+                      { value: 'KONGHUCU', label: 'KONGHUCU' },
+                    ]}
                     value={form.religion}
-                    onChange={(e) => setForm({ ...form, religion: e.target.value })}
-                    className="w-full h-10 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
-                  >
-                    <option value="ISLAM">ISLAM</option>
-                    <option value="KRISTEN">KRISTEN</option>
-                    <option value="KATOLIK">KATOLIK</option>
-                    <option value="HINDU">HINDU</option>
-                    <option value="BUDHA">BUDHA</option>
-                    <option value="KONGHUCU">KONGHUCU</option>
-                  </select>
+                    onChange={(val) => setForm({ ...form, religion: val })}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="bpInput">Tempat Lahir</Label>
@@ -1172,7 +1171,7 @@ export default function SiswaPage() {
             </div>
           </div>
 
-          {/* Sticky Footer - Strictly fixed at the bottom with 0 gap */}
+          {/* Sticky Footer */}
           <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowFormModal(false)}>
               Batal
@@ -1337,20 +1336,15 @@ export default function SiswaPage() {
                 )}
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="devSelectModal">Pilih Perangkat Mesin Tujuan</Label>
-                  <select
-                    id="devSelectModal"
+                  <Label>Pilih Perangkat Mesin Tujuan</Label>
+                  <CustomSelect
+                    options={[
+                      { value: 'ALL', label: 'Semua Perangkat Aktif' },
+                      ...devices.map((d) => ({ value: d.id, label: `${d.name} (${d.ipAddress || 'Online'})` })),
+                    ]}
                     value={selectedDevice}
-                    onChange={(e) => setSelectedDevice(e.target.value)}
-                    className="w-full h-11 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
-                  >
-                    <option value="ALL">Semua Perangkat Aktif</option>
-                    {devices.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.ipAddress || 'Online'})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedDevice}
+                  />
                 </div>
               </div>
             )}
