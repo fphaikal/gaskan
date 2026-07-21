@@ -19,6 +19,14 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
+
+const resolvePhoto = (url?: string) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function ReshufflePage() {
   const [activeTab, setActiveTab] = useState<'website' | 'excel'>('website');
   const [classes, setClasses] = useState<any[]>([]);
@@ -36,6 +44,7 @@ export default function ReshufflePage() {
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [excelRows, setExcelRows] = useState<any[]>([]);
   const [excelTargetClassId, setExcelTargetClassId] = useState('');
+  const [excelTemplateClassId, setExcelTemplateClassId] = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
   // Modals State
@@ -122,13 +131,13 @@ export default function ReshufflePage() {
       const workbook = new ExcelJS.Workbook();
       const ws = workbook.addWorksheet('Template_Reshuffle');
       ws.columns = [
-        { header: 'NIS*', key: 'nis', width: 15 },
-        { header: 'Nama Siswa', key: 'name', width: 25 },
-        { header: 'Nama Kelas Tujuan*', key: 'targetClass', width: 20 },
-        { header: 'Nomor Rombel (Opsional)', key: 'rombel', width: 20 },
+        { header: 'No', key: 'no', width: 8 },
+        { header: 'NIS', key: 'nis', width: 15 },
+        { header: 'Nama', key: 'name', width: 25 },
+        { header: 'Rombel', key: 'rombel', width: 15 },
       ];
-      ws.addRow({ nis: '25101001', name: 'Ahmad Dahlan', targetClass: 'XI AK 1', rombel: '1' });
-      ws.addRow({ nis: '25101002', name: 'Siti Sarah', targetClass: 'XI AK 1', rombel: '1' });
+      ws.addRow({ no: 1, nis: '25101350', name: 'Aafiyah Haniifah Nadhiir', rombel: '1' });
+      ws.addRow({ no: 2, nis: '25101351', name: 'Adhimas Putra Susanto', rombel: '1' });
 
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -155,13 +164,12 @@ export default function ReshufflePage() {
       const rows: any[] = [];
       ws.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return;
-        const nis = String(row.getCell(1).value || '').trim();
-        const name = String(row.getCell(2).value || '').trim();
-        const targetClass = String(row.getCell(3).value || '').trim();
+        const nis = String(row.getCell(2).value || row.getCell(1).value || '').trim();
+        const name = String(row.getCell(3).value || '').trim();
         const rombel = String(row.getCell(4).value || '').trim();
 
         if (nis || name) {
-          rows.push({ row: rowNumber, nis, name, targetClass, rombel, status: 'SIAP' });
+          rows.push({ row: rowNumber, nis, name, rombel, status: 'SIAP' });
         }
       });
 
@@ -200,7 +208,7 @@ export default function ReshufflePage() {
     setIsProcessing(true);
     setShowConfirmModal(false);
     setShowProgressModal(true);
-    setProgressPercent(20);
+    setProgressPercent(25);
 
     try {
       if (activeTab === 'website') {
@@ -241,7 +249,7 @@ export default function ReshufflePage() {
           nis: r.nis,
           name: r.name || 'Siswa',
           fromClass: 'Kelas Asal',
-          toClass: targetObj?.className || r.targetClass || 'Kelas Tujuan',
+          toClass: targetObj?.className || 'Kelas Tujuan',
           rombel: r.rombel || '-',
         }));
 
@@ -270,7 +278,7 @@ export default function ReshufflePage() {
   }, [classes, targetClassId, excelTargetClassId, activeTab]);
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-28 animate-in fade-in duration-500 max-w-7xl mx-auto">
       {/* Top Header Card matching Nuxt 1-to-1 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
         <div>
@@ -378,9 +386,10 @@ export default function ReshufflePage() {
             </div>
           </div>
 
-          {/* Student Selector Table */}
-          <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-            <div className="p-4 bg-muted/20 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Student Selection Table matching Nuxt Screenshot 1-to-1 */}
+          <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
+            {/* Search & Quick Selection Header matching screenshot */}
+            <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -388,80 +397,200 @@ export default function ReshufflePage() {
                   onChange={toggleSelectAll}
                   className="w-4 h-4 rounded border-border text-primary cursor-pointer"
                 />
-                <span className="text-xs font-black uppercase tracking-wider text-foreground">
-                  Pilih Siswa ({selectedStudentIds.length} / {filteredStudents.length} Terpilih)
-                </span>
+                <div>
+                  <h3 className="font-black text-sm text-foreground">
+                    Daftar Siswa ({selectedStudentIds.length}/{filteredStudents.length} Terpilih)
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground font-medium">
+                    Centang siswa yang akan dipindahkan ke kelas tujuan
+                  </p>
+                </div>
               </div>
 
-              <div className="w-full sm:w-64">
+              <div className="relative w-full sm:w-64">
+                <Icon icon="mingcute:search-line" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 text-sm" />
                 <Input
                   type="text"
-                  placeholder="Cari Nama / NIS / Rombel..."
+                  placeholder="Cari nama, NIS, rombel..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 rounded-xl text-xs bg-background"
+                  className="pl-9 h-9 rounded-xl text-xs font-semibold bg-background"
                 />
               </div>
             </div>
 
-            <div className="max-h-96 overflow-y-auto divide-y divide-border">
-              {isLoading ? (
-                <div className="p-12 text-center text-xs font-bold text-muted-foreground flex items-center justify-center gap-2">
-                  <Icon icon="mingcute:loading-fill" className="animate-spin text-lg" /> Memuat daftar siswa...
-                </div>
-              ) : filteredStudents.length === 0 ? (
-                <div className="p-12 text-center text-xs font-bold text-muted-foreground/40 italic">
-                  Tidak ada siswa yang ditemukan di kelas asal
-                </div>
-              ) : (
-                filteredStudents.map((std) => {
-                  const sId = String(std.id);
-                  const isChecked = selectedStudentIds.includes(sId);
-                  return (
-                    <div
-                      key={sId}
-                      onClick={() => toggleSelectStudent(sId)}
-                      className={`px-6 py-3.5 flex items-center justify-between text-xs font-bold cursor-pointer transition-colors ${
-                        isChecked ? 'bg-primary/10' : 'hover:bg-muted/30'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}}
-                          className="w-4 h-4 rounded border-border text-primary"
-                        />
-                        <span className="text-foreground text-sm font-black">{std.name || std.Nama}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-muted-foreground">
-                        <span className="font-mono">NIS: {std.nis || std.NIS}</span>
-                        {std.rombel && <Badge variant="outline" className="text-[10px] font-bold">{std.rombel}</Badge>}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+            {/* Table View matching screenshot 1-to-1 */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-muted/40 text-[10px] uppercase tracking-wider font-black text-muted-foreground/60 border-b border-border">
+                    <th className="w-12 text-center py-3">PILIH</th>
+                    <th className="text-left py-3 px-4">SISWA</th>
+                    <th className="text-center py-3 px-4">NIS / NISN</th>
+                    <th className="text-center py-3 px-4">ROMBEL SAAT INI</th>
+                    <th className="text-center py-3 px-4">STATUS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                        <Icon icon="mingcute:loading-fill" className="text-2xl text-primary animate-spin mx-auto mb-2" />
+                        <p className="font-bold">Memuat daftar siswa...</p>
+                      </td>
+                    </tr>
+                  ) : filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground font-bold italic">
+                        Tidak ada siswa aktif ditemukan di kelas asal ini.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudents.map((s) => {
+                      const sId = String(s.id);
+                      const isChecked = selectedStudentIds.includes(sId);
+                      const photo = resolvePhoto(s.photoUrl || s.faceUrl);
 
-            <div className="p-6 border-t border-border bg-muted/10 flex justify-end">
-              <Button
-                disabled={selectedStudentIds.length === 0 || !targetClassId}
-                onClick={openWebConfirm}
-                className="rounded-2xl font-bold px-8 bg-primary text-primary-foreground shadow-lg shadow-primary/20 h-12"
-              >
-                <Icon icon="mingcute:transfer-4-line" className="text-base mr-2" />
-                <span>Pindahkan {selectedStudentIds.length} Siswa ke {selectedTargetClassName}</span>
-              </Button>
+                      return (
+                        <tr
+                          key={sId}
+                          onClick={() => toggleSelectStudent(sId)}
+                          className={`cursor-pointer transition-colors ${
+                            isChecked ? 'bg-primary/10' : 'hover:bg-muted/30'
+                          }`}
+                        >
+                          <td className="text-center py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleSelectStudent(sId)}
+                              className="w-4 h-4 rounded border-border text-primary cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0 overflow-hidden border border-primary/10">
+                                {photo ? (
+                                  <img src={photo} alt={s.name || s.Nama} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span>{(s.name || s.Nama || 'S').charAt(0)}</span>
+                                )}
+                              </div>
+                              <span className="font-bold text-foreground">{s.name || s.Nama}</span>
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4 font-mono font-semibold text-muted-foreground">
+                            {s.nis || s.NIS || s.nisn || '-'}
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <span className="px-2.5 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 font-extrabold text-[10px]">
+                              {s.rombel || '1'}
+                            </span>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-black text-[9px] uppercase">
+                              {s.status || 'AKTIF'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
+
+          {/* Floating Action Footer matching Nuxt screenshot 1-to-1 */}
+          {selectedStudentIds.length > 0 && (
+            <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg bg-card/95 backdrop-blur-xl border border-primary/30 p-3.5 sm:p-4 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 z-50 animate-in slide-in-from-bottom duration-300">
+              <div className="text-center sm:text-left">
+                <p className="text-xs font-black text-foreground">
+                  {selectedStudentIds.length} Siswa Terpilih
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  Akan dipindahkan ke kelas yang dipilih
+                </p>
+              </div>
+
+              <Button
+                onClick={openWebConfirm}
+                disabled={isProcessing}
+                className="rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2 w-full sm:w-auto h-10 bg-primary text-primary-foreground"
+              >
+                {isProcessing ? (
+                  <Icon icon="mingcute:loading-fill" className="animate-spin text-base" />
+                ) : (
+                  <Icon icon="mingcute:transfer-4-line" className="text-base" />
+                )}
+                <span>Proses Reshuffle Ke Kelas Tujuan</span>
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
       {/* TAB 2: EXCEL RESHUFFLE */}
       {activeTab === 'excel' && (
         <div className="space-y-6">
-          <div className="bg-card border border-border rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-sm">
+          {/* Step 1: Download Template */}
+          <div className="bg-card p-6 rounded-3xl border border-border shadow-sm grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <div className="md:col-span-7 space-y-1">
+              <div className="flex items-center gap-2 text-amber-500 text-xs font-black uppercase tracking-wider">
+                <Icon icon="mingcute:download-3-fill" className="text-base" />
+                Langkah 1: Unduh Template Excel Reshuffle
+              </div>
+              <h3 className="text-base font-black text-foreground">Unduh File Template Pre-Filled</h3>
+              <p className="text-xs text-muted-foreground font-semibold">
+                Template 4 kolom (No, NIS, Nama, Rombel) berisi daftar siswa aktif yang siap Anda isi & edit.
+              </p>
+            </div>
+
+            <div className="md:col-span-5 flex flex-col sm:flex-row items-center gap-3">
+              <div className="w-full sm:w-auto flex-1">
+                <CustomSelect
+                  options={[
+                    { value: '', label: '-- Semua Kelas --' },
+                    ...classes.map((c) => ({ value: c.id, label: c.className || c.nama_kelas })),
+                  ]}
+                  value={excelTemplateClassId}
+                  onChange={setExcelTemplateClassId}
+                />
+              </div>
+
+              <Button
+                onClick={downloadTemplate}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black text-xs h-10 px-5 shrink-0 gap-2 shadow-lg shadow-amber-500/20"
+              >
+                <Icon icon="mingcute:file-download-line" className="text-base" />
+                <span>Unduh Template .XLSX</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Step 2: Upload Excel */}
+          <div className="bg-card p-6 rounded-3xl border border-border shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-emerald-500 text-xs font-black uppercase tracking-wider">
+                <Icon icon="mingcute:upload-3-fill" className="text-base" />
+                Langkah 2: Pilih Kelas Tujuan & Unggah File Excel
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-muted-foreground shrink-0">Kelas Tujuan:</label>
+                <div className="w-48">
+                  <CustomSelect
+                    options={[
+                      { value: '', label: '-- Pilih Kelas Tujuan --' },
+                      ...classes.map((c) => ({ value: c.id, label: c.className || c.nama_kelas })),
+                    ]}
+                    value={excelTargetClassId}
+                    onChange={setExcelTargetClassId}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -471,79 +600,60 @@ export default function ReshufflePage() {
                 if (e.dataTransfer.files[0]) handleExcelParse(e.dataTransfer.files[0]);
               }}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition-all ${
                 isDragging ? 'border-amber-500 bg-amber-500/10' : 'border-border hover:border-amber-500/50 bg-muted/20'
               }`}
             >
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx, .xls"
+                accept=".xlsx, .xls, .csv"
                 onChange={(e) => e.target.files && handleExcelParse(e.target.files[0])}
                 className="hidden"
               />
-              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
-                <Icon icon="mingcute:file-import-fill" className="text-3xl" />
+              <div className="space-y-2">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20 shadow-lg shadow-amber-500/10">
+                  <Icon icon="mingcute:upload-2-fill" className="text-3xl" />
+                </div>
+                <h4 className="font-black text-sm text-foreground">
+                  {excelFile ? excelFile.name : 'Klik atau drag & drop file Excel reshuffle (.xlsx) di sini'}
+                </h4>
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Format 4 Kolom Terbaca: <strong>No</strong> (Absen), <strong>NIS</strong>, <strong>Nama</strong>, <strong>Rombel</strong>
+                </p>
               </div>
-              <h3 className="text-lg font-black text-foreground mb-1">
-                {excelFile ? `File: ${excelFile.name}` : 'Pilih atau Tarik File Excel Reshuffle'}
-              </h3>
-              <p className="text-xs text-muted-foreground font-semibold max-w-sm">
-                Unggah file .xlsx berisi NIS siswa dan Nama Kelas Tujuan untuk memindahkan kelas secara otomatis.
-              </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button onClick={downloadTemplate} variant="outline" className="rounded-2xl gap-2 font-bold text-xs h-11 px-5 border-border">
-                <Icon icon="mingcute:download-2-line" className="text-base text-amber-500" />
-                Unduh Template Excel Reshuffle Resmi
-              </Button>
-            </div>
+            {/* Parsed Excel Rows */}
+            {excelRows.length > 0 && (
+              <div className="space-y-4 pt-4 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wider">
+                    Pratinjau ({excelRows.length} Data Siswa dari Excel)
+                  </span>
+                  <Button
+                    disabled={!excelTargetClassId}
+                    onClick={openExcelConfirm}
+                    className="rounded-2xl font-black bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 h-10 px-6 gap-2"
+                  >
+                    <Icon icon="mingcute:file-import-fill" className="text-base" />
+                    <span>Jalankan Reshuffle Excel</span>
+                  </Button>
+                </div>
+
+                <div className="max-h-80 overflow-y-auto divide-y divide-border border border-border rounded-2xl">
+                  {excelRows.map((r, i) => (
+                    <div key={i} className="grid grid-cols-12 px-6 py-3 items-center text-xs font-bold">
+                      <div className="col-span-1 text-muted-foreground font-mono">#{r.row}</div>
+                      <div className="col-span-3 font-mono text-foreground">{r.nis}</div>
+                      <div className="col-span-4 text-foreground">{r.name || 'Siswa'}</div>
+                      <div className="col-span-4 text-amber-500 text-right font-black">Ke: {selectedTargetClassName}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Select Excel Target Class */}
-          <div className="bg-card border border-border rounded-3xl p-5 space-y-2 shadow-sm">
-            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground/60">
-              Pilih Kelas Tujuan untuk Import Excel
-            </label>
-            <CustomSelect
-              options={classes.map((c) => ({ value: c.id, label: c.className || c.nama_kelas }))}
-              value={excelTargetClassId}
-              onChange={setExcelTargetClassId}
-              placeholder="-- Pilih Kelas Tujuan --"
-            />
-          </div>
-
-          {/* Parsed Excel Rows */}
-          {excelRows.length > 0 && (
-            <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-              <div className="p-4 bg-muted/20 border-b border-border flex justify-between items-center">
-                <span className="text-xs font-black text-amber-500 uppercase tracking-wider">
-                  Pratinjau ({excelRows.length} Data Siswa dari Excel)
-                </span>
-              </div>
-              <div className="max-h-80 overflow-y-auto divide-y divide-border">
-                {excelRows.map((r, i) => (
-                  <div key={i} className="grid grid-cols-12 px-6 py-3 items-center text-xs font-bold">
-                    <div className="col-span-1 text-muted-foreground font-mono">#{r.row}</div>
-                    <div className="col-span-3 font-mono text-foreground">{r.nis}</div>
-                    <div className="col-span-4 text-foreground">{r.name || 'Siswa'}</div>
-                    <div className="col-span-4 text-amber-500 text-right font-black">Ke: {selectedTargetClassName}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-6 border-t border-border bg-muted/10 flex justify-end">
-                <Button
-                  disabled={!excelTargetClassId}
-                  onClick={openExcelConfirm}
-                  className="rounded-2xl font-bold px-8 bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 h-12"
-                >
-                  <Icon icon="mingcute:file-import-fill" className="text-base mr-2" />
-                  <span>Jalankan Reshuffle Excel Sekarang</span>
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
