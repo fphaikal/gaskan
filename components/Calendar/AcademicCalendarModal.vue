@@ -264,37 +264,44 @@ const handleDelete = async (id: string) => {
       <div class="modal-box bg-base-100 border border-base-200/80 p-0 overflow-hidden rounded-[2.5rem] max-w-2xl shadow-2xl relative flex flex-col max-h-[90vh]">
         
         <!-- Header Modal -->
-        <div class="px-6 py-4 border-b border-base-200/60 flex items-center justify-between bg-base-100 shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 shadow-sm">
-              <Icon name="mingcute:calendar-month-fill" size="22" />
+        <div class="px-5 py-4 border-b border-base-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-base-100 shrink-0">
+          <div class="flex items-center justify-between w-full sm:w-auto">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 shadow-sm shrink-0">
+                <Icon name="mingcute:calendar-month-fill" size="20" />
+              </div>
+              <div>
+                <h3 class="font-black text-sm sm:text-base text-base-content leading-none">Kalender Akademik</h3>
+                <p class="text-[9px] font-bold text-base-content/40 uppercase tracking-widest mt-1">SMTI Yogyakarta · Agenda & Ujian</p>
+              </div>
             </div>
-            <div>
-              <h3 class="font-black text-base text-base-content leading-none">Kalender Akademik</h3>
-              <p class="text-[9px] font-bold text-base-content/40 uppercase tracking-widest mt-1">SMTI Yogyakarta · Agenda & Ujian</p>
-            </div>
+            <!-- Close button for mobile -->
+            <button @click="showModal = false" class="btn btn-ghost btn-xs btn-circle rounded-xl sm:hidden">
+              <Icon name="mingcute:close-line" size="18" />
+            </button>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-base-200/40">
             <NuxtLink to="/kalender" @click="showModal = false" class="btn btn-xs btn-ghost text-orange-500 hover:bg-orange-500/10 rounded-xl font-bold gap-1 text-[10px]">
               Halaman Lengkap ↗
             </NuxtLink>
             <button v-if="canManage"
                     @click="openCreateModal"
-                    class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl font-black gap-1 shadow-sm">
+                    class="btn btn-xs bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl font-black gap-1 shadow-sm whitespace-nowrap">
               <Icon name="mingcute:add-fill" size="14" />
               Agenda Baru
             </button>
-            <button @click="showModal = false" class="btn btn-ghost btn-xs btn-circle rounded-xl">
+            <!-- Close button for desktop -->
+            <button @click="showModal = false" class="btn btn-ghost btn-xs btn-circle rounded-xl hidden sm:flex">
               <Icon name="mingcute:close-line" size="18" />
             </button>
           </div>
         </div>
 
         <!-- Filter Bar for Admin / Guru -->
-        <div v-if="canManage" class="px-6 py-2 bg-base-200/40 border-b border-base-200/40 flex items-center justify-between gap-2 text-xs shrink-0">
+        <div v-if="canManage" class="px-5 py-2 bg-base-200/40 border-b border-base-200/40 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
           <span class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Filter Target:</span>
-          <div class="flex items-center gap-1">
+          <div class="flex flex-wrap items-center gap-1">
             <button v-for="sc in [
               { key: 'ALL', label: 'Semua' },
               { key: 'GLOBAL', label: 'Global' },
