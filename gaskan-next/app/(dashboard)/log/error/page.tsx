@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
@@ -91,7 +94,7 @@ export default function LogErrorPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
-      {/* Header Area matching Nuxt 1-to-1 */}
+      {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
@@ -132,7 +135,7 @@ export default function LogErrorPage() {
                 <h2 className="text-xl font-black text-foreground tracking-tight">{l.tanggal}</h2>
               </div>
 
-              {/* Cards Grid matching Nuxt 1-to-1 */}
+              {/* Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {l.data?.map((d: any, i: number) => (
                   <div
@@ -180,110 +183,100 @@ export default function LogErrorPage() {
         </div>
       )}
 
-      {/* ═══ DETAILED EVENT MODAL (DETAIL KEJADIAN 1-TO-1 NUXT) ═══ */}
+      {/* UNIFORM DASHBOARD DIALOG STRUCTURE */}
       {selectedLog && (
         <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-3xl bg-card border border-border shadow-2xl">
-            <div className="flex flex-col md:flex-row">
-              {/* Image Section (Left / Top) */}
-              <div className="md:w-1/2 bg-muted/40 p-4 border-b md:border-b-0 md:border-r border-border flex items-center justify-center relative group cursor-pointer"
+          <DialogContent className="sm:max-w-2xl p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-4">
+            <DialogHeader className="p-0 border-none bg-transparent flex flex-row items-center justify-between">
+              <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2">
+                <Icon icon="mingcute:warning-fill" className="text-rose-500 text-2xl" />
+                <span>Detail Kejadian Error</span>
+              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20 font-black text-[10px] uppercase">
+                  ERR: {selectedLog.code || '500'}
+                </Badge>
+                <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                  {selectedLog.Kelas || 'Device'}
+                </Badge>
+              </div>
+            </DialogHeader>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Image Section */}
+              <div
+                className="w-full h-56 rounded-2xl bg-muted/40 border border-border flex items-center justify-center relative overflow-hidden group cursor-pointer"
                 onClick={() => {
                   if (selectedLog.image) setActivePreviewImage(selectedLog.image);
                 }}
               >
                 {selectedLog.image ? (
-                  <div className="relative w-full overflow-hidden rounded-2xl shadow-md border border-border group/zoom">
+                  <>
                     <img
                       src={selectedLog.image}
                       alt="Captured Face"
-                      className="w-full max-h-[40vh] md:max-h-[50vh] object-cover rounded-2xl group-hover/zoom:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/zoom:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
                       <Icon icon="mingcute:zoom-in-line" className="text-2xl" />
-                      <span>Klik untuk Zoom Foto</span>
+                      <span>Zoom Foto</span>
                     </div>
-                  </div>
+                  </>
                 ) : (
-                  <div className="w-full h-48 md:h-full flex flex-col items-center justify-center text-muted-foreground/40 py-12 space-y-2">
-                    <Icon icon="mingcute:bug-line" className="text-4xl" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">Foto Tidak Tersedia</span>
+                  <div className="text-center text-muted-foreground/40 space-y-2">
+                    <Icon icon="mingcute:bug-line" className="text-4xl mx-auto" />
+                    <span className="text-xs font-semibold uppercase tracking-wider block">Foto Tidak Tersedia</span>
                   </div>
                 )}
               </div>
 
-              {/* Info Details Section (Right / Bottom) matching Nuxt 1-to-1 */}
-              <div className="md:w-1/2 p-6 flex flex-col justify-between gap-6">
-                <div className="space-y-4">
-                  {/* Badges row */}
-                  <div className="flex justify-between items-center">
-                    <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border bg-rose-500/10 text-rose-500 border-rose-500/20">
-                      ERR: {selectedLog.code || '500'}
+              {/* Details Info */}
+              <div className="space-y-3 text-xs flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="p-3 bg-muted/40 rounded-2xl border border-border">
+                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block mb-0.5">
+                      Pesan Kejadian
                     </span>
-                    <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
-                      {selectedLog.Kelas || 'Device'}
-                    </span>
-                  </div>
-
-                  {/* Pesan Kejadian */}
-                  <div>
-                    <h4 className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest mb-1">
-                      PESAN KEJADIAN
-                    </h4>
-                    <p className="text-base font-extrabold text-foreground leading-snug">
+                    <p className="text-sm font-extrabold text-foreground leading-snug">
                       {selectedLog.msg}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 pt-1">
-                    {/* Nama Gerbang */}
-                    <div>
-                      <h4 className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mb-1">
-                        NAMA GERBANG
-                      </h4>
-                      <p className="text-xs font-bold text-foreground">
-                        {selectedLog.gate || 'Samping bengkel 1'}
-                      </p>
-                    </div>
+                  <div className="p-3 bg-muted/40 rounded-2xl border border-border">
+                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block mb-0.5">
+                      Nama Gerbang
+                    </span>
+                    <p className="text-xs font-bold text-foreground">
+                      {selectedLog.gate || 'Samping bengkel 1'}
+                    </p>
+                  </div>
 
-                    {/* Waktu Scan */}
-                    <div>
-                      <h4 className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mb-1">
-                        WAKTU SCAN
-                      </h4>
-                      <p className="text-xs font-mono font-bold text-foreground">
-                        {formatTimeStr(selectedLog.timestamp)}
-                      </p>
-                    </div>
-
-                    {/* Sumber / File (If present) */}
-                    {selectedLog.namafile && (
-                      <div>
-                        <h4 className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mb-1">
-                          SUMBER / FILE
-                        </h4>
-                        <p className="text-xs font-mono font-bold text-foreground truncate">
-                          {selectedLog.namafile}
-                        </p>
-                      </div>
-                    )}
+                  <div className="p-3 bg-muted/40 rounded-2xl border border-border flex justify-between items-center font-mono">
+                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest">
+                      Waktu Scan
+                    </span>
+                    <span className="text-xs font-bold text-foreground">
+                      {formatTimeStr(selectedLog.timestamp)}
+                    </span>
                   </div>
                 </div>
-
-                {/* Tutup Detail Button matching Nuxt 1-to-1 */}
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedLog(null)}
-                  className="w-full rounded-2xl border-border hover:border-rose-500/20 hover:bg-rose-500/10 hover:text-rose-500 font-bold text-xs h-11"
-                >
-                  Tutup Detail
-                </Button>
               </div>
             </div>
+
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedLog(null)}
+                className="w-full rounded-2xl font-bold text-xs h-11"
+              >
+                Tutup Detail
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* ═══ FULL-SCREEN IMAGE LIGHTBOX ZOOM MODAL ═══ */}
+      {/* FULL-SCREEN IMAGE LIGHTBOX ZOOM MODAL */}
       {activePreviewImage && (
         <Dialog open={!!activePreviewImage} onOpenChange={() => setActivePreviewImage(null)}>
           <DialogContent className="sm:max-w-4xl p-2 bg-black/90 border border-white/10 rounded-3xl text-center flex items-center justify-center">
