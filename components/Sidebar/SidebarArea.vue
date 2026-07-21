@@ -231,6 +231,12 @@ const menuGroups = [
         label: 'Log Error',
         route: '/log/error',
       },
+      {
+        icon: 'mingcute:code-line',
+        role: ['admin', 'developer', 'guru'],
+        label: 'Dokumentasi API',
+        route: '/docs-api',
+      },
     ]
   }
 ]
