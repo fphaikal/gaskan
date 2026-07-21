@@ -6,7 +6,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { saveAs } from "file-saver"
 import { Button } from "@/components/ui/button"
-import { FileSpreadsheet, FileText, Loader2 } from "lucide-react"
+import { Icon } from "@iconify/react"
 import { cn } from "@/lib/utils"
 
 export interface ExportColumn {
@@ -30,8 +30,8 @@ export function ExportButtons<T extends Record<string, any>>({
   columns,
   fileName = "export_data",
   title = "Exported Data",
-  excelButtonText = "Export to Excel",
-  pdfButtonText = "Export to PDF",
+  excelButtonText = "Excel",
+  pdfButtonText = "PDF",
   disabled = false,
   className,
 }: ExportButtonsProps<T>) {
@@ -107,30 +107,28 @@ export function ExportButtons<T extends Record<string, any>>({
     <div className={cn("flex items-center gap-2", className)}>
       <Button
         variant="outline"
-        size="sm"
         onClick={handleExportExcel}
         disabled={isBtnDisabled || isExportingExcel}
-        className="gap-1.5"
+        className="rounded-2xl border-border bg-card hover:bg-muted font-bold text-xs gap-1.5 h-10 px-3.5 shadow-sm"
       >
         {isExportingExcel ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Icon icon="mingcute:loading-fill" className="h-4 w-4 animate-spin text-emerald-500" />
         ) : (
-          <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+          <Icon icon="mingcute:file-export-line" className="h-4 w-4 text-emerald-500" />
         )}
         <span>{excelButtonText}</span>
       </Button>
 
       <Button
         variant="outline"
-        size="sm"
         onClick={handleExportPDF}
         disabled={isBtnDisabled || isExportingPdf}
-        className="gap-1.5"
+        className="rounded-2xl border-border bg-card hover:bg-muted font-bold text-xs gap-1.5 h-10 px-3.5 shadow-sm"
       >
         {isExportingPdf ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Icon icon="mingcute:loading-fill" className="h-4 w-4 animate-spin text-rose-500" />
         ) : (
-          <FileText className="h-4 w-4 text-rose-600" />
+          <Icon icon="mingcute:pdf-line" className="h-4 w-4 text-rose-500" />
         )}
         <span>{pdfButtonText}</span>
       </Button>

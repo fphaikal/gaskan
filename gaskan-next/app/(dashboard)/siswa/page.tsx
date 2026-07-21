@@ -435,6 +435,21 @@ export default function SiswaPage() {
             <Icon icon="mingcute:refresh-3-line" className="text-lg" />
           </Button>
 
+          {/* Nuxt Navigation Buttons */}
+          <Link href="/siswa/import">
+            <Button variant="outline" className="rounded-2xl border-border bg-card font-bold text-xs gap-2 h-10 px-3.5 shadow-sm">
+              <Icon icon="mingcute:file-import-line" className="text-lg" />
+              Import Excel
+            </Button>
+          </Link>
+
+          <Link href="/siswa/import-foto">
+            <Button variant="outline" className="rounded-2xl border-border bg-card font-bold text-xs gap-2 h-10 px-3.5 shadow-sm">
+              <Icon icon="mingcute:pic-line" className="text-lg" />
+              Bulk Upload Foto
+            </Button>
+          </Link>
+
           <ExportButtons data={exportData} columns={exportColumns} fileName="direktori_siswa" title="Data Siswa" />
 
           {isAdmin && (
