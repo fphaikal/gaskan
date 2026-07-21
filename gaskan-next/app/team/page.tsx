@@ -243,12 +243,26 @@ export default function PublicTeamPage() {
 
       {/* MEMBER DETAIL MODAL */}
       {selectedMember && (
-        <Dialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)}>
-          <DialogContent className="sm:max-w-md p-6 sm:p-8 rounded-[2.5rem] bg-card border border-border space-y-5 relative overflow-hidden">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setSelectedMember(null)}
+        >
+          <div
+            className="sm:max-w-md w-full p-6 sm:p-8 rounded-[2.5rem] bg-card border border-border space-y-5 relative overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button X */}
+            <button
+              onClick={() => setSelectedMember(null)}
+              className="absolute top-4 right-4 z-20 text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted transition-colors"
+            >
+              <Icon icon="mingcute:close-line" className="text-xl" />
+            </button>
+
             {/* Header Decorative Background Gradient */}
             <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-primary/15 to-transparent pointer-events-none" />
 
-            <DialogHeader className="p-0 border-none bg-transparent text-center space-y-3 relative z-10 pt-2">
+            <div className="text-center space-y-3 relative z-10 pt-2">
               {/* Large Avatar Frame with Glowing Siluet Border */}
               <div className="w-28 h-28 rounded-3xl bg-primary/10 border-2 border-primary/40 shadow-2xl shadow-primary/20 flex items-center justify-center mx-auto overflow-hidden shrink-0">
                 {resolvePhoto(selectedMember.photoUrl) && !resolvePhoto(selectedMember.photoUrl)?.includes('0000') ? (
@@ -260,9 +274,9 @@ export default function PublicTeamPage() {
 
               {/* Name & Role */}
               <div>
-                <DialogTitle className="text-2xl font-black text-foreground tracking-tight">
+                <h3 className="text-2xl font-black text-foreground tracking-tight">
                   {selectedMember.name}
-                </DialogTitle>
+                </h3>
                 <p className={`text-sm font-bold mt-1 ${roleColor(selectedMember.role).split(' ')[0]}`}>
                   {selectedMember.role || 'Anggota Tim'}
                 </p>
@@ -275,7 +289,7 @@ export default function PublicTeamPage() {
                   <span>Periode {selectedMember.year || '2023 - Sekarang'}</span>
                 </div>
               </div>
-            </DialogHeader>
+            </div>
 
             {/* Bio Quote Box */}
             {selectedMember.bio && (
@@ -371,8 +385,8 @@ export default function PublicTeamPage() {
             >
               Tutup
             </Button>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       )}
 
       {/* Public Landing Footer */}
