@@ -146,7 +146,10 @@ const deletePhoto = async () => {
   } finally {
     isUploading.value = false;
   }
+};
+
 const isSyncingPhotos = ref(false);
+
 
 const syncPhotos = async (direction) => {
   isSyncingPhotos.value = true;
@@ -160,9 +163,10 @@ const syncPhotos = async (direction) => {
       $toast.success(res.message);
       closeModal('avatarActions');
     }
-  } catch (error: any) {
+  } catch (error) {
     $toast.error(error?.data?.message || 'Gagal menyamakan foto');
   } finally {
+
     isSyncingPhotos.value = false;
   }
 };

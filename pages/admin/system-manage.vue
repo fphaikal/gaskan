@@ -257,9 +257,13 @@ const cancelBackup = async (provider) => {
   } catch (err) {
     $toast.error(err.data?.message || 'Gagal membatalkan proses backup');
   } finally {
-const cancelling = ref(false);
+    cancelling.value = false;
+  }
+};
 
 // ── Student Field Permissions State ─────────────────────────────
+
+
 const fieldPermissions = ref([]);
 const savingPermissions = ref(false);
 
@@ -285,9 +289,10 @@ const saveFieldPermissions = async () => {
       $toast.success('Perizinan field profil siswa berhasil disimpan!');
       await fetchFieldPermissions();
     }
-  } catch (err: any) {
+  } catch (err) {
     $toast.error(err.data?.message || 'Gagal menyimpan perizinan field');
   } finally {
+
     savingPermissions.value = false;
   }
 };

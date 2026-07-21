@@ -231,7 +231,7 @@ const deleteStudentPhotoNow = async (targetType = 'both') => {
       user.value = updated;
       $toast.success('Foto siswa berhasil dihapus');
     }
-  } catch (err: any) {
+  } catch (err) {
     $toast.error(err.data?.message || 'Gagal menghapus foto siswa');
   }
 };
@@ -251,7 +251,7 @@ const syncStudentPhotoDirection = async (direction) => {
       user.value = updated;
       $toast.success(res.message);
     }
-  } catch (err: any) {
+  } catch (err) {
     $toast.error(err.data?.message || 'Gagal menyamakan foto siswa');
   } finally {
     isSyncingStudentPhotos.value = false;
