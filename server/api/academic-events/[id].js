@@ -1,14 +1,10 @@
 export default defineEventHandler(async (event) => {
   const session = requireSession(event);
   const config = useRuntimeConfig();
+  const id = getRouterParam(event, 'id');
   const method = getMethod(event);
-  const query = getQuery(event);
-  const params = new URLSearchParams(query);
 
-  let url = `${config.public.apiBase}/api/academic-events`;
-  if (params.toString()) {
-    url += `?${params.toString()}`;
-  }
+  const url = `${config.public.apiBase}/api/academic-events/${id}`;
 
   const options = {
     method,

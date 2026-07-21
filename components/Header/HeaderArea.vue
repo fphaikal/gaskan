@@ -4,9 +4,8 @@ import { storeToRefs } from 'pinia'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useRoute } from 'vue-router'
 import DropdownUser from './DropdownUser.vue'
+import AcademicCalendarModal from '~/components/Calendar/AcademicCalendarModal.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Calendar } from 'v-calendar'
-import 'v-calendar/style.css'
 
 const route = useRoute()
 const { toggleSidebar } = useSidebarStore()
@@ -38,35 +37,10 @@ const updateDateTime = () => {
 }
 
 // Academic Events Logic
-const academicEvents = ref([])
-const fetchEvents = async () => {
-  try {
-    const res = await $fetch('/api/academic-events')
-    academicEvents.value = Array.isArray(res?.data) ? res.data : []
-  } catch (e) {
-    console.error('Failed to fetch academic events:', e)
-  }
-}
-
-const calendarAttributes = computed(() => {
-  return academicEvents.value.map(event => ({
-    key: event.id,
-    dot: {
-      style: { backgroundColor: event.color || '#F2C300' },
-    },
-    dates: new Date(event.date),
-    popover: {
-      label: event.title,
-      visibility: 'hover',
-    }
-  }))
-})
-
 let timer: any
 onMounted(() => {
   updateDateTime()
   timer = setInterval(updateDateTime, 1000)
-  fetchEvents()
 })
 
 onUnmounted(() => {
@@ -160,56 +134,7 @@ const pageTitle = computed(() => {
     </div>
 
     <!-- Kalender Akademik Popup -->
-    <Teleport to="body">
-      <dialog :class="['modal', { 'modal-open': showCalendarModal }]">
-        <div class="modal-box bg-base-100 border border-base-200 p-0 overflow-visible rounded-[2.5rem] max-w-sm shadow-2xl relative">
-          <!-- Header Popup -->
-          <div class="p-6 pb-2 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <Icon name="mingcute:calendar-month-fill" size="20" />
-              </div>
-              <div>
-                <h3 class="font-black text-lg text-base-content leading-none">Kalender</h3>
-                <p class="text-[9px] font-bold text-base-content/30 uppercase tracking-widest mt-1">Akademik SMTI</p>
-              </div>
-            </div>
-            <button @click="showCalendarModal = false" class="btn btn-ghost btn-sm btn-circle rounded-xl">
-              <Icon name="mingcute:close-line" size="20" />
-            </button>
-          </div>
-          
-          <!-- Calendar Content -->
-          <div class="p-4 flex justify-center">
-            <Calendar 
-            expanded 
-            borderless
-            transparent
-            :is-dark="isDark"
-            locale="id"
-            title-position="left"
-            class="!bg-transparent"
-            :attributes="calendarAttributes"
-          />
-          </div>
-
-          <!-- Footer Popup -->
-          <div class="p-4 pt-0">
-            <div class="bg-base-200/50 rounded-2xl p-3 flex items-center gap-3 border border-base-300">
-              <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0">
-                <Icon name="mingcute:announcement-fill" size="16" />
-              </div>
-              <p class="text-[10px] font-bold text-base-content/60 leading-tight">
-                Klik tanggal untuk melihat detail agenda akademik hari tersebut.
-              </p>
-            </div>
-          </div>
-        </div>
-        <form method="dialog" class="modal-backdrop bg-black/60 backdrop-blur-sm" @click="showCalendarModal = false">
-          <button>close</button>
-        </form>
-      </dialog>
-    </Teleport>
+    <AcademicCalendarModal v-model="showCalendarModal" />
   </header>
 </template>
 
