@@ -68,7 +68,7 @@ const navGroups: NavGroup[] = [
     groupName: 'PRESENSI & KEHADIRAN',
     items: [
       { title: 'Absensi', href: '/absensi', icon: 'mingcute:clipboard-fill' },
-      { title: 'Log Kehadiran', href: '/log', icon: 'mingcute:list-check-2-fill' },
+      { title: 'Log Kehadiran', href: '/log/kehadiran', icon: 'mingcute:list-check-2-fill' },
       { title: 'On Site', href: '/log/onsite', icon: 'mingcute:location-2-fill' },
       { title: 'Surat Izin', href: '/izin', icon: 'mingcute:document-2-fill' },
       { title: 'Laporan Absensi', href: '/absensi/laporan', icon: 'mingcute:file-export-fill' },
