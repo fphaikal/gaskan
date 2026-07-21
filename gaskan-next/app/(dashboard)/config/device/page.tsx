@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Icon } from '@iconify/react';
 import api from '@/lib/api';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -18,59 +20,71 @@ import {
 } from '@/components/ui/dialog';
 
 export default function ConfigDevicePage() {
+  const router = useRouter();
   const [devices, setDevices] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [settingPushId, setSettingPushId] = useState<string | null>(null);
+
+  // Parameter Kehadiran State
+  const [lateHour, setLateHour] = useState(7);
+  const [lateMinute, setLateMinute] = useState(0);
+  const [minOutHour, setMinOutHour] = useState(12);
+  const [minOutMinute, setMinOutMinute] = useState(0);
+  const [onsiteLimitHour, setOnsiteLimitHour] = useState(21);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // Modal State
   const [showModal, setShowModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  // Global Time Settings State
-  const [lateTime, setLateTime] = useState('07:00');
-  const [minOutTime, setMinOutTime] = useState('12:00');
-  const [onsiteLimitHour, setOnsiteLimitHour] = useState('21');
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-
-  // Device Form
+  const [isEdit, setIsEdit] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const [form, setForm] = useState({
-    id: '',
     name: '',
     location: '',
     url: '',
-    username: 'admin',
+    username: '',
     password: '',
     poolingInterval: 30,
     isActive: true,
   });
 
+  const lateTime = useMemo(() => {
+    const h = String(lateHour).padStart(2, '0');
+    const m = String(lateMinute).padStart(2, '0');
+    return `${h}:${m}`;
+  }, [lateHour, lateMinute]);
+
+  const minOutTime = useMemo(() => {
+    const h = String(minOutHour).padStart(2, '0');
+    const m = String(minOutMinute).padStart(2, '0');
+    return `${h}:${m}`;
+  }, [minOutHour, minOutMinute]);
+
   const fetchDevices = useCallback(async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
-      const res = await api.get('/device').catch(() => ({ data: [] }));
+      const res = await api.get('/device').catch(() => api.get('/config/device'));
       const d = res?.data?.data || res?.data || [];
-      if (Array.isArray(d) && d.length > 0) {
-        setDevices(d);
-      } else {
-        setDevices([
-          { id: 'dev-1', name: 'Gerbang Utama SMTI', location: 'Pintu Depan', url: 'http://192.168.1.201:80', username: 'admin', poolingInterval: 30, isActive: true, status: 'ONLINE' },
-          { id: 'dev-2', name: 'Mesin Lab Kimia', location: 'Gedung B Lt 2', url: 'http://192.168.1.202:80', username: 'admin', poolingInterval: 30, isActive: false, status: 'OFFLINE' },
-        ]);
-      }
+      if (Array.isArray(d)) setDevices(d);
     } catch (e) {
       console.error(e);
+      toast.error('Gagal mengambil daftar perangkat');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, []);
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await api.get('/system/settings').catch(() => null);
-      if (res?.data?.data) {
-        const s = res.data.data;
-        if (s.lateTime) setLateTime(s.lateTime);
-        if (s.minOutTime) setMinOutTime(s.minOutTime);
-        if (s.onsiteLimitHour) setOnsiteLimitHour(String(s.onsiteLimitHour));
+      const res = await api.get('/system/settings').catch(() => api.get('/system'));
+      const d = res?.data?.data || res?.data;
+      if (d) {
+        if (d.lateHour !== undefined) setLateHour(d.lateHour);
+        if (d.lateMinute !== undefined) setLateMinute(d.lateMinute);
+        if (d.minOutHour !== undefined) setMinOutHour(d.minOutHour);
+        if (d.minOutMinute !== undefined) setMinOutMinute(d.minOutMinute);
+        if (d.onsiteLimitHour !== undefined) setOnsiteLimitHour(d.onsiteLimitHour);
       }
     } catch (e) {
       console.error(e);
@@ -82,336 +96,478 @@ export default function ConfigDevicePage() {
     fetchSettings();
   }, [fetchDevices, fetchSettings]);
 
-  const openCreate = () => {
-    setEditMode(false);
-    setForm({ id: '', name: '', location: '', url: 'http://192.168.1.201:80', username: 'admin', password: '', poolingInterval: 30, isActive: true });
-    setShowModal(true);
-  };
-
-  const openEdit = (d: any) => {
-    setEditMode(true);
+  const openAddModal = () => {
+    setIsEdit(false);
+    setCurrentId(null);
     setForm({
-      id: d.id,
-      name: d.name || '',
-      location: d.location || '',
-      url: d.url || d.ipAddress || '',
-      username: d.username || 'admin',
+      name: '',
+      location: '',
+      url: '',
+      username: '',
       password: '',
-      poolingInterval: d.poolingInterval || 30,
-      isActive: d.isActive !== false,
+      poolingInterval: 30,
+      isActive: true,
     });
     setShowModal(true);
   };
 
-  const saveDevice = async () => {
-    if (!form.name || !form.url || !form.location) {
+  const openEditModal = (device: any) => {
+    setIsEdit(true);
+    setCurrentId(device.id);
+    setForm({
+      name: device.name || '',
+      location: device.location || '',
+      url: device.url || '',
+      username: device.username || '',
+      password: '',
+      poolingInterval: device.poolingInterval || 30,
+      isActive: device.isActive !== false,
+    });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name || !form.location || !form.url || !form.username) {
       toast.error('Harap isi semua kolom wajib!');
       return;
     }
-    setIsSaving(true);
+    if (!isEdit && !form.password) {
+      toast.error('Password wajib diisi untuk perangkat baru!');
+      return;
+    }
+    setSaving(true);
     try {
-      if (editMode && form.id) {
-        await api.put(`/device/${form.id}`, form).catch(() => {});
-        toast.success('Perangkat mesin absensi berhasil diperbarui');
+      const payload: any = { ...form };
+      if (isEdit && !payload.password) delete payload.password;
+
+      if (isEdit && currentId) {
+        await api.put(`/device/${currentId}`, payload);
+        toast.success('Perangkat berhasil diperbarui');
       } else {
-        await api.post('/device', form).catch(() => {});
-        toast.success('Perangkat mesin absensi baru berhasil ditambahkan');
+        await api.post('/device', payload);
+        toast.success('Perangkat berhasil ditambahkan');
       }
       setShowModal(false);
       await fetchDevices();
     } catch (e: any) {
-      toast.error('Gagal menyimpan perangkat');
+      toast.error(e?.response?.data?.message || 'Gagal menyimpan perangkat');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const saveGlobalSettings = async () => {
-    setIsSavingSettings(true);
+  const handleDelete = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus perangkat ini?')) return;
     try {
-      await api.put('/system/settings', { lateTime, minOutTime, onsiteLimitHour }).catch(() => {});
-      toast.success('Pengaturan jam presensi global berhasil disimpan!');
-    } catch (e) {
-      toast.success('Pengaturan jam presensi berhasil diperbarui');
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const handleDeleteDevice = async () => {
-    if (!deleteId) return;
-    setIsSaving(true);
-    try {
-      await api.delete(`/device/${deleteId}`).catch(() => {});
+      await api.delete(`/device/${id}`);
       toast.success('Perangkat berhasil dihapus');
-      setDeleteId(null);
       await fetchDevices();
     } catch (e) {
       toast.error('Gagal menghapus perangkat');
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-        <p className="text-xs font-semibold text-muted-foreground">Memuat daftar perangkat & pengaturan jam...</p>
-      </div>
+  const testConnection = async (device: any) => {
+    setTestingId(device.id);
+    try {
+      const res = await api.post('/device/test-connection', {
+        url: device.url,
+        username: device.username,
+        password: 'mock-password',
+      });
+      if (res?.data?.success) {
+        toast.success(`${device.name}: ${res.data.message || 'Koneksi Berhasil'}`);
+      } else {
+        toast.error(`${device.name}: ${res?.data?.message || 'Koneksi gagal'}`);
+      }
+    } catch (e: any) {
+      toast.error(`${device.name}: ${e?.response?.data?.message || 'Gagal terhubung'}`);
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+  const handleSetupPush = async (device: any) => {
+    const guessedBackend = `${window.location.protocol}//${window.location.hostname}:5000`;
+    const serverUrl = prompt(
+      `Masukkan Alamat IP/Port Server GASKAN (IP Backend) agar perangkat bisa mengirim data presensi secara real-time (Push Mode):`,
+      guessedBackend
     );
-  }
+    if (!serverUrl) return;
+
+    setSettingPushId(device.id);
+    try {
+      const res = await api.post(`/device/${device.id}`, { serverUrl });
+      toast.success(res?.data?.message || 'Push Mode berhasil dikonfigurasi');
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Gagal terhubung ke mesin untuk setup push');
+    } finally {
+      setSettingPushId(null);
+    }
+  };
+
+  const toggleDeviceStatus = async (device: any) => {
+    try {
+      await api.put(`/device/${device.id}`, { isActive: !device.isActive });
+      setDevices((prev) =>
+        prev.map((d) => (d.id === device.id ? { ...d, isActive: !d.isActive } : d))
+      );
+      toast.success(`Status ${device.name} berhasil diperbarui`);
+    } catch (e) {
+      toast.error('Gagal mengubah status perangkat');
+    }
+  };
+
+  const saveLateSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await api.put('/system/settings', {
+        lateHour: Number(lateHour),
+        lateMinute: Number(lateMinute),
+        minOutHour: Number(minOutHour),
+        minOutMinute: Number(minOutMinute),
+        onsiteLimitHour: Number(onsiteLimitHour),
+      });
+      toast.success('Pengaturan parameter kehadiran berhasil disimpan');
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Gagal menyimpan pengaturan');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
-      {/* Header Bar matching Nuxt 1-to-1 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
+      {/* Header Area matching Nuxt 1-to-1 */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            Konfigurasi Mesin & Gerbang
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+            Mesin & Gerbang Presensi
+            <Badge className="bg-primary/15 text-primary border-primary/30 text-xs font-black">
+              {devices.length} Perangkat
+            </Badge>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-0.5">
-            Pengaturan koneksi beberapa perangkat absensi Hikvision & aturan jam presensi
+            Kelola beberapa mesin absensi Hikvision beserta nama dan lokasinya untuk pelacakan gerbang pintu masuk.
           </p>
         </div>
+
         <Button
-          onClick={openCreate}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs h-12 shadow-lg shadow-primary/20"
+          onClick={openAddModal}
+          className="bg-primary text-primary-foreground rounded-2xl px-6 h-12 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-xs"
         >
-          <Icon icon="mingcute:add-circle-fill" className="text-lg" />
-          <span>Tambah Perangkat Baru</span>
+          <Icon icon="mingcute:plus-fill" className="mr-1.5 text-lg" />
+          Tambah Perangkat
         </Button>
       </div>
 
-      {/* SECTION 1: GLOBAL PRESENCE TIME SETTINGS */}
-      <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-            <Icon icon="mingcute:time-fill" className="text-xl" />
-          </div>
-          <div>
-            <h3 className="text-lg font-black text-foreground">Pengaturan Jam Presensi Global</h3>
-            <p className="text-xs text-muted-foreground font-semibold">Tentukan batas jam keterlambatan dan jam pulang minimal siswa</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="space-y-2">
-            <Label htmlFor="lateTimeInput" className="text-xs font-black uppercase text-rose-500 tracking-wider">
-              Batas Jam Terlambat (Masuk)
-            </Label>
-            <Input
-              id="lateTimeInput"
-              type="time"
-              value={lateTime}
-              onChange={(e) => setLateTime(e.target.value)}
-              className="rounded-2xl bg-muted/30 font-bold h-11 border-border"
-            />
-            <p className="text-[10px] text-muted-foreground font-semibold">Siswa yang scan setelah jam ini dianggap Terlambat</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="minOutInput" className="text-xs font-black uppercase text-emerald-500 tracking-wider">
-              Batas Jam Pulang Minimal
-            </Label>
-            <Input
-              id="minOutInput"
-              type="time"
-              value={minOutTime}
-              onChange={(e) => setMinOutTime(e.target.value)}
-              className="rounded-2xl bg-muted/30 font-bold h-11 border-border"
-            />
-            <p className="text-[10px] text-muted-foreground font-semibold">Scan sebelum jam ini dicatat sebagai Jam Masuk</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="onsiteLimitInput" className="text-xs font-black uppercase text-sky-500 tracking-wider">
-              Batas Jam Log Onsite (Malam)
-            </Label>
-            <Input
-              id="onsiteLimitInput"
-              type="number"
-              value={onsiteLimitHour}
-              onChange={(e) => setOnsiteLimitHour(e.target.value)}
-              placeholder="21"
-              className="rounded-2xl bg-muted/30 font-bold h-11 border-border"
-            />
-            <p className="text-[10px] text-muted-foreground font-semibold">Maksimal batas jam (24-jam) log Onsite diperbarui</p>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button
-            disabled={isSavingSettings}
-            onClick={saveGlobalSettings}
-            className="rounded-2xl font-bold px-6 bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20"
-          >
-            {isSavingSettings ? 'Simpan Jam...' : 'Simpan Pengaturan Jam Presensi'}
-          </Button>
-        </div>
-      </div>
-
-      {/* SECTION 2: DEVICE CARDS GRID */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-black text-foreground tracking-tight">Daftar Perangkat Mesin Hikvision</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {devices.map((d) => (
-            <div key={d.id} className="bg-card rounded-3xl p-6 border border-border shadow-sm flex flex-col justify-between space-y-4 hover:border-primary/40 transition-all">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge className={d.status === 'ONLINE' ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[9px] font-black' : 'bg-rose-500/15 text-rose-500 border-rose-500/30 text-[9px] font-black'}>
-                    {d.status === 'ONLINE' ? 'ONLINE' : 'OFFLINE'}
-                  </Badge>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-sky-500 rounded-lg" onClick={() => openEdit(d)}>
-                      <Icon icon="mingcute:edit-2-line" className="text-base" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-rose-500 rounded-lg" onClick={() => setDeleteId(d.id)}>
-                      <Icon icon="mingcute:delete-2-line" className="text-base" />
-                    </Button>
-                  </div>
-                </div>
-
-                <h4 className="text-lg font-black text-foreground mb-1">{d.name}</h4>
-                <p className="text-xs text-muted-foreground font-semibold mb-3">{d.location || 'Lokasi Belum Diatur'}</p>
-
-                <div className="bg-muted/30 p-3 rounded-2xl border border-border space-y-1.5 font-mono text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">URL/Host:</span>
-                    <span className="font-bold text-foreground truncate max-w-[150px]">{d.url || d.ipAddress}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Interval Sync:</span>
-                    <span className="font-bold text-foreground">{d.poolingInterval || 30}s</span>
-                  </div>
-                </div>
+      {/* Loading Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="bg-card border border-border rounded-3xl p-6 space-y-4 animate-pulse">
+              <div className="h-6 w-1/2 bg-muted rounded-lg" />
+              <div className="h-4 w-1/3 bg-muted/60 rounded-lg" />
+              <div className="space-y-2 pt-4">
+                <div className="h-4 bg-muted/60 rounded" />
+                <div className="h-4 bg-muted/60 rounded w-5/6" />
               </div>
-
-              <Link href={`/config/device/${d.id}`}>
-                <Button variant="outline" className="w-full rounded-2xl font-bold text-xs gap-2 bg-card border-border">
-                  <Icon icon="mingcute:lightning-line" className="text-base text-amber-500" /> Detail & Test PING
-                </Button>
-              </Link>
             </div>
           ))}
         </div>
+      ) : devices.length === 0 ? (
+        <div className="bg-card border border-border rounded-3xl p-16 text-center max-w-lg mx-auto shadow-sm space-y-3">
+          <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto">
+            <Icon icon="mingcute:chip-line" className="text-3xl text-muted-foreground/40" />
+          </div>
+          <h3 className="text-xl font-bold text-foreground">Belum ada perangkat terdaftar</h3>
+          <p className="text-muted-foreground text-xs font-medium">
+            Tambahkan mesin sidik jari/wajah Hikvision pertama Anda untuk mulai sinkronisasi data kehadiran siswa secara otomatis.
+          </p>
+          <Button onClick={openAddModal} className="rounded-xl px-5 h-10 text-xs font-bold">
+            <Icon icon="mingcute:plus-fill" className="mr-1 text-sm" />
+            Daftarkan Mesin
+          </Button>
+        </div>
+      ) : (
+        /* Grid of Devices matching Nuxt 1-to-1 */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {devices.map((d) => (
+            <div
+              key={d.id}
+              className="bg-card border border-border hover:border-primary/30 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+            >
+              <div>
+                {/* Header Card */}
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                      {d.name}
+                    </h2>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 font-semibold">
+                      <Icon icon="mingcute:location-fill" className="text-primary text-sm shrink-0" />
+                      <span>{d.location}</span>
+                    </div>
+                  </div>
+
+                  {/* Toggle switch to activate/deactivate */}
+                  <Switch
+                    checked={d.isActive !== false}
+                    onCheckedChange={() => toggleDeviceStatus(d)}
+                  />
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-border my-4" />
+
+                {/* Connection Stats matching Nuxt 1-to-1 */}
+                <div className="space-y-2.5 text-xs font-medium text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mingcute:link-2-line" className="text-base text-muted-foreground/60" />
+                    <span className="font-mono text-xs truncate bg-muted/60 px-2 py-0.5 rounded-lg text-foreground font-bold">
+                      {d.url}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mingcute:user-3-line" className="text-base text-muted-foreground/60" />
+                    <span>
+                      Username: <strong className="text-foreground">{d.username}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mingcute:signal-fill" className="text-base text-muted-foreground/60" />
+                    <span>
+                      Mode: <strong className="text-primary">Push Webhook (Real-time)</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mingcute:time-line" className="text-base text-muted-foreground/60" />
+                    <span>
+                      Interval: <strong className="text-foreground">{d.poolingInterval || 1} detik</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Actions matching Nuxt 1-to-1 */}
+              <div className="mt-6 pt-4 border-t border-border space-y-3">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => testConnection(d)}
+                    disabled={testingId === d.id}
+                    className="flex-1 rounded-xl h-9 text-xs font-bold border-primary text-primary hover:bg-primary/10"
+                  >
+                    {testingId === d.id ? (
+                      <Icon icon="mingcute:loading-fill" className="animate-spin mr-1 text-sm" />
+                    ) : (
+                      <Icon icon="mingcute:radar-fill" className="mr-1 text-sm" />
+                    )}
+                    Test Koneksi
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={() => handleSetupPush(d)}
+                    disabled={settingPushId === d.id}
+                    className="flex-1 rounded-xl h-9 text-xs font-bold bg-primary text-primary-foreground"
+                  >
+                    {settingPushId === d.id ? (
+                      <Icon icon="mingcute:loading-fill" className="animate-spin mr-1 text-sm" />
+                    ) : (
+                      <Icon icon="mingcute:upload-2-fill" className="mr-1 text-sm" />
+                    )}
+                    Setup Push
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs text-muted-foreground font-semibold">Aksi Perangkat:</span>
+                  <div className="flex items-center gap-1.5">
+                    {/* Link to detail page /config/device/[id] */}
+                    <Link
+                      href={`/config/device/${d.id}`}
+                      className="h-8 w-8 rounded-xl border border-border hover:border-emerald-500/30 hover:text-emerald-500 flex items-center justify-center text-muted-foreground transition-colors"
+                      title="Statistik & Kapasitas Alat"
+                    >
+                      <Icon icon="mingcute:chart-bar-fill" className="text-base" />
+                    </Link>
+                    <button
+                      onClick={() => openEditModal(d)}
+                      className="h-8 w-8 rounded-xl border border-border hover:border-primary/30 hover:text-primary flex items-center justify-center text-muted-foreground transition-colors"
+                    >
+                      <Icon icon="mingcute:pencil-fill" className="text-base" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(d.id)}
+                      className="h-8 w-8 rounded-xl border border-border hover:border-rose-500/30 hover:text-rose-500 flex items-center justify-center text-muted-foreground transition-colors"
+                    >
+                      <Icon icon="mingcute:delete-2-fill" className="text-base" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Attendance Parameters Card matching Nuxt 1-to-1 */}
+      <div className="mt-12 max-w-2xl bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-md relative overflow-hidden">
+        <div className="flex items-start gap-4 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+            <Icon icon="mingcute:time-fill" className="text-2xl" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Parameter Kehadiran & On-Site</h2>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
+              Konfigurasi batas waktu keterlambatan presensi masuk dan jam batas pembersihan otomatis daftar siswa aktif di area (On-Site).
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-foreground">
+              Batas Waktu Masuk <span className="text-rose-500">*</span>
+            </Label>
+            <Input
+              type="time"
+              value={lateTime}
+              onChange={(e) => {
+                const [h, m] = e.target.value.split(':');
+                if (h) setLateHour(Number(h));
+                if (m) setLateMinute(Number(m));
+              }}
+              className="rounded-xl font-bold text-xs h-10 bg-muted/30"
+            />
+            <span className="text-[10px] text-muted-foreground block">Masuk setelah jam ini otomatis &quot;TERLAMBAT&quot;</span>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-foreground">
+              Batas Minimal Pulang <span className="text-rose-500">*</span>
+            </Label>
+            <Input
+              type="time"
+              value={minOutTime}
+              onChange={(e) => {
+                const [h, m] = e.target.value.split(':');
+                if (h) setMinOutHour(Number(h));
+                if (m) setMinOutMinute(Number(m));
+              }}
+              className="rounded-xl font-bold text-xs h-10 bg-muted/30"
+            />
+            <span className="text-[10px] text-muted-foreground block">Scan sebelum jam ini diabaikan</span>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-foreground">
+              Batas Jam Log Onsite <span className="text-rose-500">*</span>
+            </Label>
+            <select
+              value={onsiteLimitHour}
+              onChange={(e) => setOnsiteLimitHour(Number(e.target.value))}
+              className="w-full h-10 rounded-xl bg-muted/30 border border-border px-3 font-bold text-xs"
+            >
+              {[...Array(24)].map((_, i) => (
+                <option key={i} value={i}>
+                  Jam {String(i).padStart(2, '0')}:00 WIB
+                </option>
+              ))}
+            </select>
+            <span className="text-[10px] text-muted-foreground block">Auto-flush log onsite harian</span>
+          </div>
+        </div>
+
+        <Button
+          onClick={saveLateSettings}
+          disabled={savingSettings}
+          className="rounded-2xl font-bold text-xs bg-primary text-primary-foreground px-6 h-11"
+        >
+          {savingSettings ? 'Memproses...' : 'Simpan Parameter Presensi'}
+        </Button>
       </div>
 
-      {/* ═══ CREATE / EDIT MODAL ═══ */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
-            <DialogTitle className="text-xl font-black text-foreground">
-              {editMode ? 'Edit Perangkat Mesin' : 'Tambah Perangkat Baru'}
-            </DialogTitle>
-          </DialogHeader>
+      {/* CREATE / EDIT DEVICE MODAL */}
+      {showModal && (
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+          <DialogContent className="sm:max-w-md p-6 rounded-3xl bg-card border-border">
+            <DialogHeader className="p-0 border-none bg-transparent">
+              <DialogTitle className="text-xl font-black text-foreground">
+                {isEdit ? 'Edit Perangkat Absensi' : 'Daftarkan Perangkat Baru'}
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
-            <div className="space-y-2">
-              <Label htmlFor="devName">Nama Perangkat</Label>
-              <Input
-                id="devName"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Contoh: Gerbang Utama"
-                className="rounded-2xl bg-muted/30 font-bold h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="devLoc">Lokasi Pemasangan</Label>
-              <Input
-                id="devLoc"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                placeholder="Contoh: Pintu Depan Gedung A"
-                className="rounded-2xl bg-muted/30 font-bold h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="devUrl">URL / Endpoint Mesin (ISAPI)</Label>
-              <Input
-                id="devUrl"
-                value={form.url}
-                onChange={(e) => setForm({ ...form, url: e.target.value })}
-                placeholder="http://192.168.1.201:80"
-                className="rounded-2xl bg-muted/30 font-bold h-11 font-mono"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="devUser">Username Digest</Label>
+            <div className="space-y-4 text-xs mt-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Nama Perangkat</Label>
                 <Input
-                  id="devUser"
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  className="rounded-2xl bg-muted/30 font-bold h-11 font-mono"
+                  type="text"
+                  placeholder="Contoh: Samping bengkel 1"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="rounded-2xl h-11 bg-muted/30 font-bold text-xs"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="devPass">Password Digest</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Lokasi Perangkat</Label>
                 <Input
-                  id="devPass"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder={editMode ? 'Kosongkan jika sama' : 'Password Hikvision'}
-                  className="rounded-2xl bg-muted/30 font-bold h-11 font-mono"
+                  type="text"
+                  placeholder="Contoh: Samping bengkel"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  className="rounded-2xl h-11 bg-muted/30 font-bold text-xs"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">URL IP Perangkat</Label>
+                <Input
+                  type="text"
+                  placeholder="http://192.168.55.136"
+                  value={form.url}
+                  onChange={(e) => setForm({ ...form, url: e.target.value })}
+                  className="rounded-2xl h-11 bg-muted/30 font-bold text-xs font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Username Hikvision</Label>
+                  <Input
+                    type="text"
+                    value={form.username}
+                    onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    className="rounded-2xl h-11 bg-muted/30 font-bold text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Password</Label>
+                  <Input
+                    type="password"
+                    placeholder={isEdit ? 'Biarkan kosong' : 'Password'}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="rounded-2xl h-11 bg-muted/30 font-bold text-xs"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="poolInt">Interval Sinkronisasi (Detik)</Label>
-              <Input
-                id="poolInt"
-                type="number"
-                value={form.poolingInterval}
-                onChange={(e) => setForm({ ...form, poolingInterval: parseInt(e.target.value) })}
-                className="rounded-2xl bg-muted/30 font-bold h-11"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
-            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowModal(false)}>
-              Batal
-            </Button>
-            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20" disabled={isSaving} onClick={saveDevice}>
-              {isSaving ? 'Memproses...' : editMode ? 'Simpan Perubahan' : 'Tambah Mesin'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ═══ CONFIRM DELETE MODAL ═══ */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md p-6 text-center">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
-          </div>
-          <DialogHeader className="p-0 border-none bg-transparent">
-            <DialogTitle className="text-2xl font-black text-foreground text-center">
-              Hapus Perangkat Mesin?
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
-            Apakah Anda yakin ingin menghapus perangkat ini?
-          </p>
-          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
-            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteId(null)}>
-              Batal
-            </Button>
-            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteDevice}>
-              {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="gap-2 pt-3">
+              <Button variant="ghost" className="rounded-2xl font-bold text-xs" onClick={() => setShowModal(false)}>
+                Batal
+              </Button>
+              <Button onClick={handleSave} disabled={saving} className="rounded-2xl font-bold text-xs bg-primary text-primary-foreground px-6">
+                {saving ? 'Memproses...' : isEdit ? 'Simpan Perubahan' : 'Daftarkan'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

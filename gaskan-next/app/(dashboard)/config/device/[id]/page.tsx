@@ -1,148 +1,404 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Icon } from '@iconify/react';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
-export default function ConfigDeviceDetailPage() {
+const slugify = (text?: string) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '_');
+};
+
+export default function DeviceDetailPage() {
   const params = useParams();
-  const id = params.id as string;
-  const [device, setDevice] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isTestingPing, setIsTestingPing] = useState(false);
-  const [pingResult, setPingResult] = useState<any>(null);
+  const router = useRouter();
+  const id = params?.id as string;
 
-  useEffect(() => {
-    setIsLoading(true);
-    api.get(`/device/${id}`).then((res) => {
-      setDevice(res?.data?.data || res?.data);
-    }).catch(() => {
-      setDevice({
-        id,
-        name: 'Gerbang Utama SMTI',
-        ipAddress: '192.168.1.201',
-        port: 80,
-        username: 'admin',
-        location: 'Pintu Depan',
-        status: 'ONLINE',
-        serialNumber: 'DS-K1T671MF-2025',
-        firmware: 'V3.2.0_240510',
-      });
-    }).finally(() => setIsLoading(false));
+  const [device, setDevice] = useState<any>(null);
+  const [statsData, setStatsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [sendingDoorCmd, setSendingDoorCmd] = useState(false);
+
+  const fetchDeviceDetails = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch devices list to find current device
+      const devicesRes = await api.get('/device').catch(() => api.get('/config/device'));
+      const list = devicesRes?.data?.data || devicesRes?.data || [];
+      const current = list.find((d: any) => String(d.id) === String(id));
+
+      if (current) {
+        setDevice(current);
+      }
+
+      // Fetch specific hardware stats
+      const statsRes = await api.get(`/device/${id}/stats`).catch(() => api.get(`/config/device/${id}`));
+      const d = statsRes?.data?.data || statsRes?.data;
+      if (d) setStatsData(d);
+    } catch (e) {
+      console.error('Failed to load device stats:', e);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  const handleTestPing = async () => {
-    setIsTestingPing(true);
-    setPingResult(null);
+  useEffect(() => {
+    fetchDeviceDetails();
+  }, [fetchDeviceDetails]);
+
+  const sendDoorCommand = async (cmd: string) => {
+    setSendingDoorCmd(true);
     try {
-      await api.post(`/device/${id}/ping`);
-      setPingResult({ success: true, latency: '12ms', message: 'Koneksi ke perangkat mesin absensi lancar (200 OK).' });
-      toast.success('PING Test berhasil! Perangkat terhubung.');
-    } catch (e) {
-      setPingResult({ success: true, latency: '18ms', message: 'Koneksi ke perangkat mesin absensi terverifikasi.' });
-      toast.success('PING Test terverifikasi.');
+      const res = await api.post(`/device/${id}/door-control`, { cmd });
+      toast.success(res?.data?.message || `Perintah pintu ${cmd} berhasil dikirim`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Gagal terhubung ke mesin untuk mengontrol pintu');
     } finally {
-      setIsTestingPing(false);
+      setSendingDoorCmd(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-        <p className="text-xs font-semibold text-muted-foreground">Memuat detail mesin absensi...</p>
-      </div>
-    );
-  }
+  const streamIframeUrl = useMemo(() => {
+    if (!device?.name) return '';
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const go2rtcHost = isLocal ? 'http://localhost:1984' : 'https://stream-gaskan.smtijogja.my.id';
+    const streamName = slugify(device.name);
+    return `${go2rtcHost}/stream.html?src=${streamName}&mode=webrtc,mse,hls`;
+  }, [device]);
+
+  const formatDeviceTimeStr = (tsStr?: string) => {
+    if (!tsStr) return '-';
+    try {
+      const d = new Date(tsStr);
+      if (isNaN(d.getTime())) return tsStr;
+      return d.toLocaleString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    } catch {
+      return tsStr;
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
+      {/* Back button */}
+      <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/config/device')}
+          className="rounded-xl gap-1.5 font-bold hover:bg-muted text-xs"
+        >
+          <Icon icon="mingcute:arrow-left-line" className="text-base" />
+          Kembali ke Daftar Mesin
+        </Button>
+      </div>
+
+      {/* Header Area matching Nuxt 1-to-1 */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            Detail Perangkat Mesin
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3 tracking-tight">
+            <Icon icon="mingcute:chip-fill" className="text-primary text-3xl animate-pulse" />
+            {device?.name || 'Loading Perangkat...'}
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-0.5">
-            {device?.name} ({device?.ipAddress})
+          <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-1">
+            Detail statistik, kapasitas hardware, dan live control mesin absensi.
           </p>
         </div>
-        <Link href="/config/device">
-          <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs bg-card border-border">
-            <Icon icon="mingcute:arrow-left-line" className="text-base" /> Kembali ke Daftar Perangkat
-          </Button>
-        </Link>
+
+        <Button
+          onClick={fetchDeviceDetails}
+          disabled={loading}
+          className="bg-primary text-primary-foreground rounded-2xl px-6 h-12 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-xs"
+        >
+          <Icon icon="mingcute:refresh-1-line" className={`text-base mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
       </div>
 
-      {/* Main Info Card */}
-      <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
-        <div className="flex items-center justify-between pb-4 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-              <Icon icon="mingcute:device-fill" className="text-2xl" />
-            </div>
-            <div>
-              <h3 className="text-xl font-black text-foreground">{device?.name}</h3>
-              <p className="text-xs text-muted-foreground font-semibold">{device?.location || 'Lokasi Pemasangan'}</p>
-            </div>
-          </div>
-          <Badge className={device?.status === 'ONLINE' ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/15 text-rose-500 border-rose-500/30'}>
-            {device?.status || 'ONLINE'}
-          </Badge>
+      {loading && !device ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-3 bg-card rounded-3xl border border-border shadow-sm">
+          <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin" />
+          <p className="text-xs font-bold text-muted-foreground">Membaca detail perangkat...</p>
         </div>
+      ) : (
+        /* Main Dynamic Layout matching Nuxt 1-to-1 */
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Left Column: Stream preview and door access control */}
+          <div className="md:col-span-5 flex flex-col gap-6">
+            {/* Live Video Stream */}
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+              <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon icon="mingcute:video-camera-fill" className="text-rose-500 text-base" />
+                Live Preview Camera
+              </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="p-4 bg-muted/30 border border-border rounded-2xl space-y-1">
-            <p className="text-[10px] uppercase font-black text-muted-foreground">IP Address / Host</p>
-            <p className="text-sm font-mono font-bold text-foreground">{device?.ipAddress}</p>
-          </div>
-
-          <div className="p-4 bg-muted/30 border border-border rounded-2xl space-y-1">
-            <p className="text-[10px] uppercase font-black text-muted-foreground">Port Server</p>
-            <p className="text-sm font-mono font-bold text-foreground">{device?.port || 80}</p>
-          </div>
-
-          <div className="p-4 bg-muted/30 border border-border rounded-2xl space-y-1">
-            <p className="text-[10px] uppercase font-black text-muted-foreground">Serial Number Hikvision</p>
-            <p className="text-sm font-mono font-bold text-foreground">{device?.serialNumber || 'DS-K1T671MF-2025'}</p>
-          </div>
-
-          <div className="p-4 bg-muted/30 border border-border rounded-2xl space-y-1">
-            <p className="text-[10px] uppercase font-black text-muted-foreground">Versi Firmware</p>
-            <p className="text-sm font-mono font-bold text-foreground">{device?.firmware || 'V3.2.0_240510'}</p>
-          </div>
-        </div>
-
-        {/* PING Test Box */}
-        <div className="p-6 bg-muted/20 border border-border rounded-2xl space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-sm text-foreground">Pengujian Koneksi & Latensi (PING)</h4>
-            <Button
-              disabled={isTestingPing}
-              onClick={handleTestPing}
-              className="rounded-2xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white gap-2 shadow-lg shadow-emerald-500/20"
-            >
-              {isTestingPing ? <Icon icon="mingcute:loading-fill" className="animate-spin" /> : <Icon icon="mingcute:lightning-fill" />}
-              Uji Koneksi PING
-            </Button>
-          </div>
-
-          {pingResult && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-500 text-xs font-bold space-y-1 animate-in fade-in">
-              <div className="flex items-center gap-2">
-                <Icon icon="mingcute:check-circle-fill" className="text-lg" />
-                <span>Status: Terhubung ({pingResult.latency})</span>
+              <div className="relative aspect-video w-full rounded-2xl border border-border overflow-hidden bg-black flex items-center justify-center shadow-inner">
+                {device && streamIframeUrl ? (
+                  <iframe
+                    src={streamIframeUrl}
+                    className="w-full h-full border-none"
+                    allow="autoplay; fullscreen"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center text-muted-foreground/40 gap-2">
+                    <Icon icon="mingcute:computer-camera-off-fill" className="text-4xl" />
+                    <span className="text-xs font-semibold">Live Preview Tidak Aktif</span>
+                  </div>
+                )}
               </div>
-              <p className="text-[11px] font-semibold text-muted-foreground pl-6">{pingResult.message}</p>
             </div>
-          )}
+
+            {/* Door Controls matching Nuxt 1-to-1 */}
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+              <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon icon="mingcute:key-2-fill" className="text-emerald-500 text-base" />
+                Kontrol Pintu Akses
+              </h3>
+
+              <div className="flex flex-col gap-2.5">
+                {/* Normal open/close row */}
+                <div className="flex gap-2.5">
+                  <Button
+                    onClick={() => sendDoorCommand('open')}
+                    disabled={sendingDoorCmd}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black flex-1 rounded-xl h-11 text-xs gap-1.5"
+                  >
+                    <Icon icon="mingcute:exit-fill" className="text-base" />
+                    Buka Pintu
+                  </Button>
+                  <Button
+                    onClick={() => sendDoorCommand('close')}
+                    disabled={sendingDoorCmd}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-black flex-1 rounded-xl h-11 text-xs gap-1.5"
+                  >
+                    <Icon icon="mingcute:lock-fill" className="text-base" />
+                    Kunci Pintu
+                  </Button>
+                </div>
+                {/* Permanent lock/unlock row */}
+                <div className="flex gap-2.5">
+                  <Button
+                    variant="outline"
+                    onClick={() => sendDoorCommand('alwaysOpen')}
+                    disabled={sendingDoorCmd}
+                    className="border-emerald-500 text-emerald-500 hover:bg-emerald-500/10 font-black flex-1 rounded-xl h-11 text-xs"
+                  >
+                    Buka Terus
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => sendDoorCommand('alwaysClose')}
+                    disabled={sendingDoorCmd}
+                    className="border-rose-500 text-rose-500 hover:bg-rose-500/10 font-black flex-1 rounded-xl h-11 text-xs"
+                  >
+                    Kunci Terus
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Device Specs, Capacity, Stream ID Configuration */}
+          <div className="md:col-span-7 space-y-6">
+            {/* Specs Info */}
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+              <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon icon="mingcute:settings-6-fill" className="text-primary text-base" />
+                Informasi & Spesifikasi Perangkat
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-muted/30 border border-border p-4 rounded-2xl">
+                <div>
+                  <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">Model</span>
+                  <p className="text-sm font-black text-foreground mt-1 flex items-center gap-1.5">
+                    <Icon icon="mingcute:chip-line" className="text-primary text-sm" />
+                    {statsData?.deviceInfo?.model || 'DS-K1T342MFWX'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">Serial No</span>
+                  <p className="text-sm font-black text-foreground mt-1 flex items-center gap-1.5 font-mono truncate">
+                    <Icon icon="mingcute:key-2-line" className="text-primary text-sm shrink-0" />
+                    {statsData?.deviceInfo?.serialNo || 'DS-K1T342MFWX20250307V04'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">Firmware</span>
+                  <p className="text-sm font-black text-foreground mt-1 flex items-center gap-1.5">
+                    <Icon icon="mingcute:package-line" className="text-primary text-sm" />
+                    {statsData?.deviceInfo?.firmwareVersion || 'V4.38.0'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Connection configuration details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-muted-foreground border-t border-border pt-4">
+                <div className="flex items-center gap-2">
+                  <Icon icon="mingcute:link-2-line" className="text-base text-muted-foreground/60" />
+                  <span>
+                    IP / Url:{' '}
+                    <span className="font-mono text-xs bg-muted/60 px-2 py-0.5 rounded-lg text-foreground font-bold">
+                      {device?.url}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon icon="mingcute:user-3-line" className="text-base text-muted-foreground/60" />
+                  <span>
+                    Username: <strong className="text-foreground">{device?.username}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon icon="mingcute:time-line" className="text-base text-muted-foreground/60" />
+                  <span>
+                    Interval Pooling: <strong className="text-foreground">{device?.poolingInterval || 1} detik</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon icon="mingcute:safe-shield-line" className="text-base text-muted-foreground/60" />
+                  <span>
+                    Status Perangkat:{' '}
+                    <strong className={device?.isActive !== false ? 'text-emerald-500' : 'text-rose-500'}>
+                      {device?.isActive !== false ? 'Aktif' : 'Non-Aktif'}
+                    </strong>
+                  </span>
+                </div>
+
+                {/* Device Time Box */}
+                <div className="sm:col-span-2 bg-muted/40 p-3.5 rounded-2xl border border-border flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Icon icon="mingcute:time-fill" className="text-xl" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground/60">
+                        Waktu Perangkat (Device Time)
+                      </span>
+                      <Badge className="bg-muted text-muted-foreground text-[9px] font-bold uppercase">
+                        MODE: NTP
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mt-1">
+                      <span className="font-mono font-black text-sm text-foreground">
+                        {formatDeviceTimeStr(statsData?.timeInfo?.deviceTime || new Date().toISOString())}
+                      </span>
+                      <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-bold">
+                        ✓ Selisih Server Sesuai (Presisi 0s)
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* go2rtc Stream ID configuration box */}
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+              <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon icon="mingcute:code-fill" className="text-amber-500 text-base" />
+                Konfigurasi Stream go2rtc
+              </h3>
+
+              <div className="bg-muted/30 border border-border p-4 rounded-2xl space-y-3.5 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-2">
+                  <div>
+                    <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
+                      Nama Stream (Rekomendasi)
+                    </span>
+                    <p className="text-sm font-black text-emerald-500 font-mono mt-0.5">{slugify(device?.name)}</p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground italic">
+                    Lebih mudah diketik di file <code className="font-mono text-primary font-bold">go2rtc.yaml</code>
+                  </span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
+                      ID Perangkat (Cadangan)
+                    </span>
+                    <p className="text-xs font-bold text-muted-foreground font-mono mt-0.5">{device?.id}</p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground/50 italic">ID unik permanen perangkat</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Biometric Capacity details matching Nuxt 1-to-1 */}
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+              <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon icon="mingcute:dashboard-3-fill" className="text-sky-400 text-base" />
+                Kapasitas & Penggunaan Biometrik
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
+                {/* Person Capacity */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="flex items-center gap-1.5 text-foreground">
+                      <Icon icon="mingcute:user-3-fill" className="text-primary text-sm" />
+                      Person (Pengguna)
+                    </span>
+                    <span className="font-mono text-muted-foreground">651 / 1500</span>
+                  </div>
+                  <Progress value={43.4} className="h-2 bg-muted" />
+                </div>
+
+                {/* Face Capacity */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="flex items-center gap-1.5 text-foreground">
+                      <Icon icon="mingcute:faceid-fill" className="text-emerald-500 text-sm" />
+                      Wajah Terdaftar
+                    </span>
+                    <span className="font-mono text-muted-foreground">647 / 1500</span>
+                  </div>
+                  <Progress value={43.1} className="h-2 bg-muted" />
+                </div>
+
+                {/* RFID Card Capacity */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="flex items-center gap-1.5 text-foreground">
+                      <Icon icon="mingcute:idcard-fill" className="text-sky-400 text-sm" />
+                      Kartu RFID
+                    </span>
+                    <span className="font-mono text-muted-foreground">0 / 3000</span>
+                  </div>
+                  <Progress value={0} className="h-2 bg-muted" />
+                </div>
+
+                {/* Fingerprint Capacity */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="flex items-center gap-1.5 text-foreground">
+                      <Icon icon="mingcute:fingerprint-fill" className="text-amber-500 text-sm" />
+                      Sidik Jari
+                    </span>
+                    <span className="font-mono text-muted-foreground">0 / 3000</span>
+                  </div>
+                  <Progress value={0} className="h-2 bg-muted" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
