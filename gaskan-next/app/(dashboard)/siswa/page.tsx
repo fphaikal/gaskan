@@ -322,7 +322,6 @@ export default function SiswaPage() {
     setIsSyncing(true);
     setSyncFinished(false);
 
-    // Simulate progress log terminal
     const devicesToSync = selectedDevice === 'ALL' ? (devices.length > 0 ? devices : [{ name: 'Gerbang Utama SMTI' }]) : devices.filter(d => d.id === selectedDevice);
     const totalCount = stdIds.length * devicesToSync.length;
     let completed = 0;
@@ -910,19 +909,21 @@ export default function SiswaPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════
-           ALL DIALOG MODALS REPLICATED 1-TO-1 FROM NUXT
+           ALL DIALOG MODALS WITH FIXED HEADER/FOOTER & INTERNAL SCROLL
       ══════════════════════════════════════════════════ */}
 
-      {/* MODAL 1: ADD / EDIT STUDENT MODAL matching Nuxt 1-to-1 */}
+      {/* MODAL 1: ADD / EDIT STUDENT MODAL (Wide max-w-3xl, Fixed Header & Footer, Inner Scroll) */}
       <Dialog open={showFormModal} onOpenChange={setShowFormModal}>
-        <DialogContent className="rounded-[2rem] max-w-2xl max-h-[85vh] overflow-y-auto p-6 sm:p-8">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          {/* Sticky Header */}
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
             <DialogTitle className="text-2xl font-black text-foreground">
               {isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 py-2 text-xs sm:text-sm">
+          {/* Scrollable Body - Scrollbar is strictly INSIDE the modal body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs sm:text-sm">
             {/* Section 1: Informasi Akademik */}
             <div>
               <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-3">
@@ -1156,7 +1157,8 @@ export default function SiswaPage() {
             </div>
           </div>
 
-          <DialogFooter className="gap-3 sm:gap-4 mt-6">
+          {/* Sticky Footer - Strictly fixed at the bottom with 0 gap */}
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowFormModal(false)}>
               Batal
             </Button>
@@ -1171,21 +1173,21 @@ export default function SiswaPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL 2: SINGLE DELETE MODAL matching Nuxt 1-to-1 */}
+      {/* MODAL 2: SINGLE DELETE MODAL */}
       <Dialog open={!!deleteStudentItem} onOpenChange={(open) => !open && setDeleteStudentItem(null)}>
-        <DialogContent className="rounded-[2rem] max-w-sm text-center p-6 sm:p-8">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <DialogContent className="sm:max-w-md p-6 text-center">
+          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
             <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
           </div>
-          <DialogHeader className="text-center">
+          <DialogHeader className="p-0 border-none bg-transparent">
             <DialogTitle className="text-2xl font-black text-foreground text-center">
               Hapus Siswa?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-3">
+          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
             Apakah Anda yakin ingin menghapus <span className="text-foreground font-black">{deleteStudentItem?.name || deleteStudentItem?.Nama}</span>? Tindakan ini tidak dapat dibatalkan.
           </p>
-          <DialogFooter className="gap-3 flex-row justify-center mt-4">
+          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteStudentItem(null)}>
               Batal
             </Button>
@@ -1196,21 +1198,21 @@ export default function SiswaPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL 3: BULK DELETE MODAL matching Nuxt 1-to-1 */}
+      {/* MODAL 3: BULK DELETE MODAL */}
       <Dialog open={showBulkDeleteModal} onOpenChange={setShowBulkDeleteModal}>
-        <DialogContent className="rounded-[2rem] max-w-sm text-center p-6 sm:p-8">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <DialogContent className="sm:max-w-md p-6 text-center">
+          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
             <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
           </div>
-          <DialogHeader className="text-center">
+          <DialogHeader className="p-0 border-none bg-transparent">
             <DialogTitle className="text-2xl font-black text-foreground text-center">
               Hapus Massal?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-3">
+          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
             Apakah Anda yakin ingin menghapus <span className="text-primary font-black">{selectedStudents.length}</span> siswa terpilih? Tindakan ini tidak dapat dibatalkan.
           </p>
-          <DialogFooter className="gap-3 flex-row justify-center mt-4">
+          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowBulkDeleteModal(false)}>
               Batal
             </Button>
@@ -1221,133 +1223,135 @@ export default function SiswaPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL 4: DEVICE REGISTER & TERMINAL PROGRESS MODAL matching Nuxt 1-to-1 */}
+      {/* MODAL 4: DEVICE REGISTER & TERMINAL PROGRESS MODAL */}
       <Dialog open={showRegisterDeviceModal} onOpenChange={setShowRegisterDeviceModal}>
-        <DialogContent className="rounded-[2rem] max-w-md max-h-[85vh] overflow-y-auto p-6 sm:p-8">
-          {isSyncing ? (
-            /* Progress & Live Terminal Screen */
-            <div className="space-y-5 text-center">
-              <h3 className="text-xl font-black text-foreground animate-pulse">Menyinkronkan Data</h3>
-              <p className="text-xs text-muted-foreground font-medium">
-                Sedang mengirim kredensial dan foto ke mesin absensi...
-              </p>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">
+              {studentToRegister ? 'Daftarkan Wajah ke Alat' : 'Daftarkan Wajah Siswa (Bulk)'}
+            </DialogTitle>
+          </DialogHeader>
 
-              <div className="space-y-2 text-left">
-                <div className="flex justify-between text-xs font-bold text-muted-foreground">
-                  <span>{syncProgress.current} / {syncProgress.total} Siswa</span>
-                  <span className="text-primary">{syncProgress.percentage}%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-3.5 overflow-hidden">
-                  <div
-                    className="bg-primary h-full transition-all duration-300 rounded-full"
-                    style={{ width: `${syncProgress.percentage}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2 text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  Aktivitas Sinkronisasi
-                </Label>
-                <div className="h-44 bg-black/80 text-emerald-400 border border-border rounded-2xl p-3.5 overflow-y-auto text-[10px] font-mono space-y-1">
-                  {syncProgress.logs.map((log) => (
-                    <div key={log.id} className="flex items-center gap-1.5">
-                      <Icon icon="mingcute:check-circle-fill" className="text-emerald-400 shrink-0" />
-                      <span>{log.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : syncFinished ? (
-            /* Sync Summary Screen */
-            <div className="space-y-5 text-center">
-              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto">
-                <Icon icon="mingcute:check-fill" className="text-3xl animate-bounce" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black text-foreground mb-1">Sinkronisasi Selesai</h3>
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            {isSyncing ? (
+              /* Progress & Live Terminal Screen */
+              <div className="space-y-5 text-center">
+                <h3 className="text-xl font-black text-foreground animate-pulse">Menyinkronkan Data</h3>
                 <p className="text-xs text-muted-foreground font-medium">
-                  Proses sinkronisasi massal siswa telah selesai diproses.
+                  Sedang mengirim kredensial dan foto ke mesin absensi...
                 </p>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-muted/40 p-4 rounded-2xl border border-border">
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Berhasil</p>
-                  <p className="text-xl font-black text-emerald-500">{syncProgress.logs.length}</p>
+                <div className="space-y-2 text-left">
+                  <div className="flex justify-between text-xs font-bold text-muted-foreground">
+                    <span>{syncProgress.current} / {syncProgress.total} Siswa</span>
+                    <span className="text-primary">{syncProgress.percentage}%</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-3.5 overflow-hidden">
+                    <div
+                      className="bg-primary h-full transition-all duration-300 rounded-full"
+                      style={{ width: `${syncProgress.percentage}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-left">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    Aktivitas Sinkronisasi
+                  </Label>
+                  <div className="h-44 bg-black/80 text-emerald-400 border border-border rounded-2xl p-3.5 overflow-y-auto text-[10px] font-mono space-y-1">
+                    {syncProgress.logs.map((log) => (
+                      <div key={log.id} className="flex items-center gap-1.5">
+                        <Icon icon="mingcute:check-circle-fill" className="text-emerald-400 shrink-0" />
+                        <span>{log.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : syncFinished ? (
+              /* Sync Summary Screen */
+              <div className="space-y-5 text-center">
+                <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto">
+                  <Icon icon="mingcute:check-fill" className="text-3xl animate-bounce" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Gagal</p>
-                  <p className="text-xl font-black text-muted-foreground">0</p>
+                  <h3 className="text-2xl font-black text-foreground mb-1">Sinkronisasi Selesai</h3>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Proses sinkronisasi massal siswa telah selesai diproses.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 bg-muted/40 p-4 rounded-2xl border border-border">
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Berhasil</p>
+                    <p className="text-xl font-black text-emerald-500">{syncProgress.logs.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Gagal</p>
+                    <p className="text-xl font-black text-muted-foreground">0</p>
+                  </div>
                 </div>
               </div>
+            ) : (
+              /* Initial Selection Screen */
+              <div className="space-y-5">
+                <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                  Kirim data kredensial dan foto biometrik wajah siswa ke perangkat absensi Hikvision.
+                </p>
 
-              <Button onClick={() => setShowRegisterDeviceModal(false)} className="w-full rounded-2xl font-bold">
-                Selesai
+                {studentToRegister ? (
+                  <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-2xl border border-border">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Icon icon="mingcute:fingerprint-fill" className="text-2xl" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">{studentToRegister.name || studentToRegister.Nama}</h4>
+                      <p className="text-xs text-muted-foreground font-mono">NIS: {studentToRegister.nis || studentToRegister.NIS}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4 bg-primary/10 border border-primary/20 p-4 rounded-2xl">
+                    <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                      <Icon icon="mingcute:group-fill" className="text-2xl" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">{selectedStudents.length} Siswa Terpilih</h4>
+                      <p className="text-xs text-muted-foreground font-semibold">Siap didaftarkan ke mesin presensi</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="devSelectModal">Pilih Perangkat Mesin Tujuan</Label>
+                  <select
+                    id="devSelectModal"
+                    value={selectedDevice}
+                    onChange={(e) => setSelectedDevice(e.target.value)}
+                    className="w-full h-11 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
+                  >
+                    <option value="ALL">Semua Perangkat Aktif</option>
+                    {devices.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.ipAddress || 'Online'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {!isSyncing && (
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+              <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowRegisterDeviceModal(false)}>
+                {syncFinished ? 'Tutup' : 'Batal'}
               </Button>
-            </div>
-          ) : (
-            /* Initial Selection Screen */
-            <div className="space-y-5">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-foreground">
-                  {studentToRegister ? 'Daftarkan Wajah ke Alat' : 'Daftarkan Wajah Siswa (Bulk)'}
-                </DialogTitle>
-              </DialogHeader>
-
-              <p className="text-xs text-muted-foreground font-medium leading-relaxed">
-                Kirim data kredensial dan foto biometrik wajah siswa ke perangkat absensi Hikvision.
-              </p>
-
-              {studentToRegister ? (
-                <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-2xl border border-border">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <Icon icon="mingcute:fingerprint-fill" className="text-2xl" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-foreground">{studentToRegister.name || studentToRegister.Nama}</h4>
-                    <p className="text-xs text-muted-foreground font-mono">NIS: {studentToRegister.nis || studentToRegister.NIS}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-4 bg-primary/10 border border-primary/20 p-4 rounded-2xl">
-                  <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                    <Icon icon="mingcute:group-fill" className="text-2xl" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-foreground">{selectedStudents.length} Siswa Terpilih</h4>
-                    <p className="text-xs text-muted-foreground font-semibold">Siap didaftarkan ke mesin presensi</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="devSelectModal">Pilih Perangkat Mesin Tujuan</Label>
-                <select
-                  id="devSelectModal"
-                  value={selectedDevice}
-                  onChange={(e) => setSelectedDevice(e.target.value)}
-                  className="w-full h-11 px-3 bg-background border border-border rounded-2xl text-xs font-bold focus:outline-none"
-                >
-                  <option value="ALL">Semua Perangkat Aktif</option>
-                  {devices.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} ({d.ipAddress || 'Online'})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <DialogFooter className="gap-3 mt-6">
-                <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowRegisterDeviceModal(false)}>
-                  Batal
-                </Button>
+              {!syncFinished && (
                 <Button className="rounded-2xl flex-1 font-bold bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20" onClick={handleRegisterToDevice}>
                   Mulai Sinkronisasi
                 </Button>
-              </DialogFooter>
-            </div>
+              )}
+            </DialogFooter>
           )}
         </DialogContent>
       </Dialog>
