@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
@@ -27,7 +25,7 @@ export default function LogErrorPage() {
 
   const fetchErrorLog = useCallback(async () => {
     try {
-      const res = await api.get('/log/error').catch(() => api.get('/system/log'));
+      const res = await api.get('/error?reverse=true').catch(() => api.get('/log/error'));
       const d = res?.data?.data || res?.data || [];
       if (Array.isArray(d)) {
         if (d.length > 0 && d[0].tanggal) {

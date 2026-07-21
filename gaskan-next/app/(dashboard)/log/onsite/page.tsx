@@ -25,7 +25,7 @@ export default function LogOnsitePage() {
 
   const fetchOnsiteLog = useCallback(async () => {
     try {
-      const res = await api.get('/log/onsite').catch(() => api.get('/system/log'));
+      const res = await api.get('/onsite').catch(() => api.get('/log/onsite'));
       const d = res?.data?.data || res?.data || [];
       if (Array.isArray(d)) {
         setLogs(d);
