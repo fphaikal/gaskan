@@ -148,8 +148,15 @@ const menuGroups = [
         label: 'Manajemen Tim',
         route: '/admin/team',
       },
+      {
+        icon: 'mingcute:user-setting-fill',
+        role: ['admin', 'developer'],
+        label: 'Izin Profil Siswa',
+        route: '/admin/field-permissions',
+      },
     ]
   },
+
   {
     name: 'PRESENSI & KEHADIRAN',
     menuItems: [
