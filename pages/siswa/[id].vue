@@ -172,6 +172,8 @@ const onFaceFileSelect = (e) => {
   }
 };
 
+const selectedPhotoType = ref('both');
+
 const uploadFacePhoto = async () => {
   const { canvas } = faceCropperRef.value.getResult();
   if (!canvas) return;
@@ -189,10 +191,11 @@ const uploadFacePhoto = async () => {
 
     canvas.toBlob(async (blob) => {
       const formData = new FormData();
-      formData.append('photo', blob, 'face.jpg');
+      formData.append('photo', blob, 'photo.jpg');
+      formData.append('type', selectedPhotoType.value);
 
       try {
-        const res = await $fetch(`/api/students/${user.value.id}/photo`, {
+        const res = await $fetch(`/api/students/${user.value.id}/photo?type=${selectedPhotoType.value}`, {
           method: 'POST',
           body: formData,
         });
@@ -202,10 +205,10 @@ const uploadFacePhoto = async () => {
           rawFaceImage.value = null;
           const updated = await $fetch(`/api/user?role=siswa&user=${nis}`);
           user.value = updated;
-          $toast.success('Foto wajah absensi berhasil diperbarui');
+          $toast.success(res.message || 'Foto profil siswa berhasil diperbarui');
         }
       } catch (error) {
-        $toast.error(error.data?.statusMessage || 'Gagal mengunggah foto wajah');
+        $toast.error(error.data?.statusMessage || error.data?.message || 'Gagal mengunggah foto');
       } finally {
         isUploadingFace.value = false;
       }
@@ -216,6 +219,46 @@ const uploadFacePhoto = async () => {
     isUploadingFace.value = false;
   }
 };
+
+const deleteStudentPhotoNow = async (targetType = 'both') => {
+  try {
+    const res = await $fetch(`/api/students/${user.value.id}/photo?type=${targetType}`, {
+      method: 'DELETE',
+    });
+    if (res.success) {
+      showFaceUploadOptions.value = false;
+      const updated = await $fetch(`/api/user?role=siswa&user=${nis}`);
+      user.value = updated;
+      $toast.success('Foto siswa berhasil dihapus');
+    }
+  } catch (err: any) {
+    $toast.error(err.data?.message || 'Gagal menghapus foto siswa');
+  }
+};
+
+const isSyncingStudentPhotos = ref(false);
+
+const syncStudentPhotoDirection = async (direction) => {
+  isSyncingStudentPhotos.value = true;
+  try {
+    const res = await $fetch(`/api/students/${user.value.id}/sync-photos`, {
+      method: 'POST',
+      body: { direction }
+    });
+    if (res?.success) {
+      showFaceUploadOptions.value = false;
+      const updated = await $fetch(`/api/user?role=siswa&user=${nis}`);
+      user.value = updated;
+      $toast.success(res.message);
+    }
+  } catch (err: any) {
+    $toast.error(err.data?.message || 'Gagal menyamakan foto siswa');
+  } finally {
+    isSyncingStudentPhotos.value = false;
+  }
+};
+
+
 
 const cancelFaceCrop = () => {
   showFaceCropper.value = false;
@@ -257,11 +300,20 @@ useSeoMeta({
             <img src="../../public/banner.webp" alt="profile cover" class="h-full w-full object-cover object-center" />
           </div>
           <div class="px-4 pb-6 lg:pb-8 text-center relative">
-            <div class="relative z-30 mx-auto -mt-16 h-28 w-28 sm:h-36 sm:w-36 rounded-full bg-base-100 p-1.5 shadow-md">
+            <div class="relative z-30 mx-auto -mt-16 h-28 w-28 sm:h-36 sm:w-36 rounded-full bg-base-100 p-1.5 shadow-md group">
               <div class="relative z-20 h-full w-full mx-auto rounded-full overflow-hidden bg-base-200">
                 <img :src="user.url_picture" alt="profile photo" class="h-full w-full object-cover object-center" />
+                <button 
+                  @click="showFaceUploadOptions = true"
+                  class="absolute inset-0 bg-black/50 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity font-bold text-xs gap-1"
+                  title="Ubah Foto Siswa"
+                >
+                  <Icon name="mingcute:camera-fill" size="20" />
+                  <span>Ubah Foto</span>
+                </button>
               </div>
             </div>
+
             <div class="mt-4">
               <h3 class="mb-1 text-2xl font-bold text-base-content">{{ user.Nama || '' }}</h3>
               <p class="font-medium text-base-content/70">{{ user.Kelas }}</p>
@@ -487,10 +539,39 @@ useSeoMeta({
     <div v-else class="flex items-center justify-center min-h-[50vh]">
       <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
-    <!-- Modal: Opsi Upload Wajah -->
+    <!-- Modal: Opsi Upload Foto Siswa -->
     <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showFaceUploadOptions }]">
       <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-6">
-        <h3 class="font-bold text-lg text-base-content mb-6 text-center sm:text-left">Pilih Metode Upload Wajah</h3>
+        <h3 class="font-bold text-lg text-base-content mb-4 text-center sm:text-left">Kelola Foto Siswa</h3>
+
+        <!-- Opsi Target Foto -->
+        <div class="mb-4 space-y-1">
+          <label class="text-xs font-bold opacity-60">Target Foto yang Diperbarui:</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button 
+              type="button"
+              @click="selectedPhotoType = 'both'"
+              :class="['btn btn-xs rounded-xl font-bold', selectedPhotoType === 'both' ? 'btn-primary' : 'btn-ghost bg-base-200/50']"
+            >
+              Foto Profil & Wajah
+            </button>
+            <button 
+              type="button"
+              @click="selectedPhotoType = 'profile'"
+              :class="['btn btn-xs rounded-xl font-bold', selectedPhotoType === 'profile' ? 'btn-primary' : 'btn-ghost bg-base-200/50']"
+            >
+              Foto Profil
+            </button>
+            <button 
+              type="button"
+              @click="selectedPhotoType = 'face'"
+              :class="['btn btn-xs rounded-xl font-bold', selectedPhotoType === 'face' ? 'btn-primary' : 'btn-ghost bg-base-200/50']"
+            >
+              Wajah Absensi
+            </button>
+          </div>
+        </div>
+
         <div class="flex flex-col gap-3">
           <!-- Ambil Selfie -->
           <button @click="startCamera" class="btn btn-ghost bg-base-200/50 hover:bg-primary/10 hover:text-primary rounded-2xl flex items-center justify-between px-6 h-16 transition-all">
@@ -499,8 +580,8 @@ useSeoMeta({
                 <Icon name="mingcute:camera-fill" size="22" />
               </div>
               <div class="text-left">
-                <p class="font-bold text-sm">Ambil Foto (Selfie)</p>
-                 <p class="text-xs text-base-content/50">Gunakan kamera depan HP / laptop</p>
+                <p class="font-bold text-sm">Ambil Foto (Kamera)</p>
+                 <p class="text-xs text-base-content/50">Gunakan kamera HP / laptop</p>
               </div>
             </div>
             <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
@@ -514,12 +595,50 @@ useSeoMeta({
               </div>
               <div class="text-left">
                 <p class="font-bold text-sm">Pilih dari Galeri</p>
-                <p class="text-xs text-base-content/50">Unggah berkas gambar yang sudah ada</p>
+                <p class="text-xs text-base-content/50">Unggah berkas gambar dari perangkat</p>
               </div>
             </div>
             <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
           </button>
+
+          <!-- Samakan Foto Profil dengan Foto Wajah -->
+          <button @click="syncStudentPhotoDirection('FACE_TO_PROFILE')" :disabled="isSyncingStudentPhotos" class="btn btn-ghost bg-base-200/50 hover:bg-info/10 hover:text-info rounded-2xl flex items-center justify-between px-6 h-14 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-9 h-9 rounded-xl bg-info/10 flex items-center justify-center text-info">
+                <Icon name="mingcute:face-fill" size="20" />
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-xs">Gunakan Foto Wajah sebagai Profil</p>
+                <p class="text-[10px] text-base-content/50">Samakan foto profil dengan foto wajah absensi</p>
+              </div>
+            </div>
+            <Icon name="mingcute:transfer-line" size="18" class="text-base-content/20" />
+          </button>
+
+          <!-- Samakan Wajah Absensi dengan Foto Profil -->
+          <button @click="syncStudentPhotoDirection('PROFILE_TO_FACE')" :disabled="isSyncingStudentPhotos" class="btn btn-ghost bg-base-200/50 hover:bg-amber-500/10 hover:text-amber-500 rounded-2xl flex items-center justify-between px-6 h-14 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                <Icon name="mingcute:user-4-fill" size="20" />
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-xs">Gunakan Foto Profil untuk Wajah Absensi</p>
+                <p class="text-[10px] text-base-content/50">Samakan foto wajah absensi dengan foto profil</p>
+              </div>
+            </div>
+            <Icon name="mingcute:transfer-line" size="18" class="text-base-content/20" />
+          </button>
+
+          <!-- Hapus Foto -->
+          <button @click="deleteStudentPhotoNow(selectedPhotoType)" class="btn btn-ghost bg-error/10 text-error hover:bg-error/20 rounded-2xl flex items-center justify-between px-6 h-12 transition-all">
+            <div class="flex items-center gap-3">
+              <Icon name="mingcute:delete-2-fill" size="18" />
+              <span class="font-bold text-xs">Hapus Foto {{ selectedPhotoType === 'both' ? 'Siswa' : selectedPhotoType === 'profile' ? 'Profil' : 'Wajah' }}</span>
+            </div>
+          </button>
+
           <input ref="faceFileInputHelper" type="file" class="hidden" accept="image/*" @change="onFaceFileSelect" />
+
         </div>
         <div class="modal-action sm:mt-6 mt-4">
           <button @click="showFaceUploadOptions = false" class="btn btn-ghost w-full rounded-2xl">Batal</button>
@@ -527,6 +646,7 @@ useSeoMeta({
       </div>
       <form method="dialog" class="modal-backdrop" @click="showFaceUploadOptions = false"><button>close</button></form>
     </dialog>
+
 
     <!-- Modal: Kamera Selfie -->
     <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showCameraModal }]">

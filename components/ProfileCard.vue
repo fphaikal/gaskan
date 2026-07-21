@@ -146,9 +146,29 @@ const deletePhoto = async () => {
   } finally {
     isUploading.value = false;
   }
+const isSyncingPhotos = ref(false);
+
+const syncPhotos = async (direction) => {
+  isSyncingPhotos.value = true;
+  try {
+    const res = await $fetch('/api/profile/sync-photos', {
+      method: 'POST',
+      body: { direction }
+    });
+    if (res?.success) {
+      await refreshUser();
+      $toast.success(res.message);
+      closeModal('avatarActions');
+    }
+  } catch (error: any) {
+    $toast.error(error?.data?.message || 'Gagal menyamakan foto');
+  } finally {
+    isSyncingPhotos.value = false;
+  }
 };
 
 const closeAndRefresh = async (modalId, successMsg = 'Berhasil diperbarui') => {
+
   await refreshUser();
   closeModal(modalId);
   err.value = false;
@@ -928,12 +948,49 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
               <Icon name="mingcute:camera-fill" size="22" />
             </div>
             <div class="text-left">
-              <p class="font-bold text-sm">Ganti Foto</p>
-              <p class="text-xs text-base-content/50">Unggah foto baru dari galeri</p>
+              <p class="font-bold text-sm">Ganti Foto Baru</p>
+              <p class="text-xs text-base-content/50">Unggah foto baru dari perangkat</p>
             </div>
           </div>
           <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
         </button>
+
+        <!-- Samakan Foto Profil dengan Foto Wajah Absensi -->
+        <button 
+          @click="syncPhotos('FACE_TO_PROFILE')"
+          :disabled="isSyncingPhotos"
+          class="btn btn-ghost bg-base-200/50 hover:bg-info/10 hover:text-info rounded-2xl flex items-center justify-between px-6 h-16 transition-all"
+        >
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center text-info">
+              <Icon name="mingcute:face-fill" size="22" />
+            </div>
+            <div class="text-left">
+              <p class="font-bold text-sm">Gunakan Foto Wajah Absensi</p>
+              <p class="text-xs text-base-content/50">Samakan foto profil dengan foto wajah absensi</p>
+            </div>
+          </div>
+          <Icon name="mingcute:transfer-line" size="18" class="text-base-content/20" />
+        </button>
+
+        <!-- Samakan Foto Wajah Absensi dengan Foto Profil -->
+        <button 
+          @click="syncPhotos('PROFILE_TO_FACE')"
+          :disabled="isSyncingPhotos"
+          class="btn btn-ghost bg-base-200/50 hover:bg-amber-500/10 hover:text-amber-500 rounded-2xl flex items-center justify-between px-6 h-16 transition-all"
+        >
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+              <Icon name="mingcute:user-4-fill" size="22" />
+            </div>
+            <div class="text-left">
+              <p class="font-bold text-sm">Gunakan Foto Profil untuk Absensi</p>
+              <p class="text-xs text-base-content/50">Samakan foto wajah absensi dengan foto profil saat ini</p>
+            </div>
+          </div>
+          <Icon name="mingcute:transfer-line" size="18" class="text-base-content/20" />
+        </button>
+
 
         <!-- Delete Photo (Only if custom photo exists) -->
         <button 

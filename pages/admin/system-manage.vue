@@ -257,13 +257,46 @@ const cancelBackup = async (provider) => {
   } catch (err) {
     $toast.error(err.data?.message || 'Gagal membatalkan proses backup');
   } finally {
-    cancelling.value = false;
+const cancelling = ref(false);
+
+// ── Student Field Permissions State ─────────────────────────────
+const fieldPermissions = ref([]);
+const savingPermissions = ref(false);
+
+const fetchFieldPermissions = async () => {
+  try {
+    const res = await $fetch('/api/system/field-permissions');
+    if (res?.success && res.data) {
+      fieldPermissions.value = res.data;
+    }
+  } catch (err) {
+    console.error('Failed to fetch field permissions:', err);
+  }
+};
+
+const saveFieldPermissions = async () => {
+  savingPermissions.value = true;
+  try {
+    const res = await $fetch('/api/system/field-permissions', {
+      method: 'PUT',
+      body: { permissions: fieldPermissions.value }
+    });
+    if (res?.success) {
+      $toast.success('Perizinan field profil siswa berhasil disimpan!');
+      await fetchFieldPermissions();
+    }
+  } catch (err: any) {
+    $toast.error(err.data?.message || 'Gagal menyimpan perizinan field');
+  } finally {
+    savingPermissions.value = false;
   }
 };
 
 onMounted(() => {
   fetchMetrics();
   fetchBackupStatus();
+  fetchFieldPermissions();
+
 
   const route = useRoute();
   if (route.query.gd_auth === 'success') {
@@ -653,7 +686,84 @@ const bentoCard = "bg-base-100 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-6 bor
           </div>
         </div>
 
+        <!-- Student Field Permissions Section -->
+        <div :class="bentoCard" class="space-y-6 md:col-span-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-base-200/80 pb-4 gap-4">
+            <div>
+              <h2 class="text-xl font-black text-base-content flex items-center gap-2">
+                <Icon name="mingcute:user-setting-fill" class="text-primary" />
+                <span>Pengaturan Izin Edit Profil Siswa</span>
+              </h2>
+              <p class="text-xs opacity-50 mt-1">
+                Atur izin edit tiap field biodata siswa. Terdapat 3 opsi: 🟢 <strong>Bebas Diedit</strong>, 🔴 <strong>Tidak Boleh Diedit</strong>, dan 🟡 <strong>Sekali Isi Jika Kosong</strong>.
+              </p>
+            </div>
+            <div class="shrink-0">
+              <button 
+                @click="saveFieldPermissions" 
+                :disabled="savingPermissions"
+                class="btn btn-primary btn-sm rounded-xl font-bold gap-2 shadow-md shadow-primary/20 w-full sm:w-auto"
+              >
+                <span v-if="savingPermissions" class="loading loading-spinner loading-xs"></span>
+                <Icon v-else name="mingcute:save-fill" />
+                <span>Simpan Perizinan Field</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div 
+              v-for="field in fieldPermissions" 
+              :key="field.fieldName"
+              class="p-4 rounded-2xl bg-base-200/40 border border-base-200 space-y-3"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-black text-sm text-base-content">{{ field.label }}</span>
+                <span 
+                  :class="[
+                    'badge badge-sm font-bold text-[10px]',
+                    field.mode === 'FREELY_EDITABLE' ? 'badge-success text-white' : 
+                    field.mode === 'LOCKED' ? 'badge-error text-white' : 'badge-warning text-slate-900'
+                  ]"
+                >
+                  {{ field.mode === 'FREELY_EDITABLE' ? 'Bebas Diedit' : field.mode === 'LOCKED' ? 'Terkunci' : '1x Isi Kosong' }}
+                </span>
+              </div>
+
+              <div class="space-y-1.5 pt-1">
+                <label 
+                  @click="field.mode = 'FREELY_EDITABLE'" 
+                  class="flex items-center gap-2 text-xs font-bold cursor-pointer p-2 rounded-xl border transition-all"
+                  :class="field.mode === 'FREELY_EDITABLE' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-base-100/60 border-base-200 text-base-content/60'"
+                >
+                  <input type="radio" :name="`perm-${field.fieldName}`" value="FREELY_EDITABLE" v-model="field.mode" class="radio radio-xs radio-success" />
+                  <span>🟢 Bebas Diedit Siswa</span>
+                </label>
+
+                <label 
+                  @click="field.mode = 'LOCKED'" 
+                  class="flex items-center gap-2 text-xs font-bold cursor-pointer p-2 rounded-xl border transition-all"
+                  :class="field.mode === 'LOCKED' ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400' : 'bg-base-100/60 border-base-200 text-base-content/60'"
+                >
+                  <input type="radio" :name="`perm-${field.fieldName}`" value="LOCKED" v-model="field.mode" class="radio radio-xs radio-error" />
+                  <span>🔴 Tidak Boleh Diedit</span>
+                </label>
+
+                <label 
+                  @click="field.mode = 'FILL_ONCE'" 
+                  class="flex items-center gap-2 text-xs font-bold cursor-pointer p-2 rounded-xl border transition-all"
+                  :class="field.mode === 'FILL_ONCE' ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400' : 'bg-base-100/60 border-base-200 text-base-content/60'"
+                >
+                  <input type="radio" :name="`perm-${field.fieldName}`" value="FILL_ONCE" v-model="field.mode" class="radio radio-xs radio-warning" />
+                  <span>🟡 Sekali Isi Jika Kosong</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Sistem Dual Auto Backup CDN & Cloud Storage (Khusus Akun Developer) -->
+
         <div v-if="isDeveloper" :class="bentoCard" class="space-y-6 md:col-span-2">
           <div class="border-b border-base-200/80 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="text-left">
