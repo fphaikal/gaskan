@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '~/store/useAuthStore';
 import { useThemeStore } from '~/store/useThemeStore';
 import { storeToRefs } from 'pinia';
@@ -12,12 +12,89 @@ useSeoMeta({
 const config = useRuntimeConfig();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
-const { role, userData } = storeToRefs(authStore);
-const { isDark } = storeToRefs(themeStore);
+const { role } = storeToRefs(authStore);
 
-const isDev = computed(() => role.value === 'developer');
-const isAdmin = computed(() => role.value === 'admin' || isDev.value);
-const isGuru = computed(() => role.value === 'guru');
+// Default fallback specification in case API proxy or backend is unreachable
+const fallbackSpec = {
+  openapi: '3.0.3',
+  info: {
+    title: 'GASKAN - Gerbang Akses Pintar dan Kehadiran API',
+    version: '1.0.0',
+    description: 'Dokumentasi Terproteksi Resmi Backend API GASKAN (SMK SMTI Yogyakarta). Menyediakan endpoint presensi face recognition, manajemen siswa, kalender akademik, perangkat Hikvision, dan statistik real-time.'
+  },
+  servers: [
+    { url: 'https://gaskan-api.smtijogja.my.id', description: 'Production API Server' },
+    { url: 'http://localhost:5000', description: 'Local Development Server' }
+  ],
+  tags: [
+    { name: 'Auth', description: 'Otentikasi & Token Management' },
+    { name: 'Presensi & Kehadiran', description: 'Scan Wajah & Log Absensi' },
+    { name: 'Kalender Akademik', description: 'Hari Efektif, Fakultatif, Libur, & Ujian' },
+    { name: 'Siswa & User', description: 'Manajemen Data Siswa' },
+    { name: 'Kelas & Semester', description: 'Struktur Kelas & Jurusan' },
+    { name: 'Surat Izin', description: 'Pengajuan Surat Izin/Sakit' },
+    { name: 'Perangkat & Hikvision', description: 'Webhook Perangkat Gate' },
+    { name: 'Dashboard & Sistem', description: 'Statistik & Metrik Server' }
+  ],
+  paths: {
+    '/api/auth/login': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Login Pengguna (Siswa/Guru/Admin/Developer)',
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  login: { type: 'string', example: 'admin@smtijogja.sch.id' },
+                  password: { type: 'string', example: 'admin123' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/auth/me': {
+      get: { tags: ['Auth'], summary: 'Ambil Profil Pengguna Terautentikasi' }
+    },
+    '/api/dashboard/stats': {
+      get: { tags: ['Dashboard & Sistem'], summary: 'Ambil Ringkasan Statistik Dashboard & Rekap Absensi' }
+    },
+    '/api/academic-events': {
+      get: { tags: ['Kalender Akademik'], summary: 'Ambil Daftar Agenda Akademik (Terfilter Sesuai Class/Major)' },
+      post: { tags: ['Kalender Akademik'], summary: 'Buat Agenda Akademik Baru (Admin/Guru/Developer)' }
+    },
+    '/api/academic-events/{id}': {
+      get: { tags: ['Kalender Akademik'], summary: 'Detail Agenda Akademik Berdasarkan ID' },
+      put: { tags: ['Kalender Akademik'], summary: 'Perbarui Agenda Akademik' },
+      delete: { tags: ['Kalender Akademik'], summary: 'Hapus Agenda Akademik' }
+    },
+    '/api/attendance/today': {
+      get: { tags: ['Presensi & Kehadiran'], summary: 'Ambil Data Absensi Siswa Hari Ini Per Kelas' }
+    },
+    '/api/log': {
+      get: { tags: ['Presensi & Kehadiran'], summary: 'Log Rekap Kehadiran Harian (Grouped per Student-Day dengan Backend Pagination)' }
+    },
+    '/api/students': {
+      get: { tags: ['Siswa & User'], summary: 'Daftar Siswa (Dengan Filter Kelas, Status, Search)' }
+    },
+    '/api/classes': {
+      get: { tags: ['Kelas & Semester'], summary: 'Daftar Kelas Aktif SMTI Yogyakarta' }
+    },
+    '/api/leaves': {
+      get: { tags: ['Surat Izin'], summary: 'Daftar Pengajuan Surat Izin/Sakit Siswa' },
+      post: { tags: ['Surat Izin'], summary: 'Ajukan Surat Izin/Sakit Baru' }
+    },
+    '/api/system/metrics': {
+      get: { tags: ['Dashboard & Sistem'], summary: 'Metrik Performa Server, Hardware, RAM, Disk & Network' }
+    },
+    '/api/device/webhook': {
+      post: { tags: ['Perangkat & Hikvision'], summary: 'Webhook Events Real-time dari Mesin Scan Wajah Hikvision' }
+    }
+  }
+};
 
 // State
 const isLoadingSpec = ref(true);
@@ -25,6 +102,7 @@ const spec = ref<any>(null);
 const searchQuery = ref('');
 const selectedTag = ref('ALL');
 const activeEndpointKey = ref('');
+const fetchError = ref<string | null>(null);
 
 // Execution state for "Try It Out"
 const selectedServer = ref('');
@@ -46,27 +124,41 @@ const executionResult = ref<{
 const showTokenModal = ref(false);
 const tokenInput = ref('');
 
-// Fetch OpenAPI JSON spec from backend API
+// Fetch OpenAPI JSON spec from backend API or proxy
 const fetchSpec = async () => {
   try {
     isLoadingSpec.value = true;
-    const res = await $fetch<any>('/api/docs/openapi.json');
-    spec.value = res;
-    if (res?.servers?.length) {
-      selectedServer.value = res.servers[0].url;
+    fetchError.value = null;
+    let loadedSpec: any = null;
+
+    try {
+      loadedSpec = await $fetch<any>('/api/docs/openapi.json');
+    } catch (e1) {
+      console.warn('Nuxt proxy fetch failed, attempting direct backend fetch...');
+      const apiBase = (config.public.apiBase || 'https://gaskan-api.smtijogja.my.id').replace(/\/+$/, '');
+      loadedSpec = await $fetch<any>(`${apiBase}/api/docs/openapi.json`);
     }
-    // Set default active endpoint
+
+    if (loadedSpec && loadedSpec.paths) {
+      spec.value = loadedSpec;
+    } else {
+      spec.value = fallbackSpec;
+    }
+  } catch (err: any) {
+    console.warn('Using embedded OpenAPI fallback spec due to network error:', err);
+    spec.value = fallbackSpec;
+    fetchError.value = 'Mode Offline: Menggunakan spesifikasi API lokal.';
+  } finally {
+    if (spec.value?.servers?.length) {
+      selectedServer.value = spec.value.servers[0].url;
+    }
     const firstKey = getFlattenedEndpoints.value[0]?.key || '';
     if (firstKey) selectEndpoint(firstKey);
-  } catch (err) {
-    console.error('Failed to load OpenAPI spec:', err);
-  } finally {
     isLoadingSpec.value = false;
   }
 };
 
 onMounted(() => {
-  // Sync token from authStore / cookie / localStorage
   const storedToken = useCookie('auth_token').value || localStorage.getItem('token') || '';
   userToken.value = storedToken;
   tokenInput.value = storedToken;
@@ -169,13 +261,11 @@ const selectEndpoint = (key: string) => {
 
   const ep = getFlattenedEndpoints.value.find(e => e.key === key);
   if (ep) {
-    // Populate default path parameters
     ep.parameters?.forEach((p: any) => {
       if (p.in === 'path') pathParams.value[p.name] = p.schema?.default || '';
       if (p.in === 'query') queryParams.value[p.name] = p.schema?.default !== undefined ? String(p.schema.default) : '';
     });
 
-    // Populate request body sample if available
     if (ep.requestBody) {
       const content = ep.requestBody.content?.['application/json'];
       if (content?.schema) {
@@ -213,12 +303,10 @@ const curlCommand = computed(() => {
   const ep = activeEndpoint.value;
   let url = (selectedServer.value || config.public.apiBase || 'https://gaskan-api.smtijogja.my.id').replace(/\/+$/, '') + ep.path;
 
-  // Substitute path params
   Object.entries(pathParams.value).forEach(([k, v]) => {
     if (v) url = url.replace(`{${k}}`, encodeURIComponent(v));
   });
 
-  // Query params
   const qParts: string[] = [];
   Object.entries(queryParams.value).forEach(([k, v]) => {
     if (v) qParts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
@@ -251,8 +339,6 @@ const executeRequest = async () => {
     executionResult.value = null;
 
     let url = ep.path;
-
-    // Substitute path params
     Object.entries(pathParams.value).forEach(([k, v]) => {
       if (v) url = url.replace(`{${k}}`, encodeURIComponent(v));
     });
