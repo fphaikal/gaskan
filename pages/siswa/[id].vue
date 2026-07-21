@@ -110,6 +110,8 @@ const videoRef = ref(null);
 const showFaceCropper = ref(false);
 const rawFaceImage = ref(null);
 const faceCropperRef = ref(null);
+const activePhotoTab = ref('upload');
+
 
 const startCamera = async () => {
   showFaceUploadOptions.value = false;
@@ -539,113 +541,171 @@ useSeoMeta({
     <div v-else class="flex items-center justify-center min-h-[50vh]">
       <span class="loading loading-spinner loading-lg text-primary"></span>
     </div>
-    <!-- Modal: Opsi Upload Foto Siswa -->
+    <!-- Modal: Opsi Upload & Kelola Foto Siswa -->
     <dialog :class="['modal modal-bottom sm:modal-middle', { 'modal-open': showFaceUploadOptions }]">
-      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2rem] sm:rounded-[2rem] p-6">
-        <h3 class="font-bold text-lg text-base-content mb-4 text-center sm:text-left">Kelola Foto Siswa</h3>
+      <div class="modal-box bg-base-100 border border-base-200/60 shadow-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 max-w-lg">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4 border-b border-base-200/60 pb-3">
+          <div>
+            <h3 class="font-black text-xl text-base-content">Kelola Foto Siswa</h3>
+            <p class="text-xs opacity-60">Atur foto profil dan foto presensi wajah siswa</p>
+          </div>
+          <button @click="showFaceUploadOptions = false" class="btn btn-sm btn-circle btn-ghost">
+            <Icon name="mingcute:close-line" size="18" />
+          </button>
+        </div>
 
-        <!-- Opsi Target Foto -->
-        <div class="mb-4 space-y-1">
-          <label class="text-xs font-bold opacity-60">Target Foto yang Diperbarui:</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button 
-              type="button"
-              @click="selectedPhotoType = 'both'"
-              :class="['btn btn-xs rounded-xl font-bold', selectedPhotoType === 'both' ? 'btn-primary' : 'btn-ghost bg-base-200/50']"
-            >
-              Foto Profil & Wajah
-            </button>
-            <button 
-              type="button"
-              @click="selectedPhotoType = 'profile'"
-              :class="['btn btn-xs rounded-xl font-bold', selectedPhotoType === 'profile' ? 'btn-primary' : 'btn-ghost bg-base-200/50']"
-            >
-              Foto Profil
-            </button>
-            <button 
-              type="button"
-              @click="selectedPhotoType = 'face'"
-              :class="['btn btn-xs rounded-xl font-bold', selectedPhotoType === 'face' ? 'btn-primary' : 'btn-ghost bg-base-200/50']"
-            >
-              Wajah Absensi
-            </button>
+        <!-- Navigation Tabs -->
+        <div class="grid grid-cols-2 gap-2 bg-base-200/60 p-1.5 rounded-2xl mb-5">
+          <button 
+            type="button" 
+            @click="activePhotoTab = 'upload'"
+            :class="['btn btn-sm rounded-xl font-bold transition-all gap-2', activePhotoTab === 'upload' ? 'btn-primary shadow-sm' : 'btn-ghost text-base-content/60']"
+          >
+            <Icon name="mingcute:camera-fill" size="16" />
+            <span>Unggah Foto Baru</span>
+          </button>
+          <button 
+            type="button" 
+            @click="activePhotoTab = 'sync'"
+            :class="['btn btn-sm rounded-xl font-bold transition-all gap-2', activePhotoTab === 'sync' ? 'btn-primary shadow-sm' : 'btn-ghost text-base-content/60']"
+          >
+            <Icon name="mingcute:transfer-line" size="16" />
+            <span>Sinkron & Hapus</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: Unggah Foto Baru -->
+        <div v-if="activePhotoTab === 'upload'" class="space-y-4">
+          <!-- Target Foto Selector -->
+          <div class="space-y-2 bg-base-200/30 p-3.5 rounded-2xl border border-base-200/60">
+            <label class="text-xs font-black text-base-content/70 uppercase tracking-wider block">1. Pilih Target Foto yang Diperbarui:</label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button 
+                type="button"
+                @click="selectedPhotoType = 'both'"
+                :class="['btn btn-xs rounded-xl font-bold text-[10px]', selectedPhotoType === 'both' ? 'btn-primary' : 'btn-ghost bg-base-100']"
+              >
+                Profil &amp; Wajah
+              </button>
+              <button 
+                type="button"
+                @click="selectedPhotoType = 'profile'"
+                :class="['btn btn-xs rounded-xl font-bold text-[10px]', selectedPhotoType === 'profile' ? 'btn-primary' : 'btn-ghost bg-base-100']"
+              >
+                Foto Profil
+              </button>
+              <button 
+                type="button"
+                @click="selectedPhotoType = 'face'"
+                :class="['btn btn-xs rounded-xl font-bold text-[10px]', selectedPhotoType === 'face' ? 'btn-primary' : 'btn-ghost bg-base-100']"
+              >
+                Wajah Absensi
+              </button>
+            </div>
+          </div>
+
+          <!-- Method Selector -->
+          <div class="space-y-2">
+            <label class="text-xs font-black text-base-content/70 uppercase tracking-wider block">2. Pilih Metode Pengambilan Foto:</label>
+            <div class="grid grid-cols-1 gap-2.5">
+              <!-- Kamera -->
+              <button @click="startCamera" class="btn btn-ghost bg-base-200/50 hover:bg-primary/10 hover:text-primary rounded-2xl flex items-center justify-between px-5 h-14 transition-all">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Icon name="mingcute:camera-fill" size="22" />
+                  </div>
+                  <div class="text-left">
+                    <p class="font-bold text-sm">Ambil Foto dari Kamera</p>
+                    <p class="text-[11px] text-base-content/50">Gunakan webcam / kamera HP/laptop</p>
+                  </div>
+                </div>
+                <Icon name="mingcute:right-line" size="18" class="text-base-content/30" />
+              </button>
+
+              <!-- Galeri -->
+              <button @click="$refs.faceFileInputHelper.click()" class="btn btn-ghost bg-base-200/50 hover:bg-success/10 hover:text-success rounded-2xl flex items-center justify-between px-5 h-14 transition-all">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success">
+                    <Icon name="mingcute:pic-fill" size="22" />
+                  </div>
+                  <div class="text-left">
+                    <p class="font-bold text-sm">Pilih Berkas dari Galeri</p>
+                    <p class="text-[11px] text-base-content/50">Unggah berkas foto dari perangkat</p>
+                  </div>
+                </div>
+                <Icon name="mingcute:right-line" size="18" class="text-base-content/30" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="flex flex-col gap-3">
-          <!-- Ambil Selfie -->
-          <button @click="startCamera" class="btn btn-ghost bg-base-200/50 hover:bg-primary/10 hover:text-primary rounded-2xl flex items-center justify-between px-6 h-16 transition-all">
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <Icon name="mingcute:camera-fill" size="22" />
-              </div>
-              <div class="text-left">
-                <p class="font-bold text-sm">Ambil Foto (Kamera)</p>
-                 <p class="text-xs text-base-content/50">Gunakan kamera HP / laptop</p>
+        <!-- TAB 2: Sinkron & Hapus Foto -->
+        <div v-else class="space-y-4">
+          <!-- Section Sinkronisasi -->
+          <div class="space-y-2">
+            <label class="text-xs font-black text-base-content/70 uppercase tracking-wider block">1. Sinkronisasi Antar Foto:</label>
+            <div class="grid grid-cols-1 gap-2.5">
+              <button @click="syncStudentPhotoDirection('FACE_TO_PROFILE')" :disabled="isSyncingStudentPhotos" class="btn btn-ghost bg-base-200/50 hover:bg-info/10 hover:text-info rounded-2xl flex items-center justify-between px-5 h-14 transition-all text-left">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center text-info">
+                    <Icon name="mingcute:face-fill" size="22" />
+                  </div>
+                  <div>
+                    <p class="font-bold text-sm">Wajah Absensi ➔ Foto Profil</p>
+                    <p class="text-[11px] text-base-content/50">Salin foto wajah absensi untuk foto profil</p>
+                  </div>
+                </div>
+                <Icon name="mingcute:transfer-line" size="18" class="text-base-content/30" />
+              </button>
+
+              <button @click="syncStudentPhotoDirection('PROFILE_TO_FACE')" :disabled="isSyncingStudentPhotos" class="btn btn-ghost bg-base-200/50 hover:bg-amber-500/10 hover:text-amber-500 rounded-2xl flex items-center justify-between px-5 h-14 transition-all text-left">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                    <Icon name="mingcute:user-4-fill" size="22" />
+                  </div>
+                  <div>
+                    <p class="font-bold text-sm">Foto Profil ➔ Wajah Absensi</p>
+                    <p class="text-[11px] text-base-content/50">Salin foto profil untuk wajah absensi</p>
+                  </div>
+                </div>
+                <Icon name="mingcute:transfer-line" size="18" class="text-base-content/30" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Section Hapus Foto -->
+          <div class="space-y-2 border-t border-base-200/60 pt-3">
+            <label class="text-xs font-black text-rose-500 uppercase tracking-wider block">2. Tindakan Hapus Foto:</label>
+            <div class="flex flex-col gap-2">
+              <button @click="deleteStudentPhotoNow('both')" class="btn btn-ghost bg-error/10 text-error hover:bg-error/20 rounded-2xl flex items-center justify-between px-5 h-12 transition-all">
+                <div class="flex items-center gap-3">
+                  <Icon name="mingcute:delete-2-fill" size="18" />
+                  <span class="font-bold text-xs">Hapus Kedua Foto (Profil &amp; Wajah)</span>
+                </div>
+              </button>
+
+              <div class="grid grid-cols-2 gap-2">
+                <button @click="deleteStudentPhotoNow('profile')" class="btn btn-ghost bg-error/5 text-error hover:bg-error/15 rounded-xl font-bold text-xs h-10">
+                  Hapus Foto Profil
+                </button>
+                <button @click="deleteStudentPhotoNow('face')" class="btn btn-ghost bg-error/5 text-error hover:bg-error/15 rounded-xl font-bold text-xs h-10">
+                  Hapus Wajah Absensi
+                </button>
               </div>
             </div>
-            <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
-          </button>
-
-          <!-- Dari Galeri -->
-          <button @click="$refs.faceFileInputHelper.click()" class="btn btn-ghost bg-base-200/50 hover:bg-success/10 hover:text-success rounded-2xl flex items-center justify-between px-6 h-16 transition-all">
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success">
-                <Icon name="mingcute:pic-fill" size="22" />
-              </div>
-              <div class="text-left">
-                <p class="font-bold text-sm">Pilih dari Galeri</p>
-                <p class="text-xs text-base-content/50">Unggah berkas gambar dari perangkat</p>
-              </div>
-            </div>
-            <Icon name="mingcute:right-line" size="18" class="text-base-content/20" />
-          </button>
-
-          <!-- Samakan Foto Profil dengan Foto Wajah -->
-          <button @click="syncStudentPhotoDirection('FACE_TO_PROFILE')" :disabled="isSyncingStudentPhotos" class="btn btn-ghost bg-base-200/50 hover:bg-info/10 hover:text-info rounded-2xl flex items-center justify-between px-6 h-14 transition-all">
-            <div class="flex items-center gap-4">
-              <div class="w-9 h-9 rounded-xl bg-info/10 flex items-center justify-center text-info">
-                <Icon name="mingcute:face-fill" size="20" />
-              </div>
-              <div class="text-left">
-                <p class="font-bold text-xs">Gunakan Foto Wajah sebagai Profil</p>
-                <p class="text-[10px] text-base-content/50">Samakan foto profil dengan foto wajah absensi</p>
-              </div>
-            </div>
-            <Icon name="mingcute:transfer-line" size="18" class="text-base-content/20" />
-          </button>
-
-          <!-- Samakan Wajah Absensi dengan Foto Profil -->
-          <button @click="syncStudentPhotoDirection('PROFILE_TO_FACE')" :disabled="isSyncingStudentPhotos" class="btn btn-ghost bg-base-200/50 hover:bg-amber-500/10 hover:text-amber-500 rounded-2xl flex items-center justify-between px-6 h-14 transition-all">
-            <div class="flex items-center gap-4">
-              <div class="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                <Icon name="mingcute:user-4-fill" size="20" />
-              </div>
-              <div class="text-left">
-                <p class="font-bold text-xs">Gunakan Foto Profil untuk Wajah Absensi</p>
-                <p class="text-[10px] text-base-content/50">Samakan foto wajah absensi dengan foto profil</p>
-              </div>
-            </div>
-            <Icon name="mingcute:transfer-line" size="18" class="text-base-content/20" />
-          </button>
-
-          <!-- Hapus Foto -->
-          <button @click="deleteStudentPhotoNow(selectedPhotoType)" class="btn btn-ghost bg-error/10 text-error hover:bg-error/20 rounded-2xl flex items-center justify-between px-6 h-12 transition-all">
-            <div class="flex items-center gap-3">
-              <Icon name="mingcute:delete-2-fill" size="18" />
-              <span class="font-bold text-xs">Hapus Foto {{ selectedPhotoType === 'both' ? 'Siswa' : selectedPhotoType === 'profile' ? 'Profil' : 'Wajah' }}</span>
-            </div>
-          </button>
-
-          <input ref="faceFileInputHelper" type="file" class="hidden" accept="image/*" @change="onFaceFileSelect" />
-
+          </div>
         </div>
+
+        <input ref="faceFileInputHelper" type="file" class="hidden" accept="image/*" @change="onFaceFileSelect" />
+
         <div class="modal-action sm:mt-6 mt-4">
           <button @click="showFaceUploadOptions = false" class="btn btn-ghost w-full rounded-2xl">Batal</button>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop" @click="showFaceUploadOptions = false"><button>close</button></form>
     </dialog>
+
 
 
     <!-- Modal: Kamera Selfie -->
