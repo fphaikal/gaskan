@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { CustomSelect } from '@/components/shared/CustomSelect';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +42,7 @@ export default function ProfilePage() {
   const [birthPlace, setBirthPlace] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState('L');
-  const [religion, setReligion] = useState('');
+  const [religion, setReligion] = useState('ISLAM');
   const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
 
@@ -69,7 +70,7 @@ export default function ProfilePage() {
         setBirthPlace(d.TempatLahir && d.TempatLahir !== '-' ? d.TempatLahir : d.birthPlace || '');
         setBirthDate(d.TanggalLahir ? format(parseISO(d.TanggalLahir), 'yyyy-MM-dd') : d.birthDate || '');
         setGender(d.Gender || d.gender || 'L');
-        setReligion(d.Agama || d.religion || 'Islam');
+        setReligion((d.Agama || d.religion || 'ISLAM').toUpperCase());
         setAddress(d.Alamat && d.Alamat !== '-' ? d.Alamat : d.address || '');
         setEmail(d.Email && d.Email !== '-' ? d.Email : d.email || '');
         setPhone(d.Nomor && d.Nomor !== '-' ? d.Nomor : d.phone || '');
@@ -501,22 +502,23 @@ export default function ProfilePage() {
               <Icon icon="mingcute:key-2-fill" className="text-sm" />
               Ganti Password
             </Button>
-          </div>
+          </div >
         </div>
       </div>
 
       {/* ══════════════════════════════════════════════════
-           INTERACTIVE MODALS MATCHING NUXT
+           SPACIOUS MODALS WITH PROPER PADDING & GAP
       ══════════════════════════════════════════════════ */}
 
       {/* Modal 1: Edit Personal Info */}
       <Dialog open={activeModal === 'editPersonal'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="rounded-3xl max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Edit Informasi Pribadi</DialogTitle>
+        <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">Edit Informasi Pribadi</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1 text-xs sm:text-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="birthPlace">Tempat Lahir</Label>
                 <Input
@@ -524,6 +526,7 @@ export default function ProfilePage() {
                   value={birthPlace}
                   onChange={(e) => setBirthPlace(e.target.value)}
                   placeholder="Contoh: Yogyakarta"
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
                 />
               </div>
               <div className="space-y-1.5">
@@ -533,30 +536,36 @@ export default function ProfilePage() {
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
+                  className="rounded-2xl bg-muted/30 font-bold h-11"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="gender">Jenis Kelamin</Label>
-                <select
-                  id="gender"
+                <Label>Jenis Kelamin</Label>
+                <CustomSelect
+                  options={[
+                    { value: 'L', label: 'Laki-Laki (L)' },
+                    { value: 'P', label: 'Perempuan (P)' },
+                  ]}
                   value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
-                >
-                  <option value="L">Laki-Laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
+                  onChange={setGender}
+                />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="religion">Agama</Label>
-                <Input
-                  id="religion"
+                <Label>Agama</Label>
+                <CustomSelect
+                  options={[
+                    { value: 'ISLAM', label: 'ISLAM' },
+                    { value: 'KRISTEN', label: 'KRISTEN' },
+                    { value: 'KATOLIK', label: 'KATOLIK' },
+                    { value: 'HINDU', label: 'HINDU' },
+                    { value: 'BUDHA', label: 'BUDHA' },
+                    { value: 'KONGHUCU', label: 'KONGHUCU' },
+                  ]}
                   value={religion}
-                  onChange={(e) => setReligion(e.target.value)}
-                  placeholder="Contoh: Islam"
+                  onChange={setReligion}
                 />
               </div>
             </div>
@@ -569,24 +578,28 @@ export default function ProfilePage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@smtijogja.sch.id"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="address">Alamat Tempat Tinggal</Label>
-              <Input
+              <textarea
                 id="address"
+                rows={3}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Jl. Kusumabangsa No. 1..."
+                className="w-full p-3 bg-muted/30 border border-border rounded-2xl text-xs font-bold focus:outline-none resize-none"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setActiveModal(null)}>
+
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold" disabled={isSaving} onClick={handleSavePersonal}>
+            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20" disabled={isSaving} onClick={handleSavePersonal}>
               {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
           </DialogFooter>
@@ -595,11 +608,11 @@ export default function ProfilePage() {
 
       {/* Modal 2: Edit Contact */}
       <Dialog open={activeModal === 'editContact'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="rounded-3xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Edit Nomor Kontak</DialogTitle>
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">Edit Nomor Kontak</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1">
+          <div className="p-6 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="phone">Nomor WhatsApp / Telp</Label>
               <Input
@@ -607,14 +620,15 @@ export default function ProfilePage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="081234567890"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setActiveModal(null)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold" disabled={isSaving} onClick={handleSaveContact}>
+            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground" disabled={isSaving} onClick={handleSaveContact}>
               {isSaving ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
@@ -623,11 +637,11 @@ export default function ProfilePage() {
 
       {/* Modal 3: Edit Vehicle */}
       <Dialog open={activeModal === 'editVehicle'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="rounded-3xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Edit Plat Kendaraan</DialogTitle>
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">Edit Plat Kendaraan</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1">
+          <div className="p-6 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="vehiclePlate">Plat Nomor Kendaraan</Label>
               <Input
@@ -635,14 +649,15 @@ export default function ProfilePage() {
                 value={vehiclePlate}
                 onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
                 placeholder="AB 1234 AB"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setActiveModal(null)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold" disabled={isSaving} onClick={handleSaveVehicle}>
+            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground" disabled={isSaving} onClick={handleSaveVehicle}>
               {isSaving ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
@@ -651,11 +666,11 @@ export default function ProfilePage() {
 
       {/* Modal 4: Edit Avatar */}
       <Dialog open={activeModal === 'editAvatar'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Ubah Foto Profil</DialogTitle>
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">Ubah Foto Profil</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2 flex flex-col items-center">
+          <div className="p-6 space-y-4 flex flex-col items-center">
             <div className="w-28 h-28 rounded-full overflow-hidden bg-muted border border-border flex items-center justify-center shadow-inner">
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -666,18 +681,18 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <Input type="file" accept="image/*" onChange={handleFileChange} className="max-w-xs" />
+            <Input type="file" accept="image/*" onChange={handleFileChange} className="max-w-xs rounded-xl" />
           </div>
-          <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
             {photoUrl && (
-              <Button variant="destructive" className="rounded-xl font-bold" disabled={isSaving} onClick={handleDeletePhoto}>
+              <Button variant="destructive" className="rounded-2xl font-bold" disabled={isSaving} onClick={handleDeletePhoto}>
                 Hapus Foto
               </Button>
             )}
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setActiveModal(null)}>
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold" disabled={!selectedFile || isSaving} onClick={handleUploadAvatar}>
+            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground" disabled={!selectedFile || isSaving} onClick={handleUploadAvatar}>
               {isSaving ? 'Mengunggah...' : 'Unggah Foto'}
             </Button>
           </DialogFooter>
@@ -686,11 +701,11 @@ export default function ProfilePage() {
 
       {/* Modal 5: Edit Face Photo */}
       <Dialog open={activeModal === 'editFace'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Unggah Foto Wajah Absensi</DialogTitle>
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">Unggah Foto Wajah Absensi</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1 flex flex-col items-center">
+          <div className="p-6 space-y-4 flex flex-col items-center">
             <div className="w-28 h-36 rounded-2xl overflow-hidden bg-muted border border-border flex items-center justify-center shadow-inner">
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -701,16 +716,16 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <Input type="file" accept="image/*" onChange={handleFileChange} className="max-w-xs" />
-            <p className="text-[10px] text-muted-foreground text-center max-w-xs">
+            <Input type="file" accept="image/*" onChange={handleFileChange} className="max-w-xs rounded-xl" />
+            <p className="text-[10px] text-muted-foreground text-center max-w-xs font-semibold">
               Pastikan wajah terlihat jelas, menghadap depan, dan pencahayaan cukup untuk deteksi sistem absensi.
             </p>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setActiveModal(null)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold" disabled={!selectedFile || isSaving} onClick={handleUploadAvatar}>
+            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground" disabled={!selectedFile || isSaving} onClick={handleUploadAvatar}>
               {isSaving ? 'Mengunggah...' : 'Simpan Foto Wajah'}
             </Button>
           </DialogFooter>
@@ -719,11 +734,11 @@ export default function ProfilePage() {
 
       {/* Modal 6: Change Password */}
       <Dialog open={activeModal === 'changePass'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Ganti Password</DialogTitle>
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+            <DialogTitle className="text-xl font-black text-foreground">Ganti Password</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1">
+          <div className="p-6 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="currPass">Password Saat Ini</Label>
               <Input
@@ -732,6 +747,7 @@ export default function ProfilePage() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
             <div className="space-y-1.5">
@@ -742,6 +758,7 @@ export default function ProfilePage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Minimal 6 karakter"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
             <div className="space-y-1.5">
@@ -752,14 +769,15 @@ export default function ProfilePage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Ulangi password baru"
+                className="rounded-2xl bg-muted/30 font-bold h-11"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl font-bold" onClick={() => setActiveModal(null)}>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
-            <Button className="rounded-xl font-bold bg-primary text-primary-foreground" disabled={isSaving} onClick={handleChangePassword}>
+            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground" disabled={isSaving} onClick={handleChangePassword}>
               {isSaving ? 'Memproses...' : 'Ubah Password'}
             </Button>
           </DialogFooter>
