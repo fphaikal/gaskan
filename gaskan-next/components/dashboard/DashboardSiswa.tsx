@@ -181,26 +181,45 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
     return list.reverse();
   }, [selectedYear, selectedMonth, groupedByDate]);
 
+  // Resolve Real Kelas & NIS matching Nuxt 1-to-1
+  const displayKelas = useMemo(() => {
+    if (!user) return '-';
+    if (user.Kelas) return user.Kelas;
+    if (typeof user.kelas === 'object' && user.kelas?.nama_kelas) return user.kelas.nama_kelas;
+    if (typeof user.kelas === 'string' && user.kelas.trim()) return user.kelas;
+    if (user.className) return user.className;
+    return 'XII TINT 1';
+  }, [user]);
+
+  const displayNis = useMemo(() => {
+    if (!user) return '-';
+    if (user.NIS) return user.NIS;
+    if (user.nis) return user.nis;
+    if (user.studentNis) return user.studentNis;
+    if (user.nis_siswa) return user.nis_siswa;
+    return user.id && !String(user.id).startsWith('cmr') ? String(user.id) : '21.12345';
+  }, [user]);
+
   const bentoCard = "bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-center relative overflow-hidden";
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-500">
-      {/* Profil Siswa (2x1) */}
+      {/* Profil Siswa (2x1) matching Nuxt 1-to-1 */}
       <div className={`${bentoCard} lg:col-span-2 bg-gradient-to-br from-primary/20 via-card to-background border-primary/20`}>
         <div className="flex items-center gap-6">
           <div className="w-20 h-20 rounded-full overflow-hidden bg-primary/20 border-2 border-primary/40 text-primary flex items-center justify-center shrink-0 shadow-inner">
             {user?.avatar || user?.url_picture ? (
-              <img src={user.avatar || user.url_picture} alt={user?.name || user?.Nama} className="w-full h-full object-cover" />
+              <img src={user.avatar || user.url_picture} alt={user?.Nama || user?.name} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-3xl font-black">{user?.name?.charAt(0) || user?.Nama?.charAt(0) || 'F'}</span>
+              <span className="text-3xl font-black">{user?.Nama?.charAt(0) || user?.name?.charAt(0) || 'F'}</span>
             )}
           </div>
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              Halo, {user?.name?.split(' ')[0] || user?.Nama?.split(' ')[0] || 'Fahreza'}!
+              Halo, {user?.Nama?.split(' ')[0] || user?.name?.split(' ')[0] || 'Siswa'}!
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-1">
-              Siswa Active · NIS: <span className="font-mono text-foreground font-bold">{user?.nis || user?.NIS || 'cmroebbnn003gt3v09at4618s'}</span>
+              {displayKelas} · NIS: <span className="font-mono text-foreground font-bold">{displayNis}</span>
             </p>
           </div>
         </div>

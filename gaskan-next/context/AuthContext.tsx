@@ -24,20 +24,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       let res;
       try {
-        res = await api.get('/auth/me', { timeout: 4000 });
-      } catch (err1) {
-        res = await api.get('/user', { timeout: 4000 }).catch(() => null);
+        res = await api.get('/user', { timeout: 4000 });
+      } catch {
+        res = await api.get('/auth/me', { timeout: 4000 }).catch(() => null);
       }
 
       if (res?.data) {
         const u = res.data.user || res.data.data || res.data;
         if (u) {
           const updatedUser: User = {
-            id: String(u.id || u.nis || '1'),
-            name: u.nama || u.name || 'Pengguna',
+            ...u,
+            id: String(u.id || u.nis || u.NIS || '1'),
+            name: u.nama || u.name || u.Nama || 'Pengguna',
             email: u.email || '',
             role: String(u.role || 'siswa').toLowerCase() as any,
             avatar: u.url_picture || u.avatar,
+            nis: u.nis || u.NIS || u.nis_siswa || u.studentNis || '',
+            kelas: u.kelas?.nama_kelas || u.kelas || u.Kelas || u.className || '',
           };
           setUser(updatedUser);
           localStorage.setItem('auth_user', JSON.stringify(updatedUser));
@@ -94,30 +97,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const normalizedUser = {
       ...userData,
       role: String(userData.role || 'siswa').toLowerCase() as any,
+      nis: userData.nis || userData.NIS || (userData as any).nis_siswa || '',
+      kelas: typeof userData.kelas === 'object' ? userData.kelas?.nama_kelas : userData.kelas || (userData as any).Kelas || '',
     };
     setToken(newToken);
     setUser(normalizedUser);
     localStorage.setItem('auth_token', newToken);
     localStorage.setItem('auth_user', JSON.stringify(normalizedUser));
+
     if (typeof document !== 'undefined') {
       const encodedToken = encodeURIComponent(newToken);
-      document.cookie = `auth_token=${encodedToken}; path=/; max-age=604800; SameSite=Lax`;
-      document.cookie = `token=${encodedToken}; path=/; max-age=604800; SameSite=Lax`;
-      document.cookie = `sessionId=${encodedToken}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `auth_token=${encodedToken}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `token=${encodedToken}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `sessionId=${encodedToken}; path=/; max-age=86400; SameSite=Lax`;
     }
+
+    refreshUser().catch(() => null);
   };
 
   const logout = () => {
-    api.post('/auth/logout').catch(() => null);
     setToken(null);
     setUser(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+
     if (typeof document !== 'undefined') {
       document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       document.cookie = 'sessionId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
+
+    api.post('/auth/logout').catch(() => null);
   };
 
   return (
@@ -127,7 +137,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
