@@ -736,68 +736,64 @@ const formatLogDate = (ts) => {
                 </div>
               </div>
 
-              <!-- TAB 2: OPTIONAL MENU - HIGH-END ELEGANT CALENDAR WIDGET -->
+              <!-- TAB 2: OPTIONAL MENU - ELEGANT CALENDAR WIDGET (Scoped CSS for clean rendering) -->
               <div v-else class="space-y-4">
                 <div class="flex items-center justify-between">
                   <div>
                     <h5 class="text-xs font-black text-base-content/60 uppercase tracking-widest">Menu Kalender Kehadiran</h5>
                     <p class="text-[10px] text-base-content/40 mt-0.5">Klik tanggal bertanda untuk melihat rincian log</p>
                   </div>
-                  <span class="text-[10px] font-mono font-bold bg-base-200 px-2.5 py-1 rounded-lg border border-base-300">
+                  <span class="text-[10px] font-mono font-bold opacity-60">
                     {{ summaryStats.percentage }}% Kehadiran
                   </span>
                 </div>
                 
-                <!-- Compact Center-Aligned Calendar Widget (Max 380px wide) -->
-                <div class="max-w-md mx-auto p-4 sm:p-5 bg-base-200/30 rounded-[2rem] border border-base-200/80 shadow-sm space-y-3">
-                  
-                  <!-- Month Name Header -->
-                  <div class="text-center pb-2 border-b border-base-200/60">
-                    <span class="text-xs font-black uppercase text-primary tracking-wider font-mono">
-                      {{ monthOptions.find(m => m.value === selectedMonth)?.name }} {{ selectedYear }}
-                    </span>
+                <!-- Elegant Calendar: Pure Scoped CSS (no Tailwind border on cells) -->
+                <div class="cal-card">
+                  <!-- Month Header -->
+                  <div class="cal-month-header">
+                    <span class="cal-month-name">{{ monthOptions.find(m => m.value === selectedMonth)?.name }}</span>
+                    <span class="cal-year">{{ selectedYear }}</span>
                   </div>
 
-                  <!-- Weekday Header Row -->
-                  <div class="grid grid-cols-7 gap-1 text-center font-bold text-[11px] text-base-content/40 uppercase tracking-wider pb-1">
-                    <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-500/80">Sab</span><span class="text-rose-500/80">Min</span>
+                  <!-- Weekday Labels -->
+                  <div class="cal-weekdays">
+                    <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span>
+                    <span class="cal-weekend">Sab</span><span class="cal-weekend">Min</span>
                   </div>
 
-                  <!-- Compact Minimalist Grid Matrix (No outer borders on empty cells) -->
-                  <div class="grid grid-cols-7 gap-1.5 justify-items-center">
-                    <div 
-                      v-for="cell in calendarCells" 
+                  <!-- Day Grid -->
+                  <div class="cal-grid">
+                    <button
+                      v-for="cell in calendarCells"
                       :key="cell.id"
                       @click="cell.data && (selectedDayLog = selectedDayLog === cell.data ? null : cell.data)"
+                      :disabled="!cell.data"
                       :class="[
-                        'w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex flex-col items-center justify-center transition-all text-xs relative select-none font-mono font-bold',
-                        cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
-                        !cell.data && cell.isWeekend ? 'bg-base-200/20 text-rose-400/80' : '',
-                        !cell.data && !cell.isWeekend ? 'bg-base-100/60 text-base-content/70 hover:bg-base-200/60' : '',
-                        cell.data ? 'cursor-pointer hover:scale-110 shadow-xs border' : '',
-                        selectedDayLog === cell.data ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100 scale-110 shadow-md z-10' : '',
-                        cell.data?.status === 'HADIR' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-black' : '',
-                        cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/20 border-amber-500/40 text-amber-600 dark:text-amber-400 font-black' : '',
-                        cell.data?.status === 'IZIN' ? 'bg-sky-500/20 border-sky-500/40 text-sky-600 dark:text-sky-400 font-black' : '',
-                        cell.data?.status === 'SAKIT' ? 'bg-orange-500/20 border-orange-500/40 text-orange-600 dark:text-orange-400 font-black' : '',
-                        cell.data?.status === 'ALPHA' ? 'bg-rose-500/20 border-rose-500/40 text-rose-600 dark:text-rose-400 font-black' : ''
+                        'cal-day',
+                        cell.type === 'empty' ? 'cal-day-empty' : '',
+                        !cell.data && cell.isWeekend ? 'cal-day-off' : '',
+                        !cell.data && !cell.isWeekend ? 'cal-day-plain' : '',
+                        cell.data?.status === 'HADIR' ? 'cal-day-hadir' : '',
+                        cell.data?.status === 'TERLAMBAT' ? 'cal-day-terlambat' : '',
+                        cell.data?.status === 'IZIN' ? 'cal-day-izin' : '',
+                        cell.data?.status === 'SAKIT' ? 'cal-day-sakit' : '',
+                        cell.data?.status === 'ALPHA' ? 'cal-day-alpha' : '',
+                        selectedDayLog === cell.data && cell.data ? 'cal-day-selected' : ''
                       ]"
                     >
-                      <!-- Day Number -->
-                      <span class="text-xs font-black leading-none">{{ cell.day }}</span>
-
-                      <!-- Status Dot Indicator -->
-                      <div v-if="cell.data" class="w-1.5 h-1.5 rounded-full mt-0.5 bg-current shadow-xs"></div>
-                    </div>
+                      <span class="cal-day-num">{{ cell.day }}</span>
+                      <span v-if="cell.data" class="cal-dot"></span>
+                    </button>
                   </div>
 
-                  <!-- Legend Bar -->
-                  <div class="flex items-center justify-center gap-3 pt-3 border-t border-base-200/60 text-[10px] font-bold text-base-content/60 flex-wrap">
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Hadir</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Lambat</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Izin</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-500"></span> Sakit</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Alpha</span>
+                  <!-- Legend -->
+                  <div class="cal-legend">
+                    <span class="cal-legend-item hadir">Hadir</span>
+                    <span class="cal-legend-item terlambat">Lambat</span>
+                    <span class="cal-legend-item izin">Izin</span>
+                    <span class="cal-legend-item sakit">Sakit</span>
+                    <span class="cal-legend-item alpha">Alpha</span>
                   </div>
                 </div>
 
@@ -889,4 +885,208 @@ const formatLogDate = (ts) => {
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ===== ELEGANT CALENDAR WIDGET (Pure CSS - bypasses DaisyUI border injection) ===== */
+.cal-card {
+  max-width: 380px;
+  margin: 0 auto;
+  background: rgba(var(--b2, 0 0 0), 0.4);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cal-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(var(--bc, 0 0 0), 0.08);
+}
+
+.cal-month-name {
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: hsl(var(--p));
+  font-family: monospace;
+}
+
+.cal-year {
+  font-size: 0.75rem;
+  font-weight: 700;
+  opacity: 0.35;
+  font-family: monospace;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.cal-weekdays span {
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  opacity: 0.3;
+  padding: 0.25rem 0;
+}
+
+.cal-weekdays .cal-weekend { color: rgb(251 113 133); opacity: 0.7; }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+/* Base day cell - NO border class, NO outline, clean flat */
+.cal-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0.625rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: monospace;
+  transition: transform 0.15s ease, background 0.15s ease;
+  background: transparent;
+  border: none;        /* Explicit no border */
+  outline: none;       /* Explicit no outline */
+  box-shadow: none;    /* Explicit no shadow */
+  cursor: default;
+  color: rgba(var(--bc, 0 0 0), 0.6);
+}
+
+.cal-day:focus { outline: none; }
+
+.cal-day-empty { visibility: hidden; pointer-events: none; }
+
+.cal-day-plain { background: rgba(var(--bc, 0 0 0), 0.04); }
+.cal-day-plain:hover { background: rgba(var(--bc, 0 0 0), 0.09); }
+
+.cal-day-off { background: rgba(var(--bc, 0 0 0), 0.02); color: rgba(251, 113, 133, 0.6); }
+
+/* Status cells – use box-shadow instead of border */
+.cal-day-hadir {
+  background: rgba(16, 185, 129, 0.18);
+  color: rgb(5, 150, 105);
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgba(16, 185, 129, 0.35);
+}
+.cal-day-hadir:hover { transform: scale(1.1); background: rgba(16, 185, 129, 0.28); }
+
+.cal-day-terlambat {
+  background: rgba(245, 158, 11, 0.18);
+  color: rgb(180, 110, 0);
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgba(245, 158, 11, 0.35);
+}
+.cal-day-terlambat:hover { transform: scale(1.1); background: rgba(245, 158, 11, 0.28); }
+
+.cal-day-izin {
+  background: rgba(14, 165, 233, 0.18);
+  color: rgb(2, 120, 175);
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgba(14, 165, 233, 0.35);
+}
+.cal-day-izin:hover { transform: scale(1.1); background: rgba(14, 165, 233, 0.28); }
+
+.cal-day-sakit {
+  background: rgba(249, 115, 22, 0.18);
+  color: rgb(194, 65, 12);
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgba(249, 115, 22, 0.35);
+}
+.cal-day-sakit:hover { transform: scale(1.1); background: rgba(249, 115, 22, 0.28); }
+
+.cal-day-alpha {
+  background: rgba(239, 68, 68, 0.18);
+  color: rgb(185, 28, 28);
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgba(239, 68, 68, 0.35);
+}
+.cal-day-alpha:hover { transform: scale(1.1); background: rgba(239, 68, 68, 0.28); }
+
+.cal-day-selected {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2.5px hsl(var(--p)), inset 0 0 0 1.5px transparent !important;
+  z-index: 10;
+}
+
+.cal-day-num {
+  line-height: 1;
+  font-size: 0.7rem;
+}
+
+.cal-dot {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(var(--bc, 0 0 0), 0.08);
+}
+
+.cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.cal-legend-item::before {
+  content: '';
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.cal-legend-item.hadir { color: rgb(5, 150, 105); }
+.cal-legend-item.hadir::before { background: rgb(16, 185, 129); }
+.cal-legend-item.terlambat { color: rgb(180, 110, 0); }
+.cal-legend-item.terlambat::before { background: rgb(245, 158, 11); }
+.cal-legend-item.izin { color: rgb(2, 120, 175); }
+.cal-legend-item.izin::before { background: rgb(14, 165, 233); }
+.cal-legend-item.sakit { color: rgb(194, 65, 12); }
+.cal-legend-item.sakit::before { background: rgb(249, 115, 22); }
+.cal-legend-item.alpha { color: rgb(185, 28, 28); }
+.cal-legend-item.alpha::before { background: rgb(239, 68, 68); }
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  .cal-day-hadir { color: rgb(52, 211, 153); }
+  .cal-day-terlambat { color: rgb(251, 191, 36); }
+  .cal-day-izin { color: rgb(56, 189, 248); }
+  .cal-day-sakit { color: rgb(251, 146, 60); }
+  .cal-day-alpha { color: rgb(252, 165, 165); }
+}
 </style>
