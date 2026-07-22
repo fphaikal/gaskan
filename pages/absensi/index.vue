@@ -90,6 +90,7 @@ const currentStudent = ref(null);
 const currentStudentAttendance = ref(null);
 const historyLoading = ref(false);
 const historyData = ref(null);
+const selectedCellDay = ref(null);
 
 const historyMonth = ref(new Date().getMonth() + 1);
 const historyYear = ref(new Date().getFullYear());
@@ -600,7 +601,10 @@ const formatTime = (ts) => {
 
                   <!-- Monthly Interactive Calendar Grid -->
                   <div class="space-y-2">
-                    <h4 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Grid Kalender Bulanan</h4>
+                    <div class="flex items-center justify-between">
+                      <h4 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Grid Kalender Bulanan</h4>
+                      <span class="text-[9px] font-bold text-base-content/40">Klik tanggal untuk rincian foto & log</span>
+                    </div>
                     
                     <!-- Weekday Header -->
                     <div class="grid grid-cols-7 gap-1 text-center font-black text-[9px] text-base-content/40 uppercase tracking-widest bg-base-200/50 py-1.5 rounded-xl">
@@ -612,10 +616,12 @@ const formatTime = (ts) => {
                       <div 
                         v-for="cell in calendarCells" 
                         :key="cell.id || cell.dateStr"
+                        @click="cell.data && (selectedCellDay = cell.data)"
                         :class="[
-                          'aspect-square rounded-xl p-1 flex flex-col justify-between text-center transition-all border text-[10px] font-bold',
+                          'aspect-square rounded-xl p-1 flex flex-col justify-between text-center transition-all border text-[10px] font-bold cursor-pointer hover:scale-105',
                           cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
                           cell.isWeekend ? 'bg-base-200/30 border-base-200 text-base-content/40' : 'bg-base-100 border-base-200',
+                          selectedCellDay && selectedCellDay === cell.data ? 'ring-2 ring-orange-500 scale-105' : '',
                           cell.data?.status === 'HADIR' ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600' : '',
                           cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/10 border-amber-500/40 text-amber-600' : '',
                           cell.data?.status === 'IZIN' ? 'bg-sky-500/10 border-sky-500/40 text-sky-600' : '',
@@ -631,22 +637,61 @@ const formatTime = (ts) => {
                     </div>
                   </div>
 
-                  <!-- Logs List -->
+                  <!-- Selected Cell Day Log Popup Card -->
+                  <div v-if="selectedCellDay" class="p-3.5 rounded-2xl bg-orange-500/5 border border-orange-500/20 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-orange-500">Log Presensi Tapping</span>
+                      <button @click="selectedCellDay = null" class="btn btn-ghost btn-xs btn-circle">
+                        <Icon name="mingcute:close-line" size="14" />
+                      </button>
+                    </div>
+                    <div class="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
+                      <div v-for="log in selectedCellDay.logs" :key="log.id" class="flex items-center gap-3 p-2 rounded-xl bg-base-100 border border-base-200">
+                        <div class="w-10 h-10 rounded-lg overflow-hidden bg-base-200 shrink-0 border border-base-200 relative">
+                          <img :src="log.notes || currentStudent?.photoUrl || 'https://api.tierkun.my.id/file/picture/0000.png'" 
+                               alt="scan" 
+                               class="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform"
+                               @click="openImagePreview(log.notes || currentStudent?.photoUrl)" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-base-content">{{ formatTime(log.timestamp) }}</span>
+                            <span :class="['px-2 py-0.5 rounded-md text-[8px] font-black uppercase', getStatus(log.status).badge]">
+                              {{ getStatus(log.status).label }}
+                            </span>
+                          </div>
+                          <p class="text-[9px] font-bold text-base-content/50 truncate mt-0.5" v-if="log.device">
+                            <Icon name="mingcute:location-fill" size="11" class="text-orange-500 inline mr-0.5" />
+                            {{ log.device.name }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Monthly Logs List -->
                   <div class="space-y-2 pt-2 border-t border-base-200">
                     <h4 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Daftar Presensi Masuk Bulan Ini</h4>
-                    <div v-if="historyData.data && historyData.data.length" class="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
-                      <div v-for="att in historyData.data" :key="att.id" class="flex items-center justify-between p-2.5 rounded-xl bg-base-200/30 border border-base-200/50 text-xs">
-                        <div class="flex items-center gap-2">
-                          <span class="font-bold text-base-content">{{ new Date(att.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) }}</span>
-                          <span class="font-mono text-base-content/60">{{ formatTime(att.timestamp) }}</span>
+                    <div v-if="historyData.data && historyData.data.length" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar">
+                      <div v-for="att in historyData.data" :key="att.id" class="flex items-center gap-3 p-2.5 rounded-2xl bg-base-200/30 border border-base-200/50 hover:bg-base-200/60 transition-colors">
+                        <!-- Captured Photo Thumbnail -->
+                        <div class="w-10 h-10 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 relative">
+                          <img :src="att.notes || currentStudent?.photoUrl || 'https://api.tierkun.my.id/file/picture/0000.png'" 
+                               alt="scan" 
+                               class="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform"
+                               @click="openImagePreview(att.notes || currentStudent?.photoUrl)" />
                         </div>
-                        <div class="flex items-center gap-2">
-                          <span v-if="att.device" class="text-[9px] font-bold text-base-content/40 hidden sm:inline">
-                            {{ att.device.name }}
-                          </span>
-                          <span :class="['px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider', getStatus(att.status).badge]">
-                            {{ getStatus(att.status).label }}
-                          </span>
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center justify-between">
+                            <span class="font-bold text-xs text-base-content">{{ new Date(att.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) }} - {{ formatTime(att.timestamp) }}</span>
+                            <span :class="['px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider', getStatus(att.status).badge]">
+                              {{ getStatus(att.status).label }}
+                            </span>
+                          </div>
+                          <p class="text-[9px] font-bold text-base-content/40 truncate mt-0.5" v-if="att.device">
+                            <Icon name="mingcute:location-fill" size="11" class="text-orange-500 inline mr-0.5" />
+                            {{ att.device.name }} ({{ att.device.location }})
+                          </p>
                         </div>
                       </div>
                     </div>

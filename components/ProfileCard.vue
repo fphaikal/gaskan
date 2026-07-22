@@ -584,6 +584,121 @@ const resolvePhoto = (url) => {
 };
 
 const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : 'Belum Diatur';
+
+// ── Student Attendance History State ────────────────────────
+const profileAttendanceMonth = ref(new Date().getMonth() + 1);
+const profileAttendanceYear = ref(new Date().getFullYear());
+const profileAttendanceData = ref(null);
+const isProfileAttendanceLoading = ref(false);
+const profileSelectedDayLog = ref(null);
+const activeProfilePreviewImage = ref(null);
+
+const monthOptions = [
+  { value: 1, name: 'Januari' },
+  { value: 2, name: 'Februari' },
+  { value: 3, name: 'Maret' },
+  { value: 4, name: 'April' },
+  { value: 5, name: 'Mei' },
+  { value: 6, name: 'Juni' },
+  { value: 7, name: 'Juli' },
+  { value: 8, name: 'Agustus' },
+  { value: 9, name: 'September' },
+  { value: 10, name: 'Oktober' },
+  { value: 11, name: 'November' },
+  { value: 12, name: 'Desember' }
+];
+
+const yearOptions = computed(() => {
+  const current = new Date().getFullYear();
+  return [current, current - 1, current - 2];
+});
+
+const fetchProfileAttendance = async () => {
+  if (userRole.value !== 'SISWA') return;
+  const targetId = user.value?.id || user.value?.nis || user.value?.NIS;
+  if (!targetId) return;
+
+  isProfileAttendanceLoading.value = true;
+  try {
+    const res = await $fetch(`/api/attendance/student/${targetId}?month=${profileAttendanceMonth.value}&year=${profileAttendanceYear.value}`);
+    profileAttendanceData.value = res?.data || res || null;
+  } catch (err) {
+    console.error('Failed to fetch profile attendance:', err);
+  } finally {
+    isProfileAttendanceLoading.value = false;
+  }
+};
+
+watch([user, profileAttendanceMonth, profileAttendanceYear], () => {
+  if (user.value && userRole.value === 'SISWA') {
+    fetchProfileAttendance();
+  }
+}, { immediate: true });
+
+const profileSummaryStats = computed(() => {
+  return profileAttendanceData.value?.summary || { hadir: 0, terlambat: 0, izin: 0, sakit: 0, alpha: 0, total: 0 };
+});
+
+const profileCalendarCells = computed(() => {
+  const cells = [];
+  const year = profileAttendanceYear.value;
+  const month = profileAttendanceMonth.value - 1;
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+
+  let startDay = firstDayOfMonth.getDay() - 1;
+  if (startDay === -1) startDay = 6;
+  for (let i = 0; i < startDay; i++) {
+    cells.push({ id: `p-empty-${i}`, type: 'empty' });
+  }
+
+  const dailyMap = profileAttendanceData.value?.dailyMap || {};
+  const totalDays = lastDayOfMonth.getDate();
+  for (let day = 1; day <= totalDays; day++) {
+    const d = new Date(year, month, day);
+    const dateStr = d.toLocaleDateString('en-CA');
+    const dayOfWeek = d.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const dayData = dailyMap[dateStr] || null;
+    cells.push({
+      id: `p-day-${day}`,
+      type: 'day',
+      day,
+      dateStr,
+      isWeekend,
+      data: dayData
+    });
+  }
+  return cells;
+});
+
+const getProfileLogPhoto = (log) => {
+  if (log?.notes && (log.notes.startsWith('http') || log.notes.startsWith('/uploads') || log.notes.endsWith('.jpg') || log.notes.endsWith('.png') || log.notes.endsWith('.jpeg') || log.notes.endsWith('.webp'))) return log.notes;
+  if (log?.photoUrl) return log.photoUrl;
+  if (log?.image) return log.image;
+  return user.value?.url_picture || user.value?.photoUrl || user.value?.faceUrl || null;
+};
+
+const getProfileStatusBadge = (status) => {
+  switch (status) {
+    case 'HADIR': return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+    case 'TERLAMBAT': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+    case 'IZIN': return 'bg-sky-500/10 text-sky-600 border-sky-500/20';
+    case 'SAKIT': return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+    case 'ALPHA': return 'bg-rose-500/10 text-rose-600 border-rose-500/20';
+    default: return 'bg-base-200 text-base-content/60 border-base-300';
+  }
+};
+
+const formatProfileLogTime = (ts) => {
+  if (!ts) return '-';
+  return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+};
+
+const formatProfileLogDate = (ts) => {
+  if (!ts) return '-';
+  return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+};
 </script>
 
 <template>
@@ -699,6 +814,131 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
           </div>
 
         </div>
+      </div>
+
+      <!-- 3. Student Attendance History Card (For Student Role) -->
+      <div v-if="userRole === 'SISWA'" class="rounded-3xl bg-base-100 p-6 md:p-8 shadow-sm border border-base-200/60 space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-base-200/60">
+          <div>
+            <h4 class="text-sm font-bold text-base-content/60 uppercase tracking-wider">Riwayat Presensi Kehadiran Siswa</h4>
+            <p class="text-xs text-base-content/40 font-medium mt-0.5">Rekapitulasi tapping presensi, status, dan foto scan wajah</p>
+          </div>
+          <!-- Month & Year Selector -->
+          <div class="flex gap-2">
+            <select v-model="profileAttendanceMonth" class="select select-bordered select-xs font-bold rounded-xl bg-base-100">
+              <option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.name }}</option>
+            </select>
+            <select v-model="profileAttendanceYear" class="select select-bordered select-xs font-bold rounded-xl bg-base-100">
+              <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="isProfileAttendanceLoading" class="flex justify-center py-10">
+          <span class="loading loading-spinner loading-md text-primary"></span>
+        </div>
+
+        <template v-else>
+          <!-- Summary Stat Badges -->
+          <div class="grid grid-cols-5 gap-2">
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-2xl text-center">
+              <p class="text-base font-black text-emerald-600">{{ profileSummaryStats.hadir || 0 }}</p>
+              <p class="text-[9px] font-black uppercase text-emerald-600/70 tracking-wider">Hadir</p>
+            </div>
+            <div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-center">
+              <p class="text-base font-black text-amber-600">{{ profileSummaryStats.terlambat || 0 }}</p>
+              <p class="text-[9px] font-black uppercase text-amber-600/70 tracking-wider">Lambat</p>
+            </div>
+            <div class="bg-sky-500/10 border border-sky-500/20 p-2.5 rounded-2xl text-center">
+              <p class="text-base font-black text-sky-600">{{ profileSummaryStats.izin || 0 }}</p>
+              <p class="text-[9px] font-black uppercase text-sky-600/70 tracking-wider">Izin</p>
+            </div>
+            <div class="bg-orange-500/10 border border-orange-500/20 p-2.5 rounded-2xl text-center">
+              <p class="text-base font-black text-orange-600">{{ profileSummaryStats.sakit || 0 }}</p>
+              <p class="text-[9px] font-black uppercase text-orange-600/70 tracking-wider">Sakit</p>
+            </div>
+            <div class="bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-2xl text-center">
+              <p class="text-base font-black text-rose-600">{{ profileSummaryStats.alpha || 0 }}</p>
+              <p class="text-[9px] font-black uppercase text-rose-600/70 tracking-wider">Alpha</p>
+            </div>
+          </div>
+
+          <!-- Interactive Calendar Grid -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <h5 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Kalender Presensi</h5>
+              <span class="text-[9px] font-bold text-base-content/40">Klik tanggal untuk melihat foto & jam tap</span>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-center font-black text-[9px] text-base-content/40 uppercase tracking-widest bg-base-200/50 py-1.5 rounded-xl">
+              <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-400">Sab</span><span class="text-rose-400">Min</span>
+            </div>
+            <div class="grid grid-cols-7 gap-1.5">
+              <div 
+                v-for="cell in profileCalendarCells" 
+                :key="cell.id"
+                @click="cell.data && (profileSelectedDayLog = profileSelectedDayLog === cell.data ? null : cell.data)"
+                :class="[
+                  'aspect-square rounded-xl p-1 flex flex-col justify-between text-center transition-all border text-[10px] font-bold cursor-pointer hover:scale-105',
+                  cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
+                  cell.isWeekend ? 'bg-base-200/30 border-base-200 text-base-content/40' : 'bg-base-100 border-base-200',
+                  profileSelectedDayLog === cell.data ? 'ring-2 ring-primary scale-105' : '',
+                  cell.data?.status === 'HADIR' ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600' : '',
+                  cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/10 border-amber-500/40 text-amber-600' : '',
+                  cell.data?.status === 'IZIN' ? 'bg-sky-500/10 border-sky-500/40 text-sky-600' : '',
+                  cell.data?.status === 'SAKIT' ? 'bg-orange-500/10 border-orange-500/40 text-orange-600' : '',
+                  cell.data?.status === 'ALPHA' ? 'bg-rose-500/10 border-rose-500/40 text-rose-600' : ''
+                ]"
+              >
+                <span :class="['text-[10px] font-black', cell.isWeekend ? 'text-rose-400' : '']">{{ cell.day }}</span>
+                <div v-if="cell.data" class="text-[8px] font-black uppercase tracking-tighter truncate">
+                  {{ cell.data.status?.slice(0, 3) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tapping Photos & Log List -->
+          <div class="space-y-2.5 pt-2 border-t border-base-200">
+            <h5 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Daftar Foto & Tapping Log</h5>
+            <div v-if="profileAttendanceData?.data && profileAttendanceData.data.length" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+              <div 
+                v-for="log in profileAttendanceData.data" 
+                :key="log.id"
+                class="flex items-center gap-3 p-2.5 rounded-2xl bg-base-200/30 border border-base-200/50 hover:bg-base-200/60 transition-colors"
+              >
+                <!-- Thumbnail Image with Click-to-Preview -->
+                <div 
+                  class="w-11 h-11 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 relative shadow-inner cursor-zoom-in group/img"
+                  @click="activeProfilePreviewImage = getProfileLogPhoto(log)"
+                >
+                  <img 
+                    v-if="getProfileLogPhoto(log)"
+                    :src="getProfileLogPhoto(log)"
+                    alt="scan"
+                    class="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-300" 
+                  />
+                  <div v-else class="w-full h-full flex items-center justify-center text-base-content/30 bg-base-200">
+                    <Icon name="mingcute:pic-line" size="16" />
+                  </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-xs text-base-content">{{ formatProfileLogDate(log.timestamp) }} - {{ formatProfileLogTime(log.timestamp) }}</span>
+                    <span :class="['px-2 py-0.5 rounded-md text-[8px] font-black uppercase border', getProfileStatusBadge(log.status)]">
+                      {{ log.status }}
+                    </span>
+                  </div>
+                  <p class="text-[9px] font-bold text-base-content/40 truncate mt-0.5" v-if="log.device">
+                    <Icon name="mingcute:location-fill" size="11" class="text-primary inline mr-0.5" />
+                    {{ log.device.name }} ({{ log.device.location || '-' }})
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p v-else class="text-xs text-base-content/40 italic text-center py-4">Belum ada data presensi bulan ini</p>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -1462,5 +1702,17 @@ const genderLabel = (g) => g === 'L' ? 'Laki-Laki' : g === 'P' ? 'Perempuan' : '
     </div>
     <form method="dialog" class="modal-backdrop" @click="cancelFaceCrop"><button>close</button></form>
   </dialog>
+
+  <!-- Lightbox Image Preview Modal for Profile Attendance -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="activeProfilePreviewImage" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4" @click="activeProfilePreviewImage = null">
+        <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors btn btn-ghost btn-circle">
+          <Icon name="mingcute:close-line" size="28" />
+        </button>
+        <img :src="activeProfilePreviewImage" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10" @click.stop />
+      </div>
+    </Transition>
+  </Teleport>
   <!-- ====== Profile Section End ====== -->
 </template>

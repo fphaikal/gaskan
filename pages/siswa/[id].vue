@@ -279,6 +279,105 @@ const gender = (getGender) => {
 
 const { data: user } = await useFetch(`/api/user?role=siswa&user=${nis}`);
 
+// Attendance History & Calendar Grid State
+const selectedMonth = ref(new Date().getMonth() + 1);
+const selectedYear = ref(new Date().getFullYear());
+const attendanceHistory = ref(null);
+const historyLoading = ref(false);
+const selectedCellLog = ref(null);
+const activePreviewImage = ref(null);
+
+const openImagePreview = (url) => { if (url) activePreviewImage.value = url; };
+const closeImagePreview = () => { activePreviewImage.value = null; };
+
+const getLogImage = (log) => {
+  if (log?.notes && (log.notes.startsWith('http') || log.notes.startsWith('/uploads') || log.notes.endsWith('.jpg') || log.notes.endsWith('.png') || log.notes.endsWith('.jpeg') || log.notes.endsWith('.webp'))) return log.notes;
+  if (log?.photoUrl) return log.photoUrl;
+  if (log?.image) return log.image;
+  return user.value?.url_picture || user.value?.photoUrl || user.value?.faceUrl || 'https://api.tierkun.my.id/file/picture/0000.png';
+};
+
+const monthOptions = [
+  { value: 1, name: 'Januari' },
+  { value: 2, name: 'Februari' },
+  { value: 3, name: 'Maret' },
+  { value: 4, name: 'April' },
+  { value: 5, name: 'Mei' },
+  { value: 6, name: 'Juni' },
+  { value: 7, name: 'Juli' },
+  { value: 8, name: 'Agustus' },
+  { value: 9, name: 'September' },
+  { value: 10, name: 'Oktober' },
+  { value: 11, name: 'November' },
+  { value: 12, name: 'Desember' }
+];
+
+const years = computed(() => {
+  const current = new Date().getFullYear();
+  return [current, current - 1, current - 2];
+});
+
+const fetchStudentAttendanceHistory = async () => {
+  if (!user.value?.id) return;
+  historyLoading.value = true;
+  try {
+    const data = await $fetch(`/api/attendance/student/${user.value.id}?month=${selectedMonth.value}&year=${selectedYear.value}`);
+    attendanceHistory.value = data;
+  } catch (e) {
+    console.error('Failed to fetch student attendance history:', e);
+  } finally {
+    historyLoading.value = false;
+  }
+};
+
+onMounted(fetchStudentAttendanceHistory);
+watch([selectedMonth, selectedYear], fetchStudentAttendanceHistory);
+
+const historySummary = computed(() => attendanceHistory.value?.summary || { hadir: 0, terlambat: 0, izin: 0, sakit: 0, alpha: 0, total: 0 });
+
+const calendarCells = computed(() => {
+  const year = selectedYear.value;
+  const month = selectedMonth.value;
+  
+  const totalDays = new Date(year, month, 0).getDate();
+  const firstDay = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+  
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) {
+    cells.push({ type: 'empty', id: `empty-${i}` });
+  }
+  
+  const dailyMap = attendanceHistory.value?.dailyMap || {};
+  
+  for (let day = 1; day <= totalDays; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dayOfWeek = (new Date(year, month - 1, day).getDay() + 6) % 7;
+    const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+    const dayData = dailyMap[dateStr] || null;
+    
+    cells.push({
+      type: 'day',
+      day,
+      dateStr,
+      isWeekend,
+      data: dayData
+    });
+  }
+  
+  return cells;
+});
+
+const getStatusBadge = (s) => {
+  const map = {
+    HADIR: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
+    TERLAMBAT: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+    IZIN: 'bg-sky-500/10 text-sky-600 border-sky-500/30',
+    SAKIT: 'bg-orange-500/10 text-orange-600 border-orange-500/30',
+    ALPHA: 'bg-rose-500/10 text-rose-600 border-rose-500/30',
+  };
+  return map[s] || 'bg-base-200 text-base-content/50 border-base-300';
+};
+
 useSeoMeta({
   title: computed(() => `Profil ${user.value?.Nama || 'Siswa'} | GASKAN`),
   ogTitle: computed(() => `Profil ${user.value?.Nama || 'Siswa'} | GASKAN`),
@@ -447,41 +546,153 @@ useSeoMeta({
           </div>
         </div>
 
-        <!-- Attendance Log Block -->
-        <div class="rounded-3xl bg-base-100 p-6 shadow-sm border border-base-200/60 relative">
-          <div class="flex items-center justify-between mb-5 pb-3 border-b border-base-200/60">
-            <h4 class="text-sm font-bold text-base-content/60 uppercase tracking-wider">Log Kehadiran Terbaru</h4>
-            <span class="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg uppercase">10 Terakhir</span>
-          </div>
-          
-          <div v-if="user.attendances && user.attendances.length > 0" class="flex flex-col gap-4">
-            <div v-for="log in user.attendances" :key="log.id" class="flex items-center justify-between group">
-              <div class="flex items-center gap-3">
-                <div :class="['w-10 h-10 rounded-xl flex items-center justify-center transition-colors', 
-                  log.status === 'HADIR' ? 'bg-success/10 text-success' : 
-                  log.status === 'TERLAMBAT' ? 'bg-warning/10 text-warning' : 
-                  'bg-error/10 text-error'
-                ]">
-                  <Icon :name="log.status === 'HADIR' ? 'mingcute:check-2-fill' : 'mingcute:time-fill'" size="20" />
-                </div>
-                <div>
-                  <p class="text-xs font-bold text-base-content">{{ log.status }}</p>
-                  <p class="text-[10px] font-medium text-base-content/40">
-                    {{ new Date(log.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) }}, 
-                    {{ new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}
-                  </p>
-                </div>
-              </div>
-              <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                 <div class="badge badge-ghost badge-xs text-[8px] font-bold uppercase tracking-tighter">{{ log.method }}</div>
-              </div>
+        <!-- History & Kalender Presensi Siswa -->
+        <div class="rounded-3xl bg-base-100 p-6 shadow-sm border border-base-200/60 relative space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-base-200/60">
+            <div>
+              <h4 class="text-sm font-bold text-base-content/60 uppercase tracking-wider">Kalender & History Presensi</h4>
+              <p class="text-xs text-base-content/40 font-medium">Riwayat tapping dan foto scan kehadiran siswa</p>
+            </div>
+            
+            <!-- Month / Year Selector -->
+            <div class="flex gap-2">
+              <select v-model="selectedMonth" class="select select-bordered select-xs font-bold rounded-xl bg-base-100">
+                <option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.name }}</option>
+              </select>
+              <select v-model="selectedYear" class="select select-bordered select-xs font-bold rounded-xl bg-base-100">
+                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+              </select>
             </div>
           </div>
-          
-          <div v-else class="flex flex-col items-center justify-center py-10 text-center opacity-40">
-            <Icon name="mingcute:empty-box-line" size="40" class="mb-2" />
-            <p class="text-xs font-bold uppercase tracking-widest">Belum Ada Data</p>
+
+          <div v-if="historyLoading" class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-md text-primary"></span>
           </div>
+
+          <template v-else>
+            <!-- Summary Stats Badges -->
+            <div class="grid grid-cols-5 gap-2">
+              <div class="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-2xl text-center">
+                <p class="text-base font-black text-emerald-600">{{ historySummary.hadir || 0 }}</p>
+                <p class="text-[9px] font-black uppercase text-emerald-600/70 tracking-wider">Hadir</p>
+              </div>
+              <div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-2xl text-center">
+                <p class="text-base font-black text-amber-600">{{ historySummary.terlambat || 0 }}</p>
+                <p class="text-[9px] font-black uppercase text-amber-600/70 tracking-wider">Terlambat</p>
+              </div>
+              <div class="bg-sky-500/10 border border-sky-500/20 p-2.5 rounded-2xl text-center">
+                <p class="text-base font-black text-sky-600">{{ historySummary.izin || 0 }}</p>
+                <p class="text-[9px] font-black uppercase text-sky-600/70 tracking-wider">Izin</p>
+              </div>
+              <div class="bg-orange-500/10 border border-orange-500/20 p-2.5 rounded-2xl text-center">
+                <p class="text-base font-black text-orange-600">{{ historySummary.sakit || 0 }}</p>
+                <p class="text-[9px] font-black uppercase text-orange-600/70 tracking-wider">Sakit</p>
+              </div>
+              <div class="bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-2xl text-center">
+                <p class="text-base font-black text-rose-600">{{ historySummary.alpha || 0 }}</p>
+                <p class="text-[9px] font-black uppercase text-rose-600/70 tracking-wider">Alpha</p>
+              </div>
+            </div>
+
+            <!-- Monthly Interactive Calendar Grid -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <h5 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Grid Kalender Bulanan</h5>
+                <span class="text-[9px] font-bold text-base-content/40">Klik tanggal untuk rincian log</span>
+              </div>
+              
+              <!-- Weekday Header -->
+              <div class="grid grid-cols-7 gap-1 text-center font-black text-[9px] text-base-content/40 uppercase tracking-widest bg-base-200/50 py-1.5 rounded-xl">
+                <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-400">Sab</span><span class="text-rose-400">Min</span>
+              </div>
+
+              <!-- Day Grid -->
+              <div class="grid grid-cols-7 gap-1.5">
+                <div 
+                  v-for="cell in calendarCells" 
+                  :key="cell.id || cell.dateStr"
+                  @click="cell.data && (selectedCellLog = cell.data)"
+                  :class="[
+                    'aspect-square rounded-xl p-1 flex flex-col justify-between text-center transition-all border text-[10px] font-bold cursor-pointer hover:scale-105',
+                    cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
+                    cell.isWeekend ? 'bg-base-200/30 border-base-200 text-base-content/40' : 'bg-base-100 border-base-200',
+                    selectedCellLog && selectedCellLog === cell.data ? 'ring-2 ring-primary scale-105' : '',
+                    cell.data?.status === 'HADIR' ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600' : '',
+                    cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/10 border-amber-500/40 text-amber-600' : '',
+                    cell.data?.status === 'IZIN' ? 'bg-sky-500/10 border-sky-500/40 text-sky-600' : '',
+                    cell.data?.status === 'SAKIT' ? 'bg-orange-500/10 border-orange-500/40 text-orange-600' : '',
+                    cell.data?.status === 'ALPHA' ? 'bg-rose-500/10 border-rose-500/40 text-rose-600' : ''
+                  ]"
+                >
+                  <span :class="['text-[10px] font-black', cell.isWeekend ? 'text-rose-400' : '']">{{ cell.day }}</span>
+                  <div v-if="cell.data" class="text-[8px] font-black uppercase tracking-tighter truncate">
+                    {{ cell.data.status?.slice(0, 3) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected Cell Day Log Popup Card -->
+            <div v-if="selectedCellLog" class="p-3.5 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-black uppercase tracking-widest text-primary">Log Presensi Tapping</span>
+                <button @click="selectedCellLog = null" class="btn btn-ghost btn-xs btn-circle">
+                  <Icon name="mingcute:close-line" size="14" />
+                </button>
+              </div>
+              <div class="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
+                <div v-for="log in selectedCellLog.logs" :key="log.id" class="flex items-center gap-3 p-2 rounded-xl bg-base-100 border border-base-200">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-base-200 shrink-0 border border-base-200 relative">
+                    <img :src="getLogImage(log)" 
+                         alt="scan" 
+                         class="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform"
+                         @click="openImagePreview(getLogImage(log))" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-mono font-bold text-base-content">{{ new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}</span>
+                      <span :class="['px-2 py-0.5 rounded-md text-[8px] font-black uppercase border', getStatusBadge(log.status)]">
+                        {{ log.status }}
+                      </span>
+                    </div>
+                    <p class="text-[9px] font-bold text-base-content/50 truncate mt-0.5" v-if="log.device">
+                      <Icon name="mingcute:location-fill" size="11" class="text-primary inline mr-0.5" />
+                      {{ log.device.name }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Logs with Captured Photos -->
+            <div class="space-y-2 pt-2 border-t border-base-200">
+              <h5 class="text-[10px] font-black text-base-content/40 uppercase tracking-widest">Daftar Foto & Log Scan Kehadiran</h5>
+              <div v-if="attendanceHistory?.data && attendanceHistory.data.length" class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar">
+                <div v-for="log in attendanceHistory.data" :key="log.id" class="flex items-center gap-3 p-2.5 rounded-2xl bg-base-200/30 border border-base-200/50 hover:bg-base-200/60 transition-colors">
+                  <!-- Captured Photo Thumbnail -->
+                  <div class="w-11 h-11 rounded-xl overflow-hidden bg-base-200 border border-base-200 shrink-0 relative shadow-inner">
+                    <img :src="getLogImage(log)" 
+                         alt="scan" 
+                         class="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform duration-300"
+                         @click="openImagePreview(getLogImage(log))" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-xs text-base-content">{{ new Date(log.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) }} - {{ new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }}</span>
+                      <span :class="['px-2 py-0.5 rounded-md text-[8px] font-black uppercase border', getStatusBadge(log.status)]">
+                        {{ log.status }}
+                      </span>
+                    </div>
+                    <p class="text-[9px] font-bold text-base-content/40 truncate mt-0.5" v-if="log.device">
+                      <Icon name="mingcute:location-fill" size="11" class="text-primary inline mr-0.5" />
+                      {{ log.device.name }} ({{ log.device.location }})
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p v-else class="text-xs text-base-content/40 italic text-center py-6">Belum ada data presensi bulan ini</p>
+            </div>
+          </template>
         </div>
         
         <!-- Leave Requests Block -->

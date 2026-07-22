@@ -4,6 +4,8 @@ import 'vue-advanced-cropper/dist/style.css';
 import { useAuthStore } from '~/store/useAuthStore';
 import { storeToRefs } from 'pinia';
 
+import StudentHistoryModal from '~/components/UI/StudentHistoryModal.vue';
+
 const authStore = useAuthStore();
 const { userData: currentUser } = storeToRefs(authStore);
 
@@ -25,6 +27,23 @@ const { $toast } = useNuxtApp();
 
 const filterPhoto = ref('ALL');
 const filterDeviceSync = ref('ALL');
+
+// Student History Modal State
+const selectedStudentForHistory = ref(null);
+const showStudentHistoryModal = ref(false);
+
+const openStudentHistory = (u) => {
+  if (!u) return;
+  selectedStudentForHistory.value = {
+    id: u.id || u.nis,
+    name: u.name,
+    nis: u.nis,
+    className: u.class?.className || '',
+    majorName: u.class?.major?.name || '',
+    photoUrl: u.photoUrl || u.faceUrl || null
+  };
+  showStudentHistoryModal.value = true;
+};
 
 const form = ref({
   name: '',
@@ -1033,7 +1052,14 @@ useSeoMeta({
                 >
                   <Icon name="mingcute:fingerprint-fill" size="16" />
                 </button>
-                <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-primary/10 hover:text-primary">
+                <button 
+                  @click="openStudentHistory(user)" 
+                  class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-emerald-500/10 hover:text-emerald-600 text-emerald-600/80" 
+                  title="Pop-up History Absen Siswa"
+                >
+                  <Icon name="mingcute:calendar-2-fill" size="16" />
+                </button>
+                <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-primary/10 hover:text-primary" title="Detail Profil Siswa">
                   <Icon name="mingcute:eye-2-line" size="16" />
                 </NuxtLink>
                 <button @click="openEditModal(user)" class="btn btn-ghost btn-xs btn-square rounded-lg hover:bg-info/10 hover:text-info">
@@ -1101,7 +1127,14 @@ useSeoMeta({
                 >
                   <Icon name="mingcute:fingerprint-fill" />
                 </button>
-                <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary">
+                <button 
+                  @click="openStudentHistory(user)" 
+                  class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-emerald-500/10 hover:text-emerald-600 text-emerald-600/80" 
+                  title="Pop-up History Absen Siswa"
+                >
+                  <Icon name="mingcute:calendar-2-fill" />
+                </button>
+                <NuxtLink :to="'/siswa/' + user.nis" class="btn btn-ghost btn-sm rounded-xl px-3 font-bold gap-2 hover:bg-primary/10 hover:text-primary" title="Detail Profil Siswa">
                   <Icon name="mingcute:eye-2-line" />
                 </NuxtLink>
                 <button @click="openEditModal(user)" class="btn btn-ghost btn-sm rounded-xl px-4 font-bold gap-2 hover:bg-info/10 hover:text-info">
@@ -1700,10 +1733,12 @@ useSeoMeta({
             <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
             Simpan Foto Wajah
           </button>
-        </div>
       </div>
       <form method="dialog" class="modal-backdrop" @click="cancelFaceCrop"><button>close</button></form>
     </dialog>
+
+    <!-- Student History Pop-up Modal -->
+    <StudentHistoryModal v-model="showStudentHistoryModal" :student="selectedStudentForHistory" />
   </div>
 </template>
 

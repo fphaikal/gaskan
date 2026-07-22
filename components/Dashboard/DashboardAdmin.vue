@@ -77,6 +77,8 @@ const statusMap = {
   ALPHA:       { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500',      label: 'Alpha' },
   BELUM_ABSEN: { color: 'text-rose-500',    dot: 'bg-rose-500',    badge: 'bg-rose-500/10 border border-rose-500/30 text-rose-500',      label: 'Belum Absen' },
 };
+import StudentHistoryModal from '~/components/UI/StudentHistoryModal.vue';
+
 const getStatus = (s) => statusMap[s] || statusMap.ALPHA;
 
 const avatarColors = [
@@ -96,9 +98,25 @@ const selectedSecurityLog = ref(null);
 const showModal = ref(false);
 const activeTab = ref('attendance'); // attendance, failures
 
+// Student History Modal State
+const selectedStudentForHistory = ref(null);
+const showStudentHistoryModal = ref(false);
+
+const openStudentHistory = (studentOrAtt) => {
+  if (!studentOrAtt) return;
+  selectedStudentForHistory.value = {
+    id: studentOrAtt.studentId || studentOrAtt.userId || studentOrAtt.id || studentOrAtt.nis,
+    name: studentOrAtt.studentName || studentOrAtt.name || 'Siswa',
+    nis: studentOrAtt.nis || studentOrAtt.studentNis || '',
+    className: studentOrAtt.className || '',
+    majorName: studentOrAtt.majorName || '',
+    photoUrl: studentOrAtt.photoUrl || studentOrAtt.faceUrl || null
+  };
+  showStudentHistoryModal.value = true;
+};
+
 const openDetail = (a) => {
-  selectedAttendance.value = a;
-  showModal.value = true;
+  openStudentHistory(a);
 };
 const closeModal = () => { showModal.value = false; selectedAttendance.value = null; };
 
@@ -934,10 +952,12 @@ onMounted(fetchAlumniStatus);
           <button class="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors btn btn-ghost btn-circle">
             <Icon name="mingcute:close-line" size="28" />
           </button>
-          <img :src="activePreviewImage" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10" @click.stop />
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ═══ STUDENT HISTORY POPUP MODAL ═══ -->
+    <StudentHistoryModal v-model="showStudentHistoryModal" :student="selectedStudentForHistory" />
   </div>
 </template>
 

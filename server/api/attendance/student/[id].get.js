@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
-  const session = requireRole(event, ['admin', 'developer', 'guru']);
-  const config = useRuntimeConfig();
   const studentId = getRouterParam(event, 'id');
+  const session = requireSelfOrRole(event, studentId, ['admin', 'developer', 'guru']);
+  const config = useRuntimeConfig();
   const query = getQuery(event);
 
   const params = new URLSearchParams();
