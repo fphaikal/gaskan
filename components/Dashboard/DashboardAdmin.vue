@@ -104,8 +104,9 @@ const showStudentHistoryModal = ref(false);
 
 const openStudentHistory = (studentOrAtt) => {
   if (!studentOrAtt) return;
+  const resolvedId = studentOrAtt.userId || studentOrAtt.studentId || studentOrAtt.nis || (typeof studentOrAtt.id === 'string' && !studentOrAtt.id.startsWith('unscanned-') ? studentOrAtt.id : null) || studentOrAtt.id;
   selectedStudentForHistory.value = {
-    id: studentOrAtt.studentId || studentOrAtt.userId || studentOrAtt.id || studentOrAtt.nis,
+    id: resolvedId,
     name: studentOrAtt.studentName || studentOrAtt.name || 'Siswa',
     nis: studentOrAtt.nis || studentOrAtt.studentNis || '',
     className: studentOrAtt.className || '',

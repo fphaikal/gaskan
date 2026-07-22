@@ -36,6 +36,7 @@ const openStudentHistory = (u) => {
   if (!u) return;
   selectedStudentForHistory.value = {
     id: u.id || u.nis,
+    userId: u.id,
     name: u.name,
     nis: u.nis,
     className: u.class?.className || '',
