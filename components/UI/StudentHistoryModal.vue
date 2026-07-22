@@ -736,12 +736,12 @@ const formatLogDate = (ts) => {
                 </div>
               </div>
 
-              <!-- TAB 2: OPTIONAL MENU - ELEGANT COMPACT CALENDAR WIDGET -->
+              <!-- TAB 2: OPTIONAL MENU - HIGH-END ELEGANT CALENDAR WIDGET -->
               <div v-else class="space-y-4">
                 <div class="flex items-center justify-between">
                   <div>
                     <h5 class="text-xs font-black text-base-content/60 uppercase tracking-widest">Menu Kalender Kehadiran</h5>
-                    <p class="text-[10px] text-base-content/40 mt-0.5">Klik tanggal bertanda untuk melihat detail log</p>
+                    <p class="text-[10px] text-base-content/40 mt-0.5">Klik tanggal bertanda untuk melihat rincian log</p>
                   </div>
                   <span class="text-[10px] font-mono font-bold bg-base-200 px-2.5 py-1 rounded-lg border border-base-300">
                     {{ summaryStats.percentage }}% Kehadiran
@@ -749,9 +749,9 @@ const formatLogDate = (ts) => {
                 </div>
                 
                 <!-- Compact Center-Aligned Calendar Widget (Max 380px wide) -->
-                <div class="max-w-md mx-auto p-4 bg-base-200/40 rounded-3xl border border-base-200/80 shadow-xs space-y-3">
+                <div class="max-w-md mx-auto p-4 sm:p-5 bg-base-200/30 rounded-[2rem] border border-base-200/80 shadow-sm space-y-3">
                   
-                  <!-- Month Name & Weekday Headers -->
+                  <!-- Month Name Header -->
                   <div class="text-center pb-2 border-b border-base-200/60">
                     <span class="text-xs font-black uppercase text-primary tracking-wider font-mono">
                       {{ monthOptions.find(m => m.value === selectedMonth)?.name }} {{ selectedYear }}
@@ -759,22 +759,22 @@ const formatLogDate = (ts) => {
                   </div>
 
                   <!-- Weekday Header Row -->
-                  <div class="grid grid-cols-7 gap-1 text-center font-black text-[10px] text-base-content/40 uppercase tracking-wider">
-                    <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-500">Sab</span><span class="text-rose-500">Min</span>
+                  <div class="grid grid-cols-7 gap-1 text-center font-bold text-[11px] text-base-content/40 uppercase tracking-wider pb-1">
+                    <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-500/80">Sab</span><span class="text-rose-500/80">Min</span>
                   </div>
 
-                  <!-- Compact Square Matrix Grid -->
+                  <!-- Compact Minimalist Grid Matrix (No outer borders on empty cells) -->
                   <div class="grid grid-cols-7 gap-1.5 justify-items-center">
                     <div 
                       v-for="cell in calendarCells" 
                       :key="cell.id"
                       @click="cell.data && (selectedDayLog = selectedDayLog === cell.data ? null : cell.data)"
                       :class="[
-                        'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex flex-col items-center justify-center transition-all text-xs relative select-none font-mono font-bold border',
+                        'w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex flex-col items-center justify-center transition-all text-xs relative select-none font-mono font-bold',
                         cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
-                        !cell.data && cell.isWeekend ? 'bg-base-200/30 border-transparent text-rose-400/70' : '',
-                        !cell.data && !cell.isWeekend ? 'bg-base-100 border-transparent text-base-content/70 hover:bg-base-200' : '',
-                        cell.data ? 'cursor-pointer hover:scale-110 shadow-xs' : '',
+                        !cell.data && cell.isWeekend ? 'bg-base-200/20 text-rose-400/80' : '',
+                        !cell.data && !cell.isWeekend ? 'bg-base-100/60 text-base-content/70 hover:bg-base-200/60' : '',
+                        cell.data ? 'cursor-pointer hover:scale-110 shadow-xs border' : '',
                         selectedDayLog === cell.data ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100 scale-110 shadow-md z-10' : '',
                         cell.data?.status === 'HADIR' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-black' : '',
                         cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/20 border-amber-500/40 text-amber-600 dark:text-amber-400 font-black' : '',
@@ -786,9 +786,18 @@ const formatLogDate = (ts) => {
                       <!-- Day Number -->
                       <span class="text-xs font-black leading-none">{{ cell.day }}</span>
 
-                      <!-- Status Indicator Dot -->
+                      <!-- Status Dot Indicator -->
                       <div v-if="cell.data" class="w-1.5 h-1.5 rounded-full mt-0.5 bg-current shadow-xs"></div>
                     </div>
+                  </div>
+
+                  <!-- Legend Bar -->
+                  <div class="flex items-center justify-center gap-3 pt-3 border-t border-base-200/60 text-[10px] font-bold text-base-content/60 flex-wrap">
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Hadir</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Lambat</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Izin</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-500"></span> Sakit</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Alpha</span>
                   </div>
                 </div>
 
