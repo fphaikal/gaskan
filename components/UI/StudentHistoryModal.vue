@@ -731,24 +731,24 @@ const formatLogDate = (ts) => {
                     <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-500">Sab</span><span class="text-rose-500">Min</span>
                   </div>
 
-                  <!-- Day Grid Cells (Square Matrix) -->
+                  <!-- Day Grid Cells (Clean Minimalist Square Matrix) -->
                   <div class="grid grid-cols-7 gap-1.5">
                     <div 
                       v-for="cell in calendarCells" 
                       :key="cell.id"
                       @click="cell.data && (selectedDayLog = selectedDayLog === cell.data ? null : cell.data)"
                       :class="[
-                        'aspect-square rounded-2xl flex flex-col items-center justify-center p-1 transition-all text-xs relative select-none border',
+                        'aspect-square rounded-xl sm:rounded-2xl flex flex-col items-center justify-center p-1 transition-all text-xs relative select-none',
                         cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
-                        !cell.data && cell.isWeekend ? 'bg-base-200/20 border-transparent text-rose-500/70' : '',
-                        !cell.data && !cell.isWeekend ? 'bg-base-100/60 border-transparent text-base-content/60 hover:bg-base-200' : '',
-                        cell.data ? 'cursor-pointer hover:scale-105 shadow-sm' : '',
+                        !cell.data && cell.isWeekend ? 'bg-base-200/30 text-rose-400/80' : '',
+                        !cell.data && !cell.isWeekend ? 'bg-base-200/50 text-base-content/70 hover:bg-base-200' : '',
+                        cell.data ? 'cursor-pointer hover:scale-105 shadow-xs border' : '',
                         selectedDayLog === cell.data ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100 scale-105 shadow-md z-10' : '',
-                        cell.data?.status === 'HADIR' ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 font-black' : '',
-                        cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/15 border-amber-500/35 text-amber-600 dark:text-amber-400 font-black' : '',
-                        cell.data?.status === 'IZIN' ? 'bg-sky-500/15 border-sky-500/35 text-sky-600 dark:text-sky-400 font-black' : '',
-                        cell.data?.status === 'SAKIT' ? 'bg-orange-500/15 border-orange-500/35 text-orange-600 dark:text-orange-400 font-black' : '',
-                        cell.data?.status === 'ALPHA' ? 'bg-rose-500/15 border-rose-500/35 text-rose-600 dark:text-rose-400 font-black' : ''
+                        cell.data?.status === 'HADIR' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-black' : '',
+                        cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/20 border-amber-500/40 text-amber-600 dark:text-amber-400 font-black' : '',
+                        cell.data?.status === 'IZIN' ? 'bg-sky-500/20 border-sky-500/40 text-sky-600 dark:text-sky-400 font-black' : '',
+                        cell.data?.status === 'SAKIT' ? 'bg-orange-500/20 border-orange-500/40 text-orange-600 dark:text-orange-400 font-black' : '',
+                        cell.data?.status === 'ALPHA' ? 'bg-rose-500/20 border-rose-500/40 text-rose-600 dark:text-rose-400 font-black' : ''
                       ]"
                     >
                       <!-- Day Number -->
