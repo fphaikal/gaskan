@@ -1733,6 +1733,7 @@ useSeoMeta({
             <span v-if="isUploadingFace" class="loading loading-spinner loading-xs"></span>
             Simpan Foto Wajah
           </button>
+        </div>
       </div>
       <form method="dialog" class="modal-backdrop" @click="cancelFaceCrop"><button>close</button></form>
     </dialog>
