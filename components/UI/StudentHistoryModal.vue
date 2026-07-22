@@ -31,7 +31,7 @@ const closeModal = () => {
 // Date Selection & Active Tab State
 const selectedMonth = ref(new Date().getMonth() + 1);
 const selectedYear = ref(new Date().getFullYear());
-const activeTab = ref('logs'); // Default to 'logs' per user requirement
+const activeTab = ref('logs'); // Default to 'logs'
 const logSubFilter = ref('today'); // 'today' | 'all'
 
 const monthOptions = [
@@ -145,12 +145,46 @@ watch([selectedMonth, selectedYear], () => {
   }
 });
 
+// Helper to compute correct status per scan index:
+// - Index 0: HADIR / TERLAMBAT / IZIN / SAKIT
+// - Index > 0: PULANG (if last tap in afternoon >= 12:00) or SCAN (for intermediate taps)
+const processDayLogs = (logList) => {
+  const sorted = [...logList].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  return sorted.map((log, idx) => {
+    if (idx === 0) return log;
+    const d = new Date(log.timestamp);
+    const hour = d.getHours();
+    const isAfternoon = hour >= 12;
+    const isLast = idx === sorted.length - 1;
+    
+    return {
+      ...log,
+      status: (isLast && isAfternoon) ? 'PULANG' : 'SCAN'
+    };
+  });
+};
+
 // Extract raw logs
 const rawLogs = computed(() => {
   if (!historyData.value) return [];
-  if (Array.isArray(historyData.value)) return historyData.value;
-  if (Array.isArray(historyData.value.data)) return historyData.value.data;
-  return [];
+  let list = [];
+  if (Array.isArray(historyData.value)) list = historyData.value;
+  else if (Array.isArray(historyData.value.data)) list = historyData.value.data;
+  
+  // Group by date & apply processDayLogs
+  const map = new Map();
+  list.forEach(item => {
+    if (!item.timestamp) return;
+    const dateStr = new Date(item.timestamp).toLocaleDateString('en-CA');
+    if (!map.has(dateStr)) map.set(dateStr, []);
+    map.get(dateStr).push(item);
+  });
+
+  const result = [];
+  map.forEach((items) => {
+    result.push(...processDayLogs(items));
+  });
+  return result;
 });
 
 // Group logs by local date
@@ -174,7 +208,6 @@ const groupedLogs = computed(() => {
     map.get(dateStr).logs.push(log);
   });
 
-  // Sort groups descending by date
   return Array.from(map.values()).sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 });
 
@@ -230,10 +263,6 @@ const summaryStats = computed(() => {
 });
 
 const computedDailyMap = computed(() => {
-  if (historyData.value?.dailyMap && typeof historyData.value.dailyMap === 'object') {
-    return historyData.value.dailyMap;
-  }
-
   const map = {};
   rawLogs.value.forEach(log => {
     if (!log.timestamp) return;
@@ -246,8 +275,9 @@ const computedDailyMap = computed(() => {
   });
 
   Object.values(map).forEach(entry => {
-    entry.logs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    entry.logs = processDayLogs(entry.logs);
     entry.firstIn = entry.logs[0];
+    entry.status = entry.firstIn ? entry.firstIn.status : 'BELUM_ABSEN';
     if (entry.logs.length > 1) {
       entry.lastOut = entry.logs[entry.logs.length - 1];
     }
@@ -328,6 +358,12 @@ const getStatusBadge = (status) => {
         label: 'Pulang',
         icon: 'mingcute:exit-line'
       };
+    case 'SCAN':
+      return {
+        badge: 'bg-base-200 text-base-content/70 border border-base-300',
+        label: 'Scan Tap',
+        icon: 'mingcute:fingerprint-fill'
+      };
     case 'ALPHA':
     case 'BELUM_ABSEN':
       return {
@@ -338,22 +374,9 @@ const getStatusBadge = (status) => {
     default:
       return {
         badge: 'bg-base-200 text-base-content/70 border border-base-300',
-        label: status || 'Tap Scan',
-        icon: 'mingcute:information-fill'
+        label: status || 'Scan',
+        icon: 'mingcute:fingerprint-fill'
       };
-  }
-};
-
-const getStatusDot = (status) => {
-  switch (status) {
-    case 'HADIR': return 'bg-emerald-500 shadow-sm shadow-emerald-500/50';
-    case 'TERLAMBAT': return 'bg-amber-500 shadow-sm shadow-amber-500/50';
-    case 'IZIN': return 'bg-sky-500 shadow-sm shadow-sky-500/50';
-    case 'SAKIT': return 'bg-orange-500 shadow-sm shadow-orange-500/50';
-    case 'PULANG': return 'bg-indigo-500 shadow-sm shadow-indigo-500/50';
-    case 'ALPHA':
-    case 'BELUM_ABSEN': return 'bg-rose-500 shadow-sm shadow-rose-500/50';
-    default: return 'bg-base-300';
   }
 };
 
@@ -508,7 +531,7 @@ const formatLogDate = (ts) => {
 
             <!-- Main Content Area -->
             <template v-else>
-              <!-- Compact Stat Cards (Grid-5 or Horizontal Scroll on Mobile) -->
+              <!-- Compact Stat Cards (Grid-5) -->
               <div class="grid grid-cols-5 gap-1.5 sm:gap-3">
                 <div class="bg-emerald-500/10 border border-emerald-500/20 p-2 sm:p-3 rounded-xl sm:rounded-2xl text-center">
                   <div class="flex items-center justify-center gap-1 text-emerald-600 mb-0.5">
@@ -597,7 +620,7 @@ const formatLogDate = (ts) => {
                       <div 
                         v-for="log in todayGroup.logs" 
                         :key="log.id || log.timestamp"
-                        class="flex items-center gap-3 sm:gap-4 p-3 rounded-2xl bg-base-100 border border-base-200 shadow-sm hover:border-primary/40 transition-colors"
+                        class="flex items-center gap-3 sm:gap-4 p-3 rounded-2xl bg-base-100 border border-base-200 shadow-xs hover:border-primary/40 transition-colors"
                       >
                         <!-- Scan Photo Thumbnail -->
                         <div 
@@ -713,7 +736,7 @@ const formatLogDate = (ts) => {
                 </div>
               </div>
 
-              <!-- TAB 2: OPTIONAL MENU - CALENDAR GRID (MINIMALIST & SLEEK) -->
+              <!-- TAB 2: OPTIONAL MENU - ELEGANT CALENDAR GRID -->
               <div v-else class="space-y-4">
                 <div class="flex items-center justify-between">
                   <div>
@@ -725,13 +748,13 @@ const formatLogDate = (ts) => {
                   </span>
                 </div>
                 
-                <div class="p-3 bg-base-200/30 rounded-3xl border border-base-200/80 space-y-2">
+                <div class="p-3.5 bg-base-200/30 rounded-3xl border border-base-200/80 space-y-3">
                   <!-- Weekday Headers -->
-                  <div class="grid grid-cols-7 gap-1 text-center font-black text-[10px] text-base-content/40 uppercase tracking-wider py-1.5">
+                  <div class="grid grid-cols-7 gap-1 text-center font-black text-[10px] text-base-content/40 uppercase tracking-wider py-1">
                     <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-500">Sab</span><span class="text-rose-500">Min</span>
                   </div>
 
-                  <!-- Day Grid Cells (Clean Minimalist Square Matrix) -->
+                  <!-- Day Grid Cells (Elegant Clean Matrix) -->
                   <div class="grid grid-cols-7 gap-1.5">
                     <div 
                       v-for="cell in calendarCells" 
