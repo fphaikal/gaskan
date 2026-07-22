@@ -904,6 +904,8 @@ const formatLogDate = (ts) => {
     padding: 1.5rem;
     gap: 1rem;
     border-radius: 1.75rem;
+    max-width: 460px;
+    margin: 0 auto;
   }
 }
 
