@@ -713,51 +713,49 @@ const formatLogDate = (ts) => {
                 </div>
               </div>
 
-              <!-- TAB 2: OPTIONAL MENU - CALENDAR GRID (MOBILE OPTIMIZED) -->
+              <!-- TAB 2: OPTIONAL MENU - CALENDAR GRID (MINIMALIST & SLEEK) -->
               <div v-else class="space-y-4">
                 <div class="flex items-center justify-between">
-                  <h5 class="text-xs font-black text-base-content/50 uppercase tracking-widest">Menu Kalender Kehadiran</h5>
-                  <span class="text-[10px] font-bold text-base-content/40">Klik tanggal untuk filter detail tap</span>
+                  <div>
+                    <h5 class="text-xs font-black text-base-content/60 uppercase tracking-widest">Menu Kalender Kehadiran</h5>
+                    <p class="text-[10px] text-base-content/40 mt-0.5">Klik tanggal bertanda untuk melihat detail log</p>
+                  </div>
+                  <span class="text-[10px] font-mono font-bold bg-base-200 px-2.5 py-1 rounded-lg border border-base-300">
+                    {{ summaryStats.percentage }}% Kehadiran
+                  </span>
                 </div>
                 
-                <!-- Weekday Headers -->
-                <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center font-black text-[9px] sm:text-[10px] text-base-content/50 uppercase tracking-wider bg-base-200/50 py-2 rounded-xl sm:rounded-2xl border border-base-200">
-                  <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-500">Sab</span><span class="text-rose-500">Min</span>
-                </div>
+                <div class="p-3 bg-base-200/30 rounded-3xl border border-base-200/80 space-y-2">
+                  <!-- Weekday Headers -->
+                  <div class="grid grid-cols-7 gap-1 text-center font-black text-[10px] text-base-content/40 uppercase tracking-wider py-1.5">
+                    <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span class="text-rose-500">Sab</span><span class="text-rose-500">Min</span>
+                  </div>
 
-                <!-- Day Grid Cells (Aspect Ratio Fixed for Mobile) -->
-                <div class="grid grid-cols-7 gap-1 sm:gap-2">
-                  <div 
-                    v-for="cell in calendarCells" 
-                    :key="cell.id"
-                    @click="cell.data && (selectedDayLog = selectedDayLog === cell.data ? null : cell.data)"
-                    :class="[
-                      'aspect-square sm:aspect-auto sm:min-h-[64px] rounded-xl sm:rounded-2xl p-1.5 sm:p-2 flex flex-col justify-between transition-all border text-xs font-bold relative cursor-pointer select-none',
-                      cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
-                      cell.isWeekend ? 'bg-base-200/40 border-base-200 text-rose-500' : 'bg-base-100 border-base-200 text-base-content',
-                      cell.data ? 'hover:scale-[1.03] hover:shadow-md' : '',
-                      selectedDayLog === cell.data ? 'ring-2 ring-primary scale-105 shadow-primary/30 z-10' : '',
-                      cell.data?.status === 'HADIR' ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600' : '',
-                      cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/10 border-amber-500/40 text-amber-600' : '',
-                      cell.data?.status === 'IZIN' ? 'bg-sky-500/10 border-sky-500/40 text-sky-600' : '',
-                      cell.data?.status === 'SAKIT' ? 'bg-orange-500/10 border-orange-500/40 text-orange-600' : '',
-                      cell.data?.status === 'ALPHA' ? 'bg-rose-500/10 border-rose-500/40 text-rose-600' : ''
-                    ]"
-                  >
-                    <!-- Top row: Day number + Tap count badge on desktop -->
-                    <div class="flex items-center justify-between w-full">
-                      <span :class="['text-[11px] sm:text-xs font-black', cell.isWeekend ? 'text-rose-500' : '']">{{ cell.day }}</span>
-                      <span v-if="cell.data?.logs?.length" class="text-[8px] font-mono px-1 rounded bg-base-200 text-base-content/60 hidden sm:inline">
-                        {{ cell.data.logs.length }} tap
-                      </span>
-                    </div>
+                  <!-- Day Grid Cells (Square Matrix) -->
+                  <div class="grid grid-cols-7 gap-1.5">
+                    <div 
+                      v-for="cell in calendarCells" 
+                      :key="cell.id"
+                      @click="cell.data && (selectedDayLog = selectedDayLog === cell.data ? null : cell.data)"
+                      :class="[
+                        'aspect-square rounded-2xl flex flex-col items-center justify-center p-1 transition-all text-xs relative select-none border',
+                        cell.type === 'empty' ? 'opacity-0 pointer-events-none' : '',
+                        !cell.data && cell.isWeekend ? 'bg-base-200/20 border-transparent text-rose-500/70' : '',
+                        !cell.data && !cell.isWeekend ? 'bg-base-100/60 border-transparent text-base-content/60 hover:bg-base-200' : '',
+                        cell.data ? 'cursor-pointer hover:scale-105 shadow-sm' : '',
+                        selectedDayLog === cell.data ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100 scale-105 shadow-md z-10' : '',
+                        cell.data?.status === 'HADIR' ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 font-black' : '',
+                        cell.data?.status === 'TERLAMBAT' ? 'bg-amber-500/15 border-amber-500/35 text-amber-600 dark:text-amber-400 font-black' : '',
+                        cell.data?.status === 'IZIN' ? 'bg-sky-500/15 border-sky-500/35 text-sky-600 dark:text-sky-400 font-black' : '',
+                        cell.data?.status === 'SAKIT' ? 'bg-orange-500/15 border-orange-500/35 text-orange-600 dark:text-orange-400 font-black' : '',
+                        cell.data?.status === 'ALPHA' ? 'bg-rose-500/15 border-rose-500/35 text-rose-600 dark:text-rose-400 font-black' : ''
+                      ]"
+                    >
+                      <!-- Day Number -->
+                      <span class="text-xs sm:text-sm font-black font-mono leading-none">{{ cell.day }}</span>
 
-                    <!-- Bottom row: Status Dot on Mobile / Label on Desktop -->
-                    <div v-if="cell.data" class="mt-auto w-full flex items-center justify-center sm:justify-start gap-1">
-                      <div :class="['w-2 h-2 rounded-full shrink-0', getStatusDot(cell.data.status)]"></div>
-                      <span class="text-[9px] font-black uppercase truncate hidden sm:inline">
-                        {{ getStatusBadge(cell.data.status).label }}
-                      </span>
+                      <!-- Status Indicator Dot -->
+                      <div v-if="cell.data" class="w-1.5 h-1.5 rounded-full mt-1 bg-current shadow-xs"></div>
                     </div>
                   </div>
                 </div>
