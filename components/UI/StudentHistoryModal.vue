@@ -887,28 +887,36 @@ const formatLogDate = (ts) => {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* ===== ELEGANT CALENDAR WIDGET (Pure CSS - bypasses DaisyUI border injection) ===== */
+/* Calendar Card: fills available width, no max-width cap */
 .cal-card {
-  max-width: 380px;
-  margin: 0 auto;
+  width: 100%;
   background: rgba(var(--b2, 0 0 0), 0.4);
   border-radius: 1.5rem;
   overflow: hidden;
-  padding: 1.25rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
+}
+
+@media (min-width: 640px) {
+  .cal-card {
+    padding: 1.5rem;
+    gap: 1rem;
+    border-radius: 1.75rem;
+  }
 }
 
 .cal-month-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
   border-bottom: 1px solid rgba(var(--bc, 0 0 0), 0.08);
 }
 
 .cal-month-name {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -916,11 +924,19 @@ const formatLogDate = (ts) => {
   font-family: monospace;
 }
 
+@media (min-width: 640px) {
+  .cal-month-name { font-size: 0.9rem; }
+}
+
 .cal-year {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   opacity: 0.35;
   font-family: monospace;
+}
+
+@media (min-width: 640px) {
+  .cal-year { font-size: 0.85rem; }
 }
 
 .cal-weekdays {
@@ -930,11 +946,15 @@ const formatLogDate = (ts) => {
 }
 
 .cal-weekdays span {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 900;
   text-transform: uppercase;
   opacity: 0.3;
-  padding: 0.25rem 0;
+  padding: 0.2rem 0;
+}
+
+@media (min-width: 640px) {
+  .cal-weekdays span { font-size: 0.65rem; padding: 0.3rem 0; }
 }
 
 .cal-weekdays .cal-weekend { color: rgb(251 113 133); opacity: 0.7; }
@@ -942,7 +962,11 @@ const formatLogDate = (ts) => {
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.25rem;
+  gap: 0.2rem;
+}
+
+@media (min-width: 640px) {
+  .cal-grid { gap: 0.4rem; }
 }
 
 /* Base day cell - NO border class, NO outline, clean flat */
@@ -954,8 +978,8 @@ const formatLogDate = (ts) => {
   justify-content: center;
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 0.625rem;
-  font-size: 0.7rem;
+  border-radius: 0.5rem;
+  font-size: 0.65rem;
   font-weight: 700;
   font-family: monospace;
   transition: transform 0.15s ease, background 0.15s ease;
@@ -965,6 +989,14 @@ const formatLogDate = (ts) => {
   box-shadow: none;    /* Explicit no shadow */
   cursor: default;
   color: rgba(var(--bc, 0 0 0), 0.6);
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .cal-day {
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+  }
 }
 
 .cal-day:focus { outline: none; }
