@@ -7,6 +7,7 @@ process.env.NEXT_PUBLIC_SITE_URL = "https://gaskan.smtijogja.sch.id";
 const seo = await import("../../lib/seo.ts").catch(() => ({}));
 const publicPaths = await import("../../lib/public-paths.ts").catch(() => ({}));
 const teamData = await import("../../lib/team.ts").catch(() => ({}));
+const teamSeo = await import("../../lib/team-seo.ts").catch(() => ({}));
 
 function getExport(name) {
   assert.equal(
@@ -26,6 +27,16 @@ function getTeamDataExport(name) {
   );
 
   return teamData[name];
+}
+
+function getTeamSeoExport(name) {
+  assert.equal(
+    typeof teamSeo[name],
+    "function",
+    `Expected lib/team-seo.ts to export ${name}()`,
+  );
+
+  return teamSeo[name];
 }
 
 test("normalizeSiteUrl returns a valid origin or the production fallback", () => {
@@ -409,4 +420,59 @@ test("fetchPublicTeamMembers requests the configured endpoint and degrades safel
     },
   });
   assert.deepEqual(failed, []);
+});
+
+test("team metadata description uses active API member counts", () => {
+  const buildTeamMetadataDescription = getTeamSeoExport(
+    "buildTeamMetadataDescription",
+  );
+  const description = buildTeamMetadataDescription([
+    { role: "Pembimbing" },
+    { role: "Frontend Developer" },
+  ]);
+
+  assert.match(description, /2 anggota aktif/);
+  assert.match(description, /1 pembimbing/);
+  assert.match(description, /1 anggota tim pengembang/);
+  assert.match(buildTeamMetadataDescription([]), /tim multidisiplin/i);
+});
+
+test("team JSON-LD publishes people and safe social and custom sameAs links", () => {
+  const buildTeamPageJsonLd = getTeamSeoExport("buildTeamPageJsonLd");
+  const jsonLd = buildTeamPageJsonLd([
+    {
+      id: "member-1",
+      name: "Member One",
+      role: "Backend Developer",
+      photoUrl: "https://api.example.test/member.webp",
+      github: "https://github.com/member",
+      linkedin: null,
+      instagram: "https://instagram.com/member",
+      bio: "Builds services.",
+      customLinks: [
+        {
+          label: "Portfolio",
+          url: "https://member.example/",
+          icon: null,
+        },
+      ],
+      year: "2023 - Sekarang",
+      order: 1,
+    },
+  ]);
+
+  assert.equal(jsonLd["@type"], "AboutPage");
+  assert.equal(jsonLd.mainEntity["@type"], "Organization");
+  assert.equal(jsonLd.mainEntity.member[0]["@type"], "Person");
+  assert.match(
+    jsonLd.mainEntity.member[0].description,
+    /periode 2023 - Sekarang/,
+  );
+  assert.deepEqual(jsonLd.mainEntity.member[0].sameAs, [
+    "https://github.com/member",
+    "https://instagram.com/member",
+    "https://member.example/",
+  ]);
+  assert.equal(JSON.stringify(jsonLd).includes("email"), false);
+  assert.equal(JSON.stringify(jsonLd).includes("nis"), false);
 });
