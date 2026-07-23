@@ -60,7 +60,8 @@ const navGroups: NavGroup[] = [
       { title: 'Manajemen Kelas', href: '/kelas', icon: 'School', roles: ['admin', 'developer', 'guru'] },
       { title: 'Semester', href: '/semester', icon: 'CalendarDays', roles: ['admin', 'developer'] },
       { title: 'Reshuffle Kelas', href: '/reshuffle', icon: 'ArrowLeftRight', roles: ['admin', 'developer'] },
-      { title: 'Manajemen User', href: '/admin', icon: 'UserCog', roles: ['admin', 'developer'] },
+      { title: 'Manajemen User', href: '/admin/users', icon: 'UserCog', roles: ['admin', 'developer'] },
+      { title: 'Import Staff Excel', href: '/admin/import-staff', icon: 'Upload', roles: ['admin', 'developer'] },
       { title: 'Manajemen Tim', href: '/admin/team', icon: 'Users', roles: ['admin', 'developer'] },
       { title: 'Izin Profil Siswa', href: '/admin/field-permissions', icon: 'UserCog', roles: ['admin', 'developer'] },
     ],
@@ -74,6 +75,8 @@ const navGroups: NavGroup[] = [
       { title: 'On Site', href: '/log/onsite', icon: 'MapPin', roles: ['admin', 'developer', 'guru'] },
       { title: 'Surat Izin', href: '/izin', icon: 'FileText', roles: ['all'] },
       { title: 'Laporan Absensi', href: '/absensi/laporan', icon: 'FileOutput', roles: ['admin', 'developer', 'guru'] },
+      { title: 'Monitor Gate Kiri', href: '/monitor/left', icon: 'ArrowLeft', roles: ['admin', 'developer'] },
+      { title: 'Monitor Gate Kanan', href: '/monitor/right', icon: 'ArrowRight', roles: ['admin', 'developer'] },
     ],
   },
   {
