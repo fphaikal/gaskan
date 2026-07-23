@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { DashboardShell } from "@/components/layout/DashboardShell";
 import { noIndexMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = noIndexMetadata;
 
-export default function DashboardLayout({
+export default function AuthLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return children;
 }
