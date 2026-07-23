@@ -33,7 +33,9 @@ export function absoluteUrl(path: "/" | `/${string}`): string {
     return siteConfig.url;
   }
 
-  return new URL(path, `${siteConfig.url}/`).toString();
+  const safePath = `/${path.replace(/^\/+/, "")}`;
+
+  return new URL(safePath, `${siteConfig.url}/`).toString();
 }
 
 type PublicPageMetadataInput = {
@@ -127,19 +129,35 @@ export function buildSitemap(): MetadataRoute.Sitemap {
   ];
 }
 
-const publicPaths = ["/", "/team", "/llms.txt", "/sitemap.xml"];
-const privatePaths = [
+const PUBLIC_ROUTES = ["/", "/team", "/llms.txt", "/sitemap.xml"];
+const PRIVATE_ROUTES = [
   "/api/",
   "/login",
   "/register",
+  "/forgot-password",
+  "/reset-password",
   "/dashboard",
+  "/home",
   "/students",
+  "/siswa",
   "/classes",
+  "/kelas",
   "/attendance",
+  "/absensi",
   "/reports",
   "/settings",
   "/users",
   "/teams",
+  "/izin",
+  "/monitor",
+  "/admin",
+  "/config",
+  "/log",
+  "/semester",
+  "/jurusan",
+  "/kalender",
+  "/reshuffle",
+  "/profile",
 ];
 
 export function buildRobots(): MetadataRoute.Robots {
@@ -153,8 +171,8 @@ export function buildRobots(): MetadataRoute.Robots {
           "Claude-User",
           "Googlebot",
         ],
-        allow: publicPaths,
-        disallow: privatePaths,
+        allow: PUBLIC_ROUTES,
+        disallow: PRIVATE_ROUTES,
       },
       {
         userAgent: ["GPTBot", "ClaudeBot", "Google-Extended"],
@@ -162,8 +180,8 @@ export function buildRobots(): MetadataRoute.Robots {
       },
       {
         userAgent: "*",
-        allow: publicPaths,
-        disallow: privatePaths,
+        allow: PUBLIC_ROUTES,
+        disallow: PRIVATE_ROUTES,
       },
     ],
     sitemap: absoluteUrl("/sitemap.xml"),

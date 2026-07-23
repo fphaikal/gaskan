@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 process.env.NEXT_PUBLIC_SITE_URL = "https://gaskan.smtijogja.sch.id";
@@ -39,6 +40,15 @@ test("absoluteUrl builds canonical URLs without a trailing slash on the root", (
   assert.equal(
     absoluteUrl("/team"),
     "https://gaskan.smtijogja.sch.id/team",
+  );
+});
+
+test("absoluteUrl keeps protocol-relative input on the configured site origin", () => {
+  const absoluteUrl = getExport("absoluteUrl");
+
+  assert.equal(
+    absoluteUrl("//evil.example/x"),
+    "https://gaskan.smtijogja.sch.id/evil.example/x",
   );
 });
 
@@ -114,6 +124,44 @@ test("buildRobots separates AI retrieval crawlers from training crawlers", () =>
   );
 });
 
+test("buildRobots blocks every current private top-level application route", () => {
+  const buildRobots = getExport("buildRobots");
+  const robots = buildRobots();
+  const [retrievalRule, , wildcardRule] = robots.rules;
+  const currentPrivateRoutes = [
+    "/api/",
+    "/login",
+    "/forgot-password",
+    "/reset-password",
+    "/home",
+    "/absensi",
+    "/admin",
+    "/config",
+    "/izin",
+    "/jurusan",
+    "/kalender",
+    "/kelas",
+    "/log",
+    "/monitor",
+    "/profile",
+    "/reshuffle",
+    "/semester",
+    "/siswa",
+    "/teams",
+  ];
+
+  for (const route of currentPrivateRoutes) {
+    assert.ok(
+      retrievalRule.disallow.includes(route),
+      `retrieval crawler policy must disallow ${route}`,
+    );
+    assert.ok(
+      wildcardRule.disallow.includes(route),
+      `wildcard crawler policy must disallow ${route}`,
+    );
+  }
+});
+
 test("noIndexMetadata blocks indexing for standard and Google crawlers", () => {
   assert.deepEqual(seo.noIndexMetadata?.robots, {
     index: false,
@@ -123,4 +171,16 @@ test("noIndexMetadata blocks indexing for standard and Google crawlers", () => {
       follow: false,
     },
   });
+});
+
+test("the SEO test script uses an explicit Node 20-compatible TypeScript runner", async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL("../../package.json", import.meta.url), "utf8"),
+  );
+
+  assert.equal(
+    packageJson.scripts["test:seo"],
+    "tsx --test tests/seo/seo.test.mjs",
+  );
+  assert.equal(typeof packageJson.devDependencies.tsx, "string");
 });
