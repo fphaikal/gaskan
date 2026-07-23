@@ -6,6 +6,7 @@ process.env.NEXT_PUBLIC_SITE_URL = "https://gaskan.smtijogja.sch.id";
 
 const seo = await import("../../lib/seo.ts").catch(() => ({}));
 const publicPaths = await import("../../lib/public-paths.ts").catch(() => ({}));
+const teamData = await import("../../lib/team.ts").catch(() => ({}));
 
 function getExport(name) {
   assert.equal(
@@ -15,6 +16,16 @@ function getExport(name) {
   );
 
   return seo[name];
+}
+
+function getTeamDataExport(name) {
+  assert.equal(
+    typeof teamData[name],
+    "function",
+    `Expected lib/team.ts to export ${name}()`,
+  );
+
+  return teamData[name];
 }
 
 test("normalizeSiteUrl returns a valid origin or the production fallback", () => {
@@ -297,4 +308,105 @@ test("isPublicPath permits only exact public route matches", () => {
       `${route} must remain protected`,
     );
   }
+});
+
+test("normalizeTeamMembers exposes only safe active public fields", () => {
+  const normalizeTeamMembers = getTeamDataExport("normalizeTeamMembers");
+  const members = normalizeTeamMembers({
+    success: true,
+    data: [
+      {
+        id: "active-1",
+        name: "Active Member",
+        role: "Frontend Developer",
+        photoUrl: "/uploads/team/member.webp",
+        github: "https://github.com/example",
+        linkedin: "javascript:alert(1)",
+        instagram: "",
+        email: "private@example.com",
+        userId: "private-user",
+        user: { nis: "22100000", email: "private@example.com" },
+        bio: "Builds the public interface.",
+        customLinks: JSON.stringify([
+          {
+            label: "Portfolio",
+            url: "https://portfolio.example/member",
+            icon: "mingcute:link-2-line",
+          },
+          { label: "Unsafe", url: "data:text/html,bad" },
+        ]),
+        year: "2023 - Sekarang",
+        order: 2,
+        isActive: true,
+      },
+      {
+        id: "inactive-1",
+        name: "Inactive Member",
+        role: "Developer",
+        isActive: false,
+      },
+    ],
+  });
+
+  assert.deepEqual(members, [
+    {
+      id: "active-1",
+      name: "Active Member",
+      role: "Frontend Developer",
+      photoUrl: `${teamData.TEAM_API_ORIGIN}/uploads/team/member.webp`,
+      github: "https://github.com/example",
+      linkedin: null,
+      instagram: null,
+      bio: "Builds the public interface.",
+      customLinks: [
+        {
+          label: "Portfolio",
+          url: "https://portfolio.example/member",
+          icon: "mingcute:link-2-line",
+        },
+      ],
+      year: "2023 - Sekarang",
+      order: 2,
+    },
+  ]);
+
+  assert.equal("email" in members[0], false);
+  assert.equal("user" in members[0], false);
+  assert.equal("userId" in members[0], false);
+});
+
+test("fetchPublicTeamMembers requests the configured endpoint and degrades safely", async () => {
+  const fetchPublicTeamMembers = getTeamDataExport("fetchPublicTeamMembers");
+  let requestedUrl = "";
+  let requestedOptions;
+  const fetcher = async (url, options) => {
+    requestedUrl = String(url);
+    requestedOptions = options;
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: [{ id: "member-1", name: "Member One", isActive: true }],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  };
+
+  const members = await fetchPublicTeamMembers({
+    apiBase: "https://api.example.test/",
+    fetcher,
+  });
+
+  assert.equal(requestedUrl, "https://api.example.test/api/team");
+  assert.equal(requestedOptions.next.revalidate, 3600);
+  assert.deepEqual(
+    members.map((member) => member.name),
+    ["Member One"],
+  );
+
+  const failed = await fetchPublicTeamMembers({
+    fetcher: async () => {
+      throw new Error("offline");
+    },
+  });
+  assert.deepEqual(failed, []);
 });
