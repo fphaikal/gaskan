@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
-import { toast } from 'sonner';
+import { goeyToast as toast } from 'goey-toast';
 
 export default function DashboardLayout({
   children,
@@ -16,7 +16,10 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     if (isLoading) return;
 
     // 1. Redirect unauthenticated users
@@ -50,8 +53,16 @@ export default function DashboardLayout({
     }
   }, [user, isLoading, pathname, router]);
 
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen bg-background text-foreground items-center justify-center" suppressHydrationWarning>
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground" suppressHydrationWarning>
       <Sidebar />
       <div className="flex flex-1 flex-col min-w-0">
         <Header />
@@ -60,3 +71,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+

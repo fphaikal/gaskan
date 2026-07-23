@@ -2,13 +2,17 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import socket from '@/lib/socket';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import {
+  SystemManagePageSkeleton,
+  SystemMetricsCardsSkeleton,
+} from '@/components/shared/SystemPageSkeletons';
 import {
   Dialog,
   DialogContent,
@@ -130,6 +134,10 @@ export default function SystemManagePage() {
     }
   };
 
+  if (loading && !metrics) {
+    return <SystemManagePageSkeleton />;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Header Area matching Nuxt 1-to-1 */}
@@ -159,10 +167,7 @@ export default function SystemManagePage() {
 
       {/* Hardware Performance Gauge Cards */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-          <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin" />
-          <p className="text-xs font-bold">Memuat metrik performa server...</p>
-        </div>
+        <SystemMetricsCardsSkeleton />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* CPU Card */}

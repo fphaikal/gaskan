@@ -18,6 +18,7 @@ import { ReusableDataTable } from "@/components/shared/ReusableDataTable";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { ExportButtons } from "@/components/shared/ExportButtons";
 import { CustomSelect } from "@/components/shared/CustomSelect";
+import { DataMasterTablePageSkeleton } from "@/components/shared/DataMasterSkeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,8 @@ import {
 export default function AdminPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
+  const [pageCount, setPageCount] = useState(-1);
 
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
@@ -54,11 +57,17 @@ export default function AdminPage() {
   const fetchAdmins = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Primary backend route for user management is /api/users
-      const res = await api.get("/users").catch(() => api.get("/admin"));
+      const params = new URLSearchParams({
+        page: String(pagination.pageIndex + 1),
+        limit: String(pagination.pageSize)
+      });
+      const res = await api.get(`/users?${params.toString()}`).catch(() => api.get("/admin"));
       const data = res.data?.data || res.data;
       if (Array.isArray(data)) {
         setAdmins(data);
+        if (res.data?.pagination) {
+          setPageCount(Math.ceil(res.data.pagination.total / res.data.pagination.limit));
+        }
       }
     } catch (error) {
       console.log("Error fetching users:", error);
@@ -69,7 +78,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchAdmins();
-  }, [fetchAdmins]);
+  }, [fetchAdmins, pagination.pageIndex, pagination.pageSize]);
 
   const handleOpenAdd = () => {
     setEditingAdmin(null);
@@ -257,6 +266,10 @@ export default function AdminPage() {
     { header: "Tanggal Dibuat", key: "created_at" },
   ];
 
+  if (isLoading && admins.length === 0) {
+    return <DataMasterTablePageSkeleton actionCount={2} />;
+  }
+
   return (
     <div className="space-y-6 pb-8">
       <PageHeader
@@ -282,6 +295,10 @@ export default function AdminPage() {
         searchKey="username"
         searchPlaceholder="Cari username atau nama admin..."
         isLoading={isLoading}
+        manualPagination
+        pageCount={pageCount}
+        pagination={pagination}
+        onPaginationChange={setPagination}
       />
 
       {/* Add / Edit Admin Dialog */}

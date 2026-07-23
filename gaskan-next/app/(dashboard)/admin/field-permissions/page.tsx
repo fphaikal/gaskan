@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { FieldPermissionsPageSkeleton } from '@/components/shared/DataMasterSkeletons';
 
 type PermissionMode = 'FREELY_EDITABLE' | 'LOCKED' | 'FILL_ONCE';
 
@@ -89,6 +90,10 @@ export default function FieldPermissionsPage() {
     return 'mingcute:file-text-fill';
   };
 
+  if (isLoading) {
+    return <FieldPermissionsPageSkeleton />;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Header Page matching Nuxt 1-to-1 */}
@@ -164,13 +169,7 @@ export default function FieldPermissionsPage() {
       </div>
 
       {/* Field Cards Grid matching Nuxt 1-to-1 */}
-      {isLoading ? (
-        <div className="flex items-center justify-center min-h-[40vh] gap-3">
-          <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-          <p className="text-xs font-semibold text-muted-foreground">Memuat perizinan field profil...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {fieldPermissions.map((field) => (
             <div
               key={field.fieldName}
@@ -272,8 +271,7 @@ export default function FieldPermissionsPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

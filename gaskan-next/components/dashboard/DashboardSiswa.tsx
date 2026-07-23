@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { CustomSelect } from '@/components/shared/CustomSelect';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DashboardSiswaProps {
   user: any;
@@ -207,70 +209,104 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-500">
-      {/* Profil Siswa (2x1) matching Nuxt 1-to-1 */}
-      <div className={`${bentoCard} lg:col-span-2 bg-gradient-to-br from-primary/20 via-card to-background border-primary/20`}>
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-full overflow-hidden bg-primary/20 border-2 border-primary/40 text-primary flex items-center justify-center shrink-0 shadow-inner">
-            {user?.avatar || user?.url_picture ? (
-              <img src={user.avatar || user.url_picture} alt={user?.Nama || user?.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-3xl font-black">{user?.Nama?.charAt(0) || user?.name?.charAt(0) || 'F'}</span>
-            )}
-          </div>
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              Halo, {user?.Nama?.split(' ')[0] || user?.name?.split(' ')[0] || 'Siswa'}!
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-1">
-              {displayKelas} · NIS: <span className="font-mono text-foreground font-bold">{displayNis}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Hari Ini (1x1) */}
-      <div className={bentoCard}>
-        <p className="text-muted-foreground font-bold mb-2 text-xs uppercase tracking-wider">Status Hari Ini</p>
-        {loading ? (
-          <div className="flex items-center gap-3">
-            <Icon icon="mingcute:loading-fill" className="text-2xl text-primary animate-spin" />
-          </div>
-        ) : todayStatus ? (
-          <div className={`flex items-center gap-3 ${getStatus(todayStatus.status).color}`}>
-            <Icon icon={getStatus(todayStatus.status).icon} className="text-4xl" />
-            <div>
-              <span className="text-2xl font-black">{getStatus(todayStatus.status).label}</span>
-              <p className="text-xs font-mono font-bold opacity-80">{formatTime(todayStatus.time)}</p>
+      {/* 1. Profil Siswa */}
+      {!user ? (
+        <div className={`${bentoCard} lg:col-span-2 bg-muted/20 border-border`}>
+          <div className="flex items-center gap-6">
+            <Skeleton className="w-20 h-20 rounded-full shrink-0" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-32" />
             </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-3 text-muted-foreground/40">
-            <Icon icon="mingcute:time-line" className="text-4xl" />
-            <span className="text-lg font-bold">Belum Absen</span>
-          </div>
-        )}
-      </div>
-
-      {/* Persentase Kehadiran (1x1) */}
-      <div className={bentoCard}>
-        <p className="text-muted-foreground font-bold mb-2 text-xs uppercase tracking-wider">Kehadiran Bulan Ini</p>
-        <div className="flex items-end gap-2">
-          <span className={`text-4xl font-black ${attendanceRate >= 80 ? 'text-emerald-500' : attendanceRate >= 60 ? 'text-amber-500' : 'text-rose-500'}`}>
-            {attendanceRate}%
-          </span>
-          <span className="text-xs text-muted-foreground font-semibold pb-1">dari {summary.total || 1} hari</span>
         </div>
-        <Progress value={attendanceRate} className="h-2.5 mt-3 bg-muted" />
-      </div>
-
-      {/* Rekap Absensi Bulan Ini (Full 4x1 span) */}
-      <div className={`${bentoCard} lg:col-span-4`}>
-        <p className="text-muted-foreground font-bold mb-4 text-xs uppercase tracking-wider">Rekap Absensi Bulan Ini</p>
-        {loading ? (
-          <div className="flex justify-center py-4">
-            <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
+      ) : (
+        <div className={`${bentoCard} lg:col-span-2 bg-gradient-to-br from-primary/20 via-card to-background border-primary/20`}>
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-primary/20 border-2 border-primary/40 text-primary flex items-center justify-center shrink-0 shadow-inner">
+              {user?.avatar || user?.url_picture ? (
+                <img src={user.avatar || user.url_picture} alt={user?.Nama || user?.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-black">{user?.Nama?.charAt(0) || user?.name?.charAt(0) || 'F'}</span>
+              )}
+            </div>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+                Halo, {user?.Nama?.split(' ')[0] || user?.name?.split(' ')[0] || 'Siswa'}!
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-1">
+                {displayKelas} · NIS: <span className="font-mono text-foreground font-bold">{displayNis}</span>
+              </p>
+            </div>
           </div>
-        ) : (
+        </div>
+      )}
+
+      {/* 2. Status Hari Ini */}
+      {loading ? (
+        <div className={`${bentoCard} bg-muted/20 border-border`}>
+          <Skeleton className="h-4 w-24 mb-4" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-10 h-10 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className={bentoCard}>
+          <p className="text-muted-foreground font-bold mb-2 text-xs uppercase tracking-wider">Status Hari Ini</p>
+          {todayStatus ? (
+            <div className={`flex items-center gap-3 ${getStatus(todayStatus.status).color}`}>
+              <Icon icon={getStatus(todayStatus.status).icon} className="text-4xl" />
+              <div>
+                <span className="text-2xl font-black">{getStatus(todayStatus.status).label}</span>
+                <p className="text-xs font-mono font-bold opacity-80">{formatTime(todayStatus.time)}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 text-muted-foreground/40">
+              <Icon icon="mingcute:time-line" className="text-4xl" />
+              <span className="text-lg font-bold">Belum Absen</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. Persentase Kehadiran */}
+      {loading ? (
+        <div className={`${bentoCard} bg-muted/20 border-border`}>
+          <Skeleton className="h-4 w-32 mb-4" />
+          <Skeleton className="h-8 w-16 mb-2" />
+          <Skeleton className="h-2.5 w-full rounded-full mt-3" />
+        </div>
+      ) : (
+        <div className={bentoCard}>
+          <p className="text-muted-foreground font-bold mb-2 text-xs uppercase tracking-wider">Kehadiran Bulan Ini</p>
+          <div className="flex items-end gap-2">
+            <span className={`text-4xl font-black ${attendanceRate >= 80 ? 'text-emerald-500' : attendanceRate >= 60 ? 'text-amber-500' : 'text-rose-500'}`}>
+              {attendanceRate}%
+            </span>
+            <span className="text-xs text-muted-foreground font-semibold pb-1">dari {summary.total || 1} hari</span>
+          </div>
+          <Progress value={attendanceRate} className="h-2.5 mt-3 bg-muted" />
+        </div>
+      )}
+
+      {/* 4. Rekap Absensi Bulan Ini */}
+      {loading ? (
+        <div className={`${bentoCard} lg:col-span-4 bg-muted/20 border-border`}>
+          <Skeleton className="h-4 w-40 mb-6" />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className={`${bentoCard} lg:col-span-4`}>
+          <p className="text-muted-foreground font-bold mb-4 text-xs uppercase tracking-wider">Rekap Absensi Bulan Ini</p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-center">
               <p className="text-3xl font-black text-emerald-500 mb-1">{summary.hadir}</p>
@@ -293,50 +329,56 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">ALPHA</p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Riwayat Kehadiran Bulanan (Full span) matching Nuxt 1-to-1 */}
-      <div className={`${bentoCard} lg:col-span-4 flex flex-col min-h-0`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
-          <div>
-            <p className="text-foreground font-black text-lg">Riwayat Kehadiran Bulanan</p>
-            <p className="text-xs text-muted-foreground font-semibold">
-              Lihat seluruh riwayat jam IN, OUT, beserta hasil foto tap absensi
-            </p>
+      {/* 5. Riwayat Kehadiran Bulanan */}
+      {loading ? (
+        <div className={`${bentoCard} lg:col-span-4 flex flex-col min-h-[400px] bg-muted/20 border-border`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-56" />
+              <Skeleton className="h-4 w-80" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-[110px] rounded-xl" />
+              <Skeleton className="h-9 w-[90px] rounded-xl" />
+            </div>
           </div>
-          {/* Select Month & Year */}
-          <div className="flex gap-2">
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="h-9 rounded-xl bg-card border border-border px-3 font-bold text-xs"
-            >
-              {months.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="h-9 rounded-xl bg-card border border-border px-3 font-bold text-xs"
-            >
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-full" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
           </div>
         </div>
-
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
+      ) : (
+        <div className={`${bentoCard} lg:col-span-4 flex flex-col min-h-0`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
+            <div>
+              <p className="text-foreground font-black text-lg">Riwayat Kehadiran Bulanan</p>
+              <p className="text-xs text-muted-foreground font-semibold">
+                Lihat seluruh riwayat jam IN, OUT, beserta hasil foto tap absensi
+              </p>
+            </div>
+            {/* Select Month & Year */}
+            <div className="flex gap-2">
+              <CustomSelect
+                value={String(selectedMonth)}
+                onChange={(val) => setSelectedMonth(Number(val))}
+                options={months.map((m) => ({ value: String(m.value), label: m.name }))}
+                triggerClassName="h-9 font-bold text-xs rounded-xl bg-card border-border min-w-[110px]"
+              />
+              <CustomSelect
+                value={String(selectedYear)}
+                onChange={(val) => setSelectedYear(Number(val))}
+                options={years.map((y) => ({ value: String(y), label: String(y) }))}
+                triggerClassName="h-9 font-bold text-xs rounded-xl bg-card border-border min-w-[90px]"
+              />
+            </div>
           </div>
-        ) : (
+
           <div className="overflow-x-auto w-full">
             <table className="w-full text-xs text-left">
               <thead>
@@ -450,8 +492,8 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* DETAIL LOG TAP MODAL */}
       {selectedDayLog && (

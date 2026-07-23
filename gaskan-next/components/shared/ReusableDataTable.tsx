@@ -41,6 +41,10 @@ export interface ReusableDataTableProps<TData, TValue> {
   isLoading?: boolean
   pageSizeOptions?: number[]
   className?: string
+  manualPagination?: boolean
+  pageCount?: number
+  pagination?: { pageIndex: number; pageSize: number }
+  onPaginationChange?: (updater: import("@tanstack/react-table").Updater<import("@tanstack/react-table").PaginationState>) => void
 }
 
 export function ReusableDataTable<TData, TValue>({
@@ -51,6 +55,10 @@ export function ReusableDataTable<TData, TValue>({
   isLoading = false,
   pageSizeOptions = [10, 20, 30, 50],
   className,
+  manualPagination,
+  pageCount,
+  pagination,
+  onPaginationChange,
 }: ReusableDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -73,7 +81,11 @@ export function ReusableDataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      ...(manualPagination && pagination ? { pagination } : {}),
     },
+    manualPagination,
+    pageCount,
+    onPaginationChange,
   })
 
   return (

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from 'next-themes';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 
 export function LandingNavbar() {
@@ -41,7 +41,7 @@ export function LandingNavbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
           <Icon
-            icon="mingcute:key-2-fill"
+            icon="Key"
             className="text-primary text-2xl transition-transform group-hover:rotate-12 duration-300"
           />
           <span className="text-xl font-extrabold tracking-tight">GASKAN</span>
@@ -74,7 +74,7 @@ export function LandingNavbar() {
           >
             {mounted && (
               <Icon
-                icon={theme === 'dark' ? 'mingcute:sun-line' : 'mingcute:moon-line'}
+                icon={theme === 'dark' ? 'Sun' : 'Moon'}
                 className="text-xl"
               />
             )}
@@ -82,10 +82,10 @@ export function LandingNavbar() {
 
           {/* Login / Dashboard CTA */}
           <Link
-            href={user ? '/home' : '/login'}
+            href={mounted && user ? '/home' : '/login'}
             className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2 text-sm shadow-md hover:shadow-primary/30 transition-all"
           >
-            {user ? 'Dashboard' : 'Masuk'}
+            {mounted && user ? 'Dashboard' : 'Masuk'}
           </Link>
 
         </div>

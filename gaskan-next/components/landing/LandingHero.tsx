@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 
@@ -17,9 +17,9 @@ interface AttendanceItem {
 export function LandingHero() {
   const { user } = useAuth();
   const [recentAttendances, setRecentAttendances] = useState<AttendanceItem[]>([
-    { name: 'Ahmad Fauzi', status: 'HADIR', timestamp: new Date().toISOString() },
-    { name: 'Siti Nurhaliza', status: 'HADIR', timestamp: new Date(Date.now() - 300000).toISOString() },
-    { name: 'Budi Santoso', status: 'TERLAMBAT', timestamp: new Date(Date.now() - 900000).toISOString() },
+    { name: 'Ahmad Fauzi', status: 'HADIR', timestamp: '2026-07-23T07:07:00.000Z' },
+    { name: 'Siti Nurhaliza', status: 'HADIR', timestamp: '2026-07-23T07:02:00.000Z' },
+    { name: 'Budi Santoso', status: 'TERLAMBAT', timestamp: '2026-07-23T06:50:00.000Z' },
   ]);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -145,30 +145,35 @@ export function LandingHero() {
 
         </div>
 
-        {/* Right: Animation widget */}
+        {/* Right: Minimalist Face Scan Animation Widget */}
         <div className="flex flex-col items-center justify-center gap-8">
-          <div className="relative w-64 h-64 flex items-center justify-center">
+          <div className="relative flex items-center justify-center">
+            {/* Ambient Pulse Ring */}
             <div
-              className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping"
-              style={{ animationDuration: '2.5s' }}
+              className="absolute -inset-6 rounded-full border border-primary/20 animate-ping pointer-events-none"
+              style={{ animationDuration: '3.5s' }}
             />
             <div
-              className="absolute inset-6 rounded-full border border-primary/20 animate-ping"
-              style={{ animationDuration: '3.2s', animationDelay: '0.8s' }}
+              className="absolute -inset-3 rounded-full border border-primary/30 pointer-events-none"
             />
 
-            <div className="w-40 h-40 rounded-full bg-primary/10 border-2 border-primary/50 flex items-center justify-center z-10 shadow-xl shadow-primary/20">
-              <Icon icon="mingcute:fingerprint-line" className="text-7xl text-primary" />
-            </div>
+            {/* Clean Circle Container */}
+            <div className="relative w-52 h-52 rounded-full bg-card/80 border-2 border-primary/40 backdrop-blur-md flex items-center justify-center shadow-xl shadow-primary/10 overflow-hidden z-10">
+              {/* ScanFace Icon with explicit size prop so it renders large and clear */}
+              <Icon icon="ScanFace" size={84} className="text-primary" strokeWidth={1.5} />
 
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-3.5 h-3.5 rounded-full bg-primary shadow-lg shadow-primary/50 animate-orbit" />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-2.5 h-2.5 rounded-full bg-primary/70 animate-orbit-delay" />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-2 h-2 rounded-full bg-primary/50 animate-orbit-delay2" />
+              {/* Clean Glowing Scan Line */}
+              <div
+                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_12px_2px] shadow-primary z-20 pointer-events-none"
+                style={{ animation: 'simpleScan 2.5s ease-in-out infinite' }}
+              />
+
+              <style>{`
+                @keyframes simpleScan {
+                  0%, 100% { top: 15%; opacity: 0.3; }
+                  50% { top: 80%; opacity: 1; }
+                }
+              `}</style>
             </div>
           </div>
 

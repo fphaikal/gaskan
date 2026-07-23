@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { PaginationControls } from '@/components/shared/PaginationControls';
+import { ErrorLogPageSkeleton } from '@/components/shared/SystemPageSkeletons';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
 
@@ -25,14 +27,28 @@ export default function LogErrorPage() {
   const [errorGroups, setErrorGroups] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(30);
+  const [total, setTotal] = useState(0);
+
   // Modal State
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [activePreviewImage, setActivePreviewImage] = useState<string | null>(null);
 
   const fetchErrorLog = useCallback(async () => {
     try {
-      const res = await api.get('/error?reverse=true').catch(() => api.get('/log/error'));
+      const params = new URLSearchParams({
+        reverse: 'true',
+        page: String(page),
+        limit: String(limit),
+      });
+      const res = await api.get(`/error?${params.toString()}`).catch(() => api.get(`/log/error?${params.toString()}`));
       const d = res?.data?.data || res?.data || [];
+      if (res?.data?.pagination) {
+        setTotal(res.data.pagination.total || 0);
+      }
+
       if (Array.isArray(d)) {
         if (d.length > 0 && d[0].tanggal) {
           setErrorGroups(d);
@@ -70,7 +86,7 @@ export default function LogErrorPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     fetchErrorLog();
@@ -91,6 +107,10 @@ export default function LogErrorPage() {
       return ts;
     }
   };
+
+  if (isLoading) {
+    return <ErrorLogPageSkeleton />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
@@ -113,12 +133,7 @@ export default function LogErrorPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-          <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin" />
-          <p className="text-xs font-bold">Memuat log error sistem...</p>
-        </div>
-      ) : errorGroups.length === 0 ? (
+      {errorGroups.length === 0 ? (
         <div className="bg-card border border-border rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-muted-foreground/40 space-y-3">
           <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center">
             <Icon icon="mingcute:bug-line" className="text-3xl text-emerald-500" />
@@ -183,11 +198,24 @@ export default function LogErrorPage() {
         </div>
       )}
 
+      <PaginationControls
+        currentPage={page}
+        itemsPerPage={limit}
+        totalItems={total}
+        totalPages={Math.ceil(total / limit) || 1}
+        onPageChange={setPage}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
+        isLoading={isLoading}
+      />
+
       {/* UNIFORM DASHBOARD DIALOG STRUCTURE */}
       {selectedLog && (
         <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-          <DialogContent className="sm:max-w-2xl p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-4">
-            <DialogHeader className="p-0 border-none bg-transparent flex flex-row items-center justify-between">
+          <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center justify-between">
               <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2">
                 <Icon icon="mingcute:warning-fill" className="text-rose-500 text-2xl" />
                 <span>Detail Kejadian Error</span>
@@ -202,72 +230,74 @@ export default function LogErrorPage() {
               </div>
             </DialogHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              {/* Image Section */}
-              <div
-                className="w-full h-56 rounded-2xl bg-muted/40 border border-border flex items-center justify-center relative overflow-hidden group cursor-pointer"
-                onClick={() => {
-                  if (selectedLog.image) setActivePreviewImage(selectedLog.image);
-                }}
-              >
-                {selectedLog.image ? (
-                  <>
-                    <img
-                      src={selectedLog.image}
-                      alt="Captured Face"
-                      className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
-                      <Icon icon="mingcute:zoom-in-line" className="text-2xl" />
-                      <span>Zoom Foto</span>
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Image Section */}
+                <div
+                  className="w-full h-56 rounded-2xl bg-muted/40 border border-border flex items-center justify-center relative overflow-hidden group cursor-pointer"
+                  onClick={() => {
+                    if (selectedLog.image) setActivePreviewImage(selectedLog.image);
+                  }}
+                >
+                  {selectedLog.image ? (
+                    <>
+                      <img
+                        src={selectedLog.image}
+                        alt="Captured Face"
+                        className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
+                        <Icon icon="mingcute:zoom-in-line" className="text-2xl" />
+                        <span>Zoom Foto</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center text-muted-foreground/40 space-y-2">
+                      <Icon icon="mingcute:bug-line" className="text-4xl mx-auto" />
+                      <span className="text-xs font-semibold uppercase tracking-wider block">Foto Tidak Tersedia</span>
                     </div>
-                  </>
-                ) : (
-                  <div className="text-center text-muted-foreground/40 space-y-2">
-                    <Icon icon="mingcute:bug-line" className="text-4xl mx-auto" />
-                    <span className="text-xs font-semibold uppercase tracking-wider block">Foto Tidak Tersedia</span>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
-              {/* Details Info */}
-              <div className="space-y-3 text-xs flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="p-3 bg-muted/40 rounded-2xl border border-border">
-                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block mb-0.5">
-                      Pesan Kejadian
-                    </span>
-                    <p className="text-sm font-extrabold text-foreground leading-snug">
-                      {selectedLog.msg}
-                    </p>
-                  </div>
+                {/* Details Info */}
+                <div className="space-y-3 text-xs flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="p-3 bg-muted/40 rounded-2xl border border-border">
+                      <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block mb-0.5">
+                        Pesan Kejadian
+                      </span>
+                      <p className="text-sm font-extrabold text-foreground leading-snug">
+                        {selectedLog.msg}
+                      </p>
+                    </div>
 
-                  <div className="p-3 bg-muted/40 rounded-2xl border border-border">
-                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block mb-0.5">
-                      Nama Gerbang
-                    </span>
-                    <p className="text-xs font-bold text-foreground">
-                      {selectedLog.gate || 'Samping bengkel 1'}
-                    </p>
-                  </div>
+                    <div className="p-3 bg-muted/40 rounded-2xl border border-border">
+                      <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block mb-0.5">
+                        Nama Gerbang
+                      </span>
+                      <p className="text-xs font-bold text-foreground">
+                        {selectedLog.gate || 'Samping bengkel 1'}
+                      </p>
+                    </div>
 
-                  <div className="p-3 bg-muted/40 rounded-2xl border border-border flex justify-between items-center font-mono">
-                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest">
-                      Waktu Scan
-                    </span>
-                    <span className="text-xs font-bold text-foreground">
-                      {formatTimeStr(selectedLog.timestamp)}
-                    </span>
+                    <div className="p-3 bg-muted/40 rounded-2xl border border-border flex justify-between items-center font-mono">
+                      <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest">
+                        Waktu Scan
+                      </span>
+                      <span className="text-xs font-bold text-foreground">
+                        {formatTimeStr(selectedLog.timestamp)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <DialogFooter className="gap-2 pt-2">
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => setSelectedLog(null)}
-                className="w-full rounded-2xl font-bold text-xs h-11"
+                className="w-full rounded-2xl font-bold text-xs"
               >
                 Tutup Detail
               </Button>

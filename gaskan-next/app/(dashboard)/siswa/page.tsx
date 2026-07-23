@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ExportButtons } from '@/components/shared/ExportButtons';
 import { CustomSelect } from '@/components/shared/CustomSelect';
+import { DataMasterTablePageSkeleton } from '@/components/shared/DataMasterSkeletons';
 import {
   Dialog,
   DialogContent,
@@ -38,9 +39,11 @@ export default function SiswaPage() {
   const [majors, setMajors] = useState<any[]>([]);
   const [devices, setDevices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [totalStudents, setTotalStudents] = useState(0);
 
   // Filters State matching Nuxt index.vue 1-to-1
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('');
   const [filterStatus, setFilterStatus] = useState('AKTIF');
@@ -100,16 +103,45 @@ export default function SiswaPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [stdRes, clsRes, mjrRes, devRes] = await Promise.allSettled([
-        api.get('/students').catch(() => api.get('/siswa')),
-        api.get('/classes').catch(() => api.get('/kelas')),
-        api.get('/classes/majors').catch(() => api.get('/jurusan')),
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(itemsPerPage),
+        status: filterStatus,
+        sortBy,
+      });
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (selectedClass) params.set('classId', selectedClass);
+      if (selectedMajor) params.set('major', selectedMajor);
+      if (filterPhoto !== 'ALL') params.set('filterPhoto', filterPhoto);
+      if (filterDeviceSync !== 'ALL') params.set('filterDeviceSync', filterDeviceSync);
+
+      const stdRes = await api.get(`/students?${params.toString()}`);
+      const payload = stdRes?.data;
+      const data = Array.isArray(payload) ? payload : payload?.data || [];
+      const total = payload?.pagination?.total ?? data.length;
+
+      setStudents(Array.isArray(data) ? data : []);
+      setTotalStudents(total);
+
+      const lastPage = Math.max(1, Math.ceil(total / itemsPerPage));
+      if (currentPage > lastPage) setCurrentPage(lastPage);
+    } catch (e) {
+      console.error('Failed to fetch students data:', e);
+      setStudents([]);
+      setTotalStudents(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, itemsPerPage, debouncedSearch, selectedClass, selectedMajor, filterStatus, filterPhoto, filterDeviceSync, sortBy]);
+
+  const fetchReferenceData = useCallback(async () => {
+    try {
+      const [clsRes, mjrRes, devRes] = await Promise.allSettled([
+        api.get('/classes'),
+        api.get('/classes/majors'),
         api.get('/device').catch(() => ({ data: [] })),
       ]);
 
-      if (stdRes.status === 'fulfilled' && stdRes.value?.data) {
-        setStudents(stdRes.value.data.data || stdRes.value.data || []);
-      }
       if (clsRes.status === 'fulfilled' && clsRes.value?.data) {
         setClasses(clsRes.value.data.data || clsRes.value.data || []);
       }
@@ -121,72 +153,29 @@ export default function SiswaPage() {
         setDevices(Array.isArray(devData) ? devData : []);
       }
     } catch (e) {
-      console.error('Failed to fetch students data:', e);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to fetch student reference data:', e);
     }
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Filtering & Sorting Logic matching Nuxt index.vue 1-to-1
-  const filteredStudents = useMemo(() => {
-    let result = students.filter((s) => {
-      const stdName = s.name || s.Nama || '';
-      const stdNis = s.nis || s.NIS || '';
-      const stdNisn = s.nisn || '';
+  useEffect(() => {
+    fetchReferenceData();
+  }, [fetchReferenceData]);
 
-      const nameMatch =
-        stdName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stdNis.includes(searchQuery) ||
-        stdNisn.includes(searchQuery);
-
-      const clsName = s.className || s.Kelas || s.class?.className || '';
-      const classMatch = !selectedClass || clsName === selectedClass || s.classId === selectedClass;
-
-      const mjrName = s.majorAlias || s.majorName || s.class?.major?.name || '';
-      const majorMatch = !selectedMajor || mjrName.toLowerCase().includes(selectedMajor.toLowerCase()) || s.majorId === selectedMajor;
-
-      let statusMatch = true;
-      if (filterStatus !== 'ALL') {
-        const stdStatus = (s.status || 'AKTIF').toUpperCase();
-        statusMatch = stdStatus === filterStatus;
-      }
-
-      let photoMatch = true;
-      const hasPhoto = !!(s.photoUrl || s.url_picture || s.faceUrl);
-      if (filterPhoto === 'WITH_PHOTO') photoMatch = hasPhoto;
-      if (filterPhoto === 'WITHOUT_PHOTO') photoMatch = !hasPhoto;
-
-      let syncMatch = true;
-      const isSynced = !!(s.faceToken || s.synced);
-      if (filterDeviceSync === 'SYNCED') syncMatch = isSynced;
-      if (filterDeviceSync === 'NOT_SYNCED') syncMatch = !isSynced;
-
-      return nameMatch && classMatch && majorMatch && statusMatch && photoMatch && syncMatch;
-    });
-
-    // Sorting
-    if (sortBy === 'name-asc') {
-      result.sort((a, b) => (a.name || a.Nama || '').localeCompare(b.name || b.Nama || ''));
-    } else if (sortBy === 'name-desc') {
-      result.sort((a, b) => (b.name || b.Nama || '').localeCompare(a.name || a.Nama || ''));
-    } else if (sortBy === 'newest') {
-      result.sort((a, b) => (b.id || 0) - (a.id || 0));
-    }
-
-    return result;
-  }, [students, searchQuery, selectedClass, selectedMajor, filterStatus, filterPhoto, filterDeviceSync, sortBy]);
-
-  // Pagination
-  const totalStudents = filteredStudents.length;
+  // The backend already returns only the requested page.
   const totalPages = Math.max(1, Math.ceil(totalStudents / itemsPerPage));
-  const paginatedStudents = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredStudents.slice(start, start + itemsPerPage);
-  }, [filteredStudents, currentPage, itemsPerPage]);
+  const paginatedStudents = students;
 
   // Select / Deselect Handlers
   const toggleSelectStudent = (id: string) => {
@@ -196,10 +185,13 @@ export default function SiswaPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedStudents.length === paginatedStudents.length && paginatedStudents.length > 0) {
-      setSelectedStudents([]);
+    const pageIds = paginatedStudents.map((s) => String(s.id));
+    const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedStudents.includes(id));
+
+    if (allPageSelected) {
+      setSelectedStudents((prev) => prev.filter((id) => !pageIds.includes(id)));
     } else {
-      setSelectedStudents(paginatedStudents.map((s) => String(s.id)));
+      setSelectedStudents((prev) => Array.from(new Set([...prev, ...pageIds])));
     }
   };
 
@@ -367,8 +359,13 @@ export default function SiswaPage() {
   };
 
   const classOptions = useMemo(() => {
-    const names = classes.map((c) => c.className || c.nama_kelas).filter(Boolean);
-    return Array.from(new Set(names)).sort();
+    return classes
+      .map((c) => ({
+        value: String(c.id),
+        label: c.className || c.nama_kelas || c.name || 'Kelas',
+      }))
+      .filter((option) => option.value && option.label)
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [classes]);
 
   const majorOptions = useMemo(() => {
@@ -383,7 +380,7 @@ export default function SiswaPage() {
     );
   }, [classes, classSearch]);
 
-  const exportData = filteredStudents.map((s) => ({
+  const exportData = students.map((s) => ({
     nis: s.nis || s.NIS || '',
     nama: s.name || s.Nama || '',
     kelas: s.className || s.Kelas || '',
@@ -404,12 +401,7 @@ export default function SiswaPage() {
   ];
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-        <p className="text-xs font-semibold text-muted-foreground">Memuat direktori siswa...</p>
-      </div>
-    );
+    return <DataMasterTablePageSkeleton actionCount={5} />;
   }
 
   return (
@@ -475,7 +467,10 @@ export default function SiswaPage() {
               type="text"
               placeholder="Cari nama, NIS, atau NISN..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-11 h-11 bg-muted/30 border-transparent rounded-2xl text-xs font-bold focus:border-primary transition-all"
             />
           </div>
@@ -486,10 +481,13 @@ export default function SiswaPage() {
               <CustomSelect
                 options={[
                   { value: '', label: 'Semua Kelas' },
-                  ...classOptions.map((cls) => ({ value: cls, label: cls })),
+                  ...classOptions,
                 ]}
                 value={selectedClass}
-                onChange={setSelectedClass}
+                onChange={(value) => {
+                  setSelectedClass(value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Semua Kelas"
                 icon="mingcute:filter-2-line"
               />
@@ -524,7 +522,10 @@ export default function SiswaPage() {
                   { value: 'ALL', label: 'SEMUA STATUS' },
                 ]}
                 value={filterStatus}
-                onChange={setFilterStatus}
+                onChange={(value) => {
+                  setFilterStatus(value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
 
@@ -539,7 +540,10 @@ export default function SiswaPage() {
                   ...majorOptions.map((m) => ({ value: m, label: m })),
                 ]}
                 value={selectedMajor}
-                onChange={setSelectedMajor}
+                onChange={(value) => {
+                  setSelectedMajor(value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Semua Jurusan"
               />
             </div>
@@ -556,7 +560,10 @@ export default function SiswaPage() {
                   { value: 'WITHOUT_PHOTO', label: 'Belum Ada Foto' },
                 ]}
                 value={filterPhoto}
-                onChange={setFilterPhoto}
+                onChange={(value) => {
+                  setFilterPhoto(value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
 
@@ -572,7 +579,10 @@ export default function SiswaPage() {
                   { value: 'NOT_SYNCED', label: 'Belum Sinkron' },
                 ]}
                 value={filterDeviceSync}
-                onChange={setFilterDeviceSync}
+                onChange={(value) => {
+                  setFilterDeviceSync(value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
 
@@ -588,7 +598,10 @@ export default function SiswaPage() {
                   { value: 'newest', label: 'Data Terbaru' },
                 ]}
                 value={sortBy}
-                onChange={setSortBy}
+                onChange={(value) => {
+                  setSortBy(value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
 
@@ -604,6 +617,7 @@ export default function SiswaPage() {
                   setFilterPhoto('ALL');
                   setFilterDeviceSync('ALL');
                   setSortBy('name-asc');
+                  setCurrentPage(1);
                 }}
                 className="w-full h-11 rounded-2xl font-bold text-xs gap-1 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-border bg-card"
               >
@@ -669,7 +683,7 @@ export default function SiswaPage() {
           <div className="col-span-5 flex items-center gap-3">
             <input
               type="checkbox"
-              checked={selectedStudents.length === paginatedStudents.length && paginatedStudents.length > 0}
+              checked={paginatedStudents.length > 0 && paginatedStudents.every((s) => selectedStudents.includes(String(s.id)))}
               onChange={toggleSelectAll}
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
             />
@@ -696,6 +710,10 @@ export default function SiswaPage() {
                 setSelectedClass('');
                 setSelectedMajor('');
                 setFilterStatus('AKTIF');
+                setFilterPhoto('ALL');
+                setFilterDeviceSync('ALL');
+                setSortBy('name-asc');
+                setCurrentPage(1);
               }}
               className="rounded-2xl px-6 font-bold text-xs"
             >
@@ -1189,23 +1207,23 @@ export default function SiswaPage() {
 
       {/* MODAL 2: SINGLE DELETE MODAL */}
       <Dialog open={!!deleteStudentItem} onOpenChange={(open) => !open && setDeleteStudentItem(null)}>
-        <DialogContent className="sm:max-w-md p-6 text-center">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
-          </div>
-          <DialogHeader className="p-0 border-none bg-transparent">
-            <DialogTitle className="text-2xl font-black text-foreground text-center">
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <div className="p-6 space-y-4 text-center">
+            <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
+              <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-foreground text-center">
               Hapus Siswa?
             </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
-            Apakah Anda yakin ingin menghapus <span className="text-foreground font-black">{deleteStudentItem?.name || deleteStudentItem?.Nama}</span>? Tindakan ini tidak dapat dibatalkan.
-          </p>
-          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
-            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteStudentItem(null)}>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+              Apakah Anda yakin ingin menghapus <span className="text-foreground font-black">{deleteStudentItem?.name || deleteStudentItem?.Nama}</span>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteStudentItem(null)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteSingle}>
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold text-xs shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteSingle}>
               {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
             </Button>
           </DialogFooter>
@@ -1214,23 +1232,23 @@ export default function SiswaPage() {
 
       {/* MODAL 3: BULK DELETE MODAL */}
       <Dialog open={showBulkDeleteModal} onOpenChange={setShowBulkDeleteModal}>
-        <DialogContent className="sm:max-w-md p-6 text-center">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
-          </div>
-          <DialogHeader className="p-0 border-none bg-transparent">
-            <DialogTitle className="text-2xl font-black text-foreground text-center">
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <div className="p-6 space-y-4 text-center">
+            <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
+              <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-foreground text-center">
               Hapus Massal?
             </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
-            Apakah Anda yakin ingin menghapus <span className="text-primary font-black">{selectedStudents.length}</span> siswa terpilih? Tindakan ini tidak dapat dibatalkan.
-          </p>
-          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
-            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowBulkDeleteModal(false)}>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+              Apakah Anda yakin ingin menghapus <span className="text-primary font-black">{selectedStudents.length}</span> siswa terpilih? Tindakan ini tidak dapat dibatalkan.
+            </p>
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setShowBulkDeleteModal(false)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleBulkDelete}>
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold text-xs shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleBulkDelete}>
               {isSaving ? 'Menghapus...' : 'Ya, Hapus Semua'}
             </Button>
           </DialogFooter>

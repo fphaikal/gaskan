@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CustomSelect } from '@/components/shared/CustomSelect';
+import { DataMasterCardGridPageSkeleton } from '@/components/shared/DataMasterSkeletons';
 import {
   Dialog,
   DialogContent,
@@ -227,6 +228,10 @@ export default function AdminTeamPage() {
     }
   };
 
+  if (isLoading) {
+    return <DataMasterCardGridPageSkeleton actionCount={1} toolbarItems={2} />;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Header Bar */}
@@ -266,21 +271,7 @@ export default function AdminTeamPage() {
       </div>
 
       {/* Bento Grid matching Nuxt 1-to-1 */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-card rounded-3xl p-6 border border-border/60 shadow-sm animate-pulse space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-muted shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-muted rounded w-3/4" />
-                  <div className="h-3 bg-muted rounded w-1/2" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : filteredMembers.length === 0 ? (
+      {filteredMembers.length === 0 ? (
         <div className="bg-card border border-border rounded-3xl p-20 text-center text-xs font-bold text-muted-foreground/40 italic">
           Belum ada data anggota tim
         </div>
@@ -507,23 +498,23 @@ export default function AdminTeamPage() {
 
       {/* ═══ CONFIRM DELETE MODAL ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md p-6 text-center">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
-          </div>
-          <DialogHeader className="p-0 border-none bg-transparent">
-            <DialogTitle className="text-2xl font-black text-foreground text-center">
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <div className="p-6 space-y-4 text-center">
+            <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
+              <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-foreground text-center">
               Hapus Anggota Tim?
             </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
-            Data anggota tim ini akan dihapus dari daftar.
-          </p>
-          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
-            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteId(null)}>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+              Data anggota tim ini akan dihapus dari daftar.
+            </p>
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteId(null)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteMember}>
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold text-xs shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteMember}>
               {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
             </Button>
           </DialogFooter>

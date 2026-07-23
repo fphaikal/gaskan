@@ -6,11 +6,12 @@ import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CustomSelect } from '@/components/shared/CustomSelect';
+import { AttendanceReportPageSkeleton } from '@/components/shared/PresencePageSkeletons';
 
 const statusStyle: Record<string, { short: string; bg: string; text: string }> = {
   HADIR: { short: 'H', bg: 'bg-emerald-500/20', text: 'text-emerald-500 font-black' },
@@ -199,6 +200,10 @@ export default function AbsensiLaporanPage() {
   }, [previewData, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil((previewData?.rows?.length || 0) / itemsPerPage);
+
+  if (isLoading) {
+    return <AttendanceReportPageSkeleton />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">

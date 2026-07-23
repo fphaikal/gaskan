@@ -2,17 +2,23 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CustomSelect } from '@/components/shared/CustomSelect';
+import { PaginationControls } from '@/components/shared/PaginationControls';
+import {
+  FileExplorerGridSkeleton,
+  FileExplorerPageSkeleton,
+} from '@/components/shared/SystemPageSkeletons';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
@@ -121,6 +127,10 @@ export default function FileExplorerPage() {
     }
   };
 
+  if (isLoading && files.length === 0) {
+    return <FileExplorerPageSkeleton />;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Top Header Card matching Nuxt 1-to-1 */}
@@ -201,10 +211,7 @@ export default function FileExplorerPage() {
 
       {/* Grid List Berkas matching Nuxt 1-to-1 */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-          <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin" />
-          <p className="text-xs font-bold">Membaca direktori server...</p>
-        </div>
+        <FileExplorerGridSkeleton />
       ) : files.length === 0 ? (
         <div className="bg-card border border-border rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-muted-foreground/40 space-y-3">
           <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center">
@@ -256,11 +263,24 @@ export default function FileExplorerPage() {
         </div>
       )}
 
+      <PaginationControls
+        currentPage={page}
+        itemsPerPage={limit}
+        totalItems={total}
+        totalPages={Math.ceil(total / limit) || 1}
+        onPageChange={setPage}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
+        isLoading={isLoading}
+      />
+
       {/* DETAIL BERKAS & PREVIEW MODAL */}
       {selectedFile && (
         <Dialog open={!!selectedFile} onOpenChange={() => setSelectedFile(null)}>
-          <DialogContent className="sm:max-w-xl p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-4">
-            <DialogHeader className="p-0 border-none bg-transparent flex flex-row items-center justify-between">
+          <DialogContent className="sm:max-w-xl flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center justify-between">
               <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2 truncate">
                 <Icon icon="mingcute:file-line" className="text-primary text-2xl shrink-0" />
                 <span className="truncate">{selectedFile.fileName}</span>
@@ -268,75 +288,77 @@ export default function FileExplorerPage() {
               {getBackupBadge(selectedFile.backupStatus)}
             </DialogHeader>
 
-            {/* Preview Box */}
-            <div className="w-full max-h-64 rounded-2xl bg-muted/40 border border-border overflow-hidden flex items-center justify-center p-2">
-              {selectedFile.isImage || /\.(jpg|jpeg|png|webp|gif)$/i.test(selectedFile.fileName) ? (
-                <img
-                  src={getFileUrl(selectedFile.localUrl || selectedFile.gdUrl || selectedFile.hfUrl)}
-                  alt={selectedFile.fileName}
-                  className="max-h-60 object-contain rounded-xl"
-                />
-              ) : (
-                <div className="py-12 text-center text-muted-foreground/50 space-y-2">
-                  <Icon icon="mingcute:file-line" className="text-5xl mx-auto" />
-                  <p className="text-xs font-bold">Dokumen Server ({selectedFile.ext})</p>
-                </div>
-              )}
-            </div>
-
-            {/* File Path & Attributes */}
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-muted/40 rounded-2xl border border-border space-y-1">
-                <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block">
-                  Relative Path
-                </span>
-                <p className="font-mono text-xs font-bold text-foreground truncate select-all">
-                  {selectedFile.relativePath}
-                </p>
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+              {/* Preview Box */}
+              <div className="w-full max-h-64 rounded-2xl bg-muted/40 border border-border overflow-hidden flex items-center justify-center p-2">
+                {selectedFile.isImage || /\.(jpg|jpeg|png|webp|gif)$/i.test(selectedFile.fileName) ? (
+                  <img
+                    src={getFileUrl(selectedFile.localUrl || selectedFile.gdUrl || selectedFile.hfUrl)}
+                    alt={selectedFile.fileName}
+                    className="max-h-60 object-contain rounded-xl"
+                  />
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground/50 space-y-2">
+                    <Icon icon="mingcute:file-line" className="text-5xl mx-auto" />
+                    <p className="text-xs font-bold">Dokumen Server ({selectedFile.ext})</p>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-muted/40 rounded-2xl border border-border">
+              {/* File Path & Attributes */}
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-muted/40 rounded-2xl border border-border space-y-1">
                   <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block">
-                    Ukuran Berkas
+                    Relative Path
                   </span>
-                  <p className="font-bold text-foreground mt-0.5">
-                    {selectedFile.sizeFormatted || formatFileSize(selectedFile.sizeBytes)}
+                  <p className="font-mono text-xs font-bold text-foreground truncate select-all">
+                    {selectedFile.relativePath}
                   </p>
                 </div>
 
-                <div className="p-3 bg-muted/40 rounded-2xl border border-border">
-                  <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block">
-                    Direktori Subfolder
-                  </span>
-                  <p className="font-bold text-foreground mt-0.5 capitalize">
-                    {selectedFile.directory || 'Root Uploads'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Issuer Details if available */}
-              {selectedFile.issuer && selectedFile.issuer.userName && (
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase text-primary tracking-widest block">
-                      Konteks Berkas ({selectedFile.issuer.context || 'Pemilik'})
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-muted/40 rounded-2xl border border-border">
+                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block">
+                      Ukuran Berkas
                     </span>
                     <p className="font-bold text-foreground mt-0.5">
-                      {selectedFile.issuer.userName} ({selectedFile.issuer.userRole || 'SISWA'})
+                      {selectedFile.sizeFormatted || formatFileSize(selectedFile.sizeBytes)}
                     </p>
                   </div>
-                  {selectedFile.issuer.userNis && (
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      NIS: {selectedFile.issuer.userNis}
-                    </Badge>
-                  )}
+
+                  <div className="p-3 bg-muted/40 rounded-2xl border border-border">
+                    <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block">
+                      Direktori Subfolder
+                    </span>
+                    <p className="font-bold text-foreground mt-0.5 capitalize">
+                      {selectedFile.directory || 'Root Uploads'}
+                    </p>
+                  </div>
                 </div>
-              )}
+
+                {/* Issuer Details if available */}
+                {selectedFile.issuer && selectedFile.issuer.userName && (
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-primary tracking-widest block">
+                        Konteks Berkas ({selectedFile.issuer.context || 'Pemilik'})
+                      </span>
+                      <p className="font-bold text-foreground mt-0.5">
+                        {selectedFile.issuer.userName} ({selectedFile.issuer.userRole || 'SISWA'})
+                      </p>
+                    </div>
+                    {selectedFile.issuer.userNis && (
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
+                        NIS: {selectedFile.issuer.userNis}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
               <Button
                 variant="outline"
                 onClick={() => copyToClipboard(getFileUrl(selectedFile.localUrl || selectedFile.gdUrl || selectedFile.hfUrl))}
@@ -354,7 +376,7 @@ export default function FileExplorerPage() {
                 <Icon icon="mingcute:delete-2-line" className="mr-1.5 text-base" />
                 Hapus Berkas
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

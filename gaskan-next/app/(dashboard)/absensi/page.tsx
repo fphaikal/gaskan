@@ -2,16 +2,22 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CustomSelect } from '@/components/shared/CustomSelect';
+import { PaginationControls } from '@/components/shared/PaginationControls';
+import {
+  AttendancePageSkeleton,
+  AttendanceRecordsTableSkeleton,
+} from '@/components/shared/PresencePageSkeletons';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -46,6 +52,7 @@ export default function AbsensiPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [markingId, setMarkingId] = useState<string | null>(null);
 
@@ -72,6 +79,7 @@ export default function AbsensiPage() {
         setStudents(d.data || d.students || []);
         if (d.summary) setSummary(d.summary);
         if (d.classes) setClasses(d.classes);
+        if (res?.data?.pagination) setTotal(res.data.pagination.total || 0);
       }
     } catch (e) {
       console.error(e);
@@ -159,6 +167,10 @@ export default function AbsensiPage() {
     }
   };
 
+  if (isLoading && students.length === 0) {
+    return <AttendancePageSkeleton />;
+  }
+
   return (
     <div className="space-y-4 pb-12 animate-in fade-in duration-500 max-w-7xl mx-auto">
       {/* Header matching Nuxt 1-to-1 */}
@@ -229,10 +241,7 @@ export default function AbsensiPage() {
       {/* Student Table matching Nuxt 1-to-1 */}
       <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground space-y-2">
-            <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-            <p className="text-xs font-bold">Memuat data absensi kelas...</p>
-          </div>
+          <AttendanceRecordsTableSkeleton />
         ) : students.length === 0 ? (
           <div className="text-center py-16 space-y-2">
             <Icon icon="mingcute:user-3-line" className="text-5xl text-muted-foreground/30 mx-auto" />
@@ -403,19 +412,32 @@ export default function AbsensiPage() {
             </table>
           </div>
         )}
+
+        <PaginationControls
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={total || summary.total || students.length}
+          totalPages={Math.ceil((total || summary.total || students.length) / itemsPerPage) || 1}
+          onPageChange={setCurrentPage}
+          onLimitChange={(newLimit) => {
+            setItemsPerPage(newLimit);
+            setCurrentPage(1);
+          }}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* DETAIL MODAL POPUP matching Nuxt */}
       {selectedAttendance && (
         <Dialog open={!!selectedAttendance} onOpenChange={() => setSelectedAttendance(null)}>
-          <DialogContent className="sm:max-w-md p-6 rounded-3xl bg-card border-border">
-            <DialogHeader className="p-0 border-none bg-transparent">
+          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
               <DialogTitle className="text-xl font-black text-foreground">
                 Detail Absensi: {selectedAttendance.studentName}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4 text-xs sm:text-sm mt-3">
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs sm:text-sm">
               <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/40 border border-border">
                 <span className="text-xs font-black text-muted-foreground">Kelas</span>
                 <span className="font-bold text-foreground">{selectedAttendance.className}</span>
@@ -437,6 +459,12 @@ export default function AbsensiPage() {
                 </div>
               </div>
             </div>
+
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
+              <Button variant="ghost" className="rounded-2xl font-bold w-full text-xs" onClick={() => setSelectedAttendance(null)}>
+                Tutup
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

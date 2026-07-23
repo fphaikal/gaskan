@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import { useSidebar } from '@/context/SidebarContext';
 import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +36,7 @@ interface NavItem {
   href: string;
   icon: string;
   badge?: string;
-  roles?: string[];
+  roles: string[];
 }
 
 interface NavGroup {
@@ -47,41 +48,43 @@ const navGroups: NavGroup[] = [
   {
     groupName: 'MENU UTAMA',
     items: [
-      { title: 'Dashboard', href: '/home', icon: 'mingcute:classify-2-fill' },
-      { title: 'Workspace Teams', href: '/teams', icon: 'mingcute:group-3-fill' },
-      { title: 'Profil Saya', href: '/profile', icon: 'mingcute:user-3-line' },
+      { title: 'Dashboard', href: '/home', icon: 'Grid', roles: ['all'] },
+      { title: 'Workspace Teams', href: '/teams', icon: 'Users', roles: ['all'] },
+      { title: 'Profil Saya', href: '/profile', icon: 'User', roles: ['all'] },
     ],
   },
   {
     groupName: 'DATA MASTER',
     items: [
-      { title: 'Daftar Siswa', href: '/siswa', icon: 'mingcute:user-3-fill' },
-      { title: 'Manajemen Kelas', href: '/kelas', icon: 'mingcute:school-fill' },
-      { title: 'Semester', href: '/semester', icon: 'mingcute:calendar-2-fill' },
-      { title: 'Reshuffle Kelas', href: '/reshuffle', icon: 'mingcute:transfer-4-line', roles: ['admin', 'developer'] },
-      { title: 'Manajemen User', href: '/admin', icon: 'mingcute:user-setting-fill', roles: ['admin', 'developer'] },
-      { title: 'Manajemen Tim', href: '/admin/team', icon: 'mingcute:group-fill', roles: ['admin', 'developer'] },
-      { title: 'Izin Profil Siswa', href: '/admin/field-permissions', icon: 'mingcute:user-setting-fill', roles: ['admin', 'developer'] },
+      { title: 'Daftar Siswa', href: '/siswa', icon: 'User', roles: ['admin', 'developer', 'guru'] },
+      { title: 'Manajemen Kelas', href: '/kelas', icon: 'School', roles: ['admin', 'developer', 'guru'] },
+      { title: 'Semester', href: '/semester', icon: 'CalendarDays', roles: ['admin', 'developer'] },
+      { title: 'Reshuffle Kelas', href: '/reshuffle', icon: 'ArrowLeftRight', roles: ['admin', 'developer'] },
+      { title: 'Manajemen User', href: '/admin', icon: 'UserCog', roles: ['admin', 'developer'] },
+      { title: 'Manajemen Tim', href: '/admin/team', icon: 'Users', roles: ['admin', 'developer'] },
+      { title: 'Izin Profil Siswa', href: '/admin/field-permissions', icon: 'UserCog', roles: ['admin', 'developer'] },
     ],
   },
   {
     groupName: 'PRESENSI & KEHADIRAN',
     items: [
-      { title: 'Absensi', href: '/absensi', icon: 'mingcute:clipboard-fill' },
-      { title: 'Log Kehadiran', href: '/log/kehadiran', icon: 'mingcute:list-check-2-fill' },
-      { title: 'On Site', href: '/log/onsite', icon: 'mingcute:location-2-fill' },
-      { title: 'Surat Izin', href: '/izin', icon: 'mingcute:document-2-fill' },
-      { title: 'Laporan Absensi', href: '/absensi/laporan', icon: 'mingcute:file-export-fill' },
+      { title: 'Kalender Akademik', href: '/kalender', icon: 'CalendarDays', roles: ['all'] },
+      { title: 'Absensi', href: '/absensi', icon: 'Clipboard', roles: ['admin', 'developer', 'guru'] },
+      { title: 'Log Kehadiran', href: '/log/kehadiran', icon: 'ListChecks', roles: ['all'] },
+      { title: 'On Site', href: '/log/onsite', icon: 'MapPin', roles: ['admin', 'developer', 'guru'] },
+      { title: 'Surat Izin', href: '/izin', icon: 'FileText', roles: ['all'] },
+      { title: 'Laporan Absensi', href: '/absensi/laporan', icon: 'FileOutput', roles: ['admin', 'developer', 'guru'] },
     ],
   },
   {
     groupName: 'SISTEM & LOG',
     items: [
-      { title: 'Kelola Sistem', href: '/admin/system-manage', icon: 'mingcute:server-2-fill', roles: ['admin', 'developer'] },
-      { title: 'Explorer File', href: '/admin/file-explorer', icon: 'mingcute:folder-open-fill', roles: ['developer'] },
-      { title: 'Konfigurasi Mesin', href: '/config/device', icon: 'mingcute:settings-6-fill', roles: ['admin', 'developer'] },
-      { title: 'Log Sistem', href: '/log/login', icon: 'mingcute:enter-door-fill', roles: ['admin', 'developer'] },
-      { title: 'Log Error', href: '/log/error', icon: 'mingcute:information-line', roles: ['developer'] },
+      { title: 'Kelola Sistem', href: '/admin/system-manage', icon: 'Server', roles: ['admin', 'developer'] },
+      { title: 'Explorer File', href: '/admin/file-explorer', icon: 'FolderOpen', roles: ['developer'] },
+      { title: 'Konfigurasi Mesin', href: '/config/device', icon: 'Settings2', roles: ['admin', 'developer'] },
+      { title: 'Log Sistem', href: '/log/login', icon: 'LogIn', roles: ['admin', 'developer'] },
+      { title: 'Log Error', href: '/log/error', icon: 'Info', roles: ['developer'] },
+      { title: 'Dokumentasi API', href: '/docs-api', icon: 'Code2', roles: ['admin', 'developer', 'guru'] },
     ],
   },
 ];
@@ -90,8 +93,21 @@ export function Sidebar() {
   const pathname = usePathname();
   const { isCollapsed, isMobileOpen, setIsMobileOpen } = useSidebar();
   const { user, logout } = useAuth();
+  const [hasTeamAccess, setHasTeamAccess] = useState<boolean>(true);
 
   const userRole = (user?.role || 'siswa').toLowerCase();
+
+  // Check Workspace Team Access
+  useEffect(() => {
+    if (!user) return;
+    if (['admin', 'developer', 'guru'].includes(userRole)) {
+      setHasTeamAccess(true);
+      return;
+    }
+    api.get('/team/my-profile')
+      .then((res) => setHasTeamAccess(Boolean(res?.data?.data || res?.data)))
+      .catch(() => setHasTeamAccess(false));
+  }, [user, userRole]);
 
   const isLinkActive = (href: string) => {
     if (href === '/home') {
@@ -109,8 +125,11 @@ export function Sidebar() {
     <div className="flex flex-col gap-5 p-3">
       {navGroups.map((group) => {
         const visibleItems = group.items.filter((item) => {
-          if (!item.roles) return true;
-          return item.roles.includes(userRole) || ['admin', 'developer'].includes(userRole);
+          if (item.href === '/teams' && !hasTeamAccess) {
+            return false;
+          }
+          if (item.roles.includes('all')) return true;
+          return item.roles.map((r) => r.toLowerCase()).includes(userRole);
         });
 
         if (visibleItems.length === 0) return null;

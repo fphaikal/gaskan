@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 

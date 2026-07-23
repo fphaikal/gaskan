@@ -5,6 +5,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id'
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
     let authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
     
     if (!authHeader) {
@@ -22,8 +23,15 @@ export async function GET(request: Request) {
       headers['Authorization'] = authHeader;
     }
 
-    // Call real Express backend /api/dashboard/stats with forwarded auth headers
-    const res = await fetch(`${API_BASE}/api/dashboard/stats`, {
+    const params = new URLSearchParams();
+    ['page', 'limit', 'search', 'class', 'classId', 'status'].forEach((key) => {
+      const value = searchParams.get(key);
+      if (value) params.set(key, value);
+    });
+
+    // Forward dashboard filters and pagination to the Express backend.
+    const query = params.toString();
+    const res = await fetch(`${API_BASE}/api/dashboard/stats${query ? `?${query}` : ''}`, {
       headers,
       cache: 'no-store',
     });
@@ -53,6 +61,12 @@ export async function GET(request: Request) {
           recentAttendances: data.recentAttendances || [],
           recentLogs: data.recentLogs || [],
           recentFaceFailures: data.recentFaceFailures || [],
+          pagination: data.pagination || {
+            page: 1,
+            limit: 10,
+            total: 0,
+            totalPages: 1,
+          },
           onsite_siswa: (data.today?.present || 0) + (data.today?.late || 0),
         });
       }
@@ -67,6 +81,7 @@ export async function GET(request: Request) {
       recentAttendances: [],
       recentLogs: [],
       recentFaceFailures: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 1 },
       onsite_siswa: 0,
     });
   } catch (error: any) {
@@ -78,6 +93,7 @@ export async function GET(request: Request) {
       recentAttendances: [],
       recentLogs: [],
       recentFaceFailures: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 1 },
       onsite_siswa: 0,
     });
   }

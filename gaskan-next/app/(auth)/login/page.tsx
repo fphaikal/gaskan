@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { goeyToast as toast } from 'goey-toast';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';

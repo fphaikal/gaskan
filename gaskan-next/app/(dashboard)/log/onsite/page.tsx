@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
+import { OnsitePageSkeleton } from '@/components/shared/PresencePageSkeletons';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,10 @@ export default function LogOnsitePage() {
     });
   };
 
+  if (isLoading) {
+    return <OnsitePageSkeleton />;
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Header Area matching Nuxt 1-to-1 */}
@@ -83,12 +88,7 @@ export default function LogOnsitePage() {
 
       {/* Timeline Container matching Nuxt 1-to-1 */}
       <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-sm">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground space-y-2">
-            <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-            <p className="text-xs font-bold">Memuat log aktivitas onsite...</p>
-          </div>
-        ) : logs.length === 0 ? (
+        {logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/40 space-y-3">
             <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center">
               <Icon icon="mingcute:radar-line" className="text-3xl animate-spin text-primary opacity-60" />

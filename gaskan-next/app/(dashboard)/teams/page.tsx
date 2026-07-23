@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
-import api from '@/lib/api';
+import { goeyToast as toast } from 'goey-toast';
+import { Icon } from '@/components/ui/icon';
+import api, { extractErrorMessage } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { CustomSelect } from '@/components/shared/CustomSelect';
 import {
   Dialog,
@@ -34,6 +35,108 @@ const categoryBadgeClass = (cat: string) => {
   if (cat === 'API' || cat === 'Hardware') return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
   return 'bg-primary/10 text-primary border-primary/20';
 };
+
+function DiscussionCardsSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <div className="space-y-4" aria-hidden="true">
+      {Array.from({ length: count }).map((_, index) => (
+        <div
+          key={index}
+          className="p-5 sm:p-6 bg-card rounded-3xl border border-border shadow-sm space-y-3"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-5 w-20 rounded-lg" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="h-6 w-3/5 max-w-md" />
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+          </div>
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-2 min-w-0">
+              <Skeleton className="w-6 h-6 rounded-full shrink-0" />
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="hidden sm:block h-3 w-20" />
+            </div>
+            <Skeleton className="h-6 w-24 rounded-full shrink-0" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DocsCardsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="p-5 bg-card rounded-3xl border border-border shadow-sm space-y-4"
+        >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-5 w-24 rounded-lg" />
+              <Skeleton className="h-7 w-7 rounded-lg" />
+            </div>
+            <Skeleton className="h-5 w-2/3" />
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WorkspaceTeamsSkeleton() {
+  return (
+    <div className="space-y-6" aria-label="Memuat Workspace Teams" aria-busy="true">
+      <div className="bg-card p-6 sm:p-8 rounded-3xl border border-border shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div className="space-y-3 flex-1">
+            <Skeleton className="h-6 w-48 rounded-full" />
+            <Skeleton className="h-8 w-full max-w-lg" />
+            <Skeleton className="h-4 w-full max-w-xl" />
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-2xl border border-border w-full sm:w-48">
+            <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 border-b border-border pb-2">
+        <Skeleton className="h-10 w-32 rounded-2xl" />
+        <Skeleton className="h-10 w-40 rounded-2xl" />
+        <Skeleton className="h-10 w-28 rounded-2xl ml-auto" />
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 overflow-hidden">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton key={index} className="h-8 w-16 rounded-xl shrink-0" />
+            ))}
+          </div>
+          <Skeleton className="h-10 w-32 rounded-2xl" />
+        </div>
+        <DiscussionCardsSkeleton />
+      </div>
+    </div>
+  );
+}
 
 export default function WorkspaceTeamsPage() {
   const { user } = useAuth();
@@ -169,7 +272,10 @@ export default function WorkspaceTeamsPage() {
   };
 
   const createDiscussionSubmit = async () => {
-    if (!newDiscussionForm.title || !newDiscussionForm.content) return;
+    if (!newDiscussionForm.title.trim() || !newDiscussionForm.content.trim()) {
+      toast.warning('Judul dan isi diskusi wajib diisi');
+      return;
+    }
     setSavingDiscussion(true);
     try {
       await api.post('/team-hub/discussions', newDiscussionForm);
@@ -177,15 +283,18 @@ export default function WorkspaceTeamsPage() {
       setShowCreateDiscussionModal(false);
       setNewDiscussionForm({ title: '', content: '', category: 'General', pinned: false });
       await fetchDiscussions();
-    } catch {
-      toast.error('Gagal membuat diskusi');
+    } catch (err: any) {
+      toast.error(extractErrorMessage(err, 'Gagal membuat diskusi'));
     } finally {
       setSavingDiscussion(false);
     }
   };
 
   const postCommentSubmit = async () => {
-    if (!newCommentContent.trim() || !selectedDiscussion) return;
+    if (!newCommentContent.trim() || !selectedDiscussion) {
+      toast.warning('Komentar tidak boleh kosong');
+      return;
+    }
     setSubmittingComment(true);
     try {
       const res = await api.post(`/team-hub/discussions/${selectedDiscussion.id}/comments`, {
@@ -201,8 +310,8 @@ export default function WorkspaceTeamsPage() {
         toast.success('Komentar terkirim');
         await fetchDiscussions();
       }
-    } catch {
-      toast.error('Gagal mengirim komentar');
+    } catch (err: any) {
+      toast.error(extractErrorMessage(err, 'Gagal mengirim komentar'));
     } finally {
       setSubmittingComment(false);
     }
@@ -222,7 +331,10 @@ export default function WorkspaceTeamsPage() {
   };
 
   const saveDocSubmit = async () => {
-    if (!docForm.title || !docForm.content) return;
+    if (!docForm.title.trim() || !docForm.content.trim()) {
+      toast.warning('Judul dan isi dokumen wajib diisi');
+      return;
+    }
     setSavingDoc(true);
     try {
       if (isEditingDoc && docForm.id) {
@@ -234,8 +346,8 @@ export default function WorkspaceTeamsPage() {
       }
       setShowCreateDocModal(false);
       await fetchDocs();
-    } catch {
-      toast.error('Gagal menyimpan dokumen');
+    } catch (err: any) {
+      toast.error(extractErrorMessage(err, 'Gagal menyimpan dokumen'));
     } finally {
       setSavingDoc(false);
     }
@@ -270,10 +382,7 @@ export default function WorkspaceTeamsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16 animate-in fade-in duration-500">
       {loadingProfile ? (
-        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
-          <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin" />
-          <p className="text-xs font-bold">Membaca akses Workspace Teams...</p>
-        </div>
+        <WorkspaceTeamsSkeleton />
       ) : !isTeamMember ? (
         <div className="min-h-[50vh] flex items-center justify-center p-4">
           <div className="max-w-md w-full text-center bg-card p-8 rounded-3xl border border-border shadow-xl space-y-4">
@@ -383,10 +492,7 @@ export default function WorkspaceTeamsPage() {
               </div>
 
               {loadingDiscussions ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-                  <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-                  <p className="text-xs font-bold">Memuat diskusi tim...</p>
-                </div>
+                <DiscussionCardsSkeleton />
               ) : discussions.length === 0 ? (
                 <div className="text-center py-16 bg-card rounded-3xl border border-border text-muted-foreground/50 italic text-xs">
                   Belum ada diskusi di kategori ini.
@@ -476,10 +582,7 @@ export default function WorkspaceTeamsPage() {
               </div>
 
               {loadingDocs ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-                  <Icon icon="mingcute:loading-fill" className="text-3xl text-primary animate-spin" />
-                  <p className="text-xs font-bold">Memuat dokumentasi tim...</p>
-                </div>
+                <DocsCardsSkeleton />
               ) : docs.length === 0 ? (
                 <div className="text-center py-16 bg-card rounded-3xl border border-border text-muted-foreground/50 italic text-xs">
                   Belum ada dokumen di kategori ini.
@@ -754,16 +857,18 @@ export default function WorkspaceTeamsPage() {
       {/* MODAL DISKUSI */}
       {showCreateDiscussionModal && (
         <Dialog open={showCreateDiscussionModal} onOpenChange={setShowCreateDiscussionModal}>
-          <DialogContent className="sm:max-w-md p-6 rounded-3xl bg-card border border-border">
-            <DialogHeader className="p-0 border-none bg-transparent">
+          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
               <DialogTitle className="text-xl font-black text-foreground">
                 Buat Diskusi Baru
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4 text-xs mt-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Judul Diskusi</Label>
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="mb-0">Judul Diskusi</Label>
+                </div>
                 <Input
                   type="text"
                   placeholder="Judul topik diskusi..."
@@ -773,8 +878,10 @@ export default function WorkspaceTeamsPage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Kategori</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="mb-0">Kategori</Label>
+                </div>
                 <CustomSelect
                   options={[
                     { value: 'General', label: 'General' },
@@ -787,23 +894,25 @@ export default function WorkspaceTeamsPage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Isi Diskusi</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="mb-0">Isi Diskusi</Label>
+                </div>
                 <textarea
                   rows={4}
                   placeholder="Tuliskan ide atau pertanyaan..."
                   value={newDiscussionForm.content}
                   onChange={(e) => setNewDiscussionForm({ ...newDiscussionForm, content: e.target.value })}
-                  className="w-full rounded-2xl bg-muted/30 border border-border p-3 font-bold text-xs"
+                  className="w-full rounded-2xl bg-muted/30 border border-border p-3 font-bold text-xs resize-none focus:outline-none"
                 />
               </div>
             </div>
 
-            <DialogFooter className="gap-2 pt-3">
-              <Button variant="ghost" className="rounded-2xl font-bold text-xs" onClick={() => setShowCreateDiscussionModal(false)}>
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+              <Button variant="ghost" className="rounded-2xl font-bold flex-1 text-xs" onClick={() => setShowCreateDiscussionModal(false)}>
                 Batal
               </Button>
-              <Button onClick={createDiscussionSubmit} disabled={savingDiscussion} className="rounded-2xl font-bold text-xs bg-primary text-primary-foreground px-6">
+              <Button onClick={createDiscussionSubmit} disabled={savingDiscussion} className="rounded-2xl font-bold flex-1 text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                 {savingDiscussion ? 'Memproses...' : 'Publikasikan'}
               </Button>
             </DialogFooter>
@@ -814,41 +923,49 @@ export default function WorkspaceTeamsPage() {
       {/* DETAIL DISKUSI MODAL */}
       {selectedDiscussion && (
         <Dialog open={!!selectedDiscussion} onOpenChange={() => setSelectedDiscussion(null)}>
-          <DialogContent className="sm:max-w-2xl p-6 rounded-3xl bg-card border border-border space-y-4">
-            <DialogHeader className="p-0 border-none bg-transparent">
+          <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
               <DialogTitle className="text-xl font-black text-foreground">
                 {selectedDiscussion.title}
               </DialogTitle>
             </DialogHeader>
 
-            <p className="text-xs text-muted-foreground leading-relaxed p-4 bg-muted/30 rounded-2xl border border-border">
-              {selectedDiscussion.content}
-            </p>
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+              <p className="text-xs text-muted-foreground leading-relaxed p-4 bg-muted/30 rounded-2xl border border-border">
+                {selectedDiscussion.content}
+              </p>
 
-            <div className="space-y-3">
-              <h4 className="text-xs font-black text-foreground">Komentar ({selectedDiscussion.comments?.length || 0})</h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {selectedDiscussion.comments?.map((c: any) => (
-                  <div key={c.id} className="p-3 bg-muted/20 rounded-xl border border-border text-xs space-y-1">
-                    <p className="font-bold text-primary">{c.author?.teamMember?.name || c.author?.name}</p>
-                    <p className="text-foreground">{c.content}</p>
-                  </div>
-                ))}
-              </div>
+              <div className="space-y-3">
+                <h4 className="text-xs font-black text-foreground">Komentar ({selectedDiscussion.comments?.length || 0})</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {selectedDiscussion.comments?.map((c: any) => (
+                    <div key={c.id} className="p-3 bg-muted/20 rounded-xl border border-border text-xs space-y-1">
+                      <p className="font-bold text-primary">{c.author?.teamMember?.name || c.author?.name}</p>
+                      <p className="text-foreground">{c.content}</p>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="flex gap-2 pt-2">
-                <Input
-                  type="text"
-                  placeholder="Tulis komentar..."
-                  value={newCommentContent}
-                  onChange={(e) => setNewCommentContent(e.target.value)}
-                  className="rounded-xl h-10 text-xs font-bold"
-                />
-                <Button onClick={postCommentSubmit} disabled={submittingComment} className="rounded-xl font-bold text-xs px-4">
-                  Kirim
-                </Button>
+                <div className="flex gap-2 pt-2">
+                  <Input
+                    type="text"
+                    placeholder="Tulis komentar..."
+                    value={newCommentContent}
+                    onChange={(e) => setNewCommentContent(e.target.value)}
+                    className="rounded-xl h-10 text-xs font-bold"
+                  />
+                  <Button onClick={postCommentSubmit} disabled={submittingComment} className="rounded-xl font-bold text-xs px-4">
+                    Kirim
+                  </Button>
+                </div>
               </div>
             </div>
+
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
+              <Button variant="ghost" className="rounded-2xl font-bold w-full text-xs" onClick={() => setSelectedDiscussion(null)}>
+                Tutup
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

@@ -10,7 +10,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function RootPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-foreground" suppressHydrationWarning>
       <LandingNavbar />
       <main className="flex-1">
         <LandingHero />

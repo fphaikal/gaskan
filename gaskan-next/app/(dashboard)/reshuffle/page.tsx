@@ -5,12 +5,16 @@ import Link from 'next/link';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CustomSelect } from '@/components/shared/CustomSelect';
+import {
+  ReshufflePageSkeleton,
+  ReshuffleTableRowsSkeleton,
+} from '@/components/shared/DataMasterSkeletons';
 import {
   Dialog,
   DialogContent,
@@ -277,6 +281,10 @@ export default function ReshufflePage() {
     return c?.className || c?.nama_kelas || 'Kelas Tujuan';
   }, [classes, targetClassId, excelTargetClassId, activeTab]);
 
+  if (isLoading && classes.length === 0) {
+    return <ReshufflePageSkeleton />;
+  }
+
   return (
     <div className="space-y-6 pb-28 animate-in fade-in duration-500 max-w-7xl mx-auto">
       {/* Top Header Card matching Nuxt 1-to-1 */}
@@ -433,12 +441,7 @@ export default function ReshufflePage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {isLoading ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-muted-foreground">
-                        <Icon icon="mingcute:loading-fill" className="text-2xl text-primary animate-spin mx-auto mb-2" />
-                        <p className="font-bold">Memuat daftar siswa...</p>
-                      </td>
-                    </tr>
+                    <ReshuffleTableRowsSkeleton />
                   ) : filteredStudents.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-12 text-center text-muted-foreground font-bold italic">
@@ -659,27 +662,27 @@ export default function ReshufflePage() {
 
       {/* ═══ CONFIRMATION MODAL ═══ */}
       <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        <DialogContent className="sm:max-w-md p-6 text-center">
-          <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Icon icon="mingcute:transfer-4-line" className="text-3xl" />
-          </div>
-          <DialogHeader className="p-0 border-none bg-transparent">
-            <DialogTitle className="text-2xl font-black text-foreground text-center">
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <div className="p-6 space-y-4 text-center">
+            <div className="w-16 h-16 bg-primary/15 text-primary rounded-full flex items-center justify-center mx-auto mb-1">
+              <Icon icon="mingcute:transfer-4-line" className="text-3xl" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-foreground text-center">
               Konfirmasi Reshuffle Kelas
             </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-3">
-            Apakah Anda yakin ingin memindahkan{' '}
-            <span className="font-bold text-foreground">
-              {activeTab === 'website' ? selectedStudentIds.length : excelRows.length} siswa
-            </span>{' '}
-            ke kelas <strong className="text-primary">"{selectedTargetClassName}"</strong>?
-          </p>
-          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
-            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowConfirmModal(false)}>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+              Apakah Anda yakin ingin memindahkan{' '}
+              <span className="font-bold text-foreground">
+                {activeTab === 'website' ? selectedStudentIds.length : excelRows.length} siswa
+              </span>{' '}
+              ke kelas <strong className="text-primary">"{selectedTargetClassName}"</strong>?
+            </p>
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setShowConfirmModal(false)}>
               Batal
             </Button>
-            <Button className="rounded-2xl flex-1 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20" disabled={isProcessing} onClick={handleExecuteReshuffle}>
+            <Button className="rounded-2xl flex-1 font-bold text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20" disabled={isProcessing} onClick={handleExecuteReshuffle}>
               {isProcessing ? 'Memproses...' : 'Ya, Pindahkan Siswa'}
             </Button>
           </DialogFooter>
@@ -688,17 +691,17 @@ export default function ReshufflePage() {
 
       {/* ═══ PROGRESS MODAL ═══ */}
       <Dialog open={showProgressModal} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-sm p-6 text-center">
-          <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin mx-auto mb-3" />
-          <DialogHeader className="p-0 border-none bg-transparent">
-            <DialogTitle className="text-xl font-black text-foreground text-center">
+        <DialogContent className="sm:max-w-sm flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <div className="p-6 space-y-4 text-center">
+            <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin mx-auto" />
+            <DialogTitle className="text-xl font-extrabold text-foreground text-center">
               Memproses Reshuffle Siswa...
             </DialogTitle>
-          </DialogHeader>
-          <div className="w-full bg-muted rounded-full h-3 overflow-hidden my-4">
-            <div className="bg-primary h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden my-2">
+              <div className="bg-primary h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+            </div>
+            <p className="text-xs font-bold text-primary">{progressPercent}% Selesai</p>
           </div>
-          <p className="text-xs font-bold text-primary">{progressPercent}% Selesai</p>
         </DialogContent>
       </Dialog>
 

@@ -49,5 +49,44 @@ api.interceptors.response.use(
   }
 );
 
+export function extractErrorMessage(err: any, fallbackMsg: string = 'Terjadi kesalahan'): string {
+  if (!err) return fallbackMsg;
+  const data = err.response?.data;
+  if (!data) return err.message || fallbackMsg;
+
+  if (data.errors) {
+    if (typeof data.errors === 'string') {
+      return data.errors;
+    }
+    if (Array.isArray(data.errors)) {
+      return data.errors.map((e: any) => (typeof e === 'string' ? e : e.message || JSON.stringify(e))).join(', ');
+    }
+    if (typeof data.errors === 'object') {
+      const messages: string[] = [];
+      Object.keys(data.errors).forEach((key) => {
+        const val = data.errors[key];
+        if (Array.isArray(val)) {
+          messages.push(...val.map(String));
+        } else if (typeof val === 'string') {
+          messages.push(val);
+        }
+      });
+      if (messages.length > 0) {
+        return messages.join(', ');
+      }
+    }
+  }
+
+  if (typeof data.message === 'string' && data.message.trim() !== '') {
+    return data.message;
+  }
+
+  if (typeof data.error === 'string' && data.error.trim() !== '') {
+    return data.error;
+  }
+
+  return fallbackMsg;
+}
+
 export { api };
 export default api;

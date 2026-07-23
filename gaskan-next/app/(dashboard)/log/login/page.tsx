@@ -2,16 +2,21 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
+  SystemLogPageSkeleton,
+  SystemLogTableSkeleton,
+} from '@/components/shared/SystemPageSkeletons';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 
 export default function LogLoginPage() {
@@ -92,6 +97,10 @@ export default function LogLoginPage() {
     });
   };
 
+  if (isLoading && logs.length === 0) {
+    return <SystemLogPageSkeleton />;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Top Header Card matching Nuxt 1-to-1 */}
@@ -149,10 +158,7 @@ export default function LogLoginPage() {
       {/* Logs Table matching Nuxt 1-to-1 */}
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-            <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin" />
-            <p className="text-xs font-bold">Memuat log aktivitas login...</p>
-          </div>
+          <SystemLogTableSkeleton />
         ) : logs.length === 0 ? (
           <div className="bg-card p-16 text-center text-muted-foreground/40 space-y-3">
             <Icon icon="mingcute:history-line" className="text-5xl mx-auto opacity-50" />
@@ -221,14 +227,14 @@ export default function LogLoginPage() {
       {/* DETAIL MODAL matching Nuxt 1-to-1 */}
       {selectedLog && (
         <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-          <DialogContent className="sm:max-w-md p-6 rounded-3xl bg-card border-border space-y-4">
-            <DialogHeader className="p-0 border-none bg-transparent">
-              <DialogTitle className="text-lg font-black text-foreground">
+          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+              <DialogTitle className="text-xl font-black text-foreground">
                 Detail Log Login: {selectedLog.user?.name || selectedLog.username || 'User'}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-3 text-xs">
+            <div className="p-6 space-y-3 flex-1 overflow-y-auto text-xs">
               <div className="p-3 bg-muted/40 rounded-2xl border border-border flex justify-between items-center">
                 <span className="text-muted-foreground font-bold">Role</span>
                 <Badge className="bg-primary/15 text-primary border-primary/30 font-black text-[10px] uppercase">
@@ -256,9 +262,11 @@ export default function LogLoginPage() {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full rounded-2xl font-bold text-xs" onClick={() => setSelectedLog(null)}>
-              Tutup
-            </Button>
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
+              <Button variant="ghost" className="rounded-2xl font-bold w-full text-xs" onClick={() => setSelectedLog(null)}>
+                Tutup
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

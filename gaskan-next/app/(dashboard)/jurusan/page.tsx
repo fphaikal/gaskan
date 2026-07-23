@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import { format, parseISO } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useAuth } from '@/context/AuthContext';
@@ -364,23 +364,23 @@ export default function JurusanPage() {
 
       {/* ═══ CONFIRM DELETE MODAL ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md p-6 text-center">
-          <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
-          </div>
-          <DialogHeader className="p-0 border-none bg-transparent">
-            <DialogTitle className="text-2xl font-black text-foreground text-center">
+        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <div className="p-6 space-y-4 text-center">
+            <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
+              <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold text-foreground text-center">
               Hapus Jurusan?
             </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground font-semibold leading-relaxed my-2">
-            Data jurusan yang dihapus tidak dapat dikembalikan. Seluruh asosiasi kelas dan siswa akan diperbarui.
-          </p>
-          <DialogFooter className="p-0 border-none bg-transparent gap-3 flex-row justify-center mt-4">
-            <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setDeleteId(null)}>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+              Data jurusan yang dihapus tidak dapat dikembalikan. Seluruh asosiasi kelas dan siswa akan diperbarui.
+            </p>
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteId(null)}>
               Batal
             </Button>
-            <Button variant="destructive" className="rounded-2xl flex-1 font-bold shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteMajor}>
+            <Button variant="destructive" className="rounded-2xl flex-1 font-bold text-xs shadow-lg shadow-rose-500/20" disabled={isSaving} onClick={handleDeleteMajor}>
               {isSaving ? 'Menghapus...' : 'Ya, Hapus'}
             </Button>
           </DialogFooter>

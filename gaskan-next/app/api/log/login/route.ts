@@ -43,11 +43,11 @@ export async function GET(request: Request) {
 
     if (res.ok) {
       const json = await res.json();
-      return NextResponse.json(json?.data || json || []);
+      return NextResponse.json(json || { data: [], pagination: { page: 1, limit: 50, total: 0 } });
     }
 
-    return NextResponse.json([]);
+    return NextResponse.json({ data: [], pagination: { page: 1, limit: 50, total: 0 } });
   } catch (error) {
-    return NextResponse.json([]);
+    return NextResponse.json({ data: [], pagination: { page: 1, limit: 50, total: 0 } });
   }
 }

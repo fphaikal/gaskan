@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CustomSelect } from '@/components/shared/CustomSelect';
+import { PaginationControls } from '@/components/shared/PaginationControls';
 
 export default function ReshuffleHistoryPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -17,10 +18,18 @@ export default function ReshuffleHistoryPage() {
   const [filterType, setFilterType] = useState('');
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+
   const fetchLogs = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
       if (filterType) params.set('type', filterType);
 
@@ -28,6 +37,11 @@ export default function ReshuffleHistoryPage() {
       const d = res?.data?.data || res?.data || [];
       if (Array.isArray(d)) {
         setLogs(d);
+        if (res?.data?.pagination) {
+          setTotal(res.data.pagination.total || 0);
+        } else {
+          setTotal(d.length);
+        }
       } else {
         setLogs([
           { id: '1', type: 'WEBSITE', operator: 'Fahreza Haikal', successCount: 15, createdAt: '2026-07-21 10:30', sourceClass: 'X AK 1', targetClass: 'XI AK 1' },
@@ -39,7 +53,7 @@ export default function ReshuffleHistoryPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, filterType]);
+  }, [searchQuery, filterType, page, limit]);
 
   useEffect(() => {
     fetchLogs();
@@ -92,7 +106,7 @@ export default function ReshuffleHistoryPage() {
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
         <div className="p-4 bg-muted/20 border-b border-border flex justify-between items-center">
           <span className="text-xs font-black text-primary uppercase tracking-wider">
-            Riwayat Audit Log ({logs.length} Data)
+            Riwayat Audit Log ({total} Data)
           </span>
         </div>
 
@@ -133,6 +147,19 @@ export default function ReshuffleHistoryPage() {
             ))
           )}
         </div>
+
+        <PaginationControls
+          currentPage={page}
+          itemsPerPage={limit}
+          totalItems={total}
+          totalPages={Math.ceil(total / limit)}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

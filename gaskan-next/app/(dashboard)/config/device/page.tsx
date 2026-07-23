@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/components/ui/icon';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +12,17 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import {
+  DeviceCardsSkeleton,
+  DeviceConfigPageSkeleton,
+} from '@/components/shared/SystemPageSkeletons';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { CustomSelect } from '@/components/shared/CustomSelect';
 
 export default function ConfigDevicePage() {
   const router = useRouter();
@@ -236,6 +241,10 @@ export default function ConfigDevicePage() {
     }
   };
 
+  if (loading && devices.length === 0) {
+    return <DeviceConfigPageSkeleton />;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
       {/* Header Area matching Nuxt 1-to-1 */}
@@ -263,18 +272,7 @@ export default function ConfigDevicePage() {
 
       {/* Loading Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="bg-card border border-border rounded-3xl p-6 space-y-4 animate-pulse">
-              <div className="h-6 w-1/2 bg-muted rounded-lg" />
-              <div className="h-4 w-1/3 bg-muted/60 rounded-lg" />
-              <div className="space-y-2 pt-4">
-                <div className="h-4 bg-muted/60 rounded" />
-                <div className="h-4 bg-muted/60 rounded w-5/6" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <DeviceCardsSkeleton />
       ) : devices.length === 0 ? (
         <div className="bg-card border border-border rounded-3xl p-16 text-center max-w-lg mx-auto shadow-sm space-y-3">
           <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto">
@@ -466,17 +464,15 @@ export default function ConfigDevicePage() {
             <Label className="text-xs font-bold text-foreground">
               Batas Jam Log Onsite <span className="text-rose-500">*</span>
             </Label>
-            <select
-              value={onsiteLimitHour}
-              onChange={(e) => setOnsiteLimitHour(Number(e.target.value))}
-              className="w-full h-10 rounded-xl bg-muted/30 border border-border px-3 font-bold text-xs"
-            >
-              {[...Array(24)].map((_, i) => (
-                <option key={i} value={i}>
-                  Jam {String(i).padStart(2, '0')}:00 WIB
-                </option>
-              ))}
-            </select>
+            <CustomSelect
+              value={String(onsiteLimitHour)}
+              onChange={(val) => setOnsiteLimitHour(Number(val))}
+              options={Array.from({ length: 24 }).map((_, i) => ({
+                value: String(i),
+                label: `Jam ${String(i).padStart(2, '0')}:00 WIB`,
+              }))}
+              triggerClassName="w-full h-10 rounded-xl bg-muted/30 border-border font-bold text-xs"
+            />
             <span className="text-[10px] text-muted-foreground block">Auto-flush log onsite harian</span>
           </div>
         </div>
@@ -493,16 +489,18 @@ export default function ConfigDevicePage() {
       {/* CREATE / EDIT DEVICE MODAL */}
       {showModal && (
         <Dialog open={showModal} onOpenChange={setShowModal}>
-          <DialogContent className="sm:max-w-md p-6 rounded-3xl bg-card border-border">
-            <DialogHeader className="p-0 border-none bg-transparent">
+          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
               <DialogTitle className="text-xl font-black text-foreground">
                 {isEdit ? 'Edit Perangkat Absensi' : 'Daftarkan Perangkat Baru'}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4 text-xs mt-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Nama Perangkat</Label>
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="mb-0">Nama Perangkat</Label>
+                </div>
                 <Input
                   type="text"
                   placeholder="Contoh: Samping bengkel 1"
@@ -512,8 +510,10 @@ export default function ConfigDevicePage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Lokasi Perangkat</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="mb-0">Lokasi Perangkat</Label>
+                </div>
                 <Input
                   type="text"
                   placeholder="Contoh: Samping bengkel"
@@ -523,8 +523,10 @@ export default function ConfigDevicePage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">URL IP Perangkat</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="mb-0">URL IP Perangkat</Label>
+                </div>
                 <Input
                   type="text"
                   placeholder="http://192.168.55.136"
@@ -534,9 +536,11 @@ export default function ConfigDevicePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Username Hikvision</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="mb-0">Username Hikvision</Label>
+                  </div>
                   <Input
                     type="text"
                     value={form.username}
@@ -544,8 +548,10 @@ export default function ConfigDevicePage() {
                     className="rounded-2xl h-11 bg-muted/30 font-bold text-xs"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Password</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="mb-0">Password</Label>
+                  </div>
                   <Input
                     type="password"
                     placeholder={isEdit ? 'Biarkan kosong' : 'Password'}
@@ -557,11 +563,11 @@ export default function ConfigDevicePage() {
               </div>
             </div>
 
-            <DialogFooter className="gap-2 pt-3">
-              <Button variant="ghost" className="rounded-2xl font-bold text-xs" onClick={() => setShowModal(false)}>
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+              <Button variant="ghost" className="rounded-2xl font-bold flex-1 text-xs" onClick={() => setShowModal(false)}>
                 Batal
               </Button>
-              <Button onClick={handleSave} disabled={saving} className="rounded-2xl font-bold text-xs bg-primary text-primary-foreground px-6">
+              <Button onClick={handleSave} disabled={saving} className="rounded-2xl font-bold flex-1 text-xs bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                 {saving ? 'Memproses...' : isEdit ? 'Simpan Perubahan' : 'Daftarkan'}
               </Button>
             </DialogFooter>
