@@ -5,6 +5,7 @@ import test from "node:test";
 process.env.NEXT_PUBLIC_SITE_URL = "https://gaskan.smtijogja.sch.id";
 
 const seo = await import("../../lib/seo.ts").catch(() => ({}));
+const publicPaths = await import("../../lib/public-paths.ts").catch(() => ({}));
 
 function getExport(name) {
   assert.equal(
@@ -29,6 +30,33 @@ test("normalizeSiteUrl returns a valid origin or the production fallback", () =>
   );
   assert.equal(
     normalizeSiteUrl(undefined),
+    "https://gaskan.smtijogja.sch.id",
+  );
+});
+
+test("resolveSiteUrl always uses the canonical domain in production", () => {
+  const resolveSiteUrl = getExport("resolveSiteUrl");
+
+  assert.equal(
+    resolveSiteUrl("http://localhost:3000", "production"),
+    "https://gaskan.smtijogja.sch.id",
+  );
+});
+
+test("resolveSiteUrl preserves a valid local origin during development", () => {
+  const resolveSiteUrl = getExport("resolveSiteUrl");
+
+  assert.equal(
+    resolveSiteUrl("http://localhost:3000/path", "development"),
+    "http://localhost:3000",
+  );
+});
+
+test("resolveSiteUrl falls back for invalid non-production URLs", () => {
+  const resolveSiteUrl = getExport("resolveSiteUrl");
+
+  assert.equal(
+    resolveSiteUrl("not-a-url", "development"),
     "https://gaskan.smtijogja.sch.id",
   );
 });
@@ -202,11 +230,71 @@ test("llms.txt describes only canonical public resources", async () => {
     new URL("../../public/llms.txt", import.meta.url),
     "utf8",
   ).catch(() => "");
+  const linkTargets = [
+    ...llmsText.matchAll(/\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/g),
+  ].map((match) => match[1]);
 
   assert.match(llmsText, /^# GASKAN/m);
-  assert.match(
-    llmsText,
-    /https:\/\/gaskan\.smtijogja\.sch\.id\/team/,
-  );
+  assert.deepEqual(linkTargets, [
+    "https://gaskan.smtijogja.sch.id",
+    "https://gaskan.smtijogja.sch.id/team",
+  ]);
   assert.doesNotMatch(llmsText, /\/login|\/home|\/teams/);
+});
+
+test("public route lists define the exact auth and discovery contract", () => {
+  assert.deepEqual(publicPaths.AUTH_PATHS, [
+    "/login",
+    "/forgot-password",
+    "/reset-password",
+  ]);
+  assert.deepEqual(publicPaths.DISCOVERY_PATHS, [
+    "/team",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/llms.txt",
+  ]);
+  assert.deepEqual(publicPaths.PUBLIC_PATHS, [
+    "/",
+    "/login",
+    "/forgot-password",
+    "/reset-password",
+    "/team",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/llms.txt",
+  ]);
+});
+
+test("isPublicPath permits only exact public route matches", () => {
+  assert.equal(typeof publicPaths.isPublicPath, "function");
+
+  const intendedPublicRoutes = [
+    "/",
+    "/login",
+    "/forgot-password",
+    "/reset-password",
+    "/team",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/llms.txt",
+  ];
+  const protectedRoutes = [
+    "/teams",
+    "/team/member",
+    "/home",
+    "/api/user",
+  ];
+
+  for (const route of intendedPublicRoutes) {
+    assert.equal(publicPaths.isPublicPath(route), true, `${route} must be public`);
+  }
+
+  for (const route of protectedRoutes) {
+    assert.equal(
+      publicPaths.isPublicPath(route),
+      false,
+      `${route} must remain protected`,
+    );
+  }
 });

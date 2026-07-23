@@ -16,13 +16,24 @@ export function normalizeSiteUrl(value: string | undefined): string {
   }
 }
 
+export function resolveSiteUrl(
+  value: string | undefined,
+  environment = process.env.NODE_ENV,
+): string {
+  if (environment === "production") {
+    return PRODUCTION_SITE_URL;
+  }
+
+  return normalizeSiteUrl(value);
+}
+
 export const siteConfig = {
   name: "GASKAN",
   alternateName: "Gerbang Akses Pintar dan Kehadiran",
   title: "GASKAN — Sistem Absensi Digital SMTI Jogja",
   description:
     "Gerbang Akses Pintar dan Kehadiran — sistem absensi digital SMTI Jogja untuk memantau kehadiran siswa secara real-time.",
-  url: normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL),
+  url: resolveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL),
   locale: "id_ID",
   language: "id-ID",
   image: "/banner.webp",

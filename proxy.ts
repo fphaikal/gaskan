@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password'];
-const DISCOVERY_PATHS = ['/team', '/robots.txt', '/sitemap.xml', '/llms.txt'];
-const PUBLIC_PATHS = ['/', ...AUTH_PATHS, ...DISCOVERY_PATHS];
+import { AUTH_PATHS, isPublicPath } from '@/lib/public-paths';
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -12,7 +10,7 @@ export function proxy(request: NextRequest) {
   const isAuthenticated = Boolean(authToken);
 
   const isAuthPath = AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname === path);
+  const requestIsPublic = isPublicPath(pathname);
 
   // If user is authenticated and trying to visit an auth path, redirect to /home
   if (isAuthenticated && isAuthPath) {
@@ -20,7 +18,7 @@ export function proxy(request: NextRequest) {
   }
 
   // If user is not authenticated and trying to visit a protected route, redirect to /login
-  if (!isAuthenticated && !isPublicPath && !pathname.startsWith('/api/')) {
+  if (!isAuthenticated && !requestIsPublic && !pathname.startsWith('/api/')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
