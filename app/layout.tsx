@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
+import { siteConfig } from "@/lib/seo";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -15,8 +16,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GASKAN — Sistem Absensi Digital SMTI Jogja",
-  description: "Gerbang Akses Pintar dan Kehadiran — Sistem Absensi Digital SMTI Jogja",
+  metadataBase: new URL(siteConfig.url),
+  applicationName: siteConfig.name,
+  title: {
+    default: siteConfig.title,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  verification: {
+    google: "zGcUSdyFHTHDyelIHIQ-fAu2Ir0mG8xxa9b4ToiCiic",
+  },
 };
 
 export default function RootLayout({
