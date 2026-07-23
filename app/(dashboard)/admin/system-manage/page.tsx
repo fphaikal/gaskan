@@ -533,8 +533,8 @@ export default function SystemManagePage() {
                   <p className="text-[10px] font-black uppercase text-muted-foreground">Model CPU Server</p>
                   <p className="font-black text-sm text-foreground">{metrics.hardware?.cpu?.model || 'Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz'}</p>
                   <div className="flex items-center gap-4 text-xs font-semibold pt-1">
-                    <span>Cores: <strong class="text-primary">{metrics.hardware?.cpu?.cores || 12}</strong></span>
-                    <span>Load Avg: <strong class="text-primary">{(metrics.hardware?.cpu?.loadAvg || [0, 0, 0]).join(', ')}</strong></span>
+                    <span>Cores: <strong className="text-primary">{metrics.hardware?.cpu?.cores || 12}</strong></span>
+                    <span>Load Avg: <strong className="text-primary">{(metrics.hardware?.cpu?.loadAvg || [0, 0, 0]).join(', ')}</strong></span>
                   </div>
                 </div>
 
