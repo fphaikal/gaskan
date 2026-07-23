@@ -501,3 +501,24 @@ test("the public team route renders API data and JSON-LD from the server", async
   assert.match(clientSource, /team: PublicTeamMember\[\]/);
   assert.doesNotMatch(clientSource, /api\.get\(['"]\/team['"]\)/);
 });
+
+test("team-facing configuration defaults to the SMTI Jogja API origin", async () => {
+  const envExample = await readFile(
+    new URL("../../.env.example", import.meta.url),
+    "utf8",
+  );
+  const nextConfig = await readFile(
+    new URL("../../next.config.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    envExample,
+    /NEXT_PUBLIC_API_BASE=https:\/\/gaskan-api\.smtijogja\.my\.id/,
+  );
+  assert.match(
+    envExample,
+    /NEXT_PUBLIC_WS_BASE=wss:\/\/gaskan-api\.smtijogja\.my\.id/,
+  );
+  assert.match(nextConfig, /gaskan-api\.smtijogja\.my\.id/);
+});

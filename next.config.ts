@@ -1,11 +1,16 @@
 import type { NextConfig } from "next";
 
-const targetApi = process.env.NEXT_PUBLIC_API_BASE || "https://api.tierkun.my.id";
+const targetApi =
+  process.env.NEXT_PUBLIC_API_BASE || "https://gaskan-api.smtijogja.my.id";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'gaskan-api.smtijogja.my.id',
+      },
       {
         protocol: 'https',
         hostname: 'api.tierkun.my.id',
