@@ -33,5 +33,4 @@ skills-lock.json
 !.env.example
 .agents
 .agentic
-.worktrees/
 
