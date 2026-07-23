@@ -196,3 +196,17 @@ test("the SEO test script uses an explicit Node 20-compatible TypeScript runner"
   );
   assert.equal(typeof packageJson.devDependencies.tsx, "string");
 });
+
+test("llms.txt describes only canonical public resources", async () => {
+  const llmsText = await readFile(
+    new URL("../../public/llms.txt", import.meta.url),
+    "utf8",
+  ).catch(() => "");
+
+  assert.match(llmsText, /^# GASKAN/m);
+  assert.match(
+    llmsText,
+    /https:\/\/gaskan\.smtijogja\.sch\.id\/team/,
+  );
+  assert.doesNotMatch(llmsText, /\/login|\/home|\/teams/);
+});

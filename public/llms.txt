@@ -1,0 +1,18 @@
+# GASKAN
+
+> GASKAN adalah Gerbang Akses Pintar dan Kehadiran, sistem absensi digital SMTI Jogja untuk memantau kehadiran siswa secara real-time.
+
+GASKAN merupakan aplikasi web internal sekolah dengan halaman publik yang menjelaskan fungsi sistem dan tim pengembangnya. Halaman autentikasi dan dashboard bukan sumber informasi publik.
+
+## Halaman Publik
+
+- [GASKAN](https://gaskan.smtijogja.sch.id): Informasi utama, fitur, statistik, dan pertanyaan umum tentang sistem absensi digital GASKAN.
+- [Tim GASKAN](https://gaskan.smtijogja.sch.id/team): Informasi pembimbing dan tim multidisiplin yang membangun serta menjaga GASKAN.
+
+## Fakta Utama
+
+- Nama: GASKAN
+- Kepanjangan: Gerbang Akses Pintar dan Kehadiran
+- Institusi: SMTI Jogja
+- Bahasa utama: Bahasa Indonesia
+- Jenis sistem: Sistem absensi digital dan pemantauan kehadiran siswa
