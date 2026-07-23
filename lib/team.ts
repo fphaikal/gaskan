@@ -131,7 +131,7 @@ export function normalizeTeamMembers(
 
       const member = entry as Record<string, unknown>;
 
-      if (member.isActive === false) {
+      if (member.isActive !== true) {
         return [];
       }
 

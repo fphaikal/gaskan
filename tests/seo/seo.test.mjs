@@ -356,6 +356,23 @@ test("normalizeTeamMembers exposes only safe active public fields", () => {
         role: "Developer",
         isActive: false,
       },
+      {
+        id: "missing-status",
+        name: "Missing Status",
+        role: "Developer",
+      },
+      {
+        id: "null-status",
+        name: "Null Status",
+        role: "Developer",
+        isActive: null,
+      },
+      {
+        id: "string-status",
+        name: "String Status",
+        role: "Developer",
+        isActive: "true",
+      },
     ],
   });
 
