@@ -1,0 +1,127 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { useSidebar } from '@/context/SidebarContext';
+import { UserNav } from '@/components/layout/UserNav';
+import { Button } from '@/components/ui/button';
+import {
+  PanelLeftClose,
+  PanelLeftOpen,
+  Sun,
+  Moon,
+  Menu,
+} from 'lucide-react';
+
+export function Header() {
+  const { isCollapsed, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Format title from pathname
+  const getPageTitle = (path: string) => {
+    if (path === '/' || path === '/home' || path === '/dashboard') return 'Dashboard';
+    const segment = path.split('/')[1];
+    if (!segment) return 'Dashboard';
+    
+    const titleMap: Record<string, string> = {
+      jurusan: 'Jurusan',
+      kelas: 'Manajemen Kelas',
+      semester: 'Semester',
+      siswa: 'Daftar Siswa',
+      absensi: 'Absensi',
+      izin: 'Surat Izin',
+      admin: 'Manajemen User',
+      log: 'Log Kehadiran & Sistem',
+      monitor: 'Monitor Presensi',
+      profile: 'Profil Saya',
+    };
+
+    return titleMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+  };
+
+  const pageTitle = getPageTitle(pathname);
+
+  return (
+    <header className="sticky top-0 z-40 flex h-16 w-full shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 md:px-6 backdrop-blur-md">
+      <div className="flex items-center gap-3">
+        {/* Mobile toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={toggleMobileSidebar}
+          aria-label="Toggle mobile sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        {/* Mobile logo */}
+        <Link href="/home" className="flex items-center gap-2 lg:hidden">
+          <Image
+            src="/smti_logo.svg"
+            alt="Logo"
+            width={28}
+            height={28}
+            style={{ width: 'auto', height: 'auto' }}
+            className="dark:invert-0"
+          />
+          <span className="font-bold text-primary">GASKAN</span>
+        </Link>
+
+        {/* Desktop Collapse Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden lg:flex"
+          onClick={toggleSidebar}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen className="h-5 w-5" />
+          ) : (
+            <PanelLeftClose className="h-5 w-5" />
+          )}
+        </Button>
+
+        {/* Desktop Page Title */}
+        <h1 className="hidden sm:block text-base font-semibold text-foreground ml-2">
+          {pageTitle}
+        </h1>
+      </div>
+
+      {/* Right side actions */}
+      <div className="flex items-center gap-2">
+        {/* Theme Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          aria-label="Toggle theme"
+          className="rounded-xl"
+        >
+          {mounted && theme === 'dark' ? (
+            <Sun className="h-5 w-5 text-amber-400 transition-all" />
+          ) : (
+            <Moon className="h-5 w-5 text-slate-700 dark:text-slate-200 transition-all" />
+          )}
+        </Button>
+
+        <div className="h-6 w-px bg-border mx-1" />
+
+        {/* User Navigation */}
+        <UserNav />
+      </div>
+    </header>
+  );
+}
+
+export default Header;

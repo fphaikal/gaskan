@@ -1,100 +1,36 @@
-# 🎨 GASKAN Nuxt Frontend
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-**GASKAN** (Gerbang Akses Pintar dan Kehadiran) Frontend adalah aplikasi web modern, responsif, dan dinamis yang bertindak sebagai dashboard utama bagi Admin, Guru, dan Siswa **SMK SMTI Yogyakarta**. Dibuat menggunakan Nuxt 3 untuk memberikan pengalaman pengguna yang mulus dan cepat.
+## Getting Started
 
----
+First, run the development server:
 
-## 📊 Frontend Architecture Graph
-
-Berikut adalah diagram alur bagaimana data mengalir di frontend dan menjalin komunikasi dengan backend:
-
-```mermaid
-graph TD
-    User([Siswa / Admin / Guru]) <-->|Interacts| VuePages[Vue Pages & Components]
-    VuePages <-->|State Management| Pinia[Pinia Store: authStore]
-    VuePages <-->|Fetch API| Nitro[Nitro Server Proxy: server/api]
-    Nitro <-->|Proxies Request| ExpressAPI[Express.js Backend API]
-    
-    %% Local verification feature
-    VuePages -.->|Local Face Validation| PicoJS[Pico.js Face Detector]
-    PicoJS -.->|Checks| FaceFinder[Cascade: facefinder]
-```
-
----
-
-## 📁 Struktur Direktori & Dokumentasi Kode
-
-```
-gaskan/
-├── components/              # Komponen Vue modular & reusable
-│   ├── Landing/             # Komponen khusus halaman landing (Navbar, Hero, dll)
-│   ├── Dashboard/           # Layout dashboard berdasarkan peran (Siswa, Admin, Guru)
-│   ├── Header/              # Header area aplikasi utama
-│   ├── ProfileCard.vue      # Pengelolaan profil & verifikasi wajah absensi siswa
-│   └── ...
-├── pages/                   # File-system Routing utama Nuxt
-│   ├── auth/                # Halaman login & lupa password
-│   ├── siswa/               # Dashboard siswa & detail profil (/siswa/[id])
-│   ├── admin/               # Panel admin untuk kelola user, kelas, & impor data
-│   ├── team.vue             # Halaman profil tim pengembang & pembimbing
-│   └── index.vue            # Halaman landing utama sistem
-├── server/                  # Nitro Server Engine (API Proxy)
-│   ├── api/                 # Proxy endpoints yang meneruskan request ke backend
-│   │   ├── profile/         # Gateway upload wajah & biodata
-│   │   ├── user.js          # Mapper data profil & fallback foto
-│   │   └── ...
-│   └── routes/              # Handler asset statis / uploads proxy
-├── store/                   # State Management berbasis Pinia
-│   └── useAuthStore.ts      # Menyimpan data session & otorisasi pengguna
-├── public/                  # Asset statis yang diakses publik langsung
-│   ├── pico.js              # Library detektor wajah client-side
-│   └── facefinder           # File model cascade pendeteksi wajah
-├── nuxt.config.ts           # Konfigurasi modul, Tailwind, & Runtime Config
-└── package.json             # Daftar scripts & dependensi frontend
-```
-
----
-
-## ✨ Fitur Unggulan Frontend
-
-1. **🎨 Tampilan Visual Premium**: Estetika modern menggunakan Glassmorphism, skema warna HSL dinamis, dan efek transisi mikro-animasi yang memanjakan mata.
-2. **🔐 Role-Based Views**: Dashboard pintar yang secara otomatis menyesuaikan tampilan berdasarkan peran (Admin, Guru, atau Siswa).
-3. **🔍 Verifikasi Wajah Instan (Pico.js)**: Sebelum foto diunggah ke database absensi Hikvision, sistem melakukan deteksi wajah secara lokal di browser guna memastikan foto absensi valid dan berkualitas tinggi.
-4. **📅 Picker Tahun Fleksibel**: Halaman tim pengembang dilengkapi pemilih periode dinamis berbentuk picker tahun.
-5. **🔄 Real-time Update**: Integrasi sinkronisasi websocket secara langsung dari server untuk menampilkan event kehadiran real-time pada halaman landing.
-
----
-
-## 🚀 Memulai (Quick Start)
-
-### 1. Kloning & Masuk Folder
-```bash
-cd NewGaskan/gaskan
-```
-
-### 2. Konfigurasi Environment
-Salin berkas `.env.example` menjadi `.env` dan isi alamat base API backend Anda:
-```bash
-cp .env.example .env
-```
-
-### 3. Instalasi Dependensi
-```bash
-npm install
-```
-
-### 4. Jalankan Server Dev
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
-Buka web di `http://localhost:3000`.
 
-### 5. Build Produksi
-Kompilasi berkas untuk mode deployment:
-```bash
-npm run build
-```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
----
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-Made with ❤️ by **GASKAN Team - SMK SMTI Yogyakarta**
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
