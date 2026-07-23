@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { createPublicPageMetadata } from "@/lib/seo";
+import { getPublicTeamMembers } from "@/lib/team";
+import { buildTeamMetadataDescription } from "@/lib/team-seo";
 
-const description =
-  "Kenali pembimbing dan tim multidisiplin yang membangun serta menjaga sistem absensi digital GASKAN SMTI Jogja.";
+export async function generateMetadata(): Promise<Metadata> {
+  const team = await getPublicTeamMembers();
 
-export const metadata: Metadata = createPublicPageMetadata({
-  title: "Tim GASKAN — Pengembang Sistem Absensi SMTI Jogja",
-  description,
-  path: "/team",
-});
+  return createPublicPageMetadata({
+    title: "Tim GASKAN — Pengembang Sistem Absensi SMTI Jogja",
+    description: buildTeamMetadataDescription(team),
+    path: "/team",
+  });
+}
 
 export default function TeamLayout({
   children,

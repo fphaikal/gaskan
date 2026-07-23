@@ -476,3 +476,28 @@ test("team JSON-LD publishes people and safe social and custom sameAs links", ()
   assert.equal(JSON.stringify(jsonLd).includes("email"), false);
   assert.equal(JSON.stringify(jsonLd).includes("nis"), false);
 });
+
+test("the public team route renders API data and JSON-LD from the server", async () => {
+  const pageSource = await readFile(
+    new URL("../../app/team/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const layoutSource = await readFile(
+    new URL("../../app/team/layout.tsx", import.meta.url),
+    "utf8",
+  );
+  const clientSource = await readFile(
+    new URL("../../app/team/TeamPageClient.tsx", import.meta.url),
+    "utf8",
+  ).catch(() => "");
+
+  assert.doesNotMatch(pageSource, /^["']use client["'];/m);
+  assert.match(pageSource, /getPublicTeamMembers/);
+  assert.match(pageSource, /buildTeamPageJsonLd/);
+  assert.match(pageSource, /application\/ld\+json/);
+  assert.match(pageSource, /<TeamPageClient team=\{team\}/);
+  assert.match(layoutSource, /export async function generateMetadata/);
+  assert.match(layoutSource, /buildTeamMetadataDescription/);
+  assert.match(clientSource, /team: PublicTeamMember\[\]/);
+  assert.doesNotMatch(clientSource, /api\.get\(['"]\/team['"]\)/);
+});
