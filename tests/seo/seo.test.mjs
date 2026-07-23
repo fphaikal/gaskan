@@ -50,6 +50,18 @@ test("absoluteUrl keeps protocol-relative input on the configured site origin", 
     absoluteUrl("//evil.example/x"),
     "https://gaskan.smtijogja.sch.id/evil.example/x",
   );
+  assert.equal(
+    absoluteUrl("/\\evil.example/x"),
+    "https://gaskan.smtijogja.sch.id/evil.example/x",
+  );
+  assert.equal(
+    absoluteUrl("/\\/evil.example/x"),
+    "https://gaskan.smtijogja.sch.id/evil.example/x",
+  );
+  assert.equal(
+    absoluteUrl("//\\\\evil.example/x"),
+    "https://gaskan.smtijogja.sch.id/evil.example/x",
+  );
 });
 
 test("createPublicPageMetadata returns complete public page metadata", () => {

@@ -33,9 +33,17 @@ export function absoluteUrl(path: "/" | `/${string}`): string {
     return siteConfig.url;
   }
 
-  const safePath = `/${path.replace(/^\/+/, "")}`;
+  const relativePath = path.replace(/^[\\/]+/, "").replaceAll("\\", "/");
 
-  return new URL(safePath, `${siteConfig.url}/`).toString();
+  if (!relativePath) {
+    return siteConfig.url;
+  }
+
+  const candidate = new URL(`/${relativePath}`, `${siteConfig.url}/`);
+
+  return candidate.origin === siteConfig.url
+    ? candidate.toString()
+    : siteConfig.url;
 }
 
 type PublicPageMetadataInput = {
