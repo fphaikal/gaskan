@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExportButtons } from '@/components/shared/ExportButtons';
 import { CustomSelect } from '@/components/shared/CustomSelect';
 import { DataMasterTablePageSkeleton } from '@/components/shared/DataMasterSkeletons';
+import { StudentHistoryModal } from '@/components/dashboard/StudentHistoryModal';
 import {
   Dialog,
   DialogContent,
@@ -80,6 +81,24 @@ export default function SiswaPage() {
   // Searchable Class Dropdown in Modal
   const [classSearch, setClassSearch] = useState('');
   const [showClassDropdown, setShowClassDropdown] = useState(false);
+
+  // Student History Modal State
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<any>(null);
+  const [showStudentHistoryModal, setShowStudentHistoryModal] = useState<boolean>(false);
+
+  const openStudentHistory = (u: any) => {
+    if (!u) return;
+    setSelectedStudentForHistory({
+      id: u.id || u.nis,
+      userId: u.id,
+      name: u.name || u.Nama,
+      nis: u.nis || u.NIS,
+      className: u.className || u.Kelas || u.class?.className || '',
+      majorName: u.majorName || u.majorAlias || u.class?.major?.name || '',
+      photoUrl: u.photoUrl || u.url_picture || u.faceUrl || null,
+    });
+    setShowStudentHistoryModal(true);
+  };
 
   // Form State
   const [form, setForm] = useState({
@@ -816,6 +835,15 @@ export default function SiswaPage() {
                           <Icon icon="mingcute:fingerprint-fill" className="text-base" />
                         </Button>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-emerald-500 rounded-lg cursor-pointer"
+                        title="History & Kalender Presensi Siswa"
+                        onClick={() => openStudentHistory(s)}
+                      >
+                        <Icon icon="mingcute:calendar-2-fill" className="text-base text-emerald-500" />
+                      </Button>
                       <Link href={`/siswa/${stdNis}`}>
                         <Button
                           variant="ghost"
@@ -871,6 +899,15 @@ export default function SiswaPage() {
                       <p className="text-[10px] font-mono text-muted-foreground">{stdNis} · {stdClass}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-emerald-500 hover:text-emerald-600"
+                        title="History Presensi"
+                        onClick={() => openStudentHistory(s)}
+                      >
+                        <Icon icon="mingcute:calendar-2-fill" className="text-sm" />
+                      </Button>
                       <Link href={`/siswa/${stdNis}`}>
                         <Button variant="ghost" size="icon" className="h-7 w-7">
                           <Icon icon="mingcute:eye-2-line" className="text-sm" />
@@ -1382,6 +1419,12 @@ export default function SiswaPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <StudentHistoryModal
+        isOpen={showStudentHistoryModal}
+        onClose={() => setShowStudentHistoryModal(false)}
+        student={selectedStudentForHistory}
+      />
     </div>
   );
 }

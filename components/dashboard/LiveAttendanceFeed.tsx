@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { CustomSelect } from '@/components/shared/CustomSelect';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StudentHistoryModal } from '@/components/dashboard/StudentHistoryModal';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
 
@@ -35,6 +36,28 @@ export function LiveAttendanceFeed() {
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
   const [selectedFailure, setSelectedFailure] = useState<any>(null);
   const [activePreviewImage, setActivePreviewImage] = useState<string | null>(null);
+
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<any>(null);
+  const [showStudentHistoryModal, setShowStudentHistoryModal] = useState<boolean>(false);
+
+  const openStudentHistory = (studentOrAtt: any) => {
+    if (!studentOrAtt) return;
+    const resolvedId =
+      studentOrAtt.userId ||
+      studentOrAtt.studentId ||
+      studentOrAtt.nis ||
+      (typeof studentOrAtt.id === 'string' && !studentOrAtt.id.startsWith('unscanned-') ? studentOrAtt.id : null) ||
+      studentOrAtt.id;
+    setSelectedStudentForHistory({
+      id: resolvedId,
+      name: studentOrAtt.studentName || studentOrAtt.name || 'Siswa',
+      nis: studentOrAtt.nis || studentOrAtt.studentNis || '',
+      className: studentOrAtt.className || '',
+      majorName: studentOrAtt.majorName || '',
+      photoUrl: studentOrAtt.photoUrl || studentOrAtt.faceUrl || null,
+    });
+    setShowStudentHistoryModal(true);
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -725,16 +748,28 @@ export function LiveAttendanceFeed() {
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4 flex flex-col sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const item = selectedAttendance;
+                  setSelectedAttendance(null);
+                  openStudentHistory(item);
+                }}
+                className="rounded-2xl font-bold flex-1 text-xs h-11 border-primary/40 text-primary hover:bg-primary/10 gap-2 cursor-pointer"
+              >
+                <Icon icon="Calendar" className="text-sm" />
+                History Presensi Siswa
+              </Button>
               <Button
                 variant="ghost"
                 onClick={() => setSelectedAttendance(null)}
-                className="rounded-2xl font-bold flex-1 text-xs h-11"
+                className="rounded-2xl font-bold flex-1 text-xs h-11 cursor-pointer"
               >
                 Tutup
               </Button>
               <Link href="/absensi" onClick={() => setSelectedAttendance(null)} className="flex-1">
-                <Button className="w-full rounded-2xl font-bold text-xs h-11 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20">
+                <Button className="w-full rounded-2xl font-bold text-xs h-11 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20 cursor-pointer">
                   Lihat Semua Absensi
                 </Button>
               </Link>
@@ -878,6 +913,12 @@ export function LiveAttendanceFeed() {
           </DialogContent>
         </Dialog>
       )}
+
+      <StudentHistoryModal
+        isOpen={showStudentHistoryModal}
+        onClose={() => setShowStudentHistoryModal(false)}
+        student={selectedStudentForHistory}
+      />
     </>
   );
 }

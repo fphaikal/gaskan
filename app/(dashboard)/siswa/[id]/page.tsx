@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StudentHistoryModal } from '@/components/dashboard/StudentHistoryModal';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
 
@@ -25,6 +26,7 @@ export default function StudentDetailPage() {
   const { user } = useAuth();
   const [student, setStudent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showStudentHistoryModal, setShowStudentHistoryModal] = useState<boolean>(false);
 
   const fetchStudentDetail = useCallback(async () => {
     setIsLoading(true);
@@ -96,13 +98,19 @@ export default function StudentDetailPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-4 sm:space-y-5 pb-12 animate-in fade-in duration-500">
       {/* Top Header Back Bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <Link href="/siswa">
           <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs shadow-sm bg-card border-border">
             <Icon icon="mingcute:arrow-left-line" className="text-base" /> Kembali ke Daftar Siswa
           </Button>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            onClick={() => setShowStudentHistoryModal(true)}
+            className="rounded-2xl gap-2 font-bold text-xs shadow-md bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer"
+          >
+            <Icon icon="mingcute:calendar-2-fill" className="text-base" /> History & Kalender Presensi
+          </Button>
           <Badge className={`text-xs font-bold px-3 py-1 ${isAktif ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' : 'bg-rose-500/15 text-rose-500 border-rose-500/30'}`}>
             {statusStr}
           </Badge>
@@ -146,8 +154,18 @@ export default function StudentDetailPage() {
               <div className="mt-3 space-y-0.5">
                 <h2 className="text-xl sm:text-2xl font-black text-foreground">{nama}</h2>
                 <p className="font-bold text-xs sm:text-sm text-muted-foreground">{kelas} • {jurusan}</p>
-                <div className="inline-flex items-center gap-1 mt-2.5 px-3.5 py-1 bg-muted/60 border border-border text-foreground rounded-full text-xs font-mono font-bold shadow-sm">
-                  NIS: {nis} {nisn !== '—' && `• NISN: ${nisn}`}
+                <div className="flex items-center justify-center gap-2 mt-2.5 flex-wrap">
+                  <div className="px-3.5 py-1 bg-muted/60 border border-border text-foreground rounded-full text-xs font-mono font-bold shadow-sm">
+                    NIS: {nis} {nisn !== '—' && `• NISN: ${nisn}`}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowStudentHistoryModal(true)}
+                    className="rounded-full text-xs font-bold gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
+                  >
+                    <Icon icon="mingcute:calendar-2-fill" className="text-sm" /> History Presensi
+                  </Button>
                 </div>
               </div>
             </div>
@@ -299,6 +317,12 @@ export default function StudentDetailPage() {
           </div>
         </div>
       </div>
+
+      <StudentHistoryModal
+        isOpen={showStudentHistoryModal}
+        onClose={() => setShowStudentHistoryModal(false)}
+        student={student}
+      />
     </div>
   );
 }
