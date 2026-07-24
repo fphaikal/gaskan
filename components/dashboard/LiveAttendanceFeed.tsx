@@ -18,6 +18,7 @@ import {
 import { CustomSelect } from '@/components/shared/CustomSelect';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StudentHistoryModal } from '@/components/dashboard/StudentHistoryModal';
+import { getSocket } from '@/lib/socket';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
 
@@ -72,6 +73,80 @@ export function LiveAttendanceFeed() {
     total: 0,
     totalPages: 1,
   });
+
+  // Realtime Socket State
+  const [isWsConnected, setIsWsConnected] = useState(false);
+  const [realtimeAttendances, setRealtimeAttendances] = useState<any[]>([]);
+  const [realtimeFailures, setRealtimeFailures] = useState<any[]>([]);
+
+  useEffect(() => {
+    const sk = getSocket();
+
+    function onConnect() {
+      setIsWsConnected(true);
+    }
+
+    function onDisconnect() {
+      setIsWsConnected(false);
+    }
+
+    function onNewAttendance(data: any) {
+      if (!data) return;
+      const newItem = {
+        id: data.id || `ws-${Date.now()}-${Math.random()}`,
+        studentName: data.studentName || data.name || data.Nama || 'Siswa',
+        className: data.className || data.Kelas || data.class?.className || '—',
+        majorName: data.majorName || data.Jurusan || data.class?.major?.name || '',
+        status: data.status || 'HADIR',
+        time: data.time || data.timestamp || data.waktu || new Date().toISOString(),
+        method: data.method || 'SCAN WAJAH (JSAPI)',
+        photoUrl: data.photoUrl || data.image || data.url_picture || null,
+        lastOutTime: data.lastOutTime || null,
+        gate: data.gate || data.device?.name || 'Gerbang Utama',
+      };
+
+      setRealtimeAttendances((prev) => [newItem, ...prev]);
+    }
+
+    function onFaceFailure(data: any) {
+      if (!data) return;
+      const newFailure = {
+        id: data.id || `fail-${Date.now()}-${Math.random()}`,
+        identifier: data.identifier || data.nama || data.studentName || 'Wajah Tidak Dikenali',
+        message: data.message || data.error || 'Verifikasi Wajah Gagal',
+        timestamp: data.timestamp || new Date().toISOString(),
+        gate: data.gate || 'Mesin Face Recognition',
+        image: data.image || data.photoUrl || null,
+      };
+      setRealtimeFailures((prev) => [newFailure, ...prev]);
+    }
+
+    sk.on('connect', onConnect);
+    sk.on('disconnect', onDisconnect);
+    sk.on('attendance:new', onNewAttendance);
+    sk.on('absen:new', onNewAttendance);
+    sk.on('presence:new', onNewAttendance);
+    sk.on('log:new', onNewAttendance);
+    sk.on('face:failure', onFaceFailure);
+    sk.on('attendance:failure', onFaceFailure);
+
+    if (sk.connected) {
+      setIsWsConnected(true);
+    } else {
+      sk.connect();
+    }
+
+    return () => {
+      sk.off('connect', onConnect);
+      sk.off('disconnect', onDisconnect);
+      sk.off('attendance:new', onNewAttendance);
+      sk.off('absen:new', onNewAttendance);
+      sk.off('presence:new', onNewAttendance);
+      sk.off('log:new', onNewAttendance);
+      sk.off('face:failure', onFaceFailure);
+      sk.off('attendance:failure', onFaceFailure);
+    };
+  }, []);
 
   const fetchData = useCallback(async () => {
     setIsFetching(true);
@@ -184,23 +259,7 @@ export function LiveAttendanceFeed() {
     });
   }, [countData]);
 
-  const recentFaceFailures = useMemo(() => {
-    if (!countData) return [];
-    let rawFailures: any[] = [];
-    if (Array.isArray(countData.recentFaceFailures)) rawFailures = countData.recentFaceFailures;
-    else if (Array.isArray(countData.face_failures)) rawFailures = countData.face_failures;
-    else if (Array.isArray(countData.recent_face_failures)) rawFailures = countData.recent_face_failures;
-    else if (Array.isArray(countData.failures)) rawFailures = countData.failures;
 
-    return rawFailures.map((item: any) => ({
-      id: item.id || Math.random().toString(),
-      identifier: item.identifier || item.nis || item.nama || 'Wajah Tidak Dikenal',
-      message: item.message || item.msg || item.notes || 'Verifikasi wajah gagal',
-      timestamp: item.timestamp || item.waktu || item.time || new Date().toISOString(),
-      image: item.image || item.notes || item.photoUrl || null,
-      gate: item.gate || item.deviceName || 'Gerbang Utama SMTI',
-    }));
-  }, [countData]);
 
   const classOptions = useMemo(() => {
     const opts = [{ value: '', label: 'Semua Kelas' }];
@@ -215,7 +274,25 @@ export function LiveAttendanceFeed() {
 
   const totalAttendance = pagination.total;
   const totalPages = Math.max(1, pagination.totalPages || Math.ceil(totalAttendance / itemsPerPage));
-  const paginatedAttendance = liveAttendanceList;
+  const paginatedAttendance = useMemo(() => {
+    const combined = [...realtimeAttendances, ...liveAttendanceList];
+    const unique = Array.from(new Map(combined.map((item) => [item.id || item.nis, item])).values());
+    if (statusFilter === 'ALL') return unique;
+    return unique.filter((item) => {
+      const st = (item.status || '').toUpperCase();
+      if (statusFilter === 'HADIR') return st === 'HADIR';
+      if (statusFilter === 'TERLAMBAT') return st === 'TERLAMBAT';
+      if (statusFilter === 'IZIN_SAKIT') return st === 'IZIN' || st === 'SAKIT';
+      if (statusFilter === 'ALPHA') return st === 'ALPHA' || st === 'BELUM_ABSEN';
+      return true;
+    });
+  }, [realtimeAttendances, liveAttendanceList, statusFilter]);
+
+  const recentFaceFailures = useMemo(() => {
+    const raw = countData?.recentFaceFailures || countData?.recent_face_failures || [];
+    const combined = [...realtimeFailures, ...(Array.isArray(raw) ? raw : [])];
+    return Array.from(new Map(combined.map((item) => [item.id, item])).values());
+  }, [countData, realtimeFailures]);
 
   const getStatus = (statusStr: string) => {
     switch (statusStr) {
@@ -345,12 +422,30 @@ export function LiveAttendanceFeed() {
             </button>
           </div>
 
-          <Link
-            href={activeTab === 'attendance' ? '/absensi' : '/log/error'}
-            className="text-[10px] font-black uppercase text-primary hover:underline tracking-widest"
-          >
-            Lihat Semua →
-          </Link>
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-xs transition-colors ${
+                isWsConnected
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+              }`}
+              title={isWsConnected ? 'WebSocket Real-time Terhubung' : 'Membuat Koneksi WebSocket...'}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isWsConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-500 animate-pulse'
+                }`}
+              />
+              <span>{isWsConnected ? 'WS Realtime' : 'WS Connecting...'}</span>
+            </div>
+
+            <Link
+              href={activeTab === 'attendance' ? '/absensi' : '/log/error'}
+              className="text-[10px] font-black uppercase text-primary hover:underline tracking-widest"
+            >
+              Lihat Semua →
+            </Link>
+          </div>
         </div>
 
         {activeTab === 'attendance' ? (

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { getSocket } from '@/lib/socket';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -89,8 +90,36 @@ export function LoginLogsTableSection() {
       }
     }
     fetchData();
+
+    const sk = getSocket();
+
+    function onUserLogin(data: any) {
+      if (!mounted || !data) return;
+      const newLog = {
+        id: data.id || `login-${Date.now()}-${Math.random()}`,
+        details: {
+          identifier: data.identifier || data.nama || data.user?.nama || data.username || 'Pengguna',
+          role: data.role || data.user?.role || 'SISWA',
+        },
+        createdAt: data.createdAt || data.timestamp || new Date().toISOString(),
+        action: data.action || 'LOGIN BERHASIL',
+      };
+
+      setLoginLogs((prev) => [newLog, ...prev]);
+      setTotalLogs((t) => t + 1);
+    }
+
+    sk.on('user:login', onUserLogin);
+    sk.on('auth:login', onUserLogin);
+    sk.on('login:new', onUserLogin);
+
+    if (!sk.connected) sk.connect();
+
     return () => {
       mounted = false;
+      sk.off('user:login', onUserLogin);
+      sk.off('auth:login', onUserLogin);
+      sk.off('login:new', onUserLogin);
     };
   }, [currentPage, debouncedSearch]);
 
