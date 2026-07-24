@@ -90,22 +90,85 @@ export function LiveAttendanceFeed() {
       setIsWsConnected(false);
     }
 
+    function inferMajorName(classNameStr: string): string {
+      if (!classNameStr || classNameStr === '—') return '';
+      const upper = classNameStr.toUpperCase();
+      if (upper.includes('TM')) return 'TEKNIK MEKATRONIKA';
+      if (upper.includes('TKI')) return 'TEKNIK KIMIA INDUSTRI';
+      if (upper.includes('KA')) return 'KIMIA ANALISIS';
+      if (upper.includes('TO')) return 'TEKNIK OTOMOTIF';
+      if (upper.includes('TITL')) return 'TEKNIK INSTALASI TENAGA LISTRIK';
+      return '';
+    }
+
     function onNewAttendance(data: any) {
       if (!data) return;
+
+      const rawName = data.Nama || data.studentName || data.name || data.siswa_nama || 'Siswa';
+      const rawClass = data.Kelas || data.className || data.kelas || data.class?.className || '—';
+      let resolvedMajor = data.majorName || data.Jurusan || data.jurusan || data.class?.major?.name || '';
+
+      if (!resolvedMajor && rawClass && rawClass !== '—') {
+        resolvedMajor = inferMajorName(rawClass);
+        if (!resolvedMajor && Array.isArray(classList)) {
+          const matched = classList.find((c: any) => {
+            const cName = typeof c === 'string' ? c : (c.className || c.nama_kelas || c.nama || c.name || '');
+            return cName.toLowerCase().replace(/\s+/g, '') === rawClass.toLowerCase().replace(/\s+/g, '');
+          });
+          if (matched && typeof matched === 'object') {
+            resolvedMajor = matched.major?.name || matched.majorName || matched.jurusan || matched.nama_jurusan || '';
+          }
+        }
+      }
+
+      const rawStatus = (data.status || data.Status || 'HADIR').toUpperCase();
+      const rawMethod = data.method || data.Method || 'FACE_RECOGNITION';
+      const rawTime = data.timestamp || data.time || data.waktu || data.created_at || new Date().toISOString();
+      const isExit = data.action === 'EXIT' || rawStatus === 'PULANG' || data.type === 'OUT';
+
       const newItem = {
         id: data.id || `ws-${Date.now()}-${Math.random()}`,
-        studentName: data.Nama || data.studentName || data.name || 'Siswa',
-        className: data.Kelas || data.className || data.class?.className || '—',
-        majorName: data.majorName || data.Jurusan || data.class?.major?.name || '',
-        status: (data.status || 'HADIR').toUpperCase(),
-        time: data.timestamp || data.time || data.waktu || new Date().toISOString(),
-        method: data.method || 'SCAN WAJAH (JSAPI)',
-        photoUrl: data.Image || data.photoUrl || data.image || data.url_picture || null,
-        lastOutTime: data.lastOutTime || null,
-        gate: data.Gate || data.gate || data.device?.name || 'Gerbang Utama',
+        nis: data.nis || data.siswa_nis || data.userId || '—',
+        studentName: rawName,
+        className: rawClass,
+        majorName: resolvedMajor || '—',
+        status: rawStatus,
+        method: rawMethod,
+        time: isExit ? (data.inTime || rawTime) : rawTime,
+        lastOutTime: isExit ? rawTime : (data.lastOutTime || null),
+        photoUrl: data.Image || data.photoUrl || data.photo || data.image || data.url_picture || null,
+        machinePhoto: data.Image || data.photoUrl || data.image || null,
+        gate: data.Gate || data.gate || data.deviceName || 'Gerbang Utama SMTI',
+        logs: [
+          {
+            id: data.id || Math.random().toString(),
+            timestamp: rawTime,
+            status: rawStatus,
+            method: rawMethod,
+            notes: data.Image || data.photoUrl || null,
+            gate: data.Gate || data.gate || 'Gerbang Utama SMTI',
+          },
+        ],
       };
 
-      setRealtimeAttendances((prev) => [newItem, ...prev]);
+      setRealtimeAttendances((prev) => {
+        const existingIndex = prev.findIndex(
+          (item) => item.studentName === rawName || (item.nis !== '—' && item.nis === newItem.nis)
+        );
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          const prevItem = updated[existingIndex];
+          updated[existingIndex] = {
+            ...prevItem,
+            status: isExit ? prevItem.status : rawStatus,
+            lastOutTime: isExit ? rawTime : prevItem.lastOutTime,
+            time: isExit ? prevItem.time : rawTime,
+            logs: [newItem.logs[0], ...(prevItem.logs || [])],
+          };
+          return updated;
+        }
+        return [newItem, ...prev];
+      });
     }
 
     function onFaceFailure(data: any) {
@@ -298,6 +361,7 @@ export function LiveAttendanceFeed() {
     switch (statusStr) {
       case 'HADIR': return { badge: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: 'CheckCircle2' };
       case 'TERLAMBAT': return { badge: 'bg-amber-500/10 text-amber-500 border-amber-500/20', icon: 'Clock' };
+      case 'PULANG': return { badge: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: 'LogOut' };
       case 'IZIN': return { badge: 'bg-sky-500/10 text-sky-500 border-sky-500/20', icon: 'FileText' };
       case 'SAKIT': return { badge: 'bg-orange-500/10 text-orange-400 border-orange-500/20', icon: 'Heart' };
       default: return { badge: 'bg-rose-500/10 text-rose-500 border-rose-500/20', icon: 'XCircle' };
@@ -305,11 +369,21 @@ export function LiveAttendanceFeed() {
   };
 
   const methodLabel = (m?: string) => {
-    if (!m) return { label: 'MESIN FINGERPRINT', color: 'text-sky-400', icon: 'Fingerprint' };
+    if (!m) return { label: 'SCAN WAJAH (JSAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
     const upper = m.toUpperCase();
-    if (upper.includes('FACE') || upper.includes('ISAPI')) return { label: 'SCAN WAJAH (ISAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
-    if (upper.includes('MANUAL') || upper.includes('WEB')) return { label: 'SISTEM WEB', color: 'text-purple-400', icon: 'Laptop' };
-    return { label: 'MESIN FINGERPRINT', color: 'text-sky-400', icon: 'Fingerprint' };
+    if (upper.includes('FACE') || upper.includes('ISAPI') || upper.includes('WAJAH')) {
+      return { label: 'SCAN WAJAH (JSAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
+    }
+    if (upper.includes('RFID') || upper.includes('CARD') || upper.includes('TAP')) {
+      return { label: 'RFID CARD TAP', color: 'text-amber-400', icon: 'CreditCard' };
+    }
+    if (upper.includes('MANUAL') || upper.includes('WEB')) {
+      return { label: 'SISTEM WEB', color: 'text-purple-400', icon: 'Laptop' };
+    }
+    if (upper.includes('FINGER')) {
+      return { label: 'MESIN FINGERPRINT', color: 'text-sky-400', icon: 'Fingerprint' };
+    }
+    return { label: 'SCAN WAJAH (JSAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
   };
 
   const formatTime = (tsStr?: string) => {
