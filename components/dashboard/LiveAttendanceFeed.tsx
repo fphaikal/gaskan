@@ -94,15 +94,15 @@ export function LiveAttendanceFeed() {
       if (!data) return;
       const newItem = {
         id: data.id || `ws-${Date.now()}-${Math.random()}`,
-        studentName: data.studentName || data.name || data.Nama || 'Siswa',
-        className: data.className || data.Kelas || data.class?.className || '—',
+        studentName: data.Nama || data.studentName || data.name || 'Siswa',
+        className: data.Kelas || data.className || data.class?.className || '—',
         majorName: data.majorName || data.Jurusan || data.class?.major?.name || '',
-        status: data.status || 'HADIR',
-        time: data.time || data.timestamp || data.waktu || new Date().toISOString(),
+        status: (data.status || 'HADIR').toUpperCase(),
+        time: data.timestamp || data.time || data.waktu || new Date().toISOString(),
         method: data.method || 'SCAN WAJAH (JSAPI)',
-        photoUrl: data.photoUrl || data.image || data.url_picture || null,
+        photoUrl: data.Image || data.photoUrl || data.image || data.url_picture || null,
         lastOutTime: data.lastOutTime || null,
-        gate: data.gate || data.device?.name || 'Gerbang Utama',
+        gate: data.Gate || data.gate || data.device?.name || 'Gerbang Utama',
       };
 
       setRealtimeAttendances((prev) => [newItem, ...prev]);
