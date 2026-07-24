@@ -23,6 +23,14 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  icons: {
+    icon: [
+      { url: '/smti_logo.svg', type: 'image/svg+xml' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: ['/smti_logo.svg'],
+    apple: ['/smti_logo.svg'],
+  },
   verification: {
     google: "zGcUSdyFHTHDyelIHIQ-fAu2Ir0mG8xxa9b4ToiCiic",
   },
@@ -39,6 +47,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/smti_logo.svg" />
+        <link rel="apple-touch-icon" href="/smti_logo.svg" />
+      </head>
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>

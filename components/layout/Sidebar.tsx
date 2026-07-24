@@ -201,7 +201,7 @@ export function Sidebar() {
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <Link href="/home" className="flex items-center gap-3 overflow-hidden">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/smti_logo.svg" alt="GASKAN Logo" width={22} height={22} className="w-5.5 h-5.5 object-contain invert dark:invert-0" />
             </div>
             {!isCollapsed && (
               <span className="text-lg font-black tracking-tight text-primary whitespace-nowrap">
@@ -255,8 +255,8 @@ export function Sidebar() {
       <Sheet open={isMobileOpen} onOpenChange={(open) => setIsMobileOpen(open)}>
         <SheetContent side="left" className="w-72 p-0 flex flex-col h-full lg:hidden bg-card border-border">
           <SheetHeader className="h-16 border-b border-border px-4 flex flex-row items-center gap-3 space-y-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+              <Image src="/smti_logo.svg" alt="GASKAN Logo" width={22} height={22} className="w-5.5 h-5.5 object-contain invert dark:invert-0" />
             </div>
             <SheetTitle className="text-lg font-black text-primary">GASKAN</SheetTitle>
           </SheetHeader>

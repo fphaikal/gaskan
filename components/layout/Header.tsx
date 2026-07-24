@@ -65,16 +65,18 @@ export function Header() {
         </Button>
 
         {/* Mobile logo */}
-        <Link href="/home" className="flex items-center gap-2 lg:hidden">
-          <Image
-            src="/smti_logo.svg"
-            alt="Logo"
-            width={28}
-            height={28}
-            style={{ width: 'auto', height: 'auto' }}
-            className="dark:invert-0"
-          />
-          <span className="font-bold text-primary">GASKAN</span>
+        <Link href="/home" className="flex items-center gap-2.5 lg:hidden">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+            <Image
+              src="/smti_logo.svg"
+              alt="GASKAN Logo"
+              width={22}
+              height={22}
+              className="w-5.5 h-5.5 object-contain invert dark:invert-0"
+              priority
+            />
+          </div>
+          <span className="font-black text-base text-primary tracking-tight">GASKAN</span>
         </Link>
 
         {/* Desktop Collapse Toggle */}
