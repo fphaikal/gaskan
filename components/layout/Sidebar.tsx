@@ -205,7 +205,7 @@ export function Sidebar() {
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <Link href="/home" className="flex items-center gap-3 overflow-hidden">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />
+              <Image src="/smti_logo.svg" alt="GASKAN Logo" width={22} height={22} className="w-5.5 h-5.5 object-contain invert dark:invert-0" />
             </div>
             {!isCollapsed && (
               <span className="text-lg font-black tracking-tight text-primary whitespace-nowrap">
@@ -263,8 +263,8 @@ export function Sidebar() {
           className="flex h-dvh max-h-dvh w-[min(18rem,calc(100vw-1rem))] max-w-none flex-col gap-0 border-border bg-card p-0 lg:hidden"
         >
           <SheetHeader className="flex h-[calc(4rem+env(safe-area-inset-top))] shrink-0 flex-row items-center gap-3 space-y-0 border-b border-border px-4 pt-[env(safe-area-inset-top)]">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+              <Image src="/smti_logo.svg" alt="GASKAN Logo" width={22} height={22} className="w-5.5 h-5.5 object-contain invert dark:invert-0" />
             </div>
             <SheetTitle className="text-lg font-black text-primary">GASKAN</SheetTitle>
           </SheetHeader>

@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { Icon } from '@/components/ui/icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
+import { getSocket } from '@/lib/socket';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 
@@ -48,8 +49,42 @@ export function AdminStatsCards() {
       }
     }
     fetchCount();
+
+    const sk = getSocket();
+
+    function onAttendanceNew(data: any) {
+      if (!data || !mounted) return;
+      const status = (data.status || 'HADIR').toUpperCase();
+      setCountData((prev: any) => {
+        if (!prev) return prev;
+        const today = { ...(prev.today || {}) };
+        if (status === 'TERLAMBAT') {
+          today.late = (today.late || 0) + 1;
+          if (today.absent > 0) today.absent -= 1;
+        } else if (status === 'HADIR') {
+          today.present = (today.present || 0) + 1;
+          if (today.absent > 0) today.absent -= 1;
+        }
+        return {
+          ...prev,
+          today,
+          hadir_today: (prev.hadir_today || 0) + (status === 'HADIR' ? 1 : 0),
+          terlambat_today: (prev.terlambat_today || 0) + (status === 'TERLAMBAT' ? 1 : 0),
+        };
+      });
+    }
+
+    sk.on('attendance:new', onAttendanceNew);
+    sk.on('absen:new', onAttendanceNew);
+    sk.on('presence:new', onAttendanceNew);
+
+    if (!sk.connected) sk.connect();
+
     return () => {
       mounted = false;
+      sk.off('attendance:new', onAttendanceNew);
+      sk.off('absen:new', onAttendanceNew);
+      sk.off('presence:new', onAttendanceNew);
     };
   }, []);
 

@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/dialog';
 import { CustomSelect } from '@/components/shared/CustomSelect';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StudentHistoryModal } from '@/components/dashboard/StudentHistoryModal';
+import { getSocket } from '@/lib/socket';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
 
@@ -29,12 +31,35 @@ const getImageUrl = (url?: string) => {
 export function LiveAttendanceFeed() {
   const [countData, setCountData] = useState<any>(null);
   const [classList, setClassList] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'attendance' | 'failures'>('attendance');
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
   const [selectedFailure, setSelectedFailure] = useState<any>(null);
   const [activePreviewImage, setActivePreviewImage] = useState<string | null>(null);
+
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<any>(null);
+  const [showStudentHistoryModal, setShowStudentHistoryModal] = useState<boolean>(false);
+
+  const openStudentHistory = (studentOrAtt: any) => {
+    if (!studentOrAtt) return;
+    const resolvedId =
+      studentOrAtt.userId ||
+      studentOrAtt.studentId ||
+      studentOrAtt.nis ||
+      (typeof studentOrAtt.id === 'string' && !studentOrAtt.id.startsWith('unscanned-') ? studentOrAtt.id : null) ||
+      studentOrAtt.id;
+    setSelectedStudentForHistory({
+      id: resolvedId,
+      name: studentOrAtt.studentName || studentOrAtt.name || 'Siswa',
+      nis: studentOrAtt.nis || studentOrAtt.studentNis || '',
+      className: studentOrAtt.className || '',
+      majorName: studentOrAtt.majorName || '',
+      photoUrl: studentOrAtt.photoUrl || studentOrAtt.faceUrl || null,
+    });
+    setShowStudentHistoryModal(true);
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -49,8 +74,145 @@ export function LiveAttendanceFeed() {
     totalPages: 1,
   });
 
+  // Realtime Socket State
+  const [isWsConnected, setIsWsConnected] = useState(false);
+  const [realtimeAttendances, setRealtimeAttendances] = useState<any[]>([]);
+  const [realtimeFailures, setRealtimeFailures] = useState<any[]>([]);
+
+  useEffect(() => {
+    const sk = getSocket();
+
+    function onConnect() {
+      setIsWsConnected(true);
+    }
+
+    function onDisconnect() {
+      setIsWsConnected(false);
+    }
+
+    function inferMajorName(classNameStr: string): string {
+      if (!classNameStr || classNameStr === '—') return '';
+      const upper = classNameStr.toUpperCase();
+      if (upper.includes('TM')) return 'TEKNIK MEKATRONIKA';
+      if (upper.includes('TKI')) return 'TEKNIK KIMIA INDUSTRI';
+      if (upper.includes('KA')) return 'KIMIA ANALISIS';
+      if (upper.includes('TO')) return 'TEKNIK OTOMOTIF';
+      if (upper.includes('TITL')) return 'TEKNIK INSTALASI TENAGA LISTRIK';
+      return '';
+    }
+
+    function onNewAttendance(data: any) {
+      if (!data) return;
+
+      const rawName = data.Nama || data.studentName || data.name || data.siswa_nama || 'Siswa';
+      const rawClass = data.Kelas || data.className || data.kelas || data.class?.className || '—';
+      let resolvedMajor = data.majorName || data.Jurusan || data.jurusan || data.class?.major?.name || '';
+
+      if (!resolvedMajor && rawClass && rawClass !== '—') {
+        resolvedMajor = inferMajorName(rawClass);
+        if (!resolvedMajor && Array.isArray(classList)) {
+          const matched = classList.find((c: any) => {
+            const cName = typeof c === 'string' ? c : (c.className || c.nama_kelas || c.nama || c.name || '');
+            return cName.toLowerCase().replace(/\s+/g, '') === rawClass.toLowerCase().replace(/\s+/g, '');
+          });
+          if (matched && typeof matched === 'object') {
+            resolvedMajor = matched.major?.name || matched.majorName || matched.jurusan || matched.nama_jurusan || '';
+          }
+        }
+      }
+
+      const rawStatus = (data.status || data.Status || 'HADIR').toUpperCase();
+      const rawMethod = data.method || data.Method || 'FACE_RECOGNITION';
+      const rawTime = data.timestamp || data.time || data.waktu || data.created_at || new Date().toISOString();
+      const isExit = data.action === 'EXIT' || rawStatus === 'PULANG' || data.type === 'OUT';
+
+      const newItem = {
+        id: data.id || `ws-${Date.now()}-${Math.random()}`,
+        nis: data.nis || data.siswa_nis || data.userId || '—',
+        studentName: rawName,
+        className: rawClass,
+        majorName: resolvedMajor || '—',
+        status: rawStatus,
+        method: rawMethod,
+        time: isExit ? (data.inTime || rawTime) : rawTime,
+        lastOutTime: isExit ? rawTime : (data.lastOutTime || null),
+        photoUrl: data.Image || data.photoUrl || data.photo || data.image || data.url_picture || null,
+        machinePhoto: data.Image || data.photoUrl || data.image || null,
+        gate: data.Gate || data.gate || data.deviceName || 'Gerbang Utama SMTI',
+        logs: [
+          {
+            id: data.id || Math.random().toString(),
+            timestamp: rawTime,
+            status: rawStatus,
+            method: rawMethod,
+            notes: data.Image || data.photoUrl || null,
+            gate: data.Gate || data.gate || 'Gerbang Utama SMTI',
+          },
+        ],
+      };
+
+      setRealtimeAttendances((prev) => {
+        const existingIndex = prev.findIndex(
+          (item) => item.studentName === rawName || (item.nis !== '—' && item.nis === newItem.nis)
+        );
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          const prevItem = updated[existingIndex];
+          updated[existingIndex] = {
+            ...prevItem,
+            status: isExit ? prevItem.status : rawStatus,
+            lastOutTime: isExit ? rawTime : prevItem.lastOutTime,
+            time: isExit ? prevItem.time : rawTime,
+            logs: [newItem.logs[0], ...(prevItem.logs || [])],
+          };
+          return updated;
+        }
+        return [newItem, ...prev];
+      });
+    }
+
+    function onFaceFailure(data: any) {
+      if (!data) return;
+      const newFailure = {
+        id: data.id || `fail-${Date.now()}-${Math.random()}`,
+        identifier: data.identifier || data.nama || data.studentName || 'Wajah Tidak Dikenali',
+        message: data.message || data.error || 'Verifikasi Wajah Gagal',
+        timestamp: data.timestamp || new Date().toISOString(),
+        gate: data.gate || 'Mesin Face Recognition',
+        image: data.image || data.photoUrl || null,
+      };
+      setRealtimeFailures((prev) => [newFailure, ...prev]);
+    }
+
+    sk.on('connect', onConnect);
+    sk.on('disconnect', onDisconnect);
+    sk.on('attendance:new', onNewAttendance);
+    sk.on('absen:new', onNewAttendance);
+    sk.on('presence:new', onNewAttendance);
+    sk.on('log:new', onNewAttendance);
+    sk.on('face:failure', onFaceFailure);
+    sk.on('attendance:failure', onFaceFailure);
+
+    if (sk.connected) {
+      setIsWsConnected(true);
+    } else {
+      sk.connect();
+    }
+
+    return () => {
+      sk.off('connect', onConnect);
+      sk.off('disconnect', onDisconnect);
+      sk.off('attendance:new', onNewAttendance);
+      sk.off('absen:new', onNewAttendance);
+      sk.off('presence:new', onNewAttendance);
+      sk.off('log:new', onNewAttendance);
+      sk.off('face:failure', onFaceFailure);
+      sk.off('attendance:failure', onFaceFailure);
+    };
+  }, []);
+
   const fetchData = useCallback(async () => {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const params = new URLSearchParams({
         page: String(currentPage),
@@ -74,7 +236,8 @@ export function LiveAttendanceFeed() {
       setCountData(null);
       setPagination({ page: 1, limit: itemsPerPage, total: 0, totalPages: 1 });
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoading(false);
     }
   }, [currentPage, itemsPerPage, debouncedSearch, selectedClass, statusFilter]);
 
@@ -159,23 +322,7 @@ export function LiveAttendanceFeed() {
     });
   }, [countData]);
 
-  const recentFaceFailures = useMemo(() => {
-    if (!countData) return [];
-    let rawFailures: any[] = [];
-    if (Array.isArray(countData.recentFaceFailures)) rawFailures = countData.recentFaceFailures;
-    else if (Array.isArray(countData.face_failures)) rawFailures = countData.face_failures;
-    else if (Array.isArray(countData.recent_face_failures)) rawFailures = countData.recent_face_failures;
-    else if (Array.isArray(countData.failures)) rawFailures = countData.failures;
 
-    return rawFailures.map((item: any) => ({
-      id: item.id || Math.random().toString(),
-      identifier: item.identifier || item.nis || item.nama || 'Wajah Tidak Dikenal',
-      message: item.message || item.msg || item.notes || 'Verifikasi wajah gagal',
-      timestamp: item.timestamp || item.waktu || item.time || new Date().toISOString(),
-      image: item.image || item.notes || item.photoUrl || null,
-      gate: item.gate || item.deviceName || 'Gerbang Utama SMTI',
-    }));
-  }, [countData]);
 
   const classOptions = useMemo(() => {
     const opts = [{ value: '', label: 'Semua Kelas' }];
@@ -190,12 +337,31 @@ export function LiveAttendanceFeed() {
 
   const totalAttendance = pagination.total;
   const totalPages = Math.max(1, pagination.totalPages || Math.ceil(totalAttendance / itemsPerPage));
-  const paginatedAttendance = liveAttendanceList;
+  const paginatedAttendance = useMemo(() => {
+    const combined = [...realtimeAttendances, ...liveAttendanceList];
+    const unique = Array.from(new Map(combined.map((item) => [item.id || item.nis, item])).values());
+    if (statusFilter === 'ALL') return unique;
+    return unique.filter((item) => {
+      const st = (item.status || '').toUpperCase();
+      if (statusFilter === 'HADIR') return st === 'HADIR';
+      if (statusFilter === 'TERLAMBAT') return st === 'TERLAMBAT';
+      if (statusFilter === 'IZIN_SAKIT') return st === 'IZIN' || st === 'SAKIT';
+      if (statusFilter === 'ALPHA') return st === 'ALPHA' || st === 'BELUM_ABSEN';
+      return true;
+    });
+  }, [realtimeAttendances, liveAttendanceList, statusFilter]);
+
+  const recentFaceFailures = useMemo(() => {
+    const raw = countData?.recentFaceFailures || countData?.recent_face_failures || [];
+    const combined = [...realtimeFailures, ...(Array.isArray(raw) ? raw : [])];
+    return Array.from(new Map(combined.map((item) => [item.id, item])).values());
+  }, [countData, realtimeFailures]);
 
   const getStatus = (statusStr: string) => {
     switch (statusStr) {
       case 'HADIR': return { badge: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: 'CheckCircle2' };
       case 'TERLAMBAT': return { badge: 'bg-amber-500/10 text-amber-500 border-amber-500/20', icon: 'Clock' };
+      case 'PULANG': return { badge: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: 'LogOut' };
       case 'IZIN': return { badge: 'bg-sky-500/10 text-sky-500 border-sky-500/20', icon: 'FileText' };
       case 'SAKIT': return { badge: 'bg-orange-500/10 text-orange-400 border-orange-500/20', icon: 'Heart' };
       default: return { badge: 'bg-rose-500/10 text-rose-500 border-rose-500/20', icon: 'XCircle' };
@@ -203,11 +369,21 @@ export function LiveAttendanceFeed() {
   };
 
   const methodLabel = (m?: string) => {
-    if (!m) return { label: 'MESIN FINGERPRINT', color: 'text-sky-400', icon: 'Fingerprint' };
+    if (!m) return { label: 'SCAN WAJAH (JSAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
     const upper = m.toUpperCase();
-    if (upper.includes('FACE') || upper.includes('ISAPI')) return { label: 'SCAN WAJAH (ISAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
-    if (upper.includes('MANUAL') || upper.includes('WEB')) return { label: 'SISTEM WEB', color: 'text-purple-400', icon: 'Laptop' };
-    return { label: 'MESIN FINGERPRINT', color: 'text-sky-400', icon: 'Fingerprint' };
+    if (upper.includes('FACE') || upper.includes('ISAPI') || upper.includes('WAJAH')) {
+      return { label: 'SCAN WAJAH (JSAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
+    }
+    if (upper.includes('RFID') || upper.includes('CARD') || upper.includes('TAP')) {
+      return { label: 'RFID CARD TAP', color: 'text-amber-400', icon: 'CreditCard' };
+    }
+    if (upper.includes('MANUAL') || upper.includes('WEB')) {
+      return { label: 'SISTEM WEB', color: 'text-purple-400', icon: 'Laptop' };
+    }
+    if (upper.includes('FINGER')) {
+      return { label: 'MESIN FINGERPRINT', color: 'text-sky-400', icon: 'Fingerprint' };
+    }
+    return { label: 'SCAN WAJAH (JSAPI)', color: 'text-emerald-400', icon: 'ScanFace' };
   };
 
   const formatTime = (tsStr?: string) => {
@@ -245,7 +421,7 @@ export function LiveAttendanceFeed() {
     return colors[Math.abs(hash) % colors.length];
   };
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="bg-card rounded-3xl border border-border shadow-sm flex flex-col min-h-[500px]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4 sm:p-6">
@@ -367,19 +543,42 @@ export function LiveAttendanceFeed() {
             </button>
           </div>
 
-          <Link
-            href={activeTab === 'attendance' ? '/absensi' : '/log/error'}
-            className="text-[10px] font-black uppercase text-primary hover:underline tracking-widest"
-          >
-            Lihat Semua →
-          </Link>
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-xs transition-colors ${
+                isWsConnected
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+              }`}
+              title={isWsConnected ? 'WebSocket Real-time Terhubung' : 'Membuat Koneksi WebSocket...'}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isWsConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-500 animate-pulse'
+                }`}
+              />
+              <span>{isWsConnected ? 'WS Realtime' : 'WS Connecting...'}</span>
+            </div>
+
+            <Link
+              href={activeTab === 'attendance' ? '/absensi' : '/log/error'}
+              className="text-[10px] font-black uppercase text-primary hover:underline tracking-widest"
+            >
+              Lihat Semua →
+            </Link>
+          </div>
         </div>
 
         {activeTab === 'attendance' ? (
           <div className="flex-1 flex flex-col">
             <div className="px-4 sm:px-6 py-3 bg-muted/20 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
               <div className="relative min-w-0 w-full flex-1 sm:max-w-xs">
-                <Icon icon="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs" />
+                <Icon
+                  icon={isFetching ? 'mingcute:loading-fill' : 'Search'}
+                  className={`absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs ${
+                    isFetching ? 'animate-spin text-primary' : ''
+                  }`}
+                />
                 <Input
                   type="text"
                   placeholder="Cari nama / NIS..."
@@ -839,16 +1038,28 @@ export function LiveAttendanceFeed() {
               </div>
             </div>
 
-            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
+            <DialogFooter className="shrink-0 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md gap-3 sm:gap-4 flex flex-col sm:flex-row sm:p-6 sm:pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const item = selectedAttendance;
+                  setSelectedAttendance(null);
+                  openStudentHistory(item);
+                }}
+                className="rounded-2xl font-bold flex-1 text-xs h-11 border-primary/40 text-primary hover:bg-primary/10 gap-2 cursor-pointer"
+              >
+                <Icon icon="Calendar" className="text-sm" />
+                History Presensi Siswa
+              </Button>
               <Button
                 variant="ghost"
                 onClick={() => setSelectedAttendance(null)}
-                className="rounded-2xl font-bold flex-1 text-xs h-11"
+                className="rounded-2xl font-bold flex-1 text-xs h-11 cursor-pointer"
               >
                 Tutup
               </Button>
               <Link href="/absensi" onClick={() => setSelectedAttendance(null)} className="flex-1">
-                <Button className="w-full rounded-2xl font-bold text-xs h-11 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20">
+                <Button className="w-full rounded-2xl font-bold text-xs h-11 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20 cursor-pointer">
                   Lihat Semua Absensi
                 </Button>
               </Link>
@@ -992,6 +1203,12 @@ export function LiveAttendanceFeed() {
           </DialogContent>
         </Dialog>
       )}
+
+      <StudentHistoryModal
+        isOpen={showStudentHistoryModal}
+        onClose={() => setShowStudentHistoryModal(false)}
+        student={selectedStudentForHistory}
+      />
     </>
   );
 }

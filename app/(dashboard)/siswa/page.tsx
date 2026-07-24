@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExportButtons } from '@/components/shared/ExportButtons';
 import { CustomSelect } from '@/components/shared/CustomSelect';
 import { DataMasterTablePageSkeleton } from '@/components/shared/DataMasterSkeletons';
+import { StudentHistoryModal } from '@/components/dashboard/StudentHistoryModal';
 import {
   Dialog,
   DialogContent,
@@ -38,7 +39,8 @@ export default function SiswaPage() {
   const [classes, setClasses] = useState<any[]>([]);
   const [majors, setMajors] = useState<any[]>([]);
   const [devices, setDevices] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
   const [totalStudents, setTotalStudents] = useState(0);
 
   // Filters State matching Nuxt index.vue 1-to-1
@@ -81,6 +83,24 @@ export default function SiswaPage() {
   const [classSearch, setClassSearch] = useState('');
   const [showClassDropdown, setShowClassDropdown] = useState(false);
 
+  // Student History Modal State
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<any>(null);
+  const [showStudentHistoryModal, setShowStudentHistoryModal] = useState<boolean>(false);
+
+  const openStudentHistory = (u: any) => {
+    if (!u) return;
+    setSelectedStudentForHistory({
+      id: u.id || u.nis,
+      userId: u.id,
+      name: u.name || u.Nama,
+      nis: u.nis || u.NIS,
+      className: u.className || u.Kelas || u.class?.className || '',
+      majorName: u.majorName || u.majorAlias || u.class?.major?.name || '',
+      photoUrl: u.photoUrl || u.url_picture || u.faceUrl || null,
+    });
+    setShowStudentHistoryModal(true);
+  };
+
   // Form State
   const [form, setForm] = useState({
     id: '',
@@ -101,7 +121,7 @@ export default function SiswaPage() {
   });
 
   const fetchData = useCallback(async () => {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const params = new URLSearchParams({
         page: String(currentPage),
@@ -130,7 +150,8 @@ export default function SiswaPage() {
       setStudents([]);
       setTotalStudents(0);
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoading(false);
     }
   }, [currentPage, itemsPerPage, debouncedSearch, selectedClass, selectedMajor, filterStatus, filterPhoto, filterDeviceSync, sortBy]);
 
@@ -400,8 +421,9 @@ export default function SiswaPage() {
     { header: 'Status', key: 'status' },
   ];
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return <DataMasterTablePageSkeleton actionCount={5} mobileList />;
+  }
   }
 
   return (
@@ -425,7 +447,7 @@ export default function SiswaPage() {
             className="h-11 w-full rounded-2xl border-border bg-card shadow-sm md:h-10 md:w-10"
             title="Refresh Data"
           >
-            <Icon icon="mingcute:refresh-3-line" className="text-lg" />
+            <Icon icon="mingcute:refresh-3-line" className={`text-lg ${isFetching ? 'animate-spin text-primary' : ''}`} />
           </Button>
 
           {/* Nuxt Navigation Buttons */}
@@ -468,7 +490,12 @@ export default function SiswaPage() {
         <div className="flex flex-col lg:flex-row gap-3 bg-card p-4 rounded-3xl border border-border shadow-sm">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Icon icon="mingcute:search-line" className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg" />
+            <Icon
+              icon={isFetching ? 'mingcute:loading-fill' : 'mingcute:search-line'}
+              className={`absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg ${
+                isFetching ? 'animate-spin text-primary' : ''
+              }`}
+            />
             <Input
               type="text"
               placeholder="Cari nama, NIS, atau NISN..."
@@ -822,6 +849,15 @@ export default function SiswaPage() {
                           <Icon icon="mingcute:fingerprint-fill" className="text-base" />
                         </Button>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-emerald-500 rounded-lg cursor-pointer"
+                        title="History & Kalender Presensi Siswa"
+                        onClick={() => openStudentHistory(s)}
+                      >
+                        <Icon icon="mingcute:calendar-2-fill" className="text-base text-emerald-500" />
+                      </Button>
                       <Link href={`/siswa/${stdNis}`}>
                         <Button
                           variant="ghost"
@@ -877,6 +913,15 @@ export default function SiswaPage() {
                       <p className="truncate text-[10px] font-mono text-muted-foreground">{stdNis} · {stdClass}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-emerald-500 hover:text-emerald-600"
+                        title="History Presensi"
+                        onClick={() => openStudentHistory(s)}
+                      >
+                        <Icon icon="mingcute:calendar-2-fill" className="text-sm" />
+                      </Button>
                       <Link href={`/siswa/${stdNis}`}>
                         <Button
                           variant="ghost"
@@ -1401,6 +1446,12 @@ export default function SiswaPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <StudentHistoryModal
+        isOpen={showStudentHistoryModal}
+        onClose={() => setShowStudentHistoryModal(false)}
+        student={selectedStudentForHistory}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { getSocket } from '@/lib/socket';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,8 +44,21 @@ export function SystemMetricsSection() {
       }
     }
     fetchMetrics();
+
+    const sk = getSocket();
+
+    function onSystemMetrics(data: any) {
+      if (!mounted || !data) return;
+      setMetrics(data.data || data);
+      setLoading(false);
+    }
+
+    sk.on('system:metrics', onSystemMetrics);
+    if (!sk.connected) sk.connect();
+
     return () => {
       mounted = false;
+      sk.off('system:metrics', onSystemMetrics);
     };
   }, []);
 
