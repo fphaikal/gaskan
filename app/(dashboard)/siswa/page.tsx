@@ -424,7 +424,6 @@ export default function SiswaPage() {
   if (isInitialLoading) {
     return <DataMasterTablePageSkeleton actionCount={5} mobileList />;
   }
-  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
