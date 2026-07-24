@@ -246,7 +246,7 @@ export default function AdminTeamPage() {
         </div>
         <Button
           onClick={openCreate}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs h-12 shadow-lg shadow-primary/20"
+          className="h-11 w-full gap-2 rounded-2xl bg-primary text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 sm:w-auto"
         >
           <Icon icon="mingcute:user-add-fill" className="text-lg" />
           <span>Tambah Anggota</span>
@@ -272,7 +272,7 @@ export default function AdminTeamPage() {
 
       {/* Bento Grid matching Nuxt 1-to-1 */}
       {filteredMembers.length === 0 ? (
-        <div className="bg-card border border-border rounded-3xl p-20 text-center text-xs font-bold text-muted-foreground/40 italic">
+        <div className="rounded-3xl border border-border bg-card px-4 py-14 text-center text-xs font-bold italic text-muted-foreground/40 sm:p-20">
           Belum ada data anggota tim
         </div>
       ) : (
@@ -284,7 +284,7 @@ export default function AdminTeamPage() {
             return (
               <div
                 key={m.id}
-                className="bg-card rounded-3xl p-6 border border-border/60 shadow-sm hover:border-primary/40 transition-all group flex flex-col justify-between"
+                className="group flex min-w-0 flex-col justify-between rounded-3xl border border-border/60 bg-card p-4 shadow-sm transition-all hover:border-primary/40 sm:p-6"
               >
                 <div>
                   <div className="flex items-start gap-4">
@@ -318,11 +318,12 @@ export default function AdminTeamPage() {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex flex-col gap-1">
+                    <div className="flex shrink-0 flex-col gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-primary rounded-lg"
+                        className="h-11 w-11 rounded-xl text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
+                        aria-label={`Edit ${m.name}`}
                         onClick={() => openEdit(m)}
                       >
                         <Icon icon="mingcute:edit-2-line" className="text-sm" />
@@ -330,7 +331,8 @@ export default function AdminTeamPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-rose-500 rounded-lg"
+                        className="h-11 w-11 rounded-xl text-muted-foreground hover:text-rose-500 sm:h-8 sm:w-8"
+                        aria-label={`Hapus ${m.name}`}
                         onClick={() => setDeleteId(m.id)}
                       >
                         <Icon icon="mingcute:delete-2-line" className="text-sm" />
@@ -346,14 +348,14 @@ export default function AdminTeamPage() {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${m.isActive !== false ? 'bg-emerald-500' : 'bg-muted'}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                       {m.isActive !== false ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <Badge variant="outline" className="text-[10px] font-bold py-0.5 px-2 text-muted-foreground">
                       Periode {m.year || '2023 - Sekarang'}
                     </Badge>
@@ -370,14 +372,14 @@ export default function AdminTeamPage() {
 
       {/* ═══ CREATE / EDIT MODAL ═══ */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-xl">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">
               {editMode ? 'Edit Anggota Tim' : 'Tambah Anggota Tim'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6 sm:text-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="memberName">Nama Lengkap</Label>
@@ -410,7 +412,7 @@ export default function AdminTeamPage() {
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
                 rows={2}
                 placeholder="Tuliskan bio singkat..."
-                className="w-full p-3 rounded-2xl bg-muted/30 border border-border text-xs font-medium focus:outline-none"
+                className="w-full rounded-2xl border border-border bg-muted/30 p-3 text-base font-medium focus:outline-none sm:text-xs"
               />
             </div>
 
@@ -429,7 +431,7 @@ export default function AdminTeamPage() {
             </div>
 
             {/* Year Range Picker */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="startYr">Tahun Mulai</Label>
                 <Input
@@ -467,7 +469,7 @@ export default function AdminTeamPage() {
               </Label>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="orderNum">Urutan Tampilan (Order)</Label>
                 <Input
@@ -481,7 +483,7 @@ export default function AdminTeamPage() {
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowModal(false)}>
               Batal
             </Button>
@@ -498,8 +500,8 @@ export default function AdminTeamPage() {
 
       {/* ═══ CONFIRM DELETE MODAL ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <div className="p-6 space-y-4 text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <div className="space-y-4 overflow-y-auto p-4 text-center sm:p-6">
             <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
               <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
             </div>
@@ -510,7 +512,7 @@ export default function AdminTeamPage() {
               Data anggota tim ini akan dihapus dari daftar.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteId(null)}>
               Batal
             </Button>

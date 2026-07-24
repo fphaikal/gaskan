@@ -4,17 +4,46 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+interface TableProps extends React.ComponentProps<"table"> {
+  containerClassName?: string
+  scrollHint?: string | false
+}
+
+function Table({
+  className,
+  containerClassName,
+  scrollHint,
+  "aria-describedby": ariaDescribedBy,
+  ...props
+}: TableProps) {
+  const hintId = React.useId()
+
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
+    <div className={cn("min-w-0", containerClassName)}>
+      <div className="relative min-w-0">
+        <div
+          data-slot="table-container"
+          className="w-full max-w-full overflow-x-auto overscroll-x-contain"
+        >
+          <table
+            data-slot="table"
+            aria-describedby={ariaDescribedBy || (scrollHint ? hintId : undefined)}
+            className={cn("w-full caption-bottom text-sm", className)}
+            {...props}
+          />
+        </div>
+        {scrollHint && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background/90 to-transparent lg:hidden"
+          />
+        )}
+      </div>
+      {scrollHint && (
+        <p id={hintId} className="px-3 py-2 text-[11px] text-muted-foreground lg:hidden">
+          {scrollHint}
+        </p>
+      )}
     </div>
   )
 }

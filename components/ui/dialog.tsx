@@ -53,7 +53,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex flex-col w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-3xl bg-card text-card-foreground border border-border shadow-2xl duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 overflow-hidden",
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100%-1rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden overscroll-contain rounded-3xl border border-border bg-card text-card-foreground shadow-2xl duration-100 outline-none sm:max-h-[calc(100dvh-2rem)] sm:max-w-[calc(100%-2rem)] data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
@@ -65,7 +65,7 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-4 right-4 z-50 rounded-full h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+                className="absolute top-2 right-2 z-50 rounded-full p-0 text-muted-foreground hover:bg-muted hover:text-foreground sm:top-4 sm:right-4"
                 size="icon-sm"
               />
             }
@@ -83,7 +83,20 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-1.5 p-6 pb-4 border-b border-border shrink-0 bg-card", className)}
+      className={cn("flex shrink-0 flex-col gap-1.5 border-b border-border bg-card p-4 pb-3 pr-14 sm:p-6 sm:pb-4", className)}
+      {...props}
+    />
+  )
+}
+
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn(
+        "min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain p-4 sm:p-6",
+        className
+      )}
       {...props}
     />
   )
@@ -101,7 +114,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end p-6 pt-4 border-t border-border shrink-0 bg-card/80 backdrop-blur-md",
+        "flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-card/80 p-4 pt-3 backdrop-blur-md [&>*]:w-full sm:flex-row sm:justify-end sm:p-6 sm:pt-4 sm:[&>*]:w-auto",
         className
       )}
       {...props}
@@ -149,6 +162,7 @@ export {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,

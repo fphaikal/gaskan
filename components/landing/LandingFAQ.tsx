@@ -29,9 +29,9 @@ export function LandingFAQ() {
   ];
 
   return (
-    <section id="faq" className="py-24 bg-muted/40">
+    <section id="faq" className="scroll-mt-20 bg-muted/40 py-16 sm:py-24">
       <div className="max-w-3xl mx-auto px-4">
-        <div className="text-center mb-16 space-y-3">
+        <div className="mb-10 space-y-3 text-center sm:mb-16">
           <div className="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-1.5 rounded-full border border-primary/20 mb-2">
             FAQ
           </div>
@@ -52,7 +52,7 @@ export function LandingFAQ() {
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : i)}
-                  className="w-full text-left p-5 font-semibold text-base flex justify-between items-center gap-4 cursor-pointer"
+                  className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 p-4 text-left text-sm font-semibold sm:gap-4 sm:p-5 sm:text-base"
                 >
                   <span>{faq.q}</span>
                   <span className={`text-xl transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
@@ -60,7 +60,7 @@ export function LandingFAQ() {
                   </span>
                 </button>
                 {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-sm opacity-70 leading-relaxed border-t border-border/50">
+                  <div className="break-words border-t border-border/50 px-4 pb-4 pt-3 text-sm leading-relaxed opacity-70 sm:px-5 sm:pb-5">
                     {faq.a}
                   </div>
                 )}

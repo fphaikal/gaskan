@@ -143,24 +143,24 @@ export default function SiswaImportPage() {
             Unggah file spreadsheet Excel (.xlsx) untuk menambahkan data siswa secara cepat
           </p>
         </div>
-        <Link href="/siswa">
-          <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs bg-card border-border">
+        <Link href="/siswa" className="w-full sm:w-auto">
+          <Button variant="outline" className="h-11 w-full gap-2 rounded-2xl border-border bg-card text-xs font-bold sm:w-auto">
             <Icon icon="mingcute:arrow-left-line" className="text-base" /> Kembali ke Daftar Siswa
           </Button>
         </Link>
       </div>
 
       {/* Stepper Header */}
-      <div className="grid grid-cols-3 gap-3 bg-card p-2 rounded-2xl border border-border shadow-xs">
-        <div className={`p-3 rounded-xl flex items-center gap-3 font-bold text-xs ${step === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+      <div className="grid grid-cols-3 gap-1 rounded-2xl border border-border bg-card p-2 shadow-xs sm:gap-3">
+        <div className={`flex min-w-0 flex-col items-center gap-1 rounded-xl p-2 text-center text-[10px] font-bold min-[420px]:flex-row min-[420px]:gap-2 sm:p-3 sm:text-xs ${step === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
           <span className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center font-black">1</span>
           <span>Unggah File</span>
         </div>
-        <div className={`p-3 rounded-xl flex items-center gap-3 font-bold text-xs ${step === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+        <div className={`flex min-w-0 flex-col items-center gap-1 rounded-xl p-2 text-center text-[10px] font-bold min-[420px]:flex-row min-[420px]:gap-2 sm:p-3 sm:text-xs ${step === 1 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
           <span className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center font-black">2</span>
           <span>Pratinjau Data</span>
         </div>
-        <div className={`p-3 rounded-xl flex items-center gap-3 font-bold text-xs ${step === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+        <div className={`flex min-w-0 flex-col items-center gap-1 rounded-xl p-2 text-center text-[10px] font-bold min-[420px]:flex-row min-[420px]:gap-2 sm:p-3 sm:text-xs ${step === 2 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
           <span className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center font-black">3</span>
           <span>Selesai</span>
         </div>
@@ -169,7 +169,7 @@ export default function SiswaImportPage() {
       {/* STEP 0: UPLOAD & TEMPLATE */}
       {step === 0 && (
         <div className="space-y-6">
-          <div className="bg-card border border-border rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-sm">
+          <div className="space-y-6 rounded-3xl border border-border bg-card p-4 text-center shadow-sm sm:p-12">
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -179,7 +179,7 @@ export default function SiswaImportPage() {
                 if (e.dataTransfer.files[0]) parseFile(e.dataTransfer.files[0]);
               }}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all ${
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-5 transition-all sm:p-10 ${
                 isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 bg-muted/20'
               }`}
             >
@@ -196,7 +196,7 @@ export default function SiswaImportPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button onClick={downloadTemplate} variant="outline" className="rounded-2xl gap-2 font-bold text-xs h-11 px-5">
+              <Button onClick={downloadTemplate} variant="outline" className="h-11 w-full gap-2 rounded-2xl px-5 text-xs font-bold sm:w-auto">
                 <Icon icon="mingcute:download-2-line" className="text-base text-emerald-500" />
                 Unduh Template Excel Resmi
               </Button>
@@ -209,18 +209,20 @@ export default function SiswaImportPage() {
       {step === 1 && (
         <div className="space-y-4">
           <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-            <div className="p-4 bg-muted/20 border-b border-border flex justify-between items-center">
+            <div className="flex flex-col gap-3 border-b border-border bg-muted/20 p-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <p className="text-xs font-black text-primary uppercase tracking-wider">
                 Pratinjau ({previewData.length} Calon Siswa)
               </p>
-              <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="text-xs font-bold">
+              <Button variant="outline" size="sm" onClick={() => setStep(0)} className="h-11 w-full rounded-xl text-xs font-bold min-[420px]:w-auto">
                 Ganti File Excel
               </Button>
             </div>
 
-            <div className="max-h-96 overflow-y-auto divide-y divide-border">
-              {previewData.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-12 px-6 py-3 items-center text-xs font-bold">
+            <p className="px-4 pt-3 text-[10px] font-bold text-muted-foreground md:hidden">Geser pratinjau ke samping untuk melihat semua kolom.</p>
+            <div className="max-h-96 overflow-auto overscroll-contain">
+              <div className="min-w-[680px] divide-y divide-border">
+                {previewData.map((item, idx) => (
+                <div key={idx} className="grid grid-cols-12 items-center px-6 py-3 text-xs font-bold">
                   <div className="col-span-1 text-muted-foreground font-mono">#{item.row}</div>
                   <div className="col-span-4 text-foreground truncate">{item.name}</div>
                   <div className="col-span-2 font-mono text-muted-foreground">{item.nis}</div>
@@ -231,17 +233,18 @@ export default function SiswaImportPage() {
                     </span>
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <div className="p-6 border-t border-border bg-muted/10 flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setStep(0)} className="rounded-2xl font-bold">
+            <div className="grid grid-cols-1 gap-3 border-t border-border bg-muted/10 p-4 min-[420px]:grid-cols-2 sm:flex sm:justify-end sm:p-6">
+              <Button variant="ghost" onClick={() => setStep(0)} className="h-11 w-full rounded-2xl font-bold sm:w-auto">
                 Batal
               </Button>
               <Button
                 disabled={isUploading}
                 onClick={handleStartImport}
-                className="rounded-2xl font-bold bg-primary text-primary-foreground px-6 shadow-lg shadow-primary/20"
+                className="h-11 w-full rounded-2xl bg-primary px-6 font-bold text-primary-foreground shadow-lg shadow-primary/20 sm:w-auto"
               >
                 {isUploading ? 'Menyimpan Ke Database...' : 'Mulai Import Sekarang'}
               </Button>
@@ -252,7 +255,7 @@ export default function SiswaImportPage() {
 
       {/* STEP 2: RESULT SUMMARY */}
       {step === 2 && (
-        <div className="bg-card border border-border rounded-3xl p-8 text-center space-y-6 shadow-sm">
+        <div className="space-y-6 rounded-3xl border border-border bg-card p-4 text-center shadow-sm sm:p-8">
           <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto text-3xl">
             <Icon icon="mingcute:check-fill" />
           </div>
@@ -274,8 +277,8 @@ export default function SiswaImportPage() {
             </div>
           </div>
 
-          <Link href="/siswa">
-            <Button className="rounded-2xl font-bold px-8 bg-primary text-primary-foreground">
+          <Link href="/siswa" className="block w-full">
+            <Button className="h-11 w-full rounded-2xl bg-primary px-8 font-bold text-primary-foreground sm:w-auto">
               Lihat Direktori Siswa
             </Button>
           </Link>

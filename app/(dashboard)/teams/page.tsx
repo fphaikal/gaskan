@@ -118,19 +118,19 @@ function WorkspaceTeamsSkeleton() {
       </div>
 
       <div className="flex items-center gap-2 border-b border-border pb-2">
-        <Skeleton className="h-10 w-32 rounded-2xl" />
-        <Skeleton className="h-10 w-40 rounded-2xl" />
-        <Skeleton className="h-10 w-28 rounded-2xl ml-auto" />
+        <Skeleton className="h-11 w-32 shrink-0 rounded-2xl sm:h-10" />
+        <Skeleton className="h-11 w-40 shrink-0 rounded-2xl sm:h-10" />
+        <Skeleton className="h-11 w-28 shrink-0 rounded-2xl sm:ml-auto sm:h-10" />
       </div>
 
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 overflow-hidden">
             {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={index} className="h-8 w-16 rounded-xl shrink-0" />
+              <Skeleton key={index} className="h-11 w-16 rounded-xl shrink-0 sm:h-8" />
             ))}
           </div>
-          <Skeleton className="h-10 w-32 rounded-2xl" />
+          <Skeleton className="h-11 w-full rounded-2xl sm:h-10 sm:w-32" />
         </div>
         <DiscussionCardsSkeleton />
       </div>
@@ -417,7 +417,7 @@ export default function WorkspaceTeamsPage() {
               </div>
 
               {myTeamProfile && (
-                <div className="flex items-center gap-3 bg-card/80 backdrop-blur-md p-3 rounded-2xl border border-border shrink-0">
+                <div className="flex w-full min-w-0 items-center gap-3 rounded-2xl border border-border bg-card/80 p-3 backdrop-blur-md sm:w-auto sm:shrink-0">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                     {myTeamProfile.photoUrl ? (
                       <img src={resolvePhoto(myTeamProfile.photoUrl) || ''} alt={myTeamProfile.name} className="w-full h-full object-cover" />
@@ -435,11 +435,11 @@ export default function WorkspaceTeamsPage() {
           </div>
 
           {/* Navigation Tabs matching Nuxt 1-to-1 */}
-          <div className="flex items-center gap-2 border-b border-border pb-2 overflow-x-auto">
+          <div className="flex w-full max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain border-b border-border pb-2">
             <Button
               variant={activeTab === 'discussions' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('discussions')}
-              className="rounded-2xl gap-2 font-bold text-xs h-10"
+              className="h-11 shrink-0 gap-2 rounded-2xl text-xs font-bold sm:h-10"
             >
               <Icon icon="mingcute:chat-3-fill" className="text-base" />
               <span>Diskusi Tim</span>
@@ -447,7 +447,7 @@ export default function WorkspaceTeamsPage() {
             <Button
               variant={activeTab === 'docs' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('docs')}
-              className="rounded-2xl gap-2 font-bold text-xs h-10"
+              className="h-11 shrink-0 gap-2 rounded-2xl text-xs font-bold sm:h-10"
             >
               <Icon icon="mingcute:book-2-fill" className="text-base" />
               <span>Dokumentasi Tim</span>
@@ -456,7 +456,7 @@ export default function WorkspaceTeamsPage() {
               <Button
                 variant={activeTab === 'profile' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('profile')}
-                className="rounded-2xl gap-2 font-bold text-xs h-10 ml-auto"
+                className="h-11 shrink-0 gap-2 rounded-2xl text-xs font-bold sm:ml-auto sm:h-10"
               >
                 <Icon icon="mingcute:user-setting-fill" className="text-base" />
                 <span>Profil Saya</span>
@@ -468,14 +468,14 @@ export default function WorkspaceTeamsPage() {
           {activeTab === 'discussions' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                <div className="flex w-full max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-1">
                   {['', 'General', 'Announcement', 'Idea', 'Bug'].map((cat) => (
                     <Button
                       key={cat}
                       size="sm"
                       variant={discussionCategory === cat ? 'default' : 'outline'}
                       onClick={() => setDiscussionCategory(cat)}
-                      className="rounded-xl font-bold text-xs h-8"
+                      className="h-11 shrink-0 rounded-xl text-xs font-bold sm:h-8"
                     >
                       {cat === '' ? 'Semua' : cat}
                     </Button>
@@ -484,7 +484,7 @@ export default function WorkspaceTeamsPage() {
 
                 <Button
                   onClick={() => setShowCreateDiscussionModal(true)}
-                  className="rounded-2xl gap-2 font-bold text-xs bg-primary text-primary-foreground h-10"
+                  className="h-11 w-full gap-2 rounded-2xl bg-primary text-xs font-bold text-primary-foreground sm:w-auto"
                 >
                   <Icon icon="mingcute:add-circle-fill" className="text-lg" />
                   <span>Buat Diskusi</span>
@@ -503,10 +503,10 @@ export default function WorkspaceTeamsPage() {
                     <div
                       key={d.id}
                       onClick={() => openDiscussionDetail(d)}
-                      className="p-5 sm:p-6 bg-card rounded-3xl border border-border hover:border-primary/40 shadow-sm hover:shadow-md transition-all cursor-pointer space-y-3 group"
+                      className="group min-w-0 cursor-pointer space-y-3 rounded-3xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:p-6"
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className={`px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider ${categoryBadgeClass(d.category)}`}>
                             {d.category}
                           </span>
@@ -521,7 +521,7 @@ export default function WorkspaceTeamsPage() {
                         </span>
                       </div>
 
-                      <h3 className="text-lg font-black text-foreground group-hover:text-primary transition-colors">
+                      <h3 className="break-words text-lg font-black text-foreground transition-colors group-hover:text-primary">
                         {d.title}
                       </h3>
 
@@ -529,8 +529,8 @@ export default function WorkspaceTeamsPage() {
                         {d.content}
                       </p>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-border text-xs">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-3 border-t border-border pt-3 text-xs min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold overflow-hidden">
                             {d.author?.teamMember?.photoUrl || d.author?.photoUrl ? (
                               <img src={resolvePhoto(d.author?.teamMember?.photoUrl || d.author?.photoUrl) || ''} alt={d.author?.name} className="w-full h-full object-cover" />
@@ -558,14 +558,14 @@ export default function WorkspaceTeamsPage() {
           {activeTab === 'docs' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                <div className="flex w-full max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-1">
                   {['', 'Documentation', 'API', 'Hardware', 'Workflow', 'Guide'].map((cat) => (
                     <Button
                       key={cat}
                       size="sm"
                       variant={docCategory === cat ? 'default' : 'outline'}
                       onClick={() => setDocCategory(cat)}
-                      className="rounded-xl font-bold text-xs h-8"
+                      className="h-11 shrink-0 rounded-xl text-xs font-bold sm:h-8"
                     >
                       {cat === '' ? 'Semua' : cat}
                     </Button>
@@ -574,7 +574,7 @@ export default function WorkspaceTeamsPage() {
 
                 <Button
                   onClick={openCreateDoc}
-                  className="rounded-2xl gap-2 font-bold text-xs bg-primary text-primary-foreground h-10"
+                  className="h-11 w-full gap-2 rounded-2xl bg-primary text-xs font-bold text-primary-foreground sm:w-auto"
                 >
                   <Icon icon="mingcute:add-circle-fill" className="text-lg" />
                   <span>Buat Dokumen</span>
@@ -592,7 +592,7 @@ export default function WorkspaceTeamsPage() {
                   {docs.map((doc) => (
                     <div
                       key={doc.id}
-                      className="p-5 bg-card rounded-3xl border border-border hover:border-primary/40 shadow-sm transition-all flex flex-col justify-between space-y-4"
+                      className="flex min-w-0 flex-col justify-between space-y-4 rounded-3xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/40 sm:p-5"
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
@@ -603,17 +603,18 @@ export default function WorkspaceTeamsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openEditDoc(doc)}
-                            className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-primary"
+                            className="h-11 w-11 rounded-xl p-0 text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
+                            aria-label={`Edit ${doc.title}`}
                           >
                             <Icon icon="mingcute:pencil-fill" className="text-sm" />
                           </Button>
                         </div>
-                        <h3 className="text-base font-black text-foreground">{doc.title}</h3>
+                        <h3 className="break-words text-base font-black text-foreground">{doc.title}</h3>
                         <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{doc.content}</p>
                       </div>
 
-                      <div className="pt-3 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
-                        <span>Penulis: {doc.author?.teamMember?.name || doc.author?.name}</span>
+                      <div className="flex flex-col gap-1 border-t border-border pt-3 text-[10px] font-semibold text-muted-foreground min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                        <span className="break-words">Penulis: {doc.author?.teamMember?.name || doc.author?.name}</span>
                         <span>{new Date(doc.createdAt).toLocaleDateString('id-ID')}</span>
                       </div>
                     </div>
@@ -625,7 +626,7 @@ export default function WorkspaceTeamsPage() {
 
           {/* TAB 3: PROFIL TIM SAYA */}
           {activeTab === 'profile' && myTeamProfile && (
-            <div className="max-w-3xl bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="max-w-3xl space-y-6 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-8">
               <div className="border-b border-border pb-4">
                 <h2 className="text-xl font-black text-foreground flex items-center gap-2">
                   <Icon icon="mingcute:user-setting-fill" className="text-primary text-2xl" />
@@ -642,15 +643,15 @@ export default function WorkspaceTeamsPage() {
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                     FOTO PROFIL TIM
                   </Label>
-                  <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-dashed border-border">
-                    <div className="w-20 h-20 rounded-2xl bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                  <div className="flex flex-col gap-4 rounded-2xl border border-dashed border-border bg-muted/30 p-4 min-[420px]:flex-row min-[420px]:items-center">
+                    <div className="flex aspect-square h-auto w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted shadow-inner">
                       {profilePhotoPreview ? (
                         <img src={resolvePhoto(profilePhotoPreview) || ''} alt="Profil" className="w-full h-full object-cover" />
                       ) : (
                         <Icon icon="mingcute:user-4-fill" className="text-3xl text-muted-foreground/30" />
                       )}
                     </div>
-                    <div className="flex-1 space-y-1">
+                    <div className="w-full min-w-0 flex-1 space-y-1">
                       <Input
                         type="file"
                         accept="image/*"
@@ -661,7 +662,7 @@ export default function WorkspaceTeamsPage() {
                             setProfilePhotoPreview(URL.createObjectURL(file));
                           }
                         }}
-                        className="rounded-xl text-xs h-9 bg-card font-bold"
+                        className="h-11 w-full rounded-xl bg-card text-xs font-bold sm:h-9"
                       />
                       <p className="text-[9px] font-semibold text-muted-foreground/60">
                         Pilih foto diri berkualitas (Max 5MB)
@@ -777,7 +778,7 @@ export default function WorkspaceTeamsPage() {
                         ...myProfileForm,
                         customLinks: [...myProfileForm.customLinks, { label: '', url: '', icon: 'mingcute:link-2-line' }]
                       })}
-                      className="rounded-xl h-7 text-[10px] font-bold bg-primary text-primary-foreground gap-1"
+                      className="h-11 gap-1 rounded-xl bg-primary text-[10px] font-bold text-primary-foreground sm:h-8"
                     >
                       <Icon icon="mingcute:add-line" />
                       <span>Tambah Link</span>
@@ -786,7 +787,7 @@ export default function WorkspaceTeamsPage() {
 
                   <div className="space-y-2 bg-muted/20 p-3 rounded-2xl border border-border">
                     {myProfileForm.customLinks.map((link: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2">
+                      <div key={idx} className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-[1fr_1fr_auto] min-[420px]:items-center">
                         <Input
                           type="text"
                           placeholder="Label (ex: Blog)"
@@ -796,7 +797,7 @@ export default function WorkspaceTeamsPage() {
                             updated[idx].label = e.target.value;
                             setMyProfileForm({ ...myProfileForm, customLinks: updated });
                           }}
-                          className="h-9 rounded-xl bg-card text-xs font-bold flex-1"
+                          className="h-11 rounded-xl bg-card text-xs font-bold min-[420px]:h-9"
                         />
                         <Input
                           type="text"
@@ -807,7 +808,7 @@ export default function WorkspaceTeamsPage() {
                             updated[idx].url = e.target.value;
                             setMyProfileForm({ ...myProfileForm, customLinks: updated });
                           }}
-                          className="h-9 rounded-xl bg-card text-xs font-bold flex-1"
+                          className="h-11 rounded-xl bg-card text-xs font-bold min-[420px]:h-9"
                         />
                         <Button
                           type="button"
@@ -817,7 +818,8 @@ export default function WorkspaceTeamsPage() {
                             const updated = myProfileForm.customLinks.filter((_, i) => i !== idx);
                             setMyProfileForm({ ...myProfileForm, customLinks: updated });
                           }}
-                          className="h-8 w-8 text-rose-500 hover:text-rose-600 rounded-lg shrink-0"
+                          className="h-11 w-full rounded-xl text-rose-500 hover:text-rose-600 min-[420px]:w-11"
+                          aria-label={`Hapus tautan ${link.label || idx + 1}`}
                         >
                           <Icon icon="mingcute:delete-2-line" className="text-base" />
                         </Button>
@@ -833,11 +835,11 @@ export default function WorkspaceTeamsPage() {
               </div>
 
               {/* Submit Button aligned to right */}
-              <div className="pt-4 flex justify-end">
+              <div className="flex justify-end pt-4">
                 <Button
                   onClick={saveMyProfileSubmit}
                   disabled={savingProfile}
-                  className="rounded-2xl font-black text-xs bg-primary text-primary-foreground h-11 px-8 shadow-lg shadow-primary/20"
+                  className="h-11 w-full rounded-2xl bg-primary px-8 text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 sm:w-auto"
                 >
                   {savingProfile ? (
                     <span className="flex items-center gap-2">
@@ -857,14 +859,14 @@ export default function WorkspaceTeamsPage() {
       {/* MODAL DISKUSI */}
       {showCreateDiscussionModal && (
         <Dialog open={showCreateDiscussionModal} onOpenChange={setShowCreateDiscussionModal}>
-          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+            <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
               <DialogTitle className="text-xl font-black text-foreground">
                 Buat Diskusi Baru
               </DialogTitle>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between mb-2">
                   <Label className="mb-0">Judul Diskusi</Label>
@@ -903,12 +905,12 @@ export default function WorkspaceTeamsPage() {
                   placeholder="Tuliskan ide atau pertanyaan..."
                   value={newDiscussionForm.content}
                   onChange={(e) => setNewDiscussionForm({ ...newDiscussionForm, content: e.target.value })}
-                  className="w-full rounded-2xl bg-muted/30 border border-border p-3 font-bold text-xs resize-none focus:outline-none"
+                  className="w-full resize-none rounded-2xl border border-border bg-muted/30 p-3 text-base font-bold focus:outline-none sm:text-xs"
                 />
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
               <Button variant="ghost" className="rounded-2xl font-bold flex-1 text-xs" onClick={() => setShowCreateDiscussionModal(false)}>
                 Batal
               </Button>
@@ -923,14 +925,14 @@ export default function WorkspaceTeamsPage() {
       {/* DETAIL DISKUSI MODAL */}
       {selectedDiscussion && (
         <Dialog open={!!selectedDiscussion} onOpenChange={() => setSelectedDiscussion(null)}>
-          <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
-              <DialogTitle className="text-xl font-black text-foreground">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-2xl">
+            <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
+              <DialogTitle className="break-words text-xl font-black text-foreground">
                 {selectedDiscussion.title}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6">
               <p className="text-xs text-muted-foreground leading-relaxed p-4 bg-muted/30 rounded-2xl border border-border">
                 {selectedDiscussion.content}
               </p>
@@ -946,22 +948,22 @@ export default function WorkspaceTeamsPage() {
                   ))}
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-col gap-2 pt-2 min-[420px]:flex-row">
                   <Input
                     type="text"
                     placeholder="Tulis komentar..."
                     value={newCommentContent}
                     onChange={(e) => setNewCommentContent(e.target.value)}
-                    className="rounded-xl h-10 text-xs font-bold"
+                    className="h-11 rounded-xl text-xs font-bold"
                   />
-                  <Button onClick={postCommentSubmit} disabled={submittingComment} className="rounded-xl font-bold text-xs px-4">
+                  <Button onClick={postCommentSubmit} disabled={submittingComment} className="h-11 w-full rounded-xl px-4 text-xs font-bold min-[420px]:w-auto">
                     Kirim
                   </Button>
                 </div>
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
+            <DialogFooter className="shrink-0 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
               <Button variant="ghost" className="rounded-2xl font-bold w-full text-xs" onClick={() => setSelectedDiscussion(null)}>
                 Tutup
               </Button>

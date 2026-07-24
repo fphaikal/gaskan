@@ -365,10 +365,10 @@ export default function DocsApiPage() {
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center gap-3">
+        <div className="relative z-10 grid w-full grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:items-center">
           <Button
             onClick={() => setShowTokenModal(true)}
-            className="rounded-2xl font-black text-xs bg-white text-orange-600 hover:bg-white/90 shadow-md gap-2 h-11"
+            className="w-full rounded-2xl font-black text-xs bg-white text-orange-600 hover:bg-white/90 shadow-md gap-2 h-11"
           >
             <Icon icon="mingcute:key-2-fill" className="text-base" />
             {userToken ? '🔑 Token Set' : '🔑 Set JWT Token'}
@@ -378,7 +378,7 @@ export default function DocsApiPage() {
             href={`${API_BASE}/docs`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-2xl font-bold text-xs bg-black/20 hover:bg-black/30 text-white border border-white/20 px-4 h-11 transition-all"
+            className="inline-flex w-full items-center justify-center rounded-2xl font-bold text-xs bg-black/20 hover:bg-black/30 text-white border border-white/20 px-4 h-11 transition-all"
           >
             Direct UI ↗
           </a>
@@ -388,7 +388,7 @@ export default function DocsApiPage() {
       {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Sidebar: Endpoint List & Search */}
-        <div className="lg:col-span-4 bg-card rounded-3xl p-5 border border-border shadow-sm space-y-4 lg:sticky lg:top-20">
+        <div className="min-w-0 lg:col-span-4 bg-card rounded-3xl p-4 sm:p-5 border border-border shadow-sm space-y-4 lg:sticky lg:top-20">
           <div className="space-y-3">
             <div className="relative">
               <Icon icon="mingcute:search-line" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" />
@@ -402,10 +402,13 @@ export default function DocsApiPage() {
             </div>
 
             {/* Tag Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar text-[10px]">
+            <div
+              className="flex w-full max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-1 custom-scrollbar text-[10px]"
+              aria-label="Filter grup endpoint"
+            >
               <button
                 onClick={() => setSelectedTag('ALL')}
-                className={`px-3 py-1 rounded-xl font-black transition-all whitespace-nowrap ${
+                className={`min-h-11 sm:min-h-0 shrink-0 px-3 py-1 rounded-xl font-black transition-all whitespace-nowrap ${
                   selectedTag === 'ALL'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted/40 text-muted-foreground hover:text-foreground'
@@ -417,7 +420,7 @@ export default function DocsApiPage() {
                 <button
                   key={tag}
                   onClick={() => setSelectedTag(tag)}
-                  className={`px-3 py-1 rounded-xl font-black transition-all whitespace-nowrap ${
+                  className={`min-h-11 sm:min-h-0 shrink-0 px-3 py-1 rounded-xl font-black transition-all whitespace-nowrap ${
                     selectedTag === tag
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/40 text-muted-foreground hover:text-foreground'
@@ -464,7 +467,7 @@ export default function DocsApiPage() {
         </div>
 
         {/* Right Content: Active Endpoint Detail & Execution */}
-        <div className="lg:col-span-8 bg-card rounded-3xl p-6 border border-border shadow-sm space-y-6">
+        <div className="min-w-0 lg:col-span-8 bg-card rounded-3xl p-4 sm:p-6 border border-border shadow-sm space-y-6">
           {activeEndpoint ? (
             <>
               {/* Endpoint Overview Header */}
@@ -473,27 +476,29 @@ export default function DocsApiPage() {
                   <Badge className={`text-xs font-black px-3 py-1 border ${methodBadgeClass(activeEndpoint.method)}`}>
                     {activeEndpoint.method}
                   </Badge>
-                  <span className="font-mono text-base sm:text-lg font-black text-foreground">{activeEndpoint.path}</span>
+                  <span className="min-w-0 break-all font-mono text-base sm:text-lg font-black text-foreground">
+                    {activeEndpoint.path}
+                  </span>
                 </div>
                 <h2 className="text-xl font-black text-foreground">{activeEndpoint.summary}</h2>
                 <p className="text-xs text-muted-foreground font-medium">{activeEndpoint.description || 'Tidak ada deskripsi tambahan.'}</p>
               </div>
 
               {/* cURL Command Generator */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-col min-[400px]:flex-row min-[400px]:items-center justify-between gap-2">
                   <h3 className="text-xs font-black uppercase text-muted-foreground/60">Contoh Perintah cURL</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => copyToClipboard(curlCommand)}
-                    className="h-8 text-xs font-bold text-primary gap-1"
+                    className="h-11 min-[640px]:h-8 w-full min-[400px]:w-auto shrink-0 text-xs font-bold text-primary gap-1"
                   >
                     <Icon icon="mingcute:copy-2-line" className="text-sm" />
                     Salin cURL
                   </Button>
                 </div>
-                <pre className="p-4 rounded-2xl bg-muted/50 border border-border font-mono text-xs text-foreground overflow-x-auto custom-scrollbar">
+                <pre className="max-w-full overflow-x-auto overscroll-x-contain p-4 rounded-2xl bg-muted/50 border border-border font-mono text-xs text-foreground custom-scrollbar">
                   {curlCommand}
                 </pre>
               </div>
@@ -533,7 +538,7 @@ export default function DocsApiPage() {
                     rows={6}
                     value={requestBodyJson}
                     onChange={(e) => setRequestBodyJson(e.target.value)}
-                    className="w-full p-4 rounded-2xl bg-muted/50 border border-border font-mono text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 custom-scrollbar"
+                    className="w-full min-w-0 max-w-full p-4 rounded-2xl bg-muted/50 border border-border font-mono text-base sm:text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 custom-scrollbar"
                   />
                 </div>
               )}
@@ -543,7 +548,7 @@ export default function DocsApiPage() {
                 <Button
                   onClick={executeRequest}
                   disabled={isExecuting}
-                  className="rounded-2xl font-black text-xs bg-primary text-primary-foreground px-6 h-11 gap-2 shadow-md hover:shadow-lg transition-all"
+                  className="w-full sm:w-auto rounded-2xl font-black text-xs bg-primary text-primary-foreground px-6 h-11 gap-2 shadow-md hover:shadow-lg transition-all"
                 >
                   <Icon icon="mingcute:play-fill" className="text-base" />
                   {isExecuting ? 'Mengeksekusi...' : 'Try It Out (Jalankan)'}
@@ -553,17 +558,26 @@ export default function DocsApiPage() {
               {/* Execution Result Output */}
               {executionResult && (
                 <div className="space-y-3 pt-4 border-t border-border animate-in fade-in duration-300">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col min-[400px]:flex-row min-[400px]:items-center justify-between gap-2">
                     <h3 className="text-xs font-black uppercase text-muted-foreground/60">Hasil Respon API</h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full min-[400px]:w-auto flex-wrap items-center gap-2">
                       <Badge className={executionResult.status < 400 ? 'bg-emerald-500/15 text-emerald-500' : 'bg-rose-500/15 text-rose-500'}>
                         {executionResult.status} {executionResult.statusText}
                       </Badge>
                       <span className="text-xs font-mono text-muted-foreground">{executionResult.timeMs} ms</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(JSON.stringify(executionResult.data, null, 2))}
+                        className="ml-auto h-11 min-[640px]:h-8 shrink-0 text-xs font-bold text-primary gap-1"
+                      >
+                        <Icon icon="mingcute:copy-2-line" className="text-sm" />
+                        Salin respons
+                      </Button>
                     </div>
                   </div>
 
-                  <pre className="p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs overflow-x-auto max-h-96 custom-scrollbar border border-slate-800">
+                  <pre className="max-w-full max-h-96 overflow-x-auto overscroll-x-contain p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs custom-scrollbar border border-slate-800">
                     {JSON.stringify(executionResult.data, null, 2)}
                   </pre>
                 </div>
@@ -579,7 +593,7 @@ export default function DocsApiPage() {
 
       {/* Set JWT Token Modal */}
       <Dialog open={showTokenModal} onOpenChange={setShowTokenModal}>
-        <DialogContent className="sm:max-w-md rounded-3xl p-6">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-w-md rounded-3xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-black text-foreground flex items-center gap-2">
               <Icon icon="mingcute:key-2-fill" className="text-orange-500 text-xl" />
@@ -596,21 +610,21 @@ export default function DocsApiPage() {
               placeholder="Bearer eyJhbGciOi..."
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
-              className="w-full p-3 rounded-2xl bg-muted/40 border border-border font-mono text-xs text-foreground focus:outline-none"
+              className="w-full p-3 rounded-2xl bg-muted/40 border border-border font-mono text-base sm:text-xs text-foreground focus:outline-none"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex flex-col-reverse min-[400px]:flex-row min-[400px]:justify-end gap-3 pt-2">
             <Button
               variant="outline"
               onClick={() => setShowTokenModal(false)}
-              className="rounded-2xl font-bold text-xs h-10"
+              className="w-full min-[400px]:w-auto rounded-2xl font-bold text-xs h-11 min-[640px]:h-10"
             >
               Batal
             </Button>
             <Button
               onClick={saveToken}
-              className="rounded-2xl font-bold text-xs bg-orange-500 hover:bg-orange-600 text-white px-5 h-10"
+              className="w-full min-[400px]:w-auto rounded-2xl font-bold text-xs bg-orange-500 hover:bg-orange-600 text-white px-5 h-11 min-[640px]:h-10"
             >
               Simpan Token
             </Button>

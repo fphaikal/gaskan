@@ -58,13 +58,13 @@ function ResetPasswordForm() {
 
   return (
     <Card className="border-border shadow-md">
-      <CardHeader className="space-y-1 text-center">
+      <CardHeader className="space-y-1 px-4 text-center sm:px-6">
         <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
         <CardDescription>
           Buat password baru untuk akun Anda
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">Password Baru</Label>
@@ -112,7 +112,7 @@ function ResetPasswordForm() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-center border-t border-border pt-4">
+      <CardFooter className="flex justify-center border-t border-border px-4 pt-4 sm:px-6">
         <Link href="/login" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
           <Icon icon="mingcute:arrow-left-line" />
           Kembali ke Login
@@ -124,15 +124,15 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="flex min-h-dvh items-center justify-center overflow-y-auto overscroll-contain bg-background p-4 py-6 sm:p-6">
+      <div className="w-full max-w-md space-y-4 sm:space-y-6">
+        <div className="mb-2 flex items-center justify-center gap-2 sm:mb-4">
           <Icon icon="mingcute:key-2-fill" className="text-primary text-3xl" />
           <span className="text-2xl font-extrabold tracking-tight">GASKAN</span>
         </div>
 
         <Suspense fallback={
-          <Card className="p-8 text-center">
+          <Card className="p-4 text-center sm:p-8">
             <Icon icon="mingcute:loading-3-line" className="animate-spin text-3xl text-primary mx-auto" />
             <p className="mt-2 text-sm text-muted-foreground">Memuat...</p>
           </Card>

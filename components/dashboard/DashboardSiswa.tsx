@@ -205,24 +205,24 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
     return user.id ? String(user.id) : '-';
   }, [user]);
 
-  const bentoCard = "bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-center relative overflow-hidden";
+  const bentoCard = "min-w-0 bg-card border border-border rounded-3xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-center relative overflow-hidden";
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in duration-500">
       {/* 1. Profil Siswa */}
       {!user ? (
         <div className={`${bentoCard} lg:col-span-2 bg-muted/20 border-border`}>
-          <div className="flex items-center gap-6">
+          <div className="flex min-w-0 flex-col items-start gap-4 min-[360px]:flex-row min-[360px]:items-center sm:gap-6">
             <Skeleton className="w-20 h-20 rounded-full shrink-0" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-7 w-48" />
-              <Skeleton className="h-4 w-32" />
+            <div className="min-w-0 space-y-2 flex-1">
+              <Skeleton className="h-7 w-48 max-w-full" />
+              <Skeleton className="h-4 w-32 max-w-full" />
             </div>
           </div>
         </div>
       ) : (
         <div className={`${bentoCard} lg:col-span-2 bg-gradient-to-br from-primary/20 via-card to-background border-primary/20`}>
-          <div className="flex items-center gap-6">
+          <div className="flex min-w-0 flex-col items-start gap-4 min-[360px]:flex-row min-[360px]:items-center sm:gap-6">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-primary/20 border-2 border-primary/40 text-primary flex items-center justify-center shrink-0 shadow-inner">
               {user?.avatar || user?.url_picture ? (
                 <img src={user.avatar || user.url_picture} alt={user?.Nama || user?.name} className="w-full h-full object-cover" />
@@ -230,11 +230,11 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
                 <span className="text-3xl font-black">{user?.Nama?.charAt(0) || user?.name?.charAt(0) || 'F'}</span>
               )}
             </div>
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            <div className="min-w-0">
+              <h2 className="break-words text-2xl sm:text-3xl font-black text-foreground tracking-tight">
                 Halo, {user?.Nama?.split(' ')[0] || user?.name?.split(' ')[0] || 'Siswa'}!
               </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-1">
+              <p className="break-words text-xs sm:text-sm text-muted-foreground font-semibold mt-1">
                 {displayKelas} · NIS: <span className="font-mono text-foreground font-bold">{displayNis}</span>
               </p>
             </div>
@@ -298,7 +298,7 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
       {loading ? (
         <div className={`${bentoCard} lg:col-span-4 bg-muted/20 border-border`}>
           <Skeleton className="h-4 w-40 mb-6" />
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-24 w-full rounded-2xl" />
             ))}
@@ -307,7 +307,7 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
       ) : (
         <div className={`${bentoCard} lg:col-span-4`}>
           <p className="text-muted-foreground font-bold mb-4 text-xs uppercase tracking-wider">Rekap Absensi Bulan Ini</p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1">
             <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-center">
               <p className="text-3xl font-black text-emerald-500 mb-1">{summary.hadir}</p>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">HADIR</p>
@@ -337,12 +337,12 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
         <div className={`${bentoCard} lg:col-span-4 flex flex-col min-h-[400px] bg-muted/20 border-border`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div className="space-y-2">
-              <Skeleton className="h-6 w-56" />
-              <Skeleton className="h-4 w-80" />
+              <Skeleton className="h-6 w-56 max-w-full" />
+              <Skeleton className="h-4 w-80 max-w-full" />
             </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-9 w-[110px] rounded-xl" />
-              <Skeleton className="h-9 w-[90px] rounded-xl" />
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+              <Skeleton className="h-11 w-full rounded-xl sm:h-9 sm:w-[110px]" />
+              <Skeleton className="h-11 w-full rounded-xl sm:h-9 sm:w-[90px]" />
             </div>
           </div>
 
@@ -363,18 +363,20 @@ export const DashboardSiswa: React.FC<DashboardSiswaProps> = ({ user }) => {
               </p>
             </div>
             {/* Select Month & Year */}
-            <div className="flex gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
               <CustomSelect
                 value={String(selectedMonth)}
                 onChange={(val) => setSelectedMonth(Number(val))}
                 options={months.map((m) => ({ value: String(m.value), label: m.name }))}
-                triggerClassName="h-9 font-bold text-xs rounded-xl bg-card border-border min-w-[110px]"
+                className="w-full sm:w-auto"
+                triggerClassName="h-11 w-full font-bold text-xs rounded-xl bg-card border-border sm:h-9 sm:min-w-[110px]"
               />
               <CustomSelect
                 value={String(selectedYear)}
                 onChange={(val) => setSelectedYear(Number(val))}
                 options={years.map((y) => ({ value: String(y), label: String(y) }))}
-                triggerClassName="h-9 font-bold text-xs rounded-xl bg-card border-border min-w-[90px]"
+                className="w-full sm:w-auto"
+                triggerClassName="h-11 w-full font-bold text-xs rounded-xl bg-card border-border sm:h-9 sm:min-w-[90px]"
               />
             </div>
           </div>

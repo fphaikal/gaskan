@@ -288,8 +288,8 @@ export default function ReshufflePage() {
   return (
     <div className="space-y-6 pb-28 animate-in fade-in duration-500 max-w-7xl mx-auto">
       {/* Top Header Card matching Nuxt 1-to-1 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
-        <div>
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:p-6">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground/60 mb-1">
             <Link href="/kelas" className="hover:text-primary transition-colors">
               Manajemen Kelas
@@ -397,15 +397,15 @@ export default function ReshufflePage() {
           {/* Student Selection Table matching Nuxt Screenshot 1-to-1 */}
           <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
             {/* Search & Quick Selection Header matching screenshot */}
-            <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col justify-between gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:p-5">
+              <div className="flex min-w-0 items-center gap-3">
                 <input
                   type="checkbox"
                   checked={isAllSelected}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-border text-primary cursor-pointer"
+                  className="h-5 w-5 shrink-0 cursor-pointer rounded border-border text-primary"
                 />
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-black text-sm text-foreground">
                     Daftar Siswa ({selectedStudentIds.length}/{filteredStudents.length} Terpilih)
                   </h3>
@@ -422,13 +422,66 @@ export default function ReshufflePage() {
                   placeholder="Cari nama, NIS, rombel..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9 rounded-xl text-xs font-semibold bg-background"
+                  className="h-11 rounded-xl bg-background pl-9 text-xs font-semibold sm:h-9"
                 />
               </div>
             </div>
 
+            <div className="divide-y divide-border md:hidden">
+              {isLoading ? (
+                <div className="p-8 text-center text-xs font-bold text-muted-foreground">Memuat siswa...</div>
+              ) : filteredStudents.length === 0 ? (
+                <div className="p-8 text-center text-xs font-bold italic text-muted-foreground">
+                  Tidak ada siswa aktif ditemukan di kelas asal ini.
+                </div>
+              ) : (
+                filteredStudents.map((s) => {
+                  const sId = String(s.id);
+                  const isChecked = selectedStudentIds.includes(sId);
+                  const photo = resolvePhoto(s.photoUrl || s.faceUrl);
+
+                  return (
+                    <label
+                      key={sId}
+                      className={`flex min-w-0 cursor-pointer items-start gap-3 p-4 transition-colors ${
+                        isChecked ? 'bg-primary/10' : 'hover:bg-muted/30'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleSelectStudent(sId)}
+                        className="mt-3 h-5 w-5 shrink-0 rounded border-border text-primary"
+                      />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/10 bg-primary/10 text-xs font-black text-primary">
+                        {photo ? (
+                          <img src={photo} alt={s.name || s.Nama} className="h-full w-full object-cover" />
+                        ) : (
+                          <span>{(s.name || s.Nama || 'S').charAt(0)}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="break-words text-sm font-bold text-foreground">{s.name || s.Nama}</p>
+                        <p className="mt-1 break-words font-mono text-xs text-muted-foreground">
+                          {s.nis || s.NIS || s.nisn || '-'}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-extrabold text-sky-400">
+                            Rombel {s.rombel || '1'}
+                          </span>
+                          <span className="rounded-md bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase text-emerald-400">
+                            {s.status || 'AKTIF'}
+                          </span>
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+
             {/* Table View matching screenshot 1-to-1 */}
-            <div className="overflow-x-auto">
+            <div className="hidden max-w-full overflow-x-auto md:block">
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/40 text-[10px] uppercase tracking-wider font-black text-muted-foreground/60 border-b border-border">
@@ -506,7 +559,7 @@ export default function ReshufflePage() {
 
           {/* Floating Action Footer matching Nuxt screenshot 1-to-1 */}
           {selectedStudentIds.length > 0 && (
-            <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg bg-card/95 backdrop-blur-xl border border-primary/30 p-3.5 sm:p-4 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 z-50 animate-in slide-in-from-bottom duration-300">
+            <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 animate-in flex-col items-center justify-between gap-3 rounded-3xl border border-primary/30 bg-card/95 p-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-xl duration-300 slide-in-from-bottom sm:bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:flex-row sm:p-4">
               <div className="text-center sm:text-left">
                 <p className="text-xs font-black text-foreground">
                   {selectedStudentIds.length} Siswa Terpilih
@@ -519,7 +572,7 @@ export default function ReshufflePage() {
               <Button
                 onClick={openWebConfirm}
                 disabled={isProcessing}
-                className="rounded-2xl font-black shadow-lg shadow-primary/30 px-6 gap-2 w-full sm:w-auto h-10 bg-primary text-primary-foreground"
+                className="h-11 w-full gap-2 rounded-2xl bg-primary px-6 text-xs font-black text-primary-foreground shadow-lg shadow-primary/30 sm:w-auto"
               >
                 {isProcessing ? (
                   <Icon icon="mingcute:loading-fill" className="animate-spin text-base" />
@@ -549,7 +602,7 @@ export default function ReshufflePage() {
               </p>
             </div>
 
-            <div className="md:col-span-5 flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex flex-col items-stretch gap-3 md:col-span-5 sm:flex-row sm:items-center">
               <div className="w-full sm:w-auto flex-1">
                 <CustomSelect
                   options={[
@@ -563,7 +616,7 @@ export default function ReshufflePage() {
 
               <Button
                 onClick={downloadTemplate}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black text-xs h-10 px-5 shrink-0 gap-2 shadow-lg shadow-amber-500/20"
+                className="h-11 w-full shrink-0 gap-2 rounded-2xl bg-amber-500 px-5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 sm:w-auto"
               >
                 <Icon icon="mingcute:file-download-line" className="text-base" />
                 <span>Unduh Template .XLSX</span>
@@ -579,9 +632,9 @@ export default function ReshufflePage() {
                 Langkah 2: Pilih Kelas Tujuan & Unggah File Excel
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center sm:w-auto">
                 <label className="text-xs font-bold text-muted-foreground shrink-0">Kelas Tujuan:</label>
-                <div className="w-48">
+                <div className="w-full min-[420px]:w-48">
                   <CustomSelect
                     options={[
                       { value: '', label: '-- Pilih Kelas Tujuan --' },
@@ -630,29 +683,32 @@ export default function ReshufflePage() {
             {/* Parsed Excel Rows */}
             {excelRows.length > 0 && (
               <div className="space-y-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                   <span className="text-xs font-black text-amber-500 uppercase tracking-wider">
                     Pratinjau ({excelRows.length} Data Siswa dari Excel)
                   </span>
                   <Button
                     disabled={!excelTargetClassId}
                     onClick={openExcelConfirm}
-                    className="rounded-2xl font-black bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 h-10 px-6 gap-2"
+                    className="h-11 w-full gap-2 rounded-2xl bg-amber-500 px-6 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 min-[420px]:w-auto"
                   >
                     <Icon icon="mingcute:file-import-fill" className="text-base" />
                     <span>Jalankan Reshuffle Excel</span>
                   </Button>
                 </div>
 
-                <div className="max-h-80 overflow-y-auto divide-y divide-border border border-border rounded-2xl">
-                  {excelRows.map((r, i) => (
-                    <div key={i} className="grid grid-cols-12 px-6 py-3 items-center text-xs font-bold">
+                <p className="text-[10px] font-bold text-muted-foreground md:hidden">Geser pratinjau ke samping untuk melihat semua kolom.</p>
+                <div className="max-h-80 overflow-auto overscroll-contain rounded-2xl border border-border">
+                  <div className="min-w-[640px] divide-y divide-border">
+                    {excelRows.map((r, i) => (
+                    <div key={i} className="grid grid-cols-12 items-center px-6 py-3 text-xs font-bold">
                       <div className="col-span-1 text-muted-foreground font-mono">#{r.row}</div>
                       <div className="col-span-3 font-mono text-foreground">{r.nis}</div>
                       <div className="col-span-4 text-foreground">{r.name || 'Siswa'}</div>
                       <div className="col-span-4 text-amber-500 text-right font-black">Ke: {selectedTargetClassName}</div>
                     </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -662,8 +718,8 @@ export default function ReshufflePage() {
 
       {/* ═══ CONFIRMATION MODAL ═══ */}
       <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <div className="p-6 space-y-4 text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <div className="space-y-4 overflow-y-auto p-4 text-center sm:p-6">
             <div className="w-16 h-16 bg-primary/15 text-primary rounded-full flex items-center justify-center mx-auto mb-1">
               <Icon icon="mingcute:transfer-4-line" className="text-3xl" />
             </div>
@@ -678,7 +734,7 @@ export default function ReshufflePage() {
               ke kelas <strong className="text-primary">"{selectedTargetClassName}"</strong>?
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setShowConfirmModal(false)}>
               Batal
             </Button>
@@ -691,8 +747,8 @@ export default function ReshufflePage() {
 
       {/* ═══ PROGRESS MODAL ═══ */}
       <Dialog open={showProgressModal} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-sm flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <div className="p-6 space-y-4 text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-sm">
+          <div className="space-y-4 overflow-y-auto p-4 text-center sm:p-6">
             <Icon icon="mingcute:loading-fill" className="text-4xl text-primary animate-spin mx-auto" />
             <DialogTitle className="text-xl font-extrabold text-foreground text-center">
               Memproses Reshuffle Siswa...
@@ -707,8 +763,8 @@ export default function ReshufflePage() {
 
       {/* ═══ SUMMARY MODAL ═══ */}
       <Dialog open={showSummaryModal} onOpenChange={setShowSummaryModal}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 text-center sm:p-6 sm:pb-4">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-2">
               <Icon icon="mingcute:check-circle-fill" className="text-2xl" />
             </div>
@@ -717,14 +773,14 @@ export default function ReshufflePage() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-2 text-xs font-semibold">
+          <div className="flex-1 space-y-2 overflow-y-auto p-4 text-xs font-semibold sm:p-6">
             {summaryList.map((item, idx) => (
-              <div key={idx} className="p-3 bg-muted/30 border border-border rounded-2xl flex items-center justify-between">
-                <div>
+              <div key={idx} className="flex flex-col gap-2 rounded-2xl border border-border bg-muted/30 p-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                <div className="min-w-0">
                   <p className="font-black text-foreground">{item.name}</p>
                   <p className="text-[10px] text-muted-foreground font-mono">NIS: {item.nis}</p>
                 </div>
-                <div className="text-right">
+                <div className="break-words text-left min-[420px]:text-right">
                   <span className="text-[10px] text-muted-foreground">{item.fromClass}</span>
                   <span className="text-primary font-bold"> &rarr; {item.toClass}</span>
                 </div>
@@ -732,7 +788,7 @@ export default function ReshufflePage() {
             ))}
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card">
+          <DialogFooter className="shrink-0 border-t border-border bg-card p-4 pt-4 sm:p-6 sm:pt-4">
             <Button className="w-full rounded-2xl font-bold bg-primary text-primary-foreground" onClick={() => setShowSummaryModal(false)}>
               Tutup Ringkasan
             </Button>

@@ -39,18 +39,21 @@ export function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" className="relative h-10 flex items-center gap-2 px-2 rounded-xl">
-            <Avatar className="h-8 w-8">
+          <Button
+            variant="ghost"
+            className="relative flex h-10 max-w-56 items-center gap-0 rounded-xl px-1.5 min-[360px]:gap-1 md:gap-2 md:px-2"
+          >
+            <Avatar className="h-8 w-8 shrink-0">
               {user?.avatar ? (
                 <AvatarImage src={user.avatar} alt={displayName} />
               ) : null}
               <AvatarFallback className="bg-primary/10 text-primary font-bold">{initial}</AvatarFallback>
             </Avatar>
-            <div className="hidden md:flex flex-col text-left text-xs leading-none">
-              <span className="font-semibold">{displayName}</span>
-              <span className="text-muted-foreground text-[10px] capitalize mt-0.5">{displayRole}</span>
+            <div className="hidden min-w-0 max-w-36 flex-col text-left text-xs leading-none md:flex">
+              <span className="truncate font-semibold">{displayName}</span>
+              <span className="mt-0.5 truncate text-[10px] capitalize text-muted-foreground">{displayRole}</span>
             </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="hidden h-4 w-4 shrink-0 text-muted-foreground min-[360px]:block" />
           </Button>
         }
       />

@@ -28,10 +28,10 @@ export function LandingFeatures() {
   ];
 
   return (
-    <section id="fitur" className="py-24 bg-muted/40">
+    <section id="fitur" className="scroll-mt-20 bg-muted/40 py-16 sm:py-24">
       <div className="max-w-6xl mx-auto px-4">
         {/* Section header */}
-        <div className="text-center mb-16 space-y-3">
+        <div className="mb-10 space-y-3 text-center sm:mb-16">
           <div className="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-1.5 rounded-full border border-primary/20 mb-2">
             Fitur Unggulan
           </div>
@@ -44,11 +44,11 @@ export function LandingFeatures() {
         </div>
 
         {/* Feature cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="group bg-card rounded-2xl border border-border p-6 flex flex-col gap-4 hover:scale-105 hover:shadow-xl hover:border-primary/40 transition-all duration-300 cursor-default"
+              className="group bg-card rounded-2xl border border-border p-5 sm:p-6 flex flex-col gap-4 hover:shadow-xl hover:border-primary/40 transition-all duration-300 cursor-default motion-safe:hover:scale-105"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
                 <Icon icon={feature.icon} className="text-2xl text-primary" />

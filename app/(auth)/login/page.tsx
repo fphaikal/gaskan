@@ -139,9 +139,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-stretch bg-background">
+    <div className="flex min-h-dvh items-stretch bg-background lg:h-dvh lg:overflow-hidden">
       {/* Left panel: Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary/10 border-r border-border relative overflow-hidden flex-col items-center justify-center p-12 gap-8">
+      <div className="relative hidden overflow-hidden border-r border-border bg-primary/10 p-8 lg:flex lg:w-1/2 lg:flex-col lg:items-center lg:justify-center lg:gap-8 xl:p-12">
         <div className="absolute top-0 left-0 w-72 h-72 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
 
@@ -179,30 +179,30 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel: Login form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-md space-y-6">
+      <div className="flex min-h-dvh w-full items-center justify-center overflow-y-auto overscroll-contain p-4 py-6 sm:p-8 lg:h-dvh lg:min-h-0 lg:w-1/2 lg:p-10 xl:p-12">
+        <div className="w-full max-w-md space-y-4 sm:space-y-6">
           <div className="flex lg:hidden items-center gap-2 mb-2">
             <Icon icon="mingcute:key-2-fill" className="text-primary text-2xl" />
             <span className="text-xl font-extrabold">GASKAN</span>
           </div>
 
           <Card className="border-border shadow-md">
-            <CardHeader className="space-y-1">
+            <CardHeader className="space-y-1 px-4 sm:px-6">
               <CardTitle className="text-2xl font-bold">Selamat Datang</CardTitle>
               <CardDescription>
                 Masuk dengan NIS / Email dan password kamu
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6">
               {errorData && (
-                <div className="mb-4 p-3.5 rounded-xl bg-destructive/15 border border-destructive/30 text-destructive text-sm flex flex-col gap-2">
-                  <div className="flex items-start gap-2">
+                <div className="mb-4 flex min-w-0 flex-col gap-2 rounded-xl border border-destructive/30 bg-destructive/15 p-3.5 text-sm text-destructive">
+                  <div className="flex min-w-0 items-start gap-2">
                     <Icon icon="mingcute:warning-fill" className="text-lg shrink-0 mt-0.5" />
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <p className="font-bold text-sm">
                         {errorData.is502 ? 'Server Error (502 Bad Gateway)' : 'Login Gagal'}
                       </p>
-                      <p className="text-xs opacity-90 leading-snug">{errorData.message}</p>
+                      <p className="break-words text-xs leading-snug opacity-90 [overflow-wrap:anywhere]">{errorData.message}</p>
                     </div>
                   </div>
 
@@ -212,20 +212,20 @@ export default function LoginPage() {
                       size="sm"
                       variant="outline"
                       onClick={handleForceLogin}
-                      className="bg-destructive/20 border-destructive/40 text-destructive hover:bg-destructive/30 font-bold text-xs self-end mt-1"
+                      className="mt-1 w-full self-end bg-destructive/20 text-xs font-bold text-destructive border-destructive/40 hover:bg-destructive/30 min-[420px]:w-auto"
                     >
                       Paksa Masuk
                     </Button>
                   )}
 
                   {errorData.is502 && (
-                    <div className="pt-2 border-t border-destructive/20 flex items-center justify-between gap-2">
-                      <span className="text-[11px] opacity-80">Gunakan backend lokal atau mode demo:</span>
+                    <div className="flex flex-col gap-2 border-t border-destructive/20 pt-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                      <span className="min-w-0 break-words text-[11px] opacity-80">Gunakan backend lokal atau mode demo:</span>
                       <Button
                         type="button"
                         size="sm"
                         onClick={handleDemoLogin}
-                        className="bg-primary text-primary-foreground font-bold text-xs shrink-0"
+                        className="w-full shrink-0 bg-primary text-xs font-bold text-primary-foreground min-[420px]:w-auto"
                       >
                         Masuk Mode Demo
                       </Button>
@@ -289,7 +289,7 @@ export default function LoginPage() {
                 </Button>
               </form>
             </CardContent>
-            <CardFooter className="flex justify-center border-t border-border pt-4">
+          <CardFooter className="flex justify-center border-t border-border px-4 pt-4 sm:px-6">
               <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
                 ← Kembali ke halaman utama
               </Link>

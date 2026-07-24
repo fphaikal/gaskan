@@ -104,8 +104,8 @@ export default function LogLoginPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Top Header Card matching Nuxt 1-to-1 */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
-        <div>
+      <div className="flex min-w-0 flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-card p-4 sm:p-6 rounded-3xl border border-border shadow-sm">
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
             Log Sistem (Audit Login & Akses)
           </h1>
@@ -136,7 +136,7 @@ export default function LogLoginPage() {
           />
 
           {/* Limit Selector */}
-          <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-2xl border border-border">
+          <div className="grid w-full grid-cols-3 gap-1 bg-muted/30 p-1 rounded-2xl border border-border sm:flex sm:w-auto">
             {[20, 50, 100].map((l) => (
               <Button
                 key={l}
@@ -146,7 +146,7 @@ export default function LogLoginPage() {
                   setLimit(l);
                   setPage(1);
                 }}
-                className="h-7 px-3 rounded-xl text-xs font-bold"
+                className="h-11 w-full px-3 rounded-xl text-xs font-bold sm:h-8 sm:w-auto"
               >
                 {l}
               </Button>
@@ -165,7 +165,43 @@ export default function LogLoginPage() {
             <p className="font-bold text-base text-foreground">Tidak ada log aktivitas login ditemukan</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="divide-y divide-border md:hidden">
+              {logs.map((item, idx) => {
+                const identity = item.user?.name || item.username || item.identifier || item.details?.identifier || 'System User';
+                const role = item.user?.role || item.role || 'USER';
+                const ip = item.ip || item.ip_address || item.details?.ip || '127.0.0.1';
+                const action = item.action || item.aktivitas || item.message || 'Aktivitas Login';
+
+                return (
+                  <button
+                    key={item.id || idx}
+                    type="button"
+                    onClick={() => openDetail(item)}
+                    className="block w-full min-w-0 space-y-3 p-4 text-left transition-colors hover:bg-muted/30"
+                  >
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-foreground">{identity}</p>
+                        <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">{ip}</p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 text-[9px] font-black uppercase">{role}</Badge>
+                    </div>
+                    <p className="break-words text-xs font-semibold text-foreground">{action}</p>
+                    <div className="flex min-w-0 items-center justify-between gap-3 border-t border-border pt-3">
+                      <span className="min-w-0 break-words font-mono text-[10px] text-muted-foreground">
+                        {formatDateTime(item.createdAt || item.created_at || item.timestamp)}
+                      </span>
+                      <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-primary">
+                        Detail →
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-muted/30 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-border">
@@ -220,7 +256,8 @@ export default function LogLoginPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -235,20 +272,20 @@ export default function LogLoginPage() {
             </DialogHeader>
 
             <div className="p-6 space-y-3 flex-1 overflow-y-auto text-xs">
-              <div className="p-3 bg-muted/40 rounded-2xl border border-border flex justify-between items-center">
+              <div className="p-3 bg-muted/40 rounded-2xl border border-border flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between">
                 <span className="text-muted-foreground font-bold">Role</span>
                 <Badge className="bg-primary/15 text-primary border-primary/30 font-black text-[10px] uppercase">
                   {selectedLog.user?.role || selectedLog.role || 'USER'}
                 </Badge>
               </div>
 
-              <div className="p-3 bg-muted/40 rounded-2xl border border-border flex justify-between items-center font-mono">
+              <div className="p-3 bg-muted/40 rounded-2xl border border-border flex flex-col gap-2 font-mono min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between">
                 <span className="text-muted-foreground font-bold">IP Address</span>
                 <span className="text-foreground font-bold">{selectedLog.ip || selectedLog.ip_address || selectedLog.details?.ip || '127.0.0.1'}</span>
               </div>
 
               {locationInfo && (
-                <div className="p-3 bg-muted/40 rounded-2xl border border-border flex justify-between items-center">
+                <div className="p-3 bg-muted/40 rounded-2xl border border-border flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between">
                   <span className="text-muted-foreground font-bold">Lokasi Geografis</span>
                   <span className="text-foreground font-bold">{locationInfo}</span>
                 </div>

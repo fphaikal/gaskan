@@ -261,9 +261,9 @@ export default function IzinPage() {
           </p>
         </div>
 
-        <div className="flex gap-3 items-center flex-wrap">
+        <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:flex-wrap">
           {isStaff && (
-            <div className="w-48">
+            <div className="w-full md:w-48">
               <CustomSelect
                 options={[
                   { value: '', label: 'Semua Status' },
@@ -281,7 +281,7 @@ export default function IzinPage() {
           {isSiswa && (
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black shadow-lg shadow-amber-500/20 gap-2 h-11 px-6 text-xs"
+              className="h-11 w-full gap-2 rounded-2xl bg-amber-500 px-6 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 md:w-auto"
             >
               <Icon icon="mingcute:add-fill" className="text-base" />
               <span>Ajukan Izin</span>
@@ -316,7 +316,7 @@ export default function IzinPage() {
       {isLoading ? (
         <LeaveCardsSkeleton />
       ) : leaves.length === 0 ? (
-        <div className="bg-card rounded-3xl border border-dashed border-border p-20 flex flex-col items-center justify-center text-center text-muted-foreground/40 space-y-3">
+        <div className="flex flex-col items-center justify-center space-y-3 rounded-3xl border border-dashed border-border bg-card px-4 py-14 text-center text-muted-foreground/40 sm:p-20">
           <Icon icon="mingcute:document-line" className="text-5xl" />
           <p className="text-sm font-black uppercase tracking-widest text-foreground">Belum ada permohonan izin</p>
           {isSiswa && <p className="text-xs font-bold">Klik &quot;Ajukan Izin&quot; untuk membuat permohonan baru</p>}
@@ -343,7 +343,7 @@ export default function IzinPage() {
                   {/* Colored top bar */}
                   <div className={`h-1.5 ${statusCfg.topBar}`} />
 
-                  <div className="p-6 flex flex-col gap-4">
+                  <div className="flex flex-col gap-4 p-4 sm:p-6">
                     <div className="flex flex-col md:flex-row md:items-start gap-4">
                       <div className="flex-1 min-w-0">
                         {/* Badges row */}
@@ -374,9 +374,9 @@ export default function IzinPage() {
 
                         {/* Student Name (Staff View) */}
                         {isStaff && student && (
-                          <p className="font-black text-foreground text-lg leading-tight mb-1">
+                          <p className="mb-1 break-words text-lg font-black leading-tight text-foreground">
                             {student.name || student.nama}
-                            <span className="text-xs text-muted-foreground font-semibold ml-2 font-mono">
+                            <span className="mt-1 block break-words font-mono text-xs font-semibold text-muted-foreground sm:ml-2 sm:mt-0 sm:inline">
                               NIS: {student.nis || '-'} · Kelas: {student.class?.className || student.kelas?.nama_kelas || '-'}
                             </span>
                           </p>
@@ -418,11 +418,11 @@ export default function IzinPage() {
 
                       {/* Action Buttons (Staff Review) */}
                       {isStaff && isPending && (
-                        <div className="flex gap-2 shrink-0">
+                        <div className="flex w-full shrink-0 flex-col gap-2 min-[360px]:flex-row md:w-auto">
                           <Button
                             size="sm"
                             onClick={() => openReview(leave, 'APPROVED')}
-                            className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-black gap-1 shadow-sm shadow-emerald-500/20 text-xs px-4"
+                            className="h-11 flex-1 gap-1 rounded-2xl bg-emerald-500 px-4 text-xs font-black text-white shadow-sm shadow-emerald-500/20 hover:bg-emerald-400"
                           >
                             <Icon icon="mingcute:check-fill" className="text-sm" />
                             Setujui
@@ -430,7 +430,7 @@ export default function IzinPage() {
                           <Button
                             size="sm"
                             onClick={() => openReview(leave, 'REJECTED')}
-                            className="bg-rose-500 hover:bg-rose-400 text-white rounded-2xl font-black gap-1 shadow-sm shadow-rose-500/20 text-xs px-4"
+                            className="h-11 flex-1 gap-1 rounded-2xl bg-rose-500 px-4 text-xs font-black text-white shadow-sm shadow-rose-500/20 hover:bg-rose-400"
                           >
                             <Icon icon="mingcute:close-fill" className="text-sm" />
                             Tolak
@@ -440,12 +440,12 @@ export default function IzinPage() {
 
                       {/* Siswa Cancel Option for PENDING leave */}
                       {isSiswa && isPending && (
-                        <div className="shrink-0">
+                        <div className="w-full shrink-0 md:w-auto">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setCancelTargetId(leave.id)}
-                            className="text-rose-500 hover:bg-rose-500/10 rounded-2xl font-bold text-xs gap-1"
+                            className="h-11 w-full gap-1 rounded-2xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 md:w-auto"
                           >
                             <Icon icon="mingcute:delete-2-fill" className="text-sm" />
                             Batalkan
@@ -488,15 +488,15 @@ export default function IzinPage() {
 
       {/* 1. CREATE LEAVE MODAL */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2">
               <Icon icon="mingcute:file-new-fill" className="text-primary text-2xl" />
               Ajukan Permohonan Izin
             </DialogTitle>
           </DialogHeader>
 
-          <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between mb-2">
                 <Label className="mb-0">Jenis Izin</Label>
@@ -573,7 +573,7 @@ export default function IzinPage() {
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl font-bold flex-1 text-xs" onClick={() => setShowCreateModal(false)}>
               Batal
             </Button>
@@ -591,14 +591,14 @@ export default function IzinPage() {
       {/* 2. REVIEW LEAVE MODAL */}
       {showReviewModal && reviewTarget && (
         <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+            <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
               <DialogTitle className="text-xl font-black text-foreground">
                 Review Permohonan: {reviewTarget.student?.name || reviewTarget.siswa?.nama || 'Siswa'}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6">
               <p className="text-muted-foreground font-semibold">
                 Memberikan verifikasi <strong className="text-foreground">{reviewForm.status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}</strong> untuk surat izin ini.
               </p>
@@ -617,7 +617,7 @@ export default function IzinPage() {
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
               <Button variant="ghost" className="rounded-2xl font-bold flex-1 text-xs" onClick={() => setShowReviewModal(false)}>
                 Batal
               </Button>
@@ -638,8 +638,8 @@ export default function IzinPage() {
       {/* 3. CANCEL CONFIRMATION MODAL */}
       {cancelTargetId && (
         <Dialog open={!!cancelTargetId} onOpenChange={() => setCancelTargetId(null)}>
-          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <div className="p-6 space-y-4 text-center">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+            <div className="space-y-4 p-4 text-center sm:p-6">
               <div className="w-14 h-14 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto mb-1">
                 <Icon icon="mingcute:delete-2-fill" className="text-2xl" />
               </div>
@@ -648,7 +648,7 @@ export default function IzinPage() {
                 Permohonan izin yang dibatalkan tidak dapat dikembalikan.
               </p>
             </div>
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
               <Button variant="ghost" className="rounded-2xl font-bold text-xs flex-1" onClick={() => setCancelTargetId(null)}>
                 Batal
               </Button>
@@ -668,14 +668,14 @@ export default function IzinPage() {
       {/* 4. PROOF LIGHTBOX MODAL */}
       {showProofModal && activeProofUrl && (
         <Dialog open={showProofModal} onOpenChange={setShowProofModal}>
-          <DialogContent className="sm:max-w-lg flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center justify-between">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-lg">
+            <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
               <DialogTitle className="text-xl font-black text-foreground">Bukti Lampiran</DialogTitle>
             </DialogHeader>
-            <div className="p-6 flex items-center justify-center">
-              <img src={activeProofUrl} alt="Proof" className="w-full max-h-[70vh] object-contain rounded-2xl" />
+            <div className="flex min-h-0 flex-1 items-center justify-center p-4 sm:p-6">
+              <img src={activeProofUrl} alt="Proof" className="max-h-[calc(100dvh-11rem)] w-full rounded-2xl object-contain" />
             </div>
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
+            <DialogFooter className="shrink-0 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
               <Button variant="ghost" className="rounded-2xl font-bold w-full text-xs" onClick={() => setShowProofModal(false)}>
                 Tutup
               </Button>

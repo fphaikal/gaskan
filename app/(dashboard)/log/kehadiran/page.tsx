@@ -157,9 +157,9 @@ export default function LogKehadiranPage() {
       {isAdminOrDev ? (
         <>
           {/* Header Bar matching Nuxt */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+          <div className="flex flex-col justify-between gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:p-6">
+            <div className="min-w-0">
+              <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
                 Log Presensi
                 <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-xs font-bold px-2.5 py-0.5 gap-1.5 uppercase">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -171,11 +171,11 @@ export default function LogKehadiranPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex w-full flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-2xl font-bold text-xs gap-1.5"
+                className="h-11 w-full gap-1.5 rounded-2xl text-xs font-bold min-[420px]:w-auto"
                 onClick={() => {
                   window.open(`${API_BASE}/api/log/kehadiran/export?type=xlsx`, '_blank');
                 }}
@@ -187,8 +187,8 @@ export default function LogKehadiranPage() {
               <Badge
                 className={
                   isLive
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-black text-xs px-3 py-1 gap-2'
-                    : 'bg-muted text-muted-foreground border-border font-black text-xs px-3 py-1 gap-2'
+                    ? 'min-h-11 justify-center gap-2 whitespace-normal bg-emerald-500/15 px-3 py-1 text-center text-xs font-black text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                    : 'min-h-11 justify-center gap-2 whitespace-normal border-border bg-muted px-3 py-1 text-center text-xs font-black text-muted-foreground'
                 }
               >
                 <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`} />
@@ -199,7 +199,7 @@ export default function LogKehadiranPage() {
 
           {/* Date Groups Feed */}
           {logGroups.length === 0 ? (
-            <div className="bg-card border border-border rounded-3xl p-16 text-center text-xs font-bold text-muted-foreground/40 italic">
+            <div className="rounded-3xl border border-border bg-card px-4 py-14 text-center text-xs font-bold italic text-muted-foreground/40 sm:p-16">
               Belum ada data log kehadiran tercatat hari ini
             </div>
           ) : (
@@ -439,8 +439,8 @@ export default function LogKehadiranPage() {
       ══════════════════════════════════════════════════ */}
       {selectedAttendance && (
         <Dialog open={!!selectedAttendance} onOpenChange={() => setSelectedAttendance(null)}>
-          <DialogContent className="sm:max-w-md p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center gap-4 space-y-0">
+          <DialogContent className="max-h-[calc(100dvh-1rem)] overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+            <DialogHeader className="flex shrink-0 flex-row items-center gap-4 space-y-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
               <div className="w-12 h-12 rounded-2xl overflow-hidden bg-muted border border-border shrink-0">
                 <img
                   src={getImageUrl(selectedAttendance.Image) || 'https://api.tierkun.my.id/file/picture/0000.png'}
@@ -454,7 +454,7 @@ export default function LogKehadiranPage() {
               </div>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="max-h-[calc(100dvh-8rem)] space-y-4 overflow-y-auto p-4 sm:p-6">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground font-bold flex items-center gap-1.5">
@@ -528,8 +528,8 @@ export default function LogKehadiranPage() {
       ══════════════════════════════════════════════════ */}
       {activePreviewImage && (
         <Dialog open={!!activePreviewImage} onOpenChange={() => setActivePreviewImage(null)}>
-          <DialogContent className="sm:max-w-md p-4 text-center bg-card border-border rounded-3xl">
-            <img src={activePreviewImage} alt="Capture" className="w-full max-h-[70vh] object-contain rounded-2xl" />
+          <DialogContent className="max-h-[calc(100dvh-1rem)] rounded-3xl border-border bg-card p-2 text-center sm:max-w-md sm:p-4">
+            <img src={activePreviewImage} alt="Capture" className="max-h-[calc(100dvh-3rem)] w-full rounded-2xl object-contain" />
           </DialogContent>
         </Dialog>
       )}

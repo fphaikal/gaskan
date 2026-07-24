@@ -92,10 +92,10 @@ export function LandingHero() {
   };
 
   return (
-    <section className="min-h-screen flex items-center pt-24 pb-16 relative overflow-hidden">
+    <section className="relative flex min-h-dvh items-center overflow-hidden pb-12 pt-24 sm:pb-16">
       {/* Background blobs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/15 rounded-full blur-3xl pointer-events-none -translate-y-1/4 translate-x-1/4" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none translate-y-1/4 -translate-x-1/4" />
+      <div className="absolute top-0 right-0 h-64 w-64 sm:h-[500px] sm:w-[500px] bg-primary/15 rounded-full blur-3xl pointer-events-none -translate-y-1/4 translate-x-1/4" />
+      <div className="absolute bottom-0 left-0 h-48 w-48 sm:h-72 sm:w-72 bg-primary/10 rounded-full blur-3xl pointer-events-none translate-y-1/4 -translate-x-1/4" />
 
       {/* Dot grid background */}
       <div
@@ -106,15 +106,15 @@ export function LandingHero() {
         }}
       />
 
-      <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center relative z-10 w-full">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-10 px-4 lg:grid-cols-2 lg:gap-12">
         {/* Left: Text */}
-        <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 bg-primary/15 text-primary border border-primary/30 rounded-full px-4 py-1.5 text-sm font-semibold">
+        <div className="min-w-0 space-y-5 sm:space-y-6">
+          <div className="inline-flex max-w-full items-center gap-2 bg-primary/15 text-primary border border-primary/30 rounded-full px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold">
             <span>✨</span>
-            <span>Sistem Absensi Digital SMTI Jogja</span>
+            <span className="min-w-0 break-words">Sistem Absensi Digital SMTI Jogja</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl xl:text-6xl font-extrabold leading-tight">
+          <h1 className="break-words text-3xl min-[380px]:text-4xl md:text-5xl xl:text-6xl font-extrabold leading-tight">
             Gerbang Akses{' '}
             <span className="text-primary relative inline-block">
               Pintar
@@ -123,21 +123,21 @@ export function LandingHero() {
             dan Kehadiran
           </h1>
 
-          <p className="text-lg opacity-70 max-w-lg leading-relaxed">
+          <p className="max-w-lg text-base leading-relaxed opacity-70 sm:text-lg">
             Kelola dan pantau kehadiran siswa secara real-time dengan mudah, cepat, dan akurat.
           </p>
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="grid grid-cols-1 gap-3 pt-2 min-[420px]:grid-cols-2 sm:flex sm:flex-wrap">
             <Link
               href={user ? '/home' : '/login'}
-              className="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold px-7 py-3 shadow-lg hover:shadow-primary/40 transition-all duration-300"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold px-5 sm:px-7 py-3 shadow-lg hover:shadow-primary/40 transition-all duration-300 sm:w-auto"
             >
               {user ? 'Ke Dashboard' : 'Mulai Sekarang'}
               <Icon icon="mingcute:arrow-right-line" className="ml-1 text-xl" />
             </Link>
             <a
               href="#fitur"
-              className="inline-flex items-center justify-center rounded-xl border border-border bg-card font-bold px-7 py-3 opacity-80 hover:opacity-100 transition-all"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card font-bold px-5 sm:px-7 py-3 opacity-80 hover:opacity-100 transition-all sm:w-auto"
             >
               Pelajari Lebih Lanjut
             </a>
@@ -146,11 +146,11 @@ export function LandingHero() {
         </div>
 
         {/* Right: Minimalist Face Scan Animation Widget */}
-        <div className="flex flex-col items-center justify-center gap-8">
+        <div className="flex min-w-0 flex-col items-center justify-center gap-6 sm:gap-8">
           <div className="relative flex items-center justify-center">
             {/* Ambient Pulse Ring */}
             <div
-              className="absolute -inset-6 rounded-full border border-primary/20 animate-ping pointer-events-none"
+              className="absolute -inset-4 sm:-inset-6 rounded-full border border-primary/20 animate-ping motion-reduce:animate-none pointer-events-none"
               style={{ animationDuration: '3.5s' }}
             />
             <div
@@ -158,13 +158,13 @@ export function LandingHero() {
             />
 
             {/* Clean Circle Container */}
-            <div className="relative w-52 h-52 rounded-full bg-card/80 border-2 border-primary/40 backdrop-blur-md flex items-center justify-center shadow-xl shadow-primary/10 overflow-hidden z-10">
+            <div className="relative h-44 w-44 sm:h-52 sm:w-52 rounded-full bg-card/80 border-2 border-primary/40 backdrop-blur-md flex items-center justify-center shadow-xl shadow-primary/10 overflow-hidden z-10">
               {/* ScanFace Icon with explicit size prop so it renders large and clear */}
               <Icon icon="ScanFace" size={84} className="text-primary" strokeWidth={1.5} />
 
               {/* Clean Glowing Scan Line */}
               <div
-                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_12px_2px] shadow-primary z-20 pointer-events-none"
+                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_12px_2px] shadow-primary z-20 motion-reduce:hidden pointer-events-none"
                 style={{ animation: 'simpleScan 2.5s ease-in-out infinite' }}
               />
 
@@ -179,8 +179,8 @@ export function LandingHero() {
 
           {/* Floating attendance card */}
           {currentItem && (
-            <div className="animate-float h-20 flex items-center justify-center">
-              <div className="backdrop-blur-md bg-card/80 border border-primary/30 rounded-2xl px-6 py-4 flex items-center gap-4 shadow-2xl w-80 max-w-full transition-all duration-500">
+            <div className="animate-float motion-reduce:animate-none min-h-20 flex w-full items-center justify-center">
+              <div className="backdrop-blur-md bg-card/80 border border-primary/30 rounded-2xl px-4 sm:px-6 py-4 flex min-w-0 items-center gap-3 sm:gap-4 shadow-2xl w-80 max-w-full transition-all duration-500">
                 <div
                   className={`w-11 h-11 rounded-full border flex items-center justify-center shrink-0 ${getStatusIconColor(
                     currentItem.status,
@@ -199,7 +199,7 @@ export function LandingHero() {
                     {formatTime(currentItem.timestamp)} WIB
                   </p>
                 </div>
-                <div className="text-xs text-primary font-semibold opacity-90 shrink-0">
+                <div className="hidden min-[380px]:block text-xs text-primary font-semibold opacity-90 shrink-0">
                   ✓ Terverifikasi
                 </div>
               </div>

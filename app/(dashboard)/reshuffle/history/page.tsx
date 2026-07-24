@@ -71,8 +71,8 @@ export default function ReshuffleHistoryPage() {
             Jejak audit histori pemindahan siswa secara acak/masal beserta informasi operator
           </p>
         </div>
-        <Link href="/reshuffle">
-          <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs bg-card border-border">
+        <Link href="/reshuffle" className="w-full sm:w-auto">
+          <Button variant="outline" className="h-11 w-full gap-2 rounded-2xl border-border bg-card text-xs font-bold sm:w-auto">
             <Icon icon="mingcute:arrow-left-line" className="text-base" /> Kembali ke Reshuffle
           </Button>
         </Link>
@@ -121,19 +121,19 @@ export default function ReshuffleHistoryPage() {
             </div>
           ) : (
             logs.map((log) => (
-              <div key={log.id} className="p-5 flex flex-col space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <div className="flex items-center gap-3">
+              <div key={log.id} className="flex flex-col space-y-3 p-4 sm:p-5">
+                <div className="flex flex-col gap-2 text-xs font-bold min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                  <div className="flex min-w-0 flex-wrap items-center gap-3">
                     <Badge className={log.type === 'EXCEL' ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-black' : 'bg-primary/15 text-primary border-primary/30 text-[10px] font-black'}>
                       {log.type === 'EXCEL' ? 'EXCEL BATCH' : 'WEBSITE'}
                     </Badge>
-                    <span className="text-foreground text-sm font-black">{log.operator || 'Operator Sistem'}</span>
+                    <span className="break-words text-sm font-black text-foreground">{log.operator || 'Operator Sistem'}</span>
                   </div>
                   <span className="font-mono text-muted-foreground text-xs">{log.createdAt || log.created_at}</span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground bg-muted/30 p-3 rounded-2xl border border-border">
-                  <div>
+                <div className="flex flex-col gap-2 rounded-2xl border border-border bg-muted/30 p-3 text-xs font-semibold text-muted-foreground min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                  <div className="break-words">
                     <span>Pemindahan: </span>
                     <span className="font-bold text-foreground">{log.sourceClass || 'Asal'}</span>
                     <span> &rarr; </span>

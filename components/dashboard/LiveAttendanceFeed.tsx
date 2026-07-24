@@ -248,26 +248,73 @@ export function LiveAttendanceFeed() {
   if (isLoading) {
     return (
       <div className="bg-card rounded-3xl border border-border shadow-sm flex flex-col min-h-[500px]">
-        <div className="p-6 border-b border-border flex items-center gap-4">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-6 w-40" />
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4 sm:p-6">
+          <div className="flex min-w-0 flex-wrap gap-4">
+            <Skeleton className="h-6 w-28 max-w-full sm:w-32" />
+            <Skeleton className="h-6 w-36 max-w-full sm:w-40" />
+          </div>
+          <Skeleton className="h-4 w-20" />
         </div>
-        <div className="px-6 py-3 border-b border-border flex items-center gap-4">
-          <Skeleton className="h-9 w-48 rounded-xl" />
-          <Skeleton className="h-9 w-32 rounded-xl" />
-          <Skeleton className="h-9 w-64 rounded-xl" />
+        <div className="flex flex-col gap-3 border-b border-border bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:px-6">
+          <Skeleton className="h-11 w-full rounded-xl sm:h-9 sm:max-w-xs sm:flex-1" />
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Skeleton className="h-11 w-full rounded-xl sm:h-9 sm:w-40" />
+            <Skeleton className="h-11 w-full rounded-xl sm:h-9 sm:w-64" />
+          </div>
         </div>
-        <div className="flex-1 p-6 space-y-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="flex items-center gap-4">
-              <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
-              <div className="space-y-2 flex-1">
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-3 w-32" />
+        <div className="space-y-3 p-4 md:hidden">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="space-y-3 rounded-2xl border border-border bg-muted/20 p-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <Skeleton className="h-11 w-11 shrink-0 rounded-xl" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <Skeleton className="h-6 w-16 shrink-0 rounded-lg" />
               </div>
-              <Skeleton className="h-6 w-24 rounded-full" />
+              <div className="grid grid-cols-2 gap-3">
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
             </div>
           ))}
+        </div>
+        <div className="hidden max-w-full flex-1 overflow-x-auto md:block">
+          <div className="min-w-[680px]">
+            <div className="grid grid-cols-12 gap-4 border-b border-border px-6 py-3">
+              <Skeleton className="col-span-4 h-3 w-full" />
+              <Skeleton className="col-span-3 h-3 w-full" />
+              <Skeleton className="col-span-2 h-3 w-full" />
+              <Skeleton className="col-span-2 h-3 w-full" />
+              <Skeleton className="col-span-1 h-3 w-full" />
+            </div>
+            <div className="divide-y divide-border/50">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="grid grid-cols-12 items-center gap-4 px-6 py-3">
+                  <div className="col-span-4 flex min-w-0 items-center gap-3">
+                    <Skeleton className="h-8 w-8 shrink-0 rounded-xl" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="col-span-3 h-4 w-28" />
+                  <Skeleton className="col-span-2 h-4 w-16" />
+                  <Skeleton className="col-span-2 h-4 w-20" />
+                  <Skeleton className="col-span-1 ml-auto h-6 w-12 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-border bg-muted/20 px-4 py-3 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between sm:px-6">
+          <Skeleton className="h-4 w-full max-w-48" />
+          <div className="flex items-center justify-between gap-2 min-[360px]:justify-start">
+            <Skeleton className="h-11 w-24 rounded-xl sm:h-8" />
+            <div className="flex gap-1">
+              <Skeleton className="h-11 w-11 rounded-xl sm:h-8 sm:w-8" />
+              <Skeleton className="h-8 w-16 rounded-xl" />
+              <Skeleton className="h-11 w-11 rounded-xl sm:h-8 sm:w-8" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -277,8 +324,8 @@ export function LiveAttendanceFeed() {
     <>
       <div className="bg-card rounded-3xl border border-border shadow-sm flex flex-col min-h-[500px]">
         {/* Feed Header */}
-        <div className="p-6 border-b border-border flex flex-wrap items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-6">
+        <div className="p-4 sm:p-6 border-b border-border flex flex-wrap items-center justify-between gap-4 shrink-0">
+          <div className="flex max-w-full items-center gap-5 overflow-x-auto pb-1 sm:gap-6">
             <button
               onClick={() => setActiveTab('attendance')}
               className={`flex items-center gap-2 pb-1 border-b-2 font-black text-sm tracking-wide transition-all cursor-pointer ${
@@ -330,8 +377,8 @@ export function LiveAttendanceFeed() {
 
         {activeTab === 'attendance' ? (
           <div className="flex-1 flex flex-col">
-            <div className="px-6 py-3 bg-muted/20 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-              <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <div className="px-4 sm:px-6 py-3 bg-muted/20 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+              <div className="relative min-w-0 w-full flex-1 sm:max-w-xs">
                 <Icon icon="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs" />
                 <Input
                   type="text"
@@ -345,7 +392,7 @@ export function LiveAttendanceFeed() {
                 />
               </div>
 
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+              <div className="flex min-w-0 w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <CustomSelect
                   value={selectedClass}
                   onChange={(val) => {
@@ -354,11 +401,11 @@ export function LiveAttendanceFeed() {
                   }}
                   options={classOptions}
                   placeholder="Semua Kelas"
-                  className="w-40 shrink-0"
+                  className="w-full sm:w-40 sm:shrink-0"
                   triggerClassName="h-9 font-bold text-xs rounded-xl bg-background border-border"
                 />
 
-                <div className="flex items-center gap-1 bg-background p-1 rounded-xl border border-border shrink-0">
+                <div className="flex max-w-full items-center gap-1 overflow-x-auto bg-background p-1 rounded-xl border border-border sm:shrink-0">
                   {[
                     { key: 'ALL', label: 'SEMUA' },
                     { key: 'HADIR', label: 'HADIR' },
@@ -385,7 +432,73 @@ export function LiveAttendanceFeed() {
               </div>
             </div>
 
-            <div className="overflow-x-auto w-full flex-1 flex flex-col min-h-0 custom-scrollbar">
+            <div className="divide-y divide-border/60 md:hidden">
+              {paginatedAttendance.map((item: any) => {
+                const st = getStatus(item.status);
+                const photo = getImageUrl(item.photoUrl);
+
+                return (
+                  <button
+                    key={item.id || item.nis}
+                    type="button"
+                    onClick={() => setSelectedAttendance(item)}
+                    className="block w-full min-w-0 space-y-3 p-4 text-left transition-colors hover:bg-primary/5"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-border bg-muted flex items-center justify-center ${
+                          photo ? 'cursor-zoom-in' : ''
+                        }`}
+                      >
+                        {photo ? (
+                          <img src={photo} alt={item.studentName} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className={`flex h-full w-full items-center justify-center text-xs font-black ${avatarColor(item.studentName)}`}>
+                            {item.studentName.charAt(0)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-foreground">{item.studentName}</p>
+                        <p className="truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          {item.className || 'Belum ada kelas'} · {item.majorName || 'Jurusan belum diatur'}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 rounded-lg border px-2 py-1 text-[9px] font-black uppercase ${st.badge}`}>
+                        {item.status === 'TERLAMBAT' ? 'Lambat' : item.status === 'ALPHA' ? 'Belum' : item.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="rounded-xl bg-muted/30 p-3">
+                        <span className="block text-[9px] font-black uppercase text-muted-foreground">Waktu</span>
+                        <span className="mt-1 block font-mono font-bold text-foreground">
+                          {formatTime(item.time)}{item.lastOutTime ? ` – ${formatTime(item.lastOutTime)}` : ''}
+                        </span>
+                      </div>
+                      <div className="rounded-xl bg-muted/30 p-3">
+                        <span className="block text-[9px] font-black uppercase text-muted-foreground">Metode</span>
+                        <span className={`mt-1 block truncate font-bold ${methodLabel(item.method).color}`}>
+                          {methodLabel(item.method).label}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="block text-right text-[10px] font-black uppercase tracking-wider text-primary">
+                      Lihat detail →
+                    </span>
+                  </button>
+                );
+              })}
+
+              {paginatedAttendance.length === 0 && (
+                <div className="flex flex-col items-center justify-center space-y-2 px-4 py-16 text-center text-muted-foreground/40">
+                  <Icon icon="Clock" className="text-4xl" />
+                  <p className="text-xs font-black uppercase tracking-widest">Tidak ada data absensi sesuai filter</p>
+                </div>
+              )}
+            </div>
+
+            <div className="hidden overflow-x-auto w-full flex-1 md:flex flex-col min-h-0 custom-scrollbar">
               <div className="min-w-[680px] flex-1 flex flex-col min-h-0">
                 <div className="grid grid-cols-12 text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 px-6 py-2.5 border-b border-border shrink-0">
                   <div className="col-span-4">SISWA</div>
@@ -484,7 +597,7 @@ export function LiveAttendanceFeed() {
               </div>
             </div>
 
-            <div className="px-6 py-3 bg-muted/20 border-t border-border flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-muted-foreground shrink-0">
+            <div className="px-4 sm:px-6 py-3 bg-muted/20 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs font-bold text-muted-foreground shrink-0">
               <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-2">
                 <span>
                   Menampilkan {totalAttendance > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{' '}
@@ -492,7 +605,7 @@ export function LiveAttendanceFeed() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:gap-3">
                 <CustomSelect
                   value={String(itemsPerPage)}
                   onChange={(val) => {
@@ -504,7 +617,8 @@ export function LiveAttendanceFeed() {
                     { value: '20', label: '20 / hal' },
                     { value: '50', label: '50 / hal' },
                   ]}
-                  triggerClassName="h-8 font-bold text-xs rounded-xl bg-background border-border min-w-[95px]"
+                  className="w-24 shrink-0"
+                  triggerClassName="h-11 w-full font-bold text-xs rounded-xl bg-background border-border sm:h-8"
                 />
 
                 <div className="flex items-center gap-1">
@@ -513,11 +627,11 @@ export function LiveAttendanceFeed() {
                     size="sm"
                     disabled={currentPage <= 1}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="h-8 px-2.5 rounded-xl text-xs font-bold"
+                    className="h-11 min-w-11 px-2.5 rounded-xl text-xs font-bold sm:h-8 sm:min-w-8"
                   >
                     «
                   </Button>
-                  <span className="px-3 text-xs font-black text-foreground">
+                  <span className="px-2 text-xs font-black text-foreground sm:px-3">
                     Hal {currentPage} / {totalPages}
                   </span>
                   <Button
@@ -525,7 +639,7 @@ export function LiveAttendanceFeed() {
                     size="sm"
                     disabled={currentPage >= totalPages}
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="h-8 px-2.5 rounded-xl text-xs font-bold"
+                    className="h-11 min-w-11 px-2.5 rounded-xl text-xs font-bold sm:h-8 sm:min-w-8"
                   >
                     »
                   </Button>
@@ -534,7 +648,7 @@ export function LiveAttendanceFeed() {
             </div>
           </div>
         ) : (
-          <div className="p-6 space-y-3 flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-4 sm:p-6 space-y-3 flex-1 overflow-y-auto custom-scrollbar">
             {recentFaceFailures.length === 0 ? (
               <div className="text-center py-16 text-emerald-500/70 font-bold space-y-2">
                 <Icon icon="ShieldCheck" className="text-4xl mx-auto" />
@@ -545,9 +659,9 @@ export function LiveAttendanceFeed() {
                 <div
                   key={f.id}
                   onClick={() => setSelectedFailure(f)}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-rose-500/5 border border-rose-500/20 text-xs cursor-pointer hover:bg-rose-500/10 transition-colors group"
+                  className="flex min-w-0 flex-col gap-3 p-3 rounded-2xl bg-rose-500/5 border border-rose-500/20 text-xs cursor-pointer hover:bg-rose-500/10 transition-colors group min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div
                       onClick={(e) => {
                         const img = getImageUrl(f.image);
@@ -584,8 +698,8 @@ export function LiveAttendanceFeed() {
 
       {selectedAttendance && (
         <Dialog open={!!selectedAttendance} onOpenChange={() => setSelectedAttendance(null)}>
-          <DialogContent className="sm:max-w-lg flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center justify-between gap-3">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-lg">
+            <DialogHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   onClick={() => {
@@ -619,7 +733,7 @@ export function LiveAttendanceFeed() {
               </div>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar text-xs">
+            <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6">
               <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/40 border border-border">
                 <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">
                   STATUS KEHADIRAN
@@ -725,7 +839,7 @@ export function LiveAttendanceFeed() {
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
               <Button
                 variant="ghost"
                 onClick={() => setSelectedAttendance(null)}
@@ -745,8 +859,8 @@ export function LiveAttendanceFeed() {
 
       {selectedFailure && (
         <Dialog open={!!selectedFailure} onOpenChange={() => setSelectedFailure(null)}>
-          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 bg-rose-500/10 flex flex-row items-center justify-between border-b border-rose-500/20 shrink-0">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+            <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-rose-500/20 bg-rose-500/10 p-4 sm:p-6">
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   onClick={() => {
@@ -781,10 +895,10 @@ export function LiveAttendanceFeed() {
               </div>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar text-xs">
+            <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6">
               {selectedFailure.image && (
                 <div
-                  className="relative w-full h-44 rounded-2xl overflow-hidden bg-muted border border-border shadow-inner flex items-center justify-center group/img cursor-pointer"
+                  className="group/img relative flex aspect-video h-auto max-h-44 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted shadow-inner"
                   onClick={() => {
                     const img = getImageUrl(selectedFailure.image);
                     if (img) setActivePreviewImage(img);
@@ -849,7 +963,7 @@ export function LiveAttendanceFeed() {
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
               <Button
                 variant="ghost"
                 onClick={() => setSelectedFailure(null)}
@@ -869,11 +983,11 @@ export function LiveAttendanceFeed() {
 
       {activePreviewImage && (
         <Dialog open={!!activePreviewImage} onOpenChange={() => setActivePreviewImage(null)}>
-          <DialogContent className="sm:max-w-3xl p-2 bg-black/90 border border-white/10 rounded-3xl text-center flex items-center justify-center">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] items-center justify-center rounded-3xl border border-white/10 bg-black/90 p-2 text-center sm:max-w-3xl">
             <img
               src={activePreviewImage}
               alt="Preview"
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+              className="max-h-[calc(100dvh-2rem)] max-w-full rounded-2xl object-contain shadow-2xl"
             />
           </DialogContent>
         </Dialog>

@@ -68,15 +68,15 @@ export default function BulkUploadFotoPage() {
             Unggah banyak foto sekaligus. Penamaan file harus sesuai dengan <span className="font-mono text-primary font-bold">NIS.jpg</span> (misal: <span className="font-mono text-primary font-bold">25101350.jpg</span>)
           </p>
         </div>
-        <Link href="/siswa">
-          <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs bg-card border-border">
+        <Link href="/siswa" className="w-full sm:w-auto">
+          <Button variant="outline" className="h-11 w-full gap-2 rounded-2xl border-border bg-card text-xs font-bold sm:w-auto">
             <Icon icon="mingcute:arrow-left-line" className="text-base" /> Kembali ke Daftar Siswa
           </Button>
         </Link>
       </div>
 
       {/* Upload Zone */}
-      <div className="bg-card border border-border rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-sm">
+      <div className="space-y-6 rounded-3xl border border-border bg-card p-4 text-center shadow-sm sm:p-12">
         <div
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -90,7 +90,7 @@ export default function BulkUploadFotoPage() {
             }
           }}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all ${
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-5 transition-all sm:p-10 ${
             isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 bg-muted/20'
           }`}
         >
@@ -107,7 +107,7 @@ export default function BulkUploadFotoPage() {
         </div>
 
         {selectedFiles.length > 0 && !isUploading && (
-          <Button onClick={handleStartUpload} className="rounded-2xl font-bold px-8 bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+          <Button onClick={handleStartUpload} className="h-11 w-full rounded-2xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20 sm:w-auto">
             Mulai Unggah {selectedFiles.length} Foto
           </Button>
         )}
@@ -115,8 +115,8 @@ export default function BulkUploadFotoPage() {
 
       {/* Progress & Log Output */}
       {isUploading || logs.length > 0 ? (
-        <div className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between text-xs font-bold">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
             <span>Proses Mengunggah ({progress.current} / {progress.total})</span>
             <span className="text-primary">{Math.round((progress.current / Math.max(1, progress.total)) * 100)}%</span>
           </div>

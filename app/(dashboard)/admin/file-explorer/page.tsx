@@ -134,9 +134,9 @@ export default function FileExplorerPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Top Header Card matching Nuxt 1-to-1 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:p-6">
+        <div className="min-w-0">
+          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
             File Explorer Server
             <Badge className="bg-primary/15 text-primary border-primary/30 text-xs font-black">DEVELOPER</Badge>
           </h1>
@@ -153,7 +153,7 @@ export default function FileExplorerPage() {
 
       {/* Filter Control Bar matching Nuxt 1-to-1 */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-card p-4 rounded-3xl border border-border shadow-sm">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative w-full max-w-sm flex-1">
           <Icon icon="mingcute:search-line" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-base" />
           <Input
             type="text"
@@ -229,7 +229,7 @@ export default function FileExplorerPage() {
               <div
                 key={idx}
                 onClick={() => setSelectedFile(file)}
-                className="bg-card border border-border hover:border-primary/40 rounded-3xl p-3 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 group cursor-pointer relative overflow-hidden"
+                className="group relative flex min-w-0 cursor-pointer flex-col justify-between gap-3 overflow-hidden rounded-3xl border border-border bg-card p-3 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
               >
                 {/* Preview Thumbnail */}
                 <div className="w-full aspect-square rounded-2xl bg-muted/40 border border-border overflow-hidden flex items-center justify-center relative group/img">
@@ -279,18 +279,18 @@ export default function FileExplorerPage() {
       {/* DETAIL BERKAS & PREVIEW MODAL */}
       {selectedFile && (
         <Dialog open={!!selectedFile} onOpenChange={() => setSelectedFile(null)}>
-          <DialogContent className="sm:max-w-xl flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center justify-between">
-              <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2 truncate">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-xl">
+            <DialogHeader className="flex shrink-0 flex-col gap-2 border-b border-border bg-card p-4 pb-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:p-6 sm:pb-4">
+              <DialogTitle className="flex min-w-0 items-center gap-2 break-words text-xl font-black text-foreground">
                 <Icon icon="mingcute:file-line" className="text-primary text-2xl shrink-0" />
                 <span className="truncate">{selectedFile.fileName}</span>
               </DialogTitle>
               {getBackupBadge(selectedFile.backupStatus)}
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
               {/* Preview Box */}
-              <div className="w-full max-h-64 rounded-2xl bg-muted/40 border border-border overflow-hidden flex items-center justify-center p-2">
+              <div className="flex max-h-[calc(100dvh-16rem)] w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted/40 p-2 sm:max-h-64">
                 {selectedFile.isImage || /\.(jpg|jpeg|png|webp|gif)$/i.test(selectedFile.fileName) ? (
                   <img
                     src={getFileUrl(selectedFile.localUrl || selectedFile.gdUrl || selectedFile.hfUrl)}
@@ -316,7 +316,7 @@ export default function FileExplorerPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
                   <div className="p-3 bg-muted/40 rounded-2xl border border-border">
                     <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest block">
                       Ukuran Berkas
@@ -338,8 +338,8 @@ export default function FileExplorerPage() {
 
                 {/* Issuer Details if available */}
                 {selectedFile.issuer && selectedFile.issuer.userName && (
-                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-primary/10 p-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                    <div className="min-w-0">
                       <span className="text-[10px] font-black uppercase text-primary tracking-widest block">
                         Konteks Berkas ({selectedFile.issuer.context || 'Pemilik'})
                       </span>
@@ -358,7 +358,7 @@ export default function FileExplorerPage() {
             </div>
 
             {/* Action Buttons */}
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
               <Button
                 variant="outline"
                 onClick={() => copyToClipboard(getFileUrl(selectedFile.localUrl || selectedFile.gdUrl || selectedFile.hfUrl))}

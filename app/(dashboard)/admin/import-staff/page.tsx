@@ -195,8 +195,8 @@ export default function ImportStaffPage() {
         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-white shadow-md shadow-violet-600/30 shrink-0">
           <Icon icon="mingcute:upload-3-fill" className="text-xl" />
         </div>
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-foreground">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-black tracking-tight text-foreground">
             <span className="bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">Import</span> Staff (Admin & Guru)
           </h1>
           <p className="text-xs text-muted-foreground font-semibold">
@@ -338,7 +338,7 @@ export default function ImportStaffPage() {
 
       {/* Step 1: Preview & Validation */}
       {step === 1 && (
-        <div className="bg-card rounded-3xl p-6 border border-border shadow-sm space-y-6">
+        <div className="space-y-6 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
             <div>
               <h3 className="text-lg font-black text-foreground">Preview & Validasi Data ({previewData.length} Baris)</h3>
@@ -353,14 +353,14 @@ export default function ImportStaffPage() {
               )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button onClick={reset} variant="outline" className="rounded-2xl font-bold text-xs h-10">
+            <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:items-center">
+              <Button onClick={reset} variant="outline" className="h-11 w-full rounded-2xl text-xs font-bold">
                 Batal / Upload Ulang
               </Button>
               <Button
                 onClick={handleImport}
                 disabled={importing || errors.length > 0}
-                className="rounded-2xl font-black text-xs bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-6 h-10 shadow-md"
+                className="h-11 w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 text-xs font-black text-white shadow-md"
               >
                 {importing ? 'Mengimpor...' : 'Impor Sekarang'}
               </Button>
@@ -368,8 +368,9 @@ export default function ImportStaffPage() {
           </div>
 
           {/* Table Preview */}
-          <div className="overflow-x-auto rounded-2xl border border-border">
-            <table className="w-full text-left text-xs">
+          <p className="text-[10px] font-bold text-muted-foreground md:hidden">Geser tabel ke samping untuk memeriksa semua kolom.</p>
+          <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-border">
+            <table className="min-w-[720px] w-full text-left text-xs">
               <thead className="bg-muted/50 text-muted-foreground font-black uppercase text-[10px] tracking-wider border-b border-border">
                 <tr>
                   <th className="p-3">Status</th>
@@ -407,7 +408,7 @@ export default function ImportStaffPage() {
 
       {/* Step 2: Success State */}
       {step === 2 && (
-        <div className="bg-card rounded-3xl p-10 border border-border shadow-sm text-center space-y-6 max-w-lg mx-auto">
+        <div className="mx-auto max-w-lg space-y-6 rounded-3xl border border-border bg-card p-4 text-center shadow-sm sm:p-10">
           <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
             <Icon icon="mingcute:check-circle-fill" className="text-4xl" />
           </div>
@@ -417,12 +418,12 @@ export default function ImportStaffPage() {
               Data Admin dan Guru telah berhasil didaftarkan ke sistem GASKAN.
             </p>
           </div>
-          <div className="flex justify-center gap-3 pt-2">
-            <Button onClick={reset} variant="outline" className="rounded-2xl font-bold text-xs h-11">
+          <div className="grid grid-cols-1 gap-3 pt-2 min-[420px]:grid-cols-2">
+            <Button onClick={reset} variant="outline" className="h-11 w-full rounded-2xl text-xs font-bold">
               Import File Lain
             </Button>
-            <Link href="/admin">
-              <Button className="rounded-2xl font-black text-xs bg-primary text-primary-foreground px-6 h-11">
+            <Link href="/admin" className="w-full">
+              <Button className="h-11 w-full rounded-2xl bg-primary px-6 text-xs font-black text-primary-foreground">
                 Kembali ke Manajemen User
               </Button>
             </Link>

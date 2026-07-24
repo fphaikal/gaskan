@@ -250,7 +250,7 @@ export default function ConfigDevicePage() {
       {/* Header Area matching Nuxt 1-to-1 */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
             Mesin & Gerbang Presensi
             <Badge className="bg-primary/15 text-primary border-primary/30 text-xs font-black">
               {devices.length} Perangkat
@@ -263,7 +263,7 @@ export default function ConfigDevicePage() {
 
         <Button
           onClick={openAddModal}
-          className="bg-primary text-primary-foreground rounded-2xl px-6 h-12 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-xs"
+          className="h-11 w-full rounded-2xl bg-primary px-6 text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] md:w-auto"
         >
           <Icon icon="mingcute:plus-fill" className="mr-1.5 text-lg" />
           Tambah Perangkat
@@ -274,7 +274,7 @@ export default function ConfigDevicePage() {
       {loading ? (
         <DeviceCardsSkeleton />
       ) : devices.length === 0 ? (
-        <div className="bg-card border border-border rounded-3xl p-16 text-center max-w-lg mx-auto shadow-sm space-y-3">
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-16 text-center max-w-lg mx-auto shadow-sm space-y-3">
           <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto">
             <Icon icon="mingcute:chip-line" className="text-3xl text-muted-foreground/40" />
           </div>
@@ -282,7 +282,7 @@ export default function ConfigDevicePage() {
           <p className="text-muted-foreground text-xs font-medium">
             Tambahkan mesin sidik jari/wajah Hikvision pertama Anda untuk mulai sinkronisasi data kehadiran siswa secara otomatis.
           </p>
-          <Button onClick={openAddModal} className="rounded-xl px-5 h-10 text-xs font-bold">
+          <Button onClick={openAddModal} className="w-full rounded-xl px-5 text-xs font-bold sm:w-auto">
             <Icon icon="mingcute:plus-fill" className="mr-1 text-sm" />
             Daftarkan Mesin
           </Button>
@@ -293,13 +293,13 @@ export default function ConfigDevicePage() {
           {devices.map((d) => (
             <div
               key={d.id}
-              className="bg-card border border-border hover:border-primary/30 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+              className="group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-lg sm:p-6"
             >
               <div>
                 {/* Header Card */}
                 <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                  <div className="min-w-0">
+                    <h2 className="break-words text-xl font-bold text-foreground transition-colors group-hover:text-primary">
                       {d.name}
                     </h2>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 font-semibold">
@@ -355,7 +355,7 @@ export default function ConfigDevicePage() {
                     size="sm"
                     onClick={() => testConnection(d)}
                     disabled={testingId === d.id}
-                    className="flex-1 rounded-xl h-9 text-xs font-bold border-primary text-primary hover:bg-primary/10"
+                    className="h-11 flex-1 rounded-xl border-primary text-xs font-bold text-primary hover:bg-primary/10 sm:h-9"
                   >
                     {testingId === d.id ? (
                       <Icon icon="mingcute:loading-fill" className="animate-spin mr-1 text-sm" />
@@ -369,7 +369,7 @@ export default function ConfigDevicePage() {
                     size="sm"
                     onClick={() => handleSetupPush(d)}
                     disabled={settingPushId === d.id}
-                    className="flex-1 rounded-xl h-9 text-xs font-bold bg-primary text-primary-foreground"
+                    className="h-11 flex-1 rounded-xl bg-primary text-xs font-bold text-primary-foreground sm:h-9"
                   >
                     {settingPushId === d.id ? (
                       <Icon icon="mingcute:loading-fill" className="animate-spin mr-1 text-sm" />
@@ -386,20 +386,22 @@ export default function ConfigDevicePage() {
                     {/* Link to detail page /config/device/[id] */}
                     <Link
                       href={`/config/device/${d.id}`}
-                      className="h-8 w-8 rounded-xl border border-border hover:border-emerald-500/30 hover:text-emerald-500 flex items-center justify-center text-muted-foreground transition-colors"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-emerald-500/30 hover:text-emerald-500 sm:h-8 sm:w-8"
                       title="Statistik & Kapasitas Alat"
                     >
                       <Icon icon="mingcute:chart-bar-fill" className="text-base" />
                     </Link>
                     <button
                       onClick={() => openEditModal(d)}
-                      className="h-8 w-8 rounded-xl border border-border hover:border-primary/30 hover:text-primary flex items-center justify-center text-muted-foreground transition-colors"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary sm:h-8 sm:w-8"
+                      aria-label={`Edit ${d.name}`}
                     >
                       <Icon icon="mingcute:pencil-fill" className="text-base" />
                     </button>
                     <button
                       onClick={() => handleDelete(d.id)}
-                      className="h-8 w-8 rounded-xl border border-border hover:border-rose-500/30 hover:text-rose-500 flex items-center justify-center text-muted-foreground transition-colors"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-rose-500/30 hover:text-rose-500 sm:h-8 sm:w-8"
+                      aria-label={`Hapus ${d.name}`}
                     >
                       <Icon icon="mingcute:delete-2-fill" className="text-base" />
                     </button>
@@ -412,7 +414,7 @@ export default function ConfigDevicePage() {
       )}
 
       {/* Attendance Parameters Card matching Nuxt 1-to-1 */}
-      <div className="mt-12 max-w-2xl bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-md relative overflow-hidden">
+      <div className="relative mt-12 max-w-2xl overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-md sm:p-8">
         <div className="flex items-start gap-4 mb-6">
           <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
             <Icon icon="mingcute:time-fill" className="text-2xl" />
@@ -480,7 +482,7 @@ export default function ConfigDevicePage() {
         <Button
           onClick={saveLateSettings}
           disabled={savingSettings}
-          className="rounded-2xl font-bold text-xs bg-primary text-primary-foreground px-6 h-11"
+          className="h-11 w-full rounded-2xl bg-primary px-6 text-xs font-bold text-primary-foreground sm:w-auto"
         >
           {savingSettings ? 'Memproses...' : 'Simpan Parameter Presensi'}
         </Button>
@@ -489,14 +491,14 @@ export default function ConfigDevicePage() {
       {/* CREATE / EDIT DEVICE MODAL */}
       {showModal && (
         <Dialog open={showModal} onOpenChange={setShowModal}>
-          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+            <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
               <DialogTitle className="text-xl font-black text-foreground">
                 {isEdit ? 'Edit Perangkat Absensi' : 'Daftarkan Perangkat Baru'}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between mb-2">
                   <Label className="mb-0">Nama Perangkat</Label>
@@ -563,7 +565,7 @@ export default function ConfigDevicePage() {
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
               <Button variant="ghost" className="rounded-2xl font-bold flex-1 text-xs" onClick={() => setShowModal(false)}>
                 Batal
               </Button>

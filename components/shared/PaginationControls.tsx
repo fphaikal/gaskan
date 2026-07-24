@@ -36,9 +36,9 @@ export function PaginationControls({
   ];
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border bg-card/90 backdrop-blur-md shrink-0">
-      <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground w-full sm:w-auto">
-        <div className="w-40 shrink-0">
+    <div className="flex shrink-0 flex-col items-center justify-between gap-3 border-t border-border bg-card/90 p-3 backdrop-blur-md sm:flex-row sm:gap-4 sm:p-4">
+      <div className="flex w-full items-center justify-between gap-3 text-xs font-bold text-muted-foreground sm:w-auto sm:justify-start sm:gap-4">
+        <div className="w-40 max-w-full shrink-0">
           <CustomSelect
             value={String(itemsPerPage)}
             onChange={(val) => {
@@ -54,28 +54,34 @@ export function PaginationControls({
         )}
       </div>
 
-      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-        <span className="text-xs font-bold text-muted-foreground mr-2">
+      <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
+        <span className="min-w-0 truncate whitespace-nowrap text-[11px] font-bold text-muted-foreground sm:mr-2 sm:text-xs">
           Halaman {currentPage} {totalPages ? `dari ${totalPages}` : ""}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="rounded-xl font-bold h-9 px-3 disabled:opacity-50 border-border bg-background"
+            className="h-11 min-w-11 rounded-xl border-border bg-background px-0 font-bold disabled:opacity-50 min-[360px]:px-3 sm:h-9"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={isPrevDisabled}
+            aria-label="Halaman sebelumnya"
+            title="Halaman sebelumnya"
           >
-            <ChevronLeft className="h-4 w-4 mr-1" /> Prev
+            <ChevronLeft className="h-4 w-4 min-[360px]:mr-1" />
+            <span className="hidden min-[360px]:inline">Prev</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="rounded-xl font-bold h-9 px-3 disabled:opacity-50 border-border bg-background"
+            className="h-11 min-w-11 rounded-xl border-border bg-background px-0 font-bold disabled:opacity-50 min-[360px]:px-3 sm:h-9"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={isNextDisabled}
+            aria-label="Halaman berikutnya"
+            title="Halaman berikutnya"
           >
-            Next <ChevronRight className="h-4 w-4 ml-1" />
+            <span className="hidden min-[360px]:inline">Next</span>
+            <ChevronRight className="h-4 w-4 min-[360px]:ml-1" />
           </Button>
         </div>
       </div>

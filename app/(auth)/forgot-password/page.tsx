@@ -38,28 +38,28 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="flex min-h-dvh items-center justify-center overflow-y-auto overscroll-contain bg-background p-4 py-6 sm:p-6">
+      <div className="w-full max-w-md space-y-4 sm:space-y-6">
+        <div className="mb-2 flex items-center justify-center gap-2 sm:mb-4">
           <Icon icon="mingcute:key-2-fill" className="text-primary text-3xl" />
           <span className="text-2xl font-extrabold tracking-tight">GASKAN</span>
         </div>
 
         <Card className="border-border shadow-md">
-          <CardHeader className="space-y-1 text-center">
+          <CardHeader className="space-y-1 px-4 text-center sm:px-6">
             <CardTitle className="text-2xl font-bold">Lupa Password</CardTitle>
             <CardDescription>
               Masukkan email terdaftar untuk menerima link reset password
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             {submitted ? (
               <div className="text-center space-y-4 py-4">
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-3xl">
                   <Icon icon="mingcute:mail-send-line" />
                 </div>
                 <h3 className="text-lg font-bold">Cek Email Anda</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
                   Kami telah mengirimkan instruksi pemulihan kata sandi ke <strong className="text-foreground">{email}</strong>.
                 </p>
                 <Button
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
               </form>
             )}
           </CardContent>
-          <CardFooter className="flex justify-center border-t border-border pt-4">
+          <CardFooter className="flex justify-center border-t border-border px-4 pt-4 sm:px-6">
             <Link href="/login" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
               <Icon icon="mingcute:arrow-left-line" />
               Kembali ke Login

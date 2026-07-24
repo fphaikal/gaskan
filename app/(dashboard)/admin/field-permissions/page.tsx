@@ -97,11 +97,11 @@ export default function FieldPermissionsPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Header Page matching Nuxt 1-to-1 */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 md:p-8 rounded-3xl border border-border shadow-sm">
-        <div>
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:p-8">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <Link href="/siswa">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl text-muted-foreground hover:text-foreground sm:h-8 sm:w-8">
                 <Icon icon="mingcute:left-line" className="text-base" />
               </Button>
             </Link>
@@ -115,11 +115,11 @@ export default function FieldPermissionsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex w-full shrink-0 items-center gap-3 md:w-auto">
           <Button
             onClick={saveFieldPermissions}
             disabled={isSaving || isLoading}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl px-6 font-bold gap-2 shadow-lg shadow-primary/20"
+            className="h-11 w-full gap-2 rounded-2xl bg-primary px-6 font-bold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 md:w-auto"
           >
             {isSaving ? (
               <Icon icon="mingcute:loading-fill" className="animate-spin text-base" />
@@ -133,13 +133,13 @@ export default function FieldPermissionsPage() {
 
       {/* Quick Bulk Actions & Legend Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 md:px-6 rounded-2xl border border-border shadow-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-black text-muted-foreground/60 mr-2 uppercase tracking-wider">Aksi Masal:</span>
+        <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap sm:items-center">
+          <span className="text-xs font-black uppercase tracking-wider text-muted-foreground/60 min-[420px]:col-span-3 sm:mr-2">Aksi Masal:</span>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => setAllModes('FREELY_EDITABLE')}
-            className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 rounded-xl font-bold text-xs"
+            className="min-h-11 w-full rounded-xl bg-emerald-500/10 text-xs font-bold text-emerald-500 hover:bg-emerald-500/20 sm:w-auto"
           >
             🟢 Set Semua Bebas
           </Button>
@@ -147,7 +147,7 @@ export default function FieldPermissionsPage() {
             size="sm"
             variant="ghost"
             onClick={() => setAllModes('LOCKED')}
-            className="bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-xl font-bold text-xs"
+            className="min-h-11 w-full rounded-xl bg-rose-500/10 text-xs font-bold text-rose-500 hover:bg-rose-500/20 sm:w-auto"
           >
             🔴 Set Semua Terkunci
           </Button>
@@ -155,13 +155,13 @@ export default function FieldPermissionsPage() {
             size="sm"
             variant="ghost"
             onClick={() => setAllModes('FILL_ONCE')}
-            className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-xl font-bold text-xs"
+            className="min-h-11 w-full rounded-xl bg-amber-500/10 text-xs font-bold text-amber-500 hover:bg-amber-500/20 sm:w-auto"
           >
             🟡 Set Semua 1x Isi
           </Button>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-muted-foreground">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Bebas</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Dikunci</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> 1x Isi Kosong</span>
@@ -173,11 +173,11 @@ export default function FieldPermissionsPage() {
           {fieldPermissions.map((field) => (
             <div
               key={field.fieldName}
-              className="bg-card p-6 rounded-3xl border border-border/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+              className="flex min-w-0 flex-col justify-between space-y-4 rounded-3xl border border-border/80 bg-card p-4 shadow-sm transition-all hover:shadow-md sm:p-6"
             >
               {/* Card Header */}
-              <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
                     <Icon icon={getFieldIcon(field.fieldName)} className="text-lg" />
                   </div>
@@ -206,7 +206,7 @@ export default function FieldPermissionsPage() {
                 {/* Option 1: FREELY_EDITABLE */}
                 <div
                   onClick={() => handleModeChange(field.fieldName, 'FREELY_EDITABLE')}
-                  className={`flex items-center gap-3 text-xs font-bold cursor-pointer p-3 rounded-2xl border transition-all ${
+                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border p-3 text-xs font-bold transition-all ${
                     field.mode === 'FREELY_EDITABLE'
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-xs'
                       : 'bg-muted/30 border-border text-muted-foreground hover:bg-muted/60'
@@ -217,7 +217,7 @@ export default function FieldPermissionsPage() {
                     name={`perm-${field.fieldName}`}
                     checked={field.mode === 'FREELY_EDITABLE'}
                     onChange={() => handleModeChange(field.fieldName, 'FREELY_EDITABLE')}
-                    className="w-3.5 h-3.5 text-emerald-500"
+                    className="h-5 w-5 shrink-0 text-emerald-500"
                   />
                   <div className="flex flex-col">
                     <span className="font-black text-xs">🟢 Bebas Diedit Siswa</span>
@@ -228,7 +228,7 @@ export default function FieldPermissionsPage() {
                 {/* Option 2: LOCKED */}
                 <div
                   onClick={() => handleModeChange(field.fieldName, 'LOCKED')}
-                  className={`flex items-center gap-3 text-xs font-bold cursor-pointer p-3 rounded-2xl border transition-all ${
+                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border p-3 text-xs font-bold transition-all ${
                     field.mode === 'LOCKED'
                       ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 shadow-xs'
                       : 'bg-muted/30 border-border text-muted-foreground hover:bg-muted/60'
@@ -239,7 +239,7 @@ export default function FieldPermissionsPage() {
                     name={`perm-${field.fieldName}`}
                     checked={field.mode === 'LOCKED'}
                     onChange={() => handleModeChange(field.fieldName, 'LOCKED')}
-                    className="w-3.5 h-3.5 text-rose-500"
+                    className="h-5 w-5 shrink-0 text-rose-500"
                   />
                   <div className="flex flex-col">
                     <span className="font-black text-xs">🔴 Tidak Boleh Diedit</span>
@@ -250,7 +250,7 @@ export default function FieldPermissionsPage() {
                 {/* Option 3: FILL_ONCE */}
                 <div
                   onClick={() => handleModeChange(field.fieldName, 'FILL_ONCE')}
-                  className={`flex items-center gap-3 text-xs font-bold cursor-pointer p-3 rounded-2xl border transition-all ${
+                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border p-3 text-xs font-bold transition-all ${
                     field.mode === 'FILL_ONCE'
                       ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 shadow-xs'
                       : 'bg-muted/30 border-border text-muted-foreground hover:bg-muted/60'
@@ -261,7 +261,7 @@ export default function FieldPermissionsPage() {
                     name={`perm-${field.fieldName}`}
                     checked={field.mode === 'FILL_ONCE'}
                     onChange={() => handleModeChange(field.fieldName, 'FILL_ONCE')}
-                    className="w-3.5 h-3.5 text-amber-500"
+                    className="h-5 w-5 shrink-0 text-amber-500"
                   />
                   <div className="flex flex-col">
                     <span className="font-black text-xs">🟡 Sekali Isi Jika Kosong</span>

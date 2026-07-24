@@ -218,6 +218,19 @@ export default function KalenderPage() {
     [filteredEvents]
   );
 
+  const selectCalendarDay = (day: Date) => {
+    setSelectedDate(day);
+
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      window.requestAnimationFrame(() => {
+        document.getElementById('selected-day-agenda')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    }
+  };
+
   // Form Handlers
   const openCreateModal = () => {
     setIsEditing(false);
@@ -327,7 +340,7 @@ export default function KalenderPage() {
           {canManage && (
             <Button
               onClick={openCreateModal}
-              className="bg-card hover:bg-card/90 text-foreground border-0 rounded-2xl font-black text-xs shadow-lg gap-2 h-11 px-5"
+              className="w-full sm:w-auto bg-card hover:bg-card/90 text-foreground border-0 rounded-2xl font-black text-xs shadow-lg gap-2 h-11 px-5"
             >
               <Icon icon="Plus" className="text-base text-primary" />
               <span>+ Tambah Agenda Baru</span>
@@ -384,25 +397,25 @@ export default function KalenderPage() {
       </div>
 
       {/* WORKSPACE CONTROLS & TOOLBAR matching Nuxt 1-to-1 */}
-      <div className="bg-card rounded-3xl p-4 border border-border shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-card rounded-3xl p-4 border border-border shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: Search & View Switcher */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex w-full flex-col min-[640px]:flex-row min-[640px]:items-center gap-3 lg:w-auto">
           {/* Search bar */}
-          <div className="relative min-w-[200px] max-w-xs">
+          <div className="relative w-full min-w-0 min-[640px]:max-w-xs">
             <Icon icon="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari agenda / catatan..."
-              className="pl-8 rounded-xl bg-muted/40 border-border text-xs font-medium h-9"
+              className="pl-8 rounded-xl bg-muted/40 border-border text-xs font-medium h-11 min-[640px]:h-9"
             />
           </div>
 
           {/* View Mode Switcher */}
-          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-2xl border border-border">
+          <div className="grid w-full grid-cols-2 items-center gap-1 bg-muted/50 p-1 rounded-2xl border border-border min-[640px]:flex min-[640px]:w-auto">
             <button
               onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              className={`min-h-11 min-[640px]:min-h-0 px-2 min-[400px]:px-3 py-1.5 rounded-xl text-[10px] min-[400px]:text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                 viewMode === 'calendar' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -411,7 +424,7 @@ export default function KalenderPage() {
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              className={`min-h-11 min-[640px]:min-h-0 px-2 min-[400px]:px-3 py-1.5 rounded-xl text-[10px] min-[400px]:text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
                 viewMode === 'table' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -422,9 +435,9 @@ export default function KalenderPage() {
         </div>
 
         {/* Right: Target Scope Pills & Class Dropdown */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
           {canManage && (
-            <div className="w-40">
+            <div className="w-full min-[420px]:w-40">
               <CustomSelect
                 options={[
                   { value: '', label: 'Semua Jurusan' },
@@ -438,7 +451,7 @@ export default function KalenderPage() {
           )}
 
           {canManage && (
-            <div className="w-40">
+            <div className="w-full min-[420px]:w-40">
               <CustomSelect
                 options={[
                   { value: '', label: 'Semua Kelas' },
@@ -451,7 +464,7 @@ export default function KalenderPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-2xl border border-border">
+          <div className="flex w-full max-w-full items-center gap-1 overflow-x-auto overscroll-x-contain bg-muted/50 p-1 rounded-2xl border border-border custom-scrollbar">
             {[
               { key: 'ALL', label: 'Semua Target' },
               { key: 'GLOBAL', label: 'Global' },
@@ -461,7 +474,7 @@ export default function KalenderPage() {
               <button
                 key={sc.key}
                 onClick={() => setActiveScopeFilter(sc.key)}
-                className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase transition-all ${
+                className={`min-h-11 min-[640px]:min-h-0 shrink-0 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase transition-all ${
                   activeScopeFilter === sc.key ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -476,9 +489,9 @@ export default function KalenderPage() {
       {viewMode === 'calendar' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Big Calendar Grid */}
-          <div className="lg:col-span-8 bg-card rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between">
+          <div className="lg:col-span-8 bg-card rounded-3xl p-4 sm:p-6 border border-border shadow-xs flex flex-col justify-between">
             {/* Month Navigation */}
-            <div className="flex items-center justify-between pb-4 border-b border-border mb-4">
+            <div className="flex flex-col min-[380px]:flex-row min-[380px]:items-center justify-between gap-3 pb-4 border-b border-border mb-4">
               <h2 className="text-lg font-black text-foreground capitalize">
                 {format(currentMonth, 'MMMM yyyy', { locale: localeId })}
               </h2>
@@ -487,7 +500,8 @@ export default function KalenderPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  className="h-8 w-8 rounded-xl"
+                  className="h-11 w-11 min-[640px]:h-8 min-[640px]:w-8 rounded-xl"
+                  aria-label="Bulan sebelumnya"
                 >
                   <Icon icon="ChevronLeft" className="text-base" />
                 </Button>
@@ -496,9 +510,9 @@ export default function KalenderPage() {
                   size="sm"
                   onClick={() => {
                     setCurrentMonth(new Date());
-                    setSelectedDate(new Date());
+                    selectCalendarDay(new Date());
                   }}
-                  className="h-8 rounded-xl text-xs font-bold px-3"
+                  className="h-11 min-[640px]:h-8 rounded-xl text-xs font-bold px-3"
                 >
                   Hari Ini
                 </Button>
@@ -506,7 +520,8 @@ export default function KalenderPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  className="h-8 w-8 rounded-xl"
+                  className="h-11 w-11 min-[640px]:h-8 min-[640px]:w-8 rounded-xl"
+                  aria-label="Bulan berikutnya"
                 >
                   <Icon icon="ChevronRight" className="text-base" />
                 </Button>
@@ -518,7 +533,7 @@ export default function KalenderPage() {
               {/* Day Headers */}
               <div className="grid grid-cols-7 gap-1 text-center mb-2">
                 {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((dayName, i) => (
-                  <div key={i} className="text-[11px] font-black uppercase tracking-wider text-muted-foreground/60 py-1">
+                  <div key={i} className="text-[9px] sm:text-[11px] font-black uppercase tracking-normal sm:tracking-wider text-muted-foreground/60 py-1">
                     {dayName}
                   </div>
                 ))}
@@ -535,8 +550,10 @@ export default function KalenderPage() {
                   return (
                     <button
                       key={dIdx}
-                      onClick={() => setSelectedDate(day)}
-                      className={`min-h-[64px] sm:min-h-[72px] p-1.5 rounded-2xl border transition-all flex flex-col justify-between items-center text-left ${
+                      onClick={() => selectCalendarDay(day)}
+                      aria-controls="selected-day-agenda"
+                      aria-label={`Lihat agenda ${format(day, 'd MMMM yyyy', { locale: localeId })}`}
+                      className={`min-h-12 sm:min-h-[72px] p-0.5 sm:p-1.5 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between items-center text-left ${
                         isSelected
                           ? 'border-primary bg-primary/10 shadow-sm ring-2 ring-primary/30'
                           : isTodayDate
@@ -547,7 +564,7 @@ export default function KalenderPage() {
                       }`}
                     >
                       <span
-                        className={`text-xs font-black rounded-full w-6 h-6 flex items-center justify-center ${
+                        className={`text-[10px] sm:text-xs font-black rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center ${
                           isTodayDate
                             ? 'bg-amber-500 text-slate-950'
                             : isSelected
@@ -566,7 +583,7 @@ export default function KalenderPage() {
                             return (
                               <span
                                 key={eIdx}
-                                className="w-2 h-2 rounded-full shadow-xs"
+                                className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shadow-xs"
                                 style={{ backgroundColor: ev.color || cfg.color }}
                                 title={`${ev.title} (${cfg.label})`}
                               />
@@ -602,11 +619,14 @@ export default function KalenderPage() {
           </div>
 
           {/* Right: Selected Date Agenda Details */}
-          <div className="lg:col-span-4 bg-card rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between">
+          <div
+            id="selected-day-agenda"
+            className="scroll-mt-20 lg:col-span-4 bg-card rounded-3xl p-4 sm:p-6 border border-border shadow-xs flex flex-col justify-between"
+          >
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div>
-                  <h3 className="text-base font-black text-foreground">Agenda Tanggal Ini</h3>
+              <div className="flex flex-col min-[400px]:flex-row min-[400px]:items-center justify-between gap-3 pb-3 border-b border-border">
+                <div className="min-w-0">
+                  <h3 className="text-base font-black text-foreground">Detail Agenda Tanggal Ini</h3>
                   <p className="text-xs text-muted-foreground font-bold">
                     {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: localeId })}
                   </p>
@@ -615,7 +635,7 @@ export default function KalenderPage() {
                   <Button
                     size="sm"
                     onClick={openCreateModal}
-                    className="rounded-xl text-xs font-bold gap-1 bg-primary text-primary-foreground shadow-sm h-8"
+                    className="w-full min-[400px]:w-auto rounded-xl text-xs font-bold gap-1 bg-primary text-primary-foreground shadow-sm h-11 min-[640px]:h-8"
                   >
                     <Icon icon="Plus" className="text-sm" />
                     <span>Tambah</span>
@@ -644,7 +664,8 @@ export default function KalenderPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => openEditModal(ev)}
-                              className="h-7 w-7 text-amber-500 hover:bg-amber-500/10 rounded-xl"
+                              className="h-11 w-11 min-[640px]:h-7 min-[640px]:w-7 text-amber-500 hover:bg-amber-500/10 rounded-xl"
+                              aria-label={`Edit agenda ${ev.title}`}
                             >
                               <Icon icon="Edit2" className="text-xs" />
                             </Button>
@@ -652,7 +673,8 @@ export default function KalenderPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => setDeleteTargetId(ev.id)}
-                              className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 rounded-xl"
+                              className="h-11 w-11 min-[640px]:h-7 min-[640px]:w-7 text-rose-500 hover:bg-rose-500/10 rounded-xl"
+                              aria-label={`Hapus agenda ${ev.title}`}
                             >
                               <Icon icon="Trash2" className="text-xs" />
                             </Button>
@@ -711,8 +733,11 @@ export default function KalenderPage() {
       ) : (
         /* DATATABLE VIEW matching Nuxt 1-to-1 */
         <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden flex flex-col">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-xs">
+          <p id="calendar-table-scroll-hint" className="px-4 pt-4 text-[10px] font-bold text-muted-foreground sm:hidden">
+            Geser tabel ke samping untuk melihat seluruh detail agenda.
+          </p>
+          <div className="overflow-x-auto overscroll-x-contain w-full" aria-describedby="calendar-table-scroll-hint">
+            <table className="min-w-[760px] w-full text-xs">
               <thead>
                 <tr className="bg-muted/40 text-[10px] font-black uppercase tracking-wider text-muted-foreground border-b border-border text-left">
                   <th className="py-3.5 px-6">Agenda &amp; Catatan</th>
@@ -794,6 +819,7 @@ export default function KalenderPage() {
                               size="icon"
                               onClick={() => openEditModal(ev)}
                               className="h-8 w-8 text-amber-500 hover:bg-amber-500/10 rounded-xl"
+                              aria-label={`Edit agenda ${ev.title}`}
                             >
                               <Icon icon="Edit2" className="text-sm" />
                             </Button>
@@ -802,6 +828,7 @@ export default function KalenderPage() {
                               size="icon"
                               onClick={() => setDeleteTargetId(ev.id)}
                               className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-xl"
+                              aria-label={`Hapus agenda ${ev.title}`}
                             >
                               <Icon icon="Trash2" className="text-sm" />
                             </Button>
@@ -828,15 +855,15 @@ export default function KalenderPage() {
 
       {/* CREATE / EDIT MODAL FORM */}
       <Dialog open={showFormModal} onOpenChange={setShowFormModal}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+          <DialogHeader className="p-4 sm:p-6 pb-4 border-b border-border shrink-0 bg-card">
             <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2">
               <Icon icon="Edit3" className="text-amber-500 text-xl" />
               {isEditing ? 'Edit Agenda Akademik' : 'Tambah Agenda Akademik Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="p-6 space-y-4 flex-1 overflow-y-auto text-xs">
+          <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto text-xs">
             <div className="space-y-2">
               <div className="flex items-center justify-between mb-2">
                 <Label htmlFor="title" className="mb-0">Judul Agenda</Label>
@@ -976,12 +1003,12 @@ export default function KalenderPage() {
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Catatan tambahan untuk siswa/guru..."
-                className="rounded-2xl bg-muted/30 font-medium text-xs resize-none"
+                className="rounded-2xl bg-muted/30 font-medium text-base sm:text-xs resize-none"
               />
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="p-4 sm:p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
             <Button variant="ghost" className="rounded-2xl font-bold flex-1 text-xs" onClick={() => setShowFormModal(false)}>
               Batal
             </Button>
@@ -999,8 +1026,8 @@ export default function KalenderPage() {
       {/* DELETE CONFIRMATION MODAL */}
       {deleteTargetId && (
         <Dialog open={!!deleteTargetId} onOpenChange={() => setDeleteTargetId(null)}>
-          <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <div className="p-6 space-y-4 text-center">
+          <DialogContent className="max-h-[calc(100dvh-1rem)] sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+            <div className="p-4 sm:p-6 space-y-4 text-center overflow-y-auto">
               <div className="w-14 h-14 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto mb-1">
                 <Icon icon="Trash2" className="text-2xl" />
               </div>
@@ -1009,7 +1036,7 @@ export default function KalenderPage() {
                 Apakah Anda yakin ingin menghapus agenda akademik ini secara permanen?
               </p>
             </div>
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+            <DialogFooter className="p-4 sm:p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
               <Button variant="ghost" className="rounded-2xl font-bold text-xs flex-1" onClick={() => setDeleteTargetId(null)}>
                 Batal
               </Button>

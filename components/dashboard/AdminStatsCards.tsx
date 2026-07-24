@@ -11,14 +11,14 @@ import { id as localeId } from 'date-fns/locale';
 
 export function AdminStatsCardsSkeleton() {
   return (
-    <div className="grid grid-cols-12 gap-4 items-stretch shrink-0 mb-6">
-      <div className="col-span-12 lg:col-span-4 h-36 bg-card border border-border rounded-3xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
-        <Skeleton className="h-3 w-36" />
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-40" />
+    <div className="grid grid-cols-12 gap-3 sm:gap-4 items-stretch shrink-0 mb-6">
+      <div className="col-span-12 lg:col-span-4 min-h-32 sm:min-h-36 bg-card border border-border rounded-3xl p-4 sm:p-5 shadow-sm space-y-3 flex flex-col justify-between">
+        <Skeleton className="h-3 w-36 max-w-full" />
+        <Skeleton className="h-8 w-48 max-w-full" />
+        <Skeleton className="h-4 w-40 max-w-full" />
       </div>
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="col-span-6 sm:col-span-3 lg:col-span-2 h-36 bg-card border border-border rounded-3xl p-4 flex flex-col items-center justify-center space-y-2">
+        <div key={i} className="col-span-6 sm:col-span-3 lg:col-span-2 min-h-28 sm:min-h-36 bg-card border border-border rounded-3xl p-3 sm:p-4 flex flex-col items-center justify-center space-y-2">
           <Skeleton className="w-8 h-8 rounded-full" />
           <Skeleton className="h-8 w-12" />
           <Skeleton className="h-3 w-10" />
@@ -97,18 +97,18 @@ export function AdminStatsCards() {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-4 items-stretch shrink-0 mb-6">
+    <div className="grid grid-cols-12 gap-3 sm:gap-4 items-stretch shrink-0 mb-6">
       {/* Welcome Hero Card */}
       <Link
         href="/profile"
-        className="col-span-12 lg:col-span-4 h-full bg-gradient-to-br from-amber-500 via-orange-400 to-amber-400 rounded-3xl p-5 relative overflow-hidden shadow-xl shadow-amber-500/20 flex flex-col justify-between hover:scale-[1.01] transition-transform cursor-pointer group text-slate-950"
+        className="col-span-12 lg:col-span-4 min-h-32 sm:min-h-36 bg-gradient-to-br from-amber-500 via-orange-400 to-amber-400 rounded-3xl p-4 sm:p-5 relative overflow-hidden shadow-xl shadow-amber-500/20 flex min-w-0 flex-col justify-between hover:scale-[1.01] transition-transform cursor-pointer group text-slate-950"
       >
         <div className="relative z-10">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-950/60 mb-0.5">
             {greeting} — {todayStr}
           </p>
-          <h1 className="text-2xl font-black text-slate-950 leading-tight">{displayName}</h1>
-          <p className="text-[11px] text-slate-950/75 font-semibold mt-1">
+          <h1 className="break-words text-xl sm:text-2xl font-black text-slate-950 leading-tight">{displayName}</h1>
+          <p className="break-words text-[11px] text-slate-950/75 font-semibold mt-1">
             {todayStats.totalSiswa} siswa · {todayStats.pendingLeaves} izin pending · {todayStats.attendancePct}% hadir
           </p>
         </div>
@@ -122,7 +122,7 @@ export function AdminStatsCards() {
       {/* Alpha Card */}
       <Link
         href="/absensi"
-        className="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-rose-500 rounded-3xl p-4 text-white shadow-lg shadow-rose-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
+        className="col-span-6 sm:col-span-3 lg:col-span-2 min-h-28 sm:min-h-36 bg-rose-500 rounded-3xl p-3 sm:p-4 text-white shadow-lg shadow-rose-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
       >
         <Icon icon="XCircle" className="text-xl mb-1 opacity-80" />
         <p className="text-3xl font-black leading-none">{todayStats.absent}</p>
@@ -132,7 +132,7 @@ export function AdminStatsCards() {
       {/* Izin/Sakit Card */}
       <Link
         href="/izin"
-        className="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-amber-500 rounded-3xl p-4 text-white shadow-lg shadow-amber-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
+        className="col-span-6 sm:col-span-3 lg:col-span-2 min-h-28 sm:min-h-36 bg-amber-500 rounded-3xl p-3 sm:p-4 text-white shadow-lg shadow-amber-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
       >
         <Icon icon="FileText" className="text-xl mb-1 opacity-80" />
         <p className="text-3xl font-black leading-none">{todayStats.izinSakit}</p>
@@ -142,7 +142,7 @@ export function AdminStatsCards() {
       {/* Lambat Card */}
       <Link
         href="/absensi"
-        className="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-orange-500 rounded-3xl p-4 text-white shadow-lg shadow-orange-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
+        className="col-span-6 sm:col-span-3 lg:col-span-2 min-h-28 sm:min-h-36 bg-orange-500 rounded-3xl p-3 sm:p-4 text-white shadow-lg shadow-orange-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer"
       >
         <Icon icon="Clock" className="text-xl mb-1 opacity-80" />
         <p className="text-3xl font-black leading-none">{todayStats.late}</p>
@@ -152,7 +152,7 @@ export function AdminStatsCards() {
       {/* Hadir Card with Progress Bar */}
       <Link
         href="/absensi"
-        className="col-span-6 sm:col-span-3 lg:col-span-2 h-full bg-emerald-500 rounded-3xl p-4 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer relative"
+        className="col-span-6 sm:col-span-3 lg:col-span-2 min-h-28 sm:min-h-36 bg-emerald-500 rounded-3xl p-3 sm:p-4 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center text-center hover:scale-[1.03] transition-transform cursor-pointer relative"
       >
         <Icon icon="CheckCircle2" className="text-xl mb-1 opacity-80" />
         <p className="text-3xl font-black leading-none">{todayStats.present + todayStats.late}</p>

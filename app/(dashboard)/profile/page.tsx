@@ -54,8 +54,8 @@ function ProfileSideCardSkeleton({ tall = false }: { tall?: boolean }) {
       </div>
       {tall ? (
         <>
-          <Skeleton className="w-28 h-36 mx-auto rounded-2xl" />
-          <Skeleton className="h-9 w-full rounded-xl" />
+          <Skeleton className="aspect-[4/5] h-auto w-28 mx-auto rounded-2xl" />
+          <Skeleton className="h-11 w-full rounded-xl sm:h-9" />
         </>
       ) : (
         <div className="flex items-center gap-3.5">
@@ -81,7 +81,7 @@ function ProfilePageSkeleton() {
         <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-5">
           <div className="overflow-hidden rounded-3xl bg-card border border-border shadow-sm">
             <Skeleton className="h-28 sm:h-36 w-full rounded-none" />
-            <div className="px-5 pb-6 text-center relative">
+            <div className="relative px-4 pb-6 text-center sm:px-5">
               <Skeleton className="mx-auto -mt-12 sm:-mt-14 h-24 w-24 sm:h-28 sm:w-28 rounded-full border-4 border-card" />
               <div className="mt-3 flex flex-col items-center gap-2">
                 <Skeleton className="h-7 w-48" />
@@ -565,6 +565,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={() => setActiveModal('avatarActions')}
                     className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    aria-label="Ubah foto profil"
                   >
                     <Icon icon="mingcute:pencil-fill" className="text-white text-xl drop-shadow-md" />
                   </button>
@@ -574,7 +575,8 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setActiveModal('avatarActions')}
-                  className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg border-2 border-card md:hidden"
+                  className="absolute bottom-0 right-0 flex h-11 w-11 items-center justify-center rounded-full border-2 border-card bg-primary text-primary-foreground shadow-lg md:hidden"
+                  aria-label="Ubah foto profil"
                 >
                   <Icon icon="mingcute:pencil-fill" className="text-xs" />
                 </button>
@@ -582,8 +584,8 @@ export default function ProfilePage() {
 
               {/* User Identity Details */}
               <div className="mt-3 space-y-0.5">
-                <h2 className="text-xl sm:text-2xl font-black text-foreground">{nama}</h2>
-                <p className="font-bold text-xs sm:text-sm text-muted-foreground">{kelas}</p>
+                <h2 className="break-words text-xl font-black text-foreground sm:text-2xl">{nama}</h2>
+                <p className="break-words text-xs font-bold text-muted-foreground sm:text-sm">{kelas}</p>
                 <div className="inline-flex items-center gap-1 mt-2.5 px-3.5 py-1 bg-muted/60 border border-border text-foreground rounded-full text-xs font-mono font-bold shadow-sm">
                   NIS: {nis}
                 </div>
@@ -601,7 +603,7 @@ export default function ProfilePage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveModal('editPersonal')}
-                className="h-7 px-2 text-xs font-bold text-muted-foreground hover:text-primary gap-1"
+                className="h-11 gap-1 px-3 text-xs font-bold text-muted-foreground hover:text-primary sm:h-8 sm:px-2"
               >
                 <Icon icon="mingcute:edit-2-line" className="text-sm" />
                 Edit
@@ -618,7 +620,7 @@ export default function ProfilePage() {
                   <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider mb-0.5">
                     Tempat, Tanggal Lahir
                   </p>
-                  <p className="text-xs sm:text-sm font-bold text-foreground truncate">{ttlStr}</p>
+                  <p className="break-words text-xs font-bold text-foreground sm:text-sm">{ttlStr}</p>
                 </div>
               </div>
 
@@ -646,7 +648,7 @@ export default function ProfilePage() {
                   <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider mb-0.5">
                     Email
                   </p>
-                  <p className="text-xs sm:text-sm font-bold text-foreground truncate">{email || 'Belum Diatur'}</p>
+                  <p className="break-all text-xs font-bold text-foreground sm:text-sm">{email || 'Belum Diatur'}</p>
                 </div>
               </div>
 
@@ -685,7 +687,8 @@ export default function ProfilePage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActiveModal('editContact')}
-                className="h-7 w-7 text-muted-foreground hover:text-primary"
+                className="h-11 w-11 rounded-xl text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
+                aria-label="Edit kontak"
               >
                 <Icon icon="mingcute:edit-2-line" className="text-sm" />
               </Button>
@@ -698,7 +701,7 @@ export default function ProfilePage() {
                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">
                   WhatsApp / Telp
                 </p>
-                <p className="text-sm font-bold text-foreground font-mono mt-0.5 truncate">
+                <p className="mt-0.5 break-all font-mono text-sm font-bold text-foreground">
                   {phone || 'Belum Diatur'}
                 </p>
               </div>
@@ -722,7 +725,8 @@ export default function ProfilePage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActiveModal('editVehicle')}
-                className="h-7 w-7 text-muted-foreground hover:text-primary"
+                className="h-11 w-11 rounded-xl text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
+                aria-label="Edit kendaraan"
               >
                 <Icon icon="mingcute:edit-2-line" className="text-sm" />
               </Button>
@@ -769,7 +773,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="relative w-28 h-36 mx-auto rounded-2xl overflow-hidden bg-muted border border-border flex items-center justify-center shadow-inner">
+              <div className="relative mx-auto flex aspect-[4/5] h-auto w-28 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted shadow-inner">
                 {faceUrl ? (
                   <img src={faceUrl} alt="Foto Wajah" className="h-full w-full object-cover object-center" />
                 ) : (
@@ -782,7 +786,7 @@ export default function ProfilePage() {
 
               <Button
                 onClick={() => setActiveModal('editFace')}
-                className="w-full h-9 rounded-xl font-bold gap-1.5 text-xs"
+                className="h-11 w-full gap-1.5 rounded-xl text-xs font-bold sm:h-9"
               >
                 <Icon icon="mingcute:upload-2-fill" className="text-sm" />
                 {faceUrl ? 'Ganti Foto Wajah' : 'Unggah Foto Wajah'}
@@ -805,7 +809,7 @@ export default function ProfilePage() {
             </p>
             <Button
               onClick={() => setActiveModal('changePass')}
-              className="w-full h-9 rounded-xl font-bold gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-11 w-full gap-1.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 sm:h-9"
             >
               <Icon icon="mingcute:key-2-fill" className="text-sm" />
               Ganti Password
@@ -820,8 +824,8 @@ export default function ProfilePage() {
 
       {/* Modal 0: Avatar Actions Modal (Foto Profil Options) */}
       <Dialog open={activeModal === 'avatarActions'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center justify-between">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Foto Profil</DialogTitle>
             {photoBadge && (
               <Badge className={`px-2.5 py-1 text-xs border ${photoBadge.color}`}>
@@ -830,7 +834,7 @@ export default function ProfilePage() {
             )}
           </DialogHeader>
 
-          <div className="p-6 space-y-3 flex-1 overflow-y-auto">
+          <div className="flex-1 space-y-3 overflow-y-auto p-4 sm:p-6">
             {/* Attention / Warning / Lock Banner for SISWA */}
             {userRole === 'SISWA' && (
               <>
@@ -943,7 +947,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
+          <DialogFooter className="shrink-0 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl w-full font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
@@ -953,8 +957,8 @@ export default function ProfilePage() {
 
       {/* Modal 0b: Delete Photo Confirmation */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <div className="p-6 space-y-4 text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <div className="space-y-4 overflow-y-auto p-4 text-center sm:p-6">
             <div className="w-14 h-14 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto mb-1">
               <Icon icon="mingcute:delete-2-fill" className="text-2xl" />
             </div>
@@ -963,7 +967,7 @@ export default function ProfilePage() {
               Foto profil Anda akan dihapus dan dikembalikan ke foto avatar default.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowDeleteConfirm(false)}>
               Batal
             </Button>
@@ -976,12 +980,12 @@ export default function ProfilePage() {
 
       {/* Modal 1: Edit Personal Info */}
       <Dialog open={activeModal === 'editPersonal'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-xl">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Edit Informasi Pribadi</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6 sm:text-sm">
             {/* Attention Warning Banner for Students */}
             {userRole === 'SISWA' && hasFillOnceWarningInPersonal && (
               <div role="alert" className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/15 p-3.5 text-xs font-medium mb-4">
@@ -1115,12 +1119,12 @@ export default function ProfilePage() {
                 disabled={isFieldDisabled('address', address)}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Jl. Kusumabangsa No. 1..."
-                className="w-full p-3 bg-muted/30 border border-border rounded-2xl text-xs font-bold focus:outline-none resize-none disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full resize-none rounded-2xl border border-border bg-muted/30 p-3 text-base font-bold focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-xs"
               />
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
@@ -1133,12 +1137,12 @@ export default function ProfilePage() {
 
       {/* Modal 2: Edit Contact */}
       <Dialog open={activeModal === 'editContact'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Edit Nomor Kontak</DialogTitle>
           </DialogHeader>
 
-          <div className="p-6 space-y-4">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
             {/* Attention Warning Banner for Students */}
             {userRole === 'SISWA' && hasFillOnceWarningInPhone && (
               <div role="alert" className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/15 p-3.5 text-xs font-medium">
@@ -1186,7 +1190,7 @@ export default function ProfilePage() {
               </p>
             </div>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
@@ -1199,12 +1203,12 @@ export default function ProfilePage() {
 
       {/* Modal 3: Edit Vehicle */}
       <Dialog open={activeModal === 'editVehicle'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Edit Plat Kendaraan</DialogTitle>
           </DialogHeader>
 
-          <div className="p-6 space-y-4">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
             {/* Attention Warning Banner for Students */}
             {userRole === 'SISWA' && hasFillOnceWarningInPlat && (
               <div role="alert" className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/15 p-3.5 text-xs font-medium">
@@ -1249,7 +1253,7 @@ export default function ProfilePage() {
               />
             </div>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
@@ -1262,12 +1266,12 @@ export default function ProfilePage() {
 
       {/* Modal 4: Upload Selected Avatar Preview */}
       <Dialog open={activeModal === 'uploadAvatar'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Unggah Foto Profil Baru</DialogTitle>
           </DialogHeader>
-          <div className="p-6 space-y-4 flex flex-col items-center">
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-muted border-2 border-primary/20 flex items-center justify-center shadow-inner">
+          <div className="flex flex-1 flex-col items-center space-y-4 overflow-y-auto p-4 sm:p-6">
+            <div className="flex aspect-square h-auto w-32 max-w-full items-center justify-center overflow-hidden rounded-full border-2 border-primary/20 bg-muted shadow-inner">
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               ) : (
@@ -1278,7 +1282,7 @@ export default function ProfilePage() {
               Pastikan foto profil Anda rapi dan sopan.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
@@ -1291,12 +1295,12 @@ export default function ProfilePage() {
 
       {/* Modal 5: Edit Face Photo (Foto Absensi) */}
       <Dialog open={activeModal === 'editFace'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Unggah Foto Wajah Absensi</DialogTitle>
           </DialogHeader>
 
-          <div className="p-6 space-y-4 flex flex-col items-center">
+          <div className="flex flex-1 flex-col items-center space-y-4 overflow-y-auto p-4 sm:p-6">
             {/* Attention Warning Banner for Students */}
             {userRole === 'SISWA' && hasFillOnceWarningInFace && (
               <div role="alert" className="w-full flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/15 p-3.5 text-xs font-medium">
@@ -1322,7 +1326,7 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <div className="w-28 h-36 rounded-2xl overflow-hidden bg-muted border border-border flex items-center justify-center shadow-inner">
+            <div className="flex aspect-[4/5] h-auto w-28 max-w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted shadow-inner">
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               ) : faceUrl ? (
@@ -1345,7 +1349,7 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>
@@ -1358,11 +1362,11 @@ export default function ProfilePage() {
 
       {/* Modal 6: Change Password */}
       <Dialog open={activeModal === 'changePass'} onOpenChange={(open) => !open && setActiveModal(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Ganti Password</DialogTitle>
           </DialogHeader>
-          <div className="p-6 space-y-4">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
             <div className="space-y-2.5">
               <Label htmlFor="currPass">Password Saat Ini</Label>
               <Input
@@ -1397,7 +1401,7 @@ export default function ProfilePage() {
               />
             </div>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setActiveModal(null)}>
               Batal
             </Button>

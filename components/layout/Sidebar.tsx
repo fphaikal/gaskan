@@ -100,6 +100,10 @@ export function Sidebar() {
 
   const userRole = (user?.role || 'siswa').toLowerCase();
 
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname, setIsMobileOpen]);
+
   // Check Workspace Team Access
   useEffect(() => {
     if (!user) return;
@@ -153,7 +157,7 @@ export function Sidebar() {
                   href={item.href}
                   onClick={onItemClick}
                   className={cn(
-                    'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold transition-all duration-150 relative group',
+                    'group relative flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold transition-all duration-150',
                     active
                       ? 'bg-primary/20 text-primary font-black'
                       : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
@@ -193,7 +197,7 @@ export function Sidebar() {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          'hidden lg:flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out shrink-0 h-screen sticky top-0',
+          'sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-card transition-all duration-300 ease-in-out lg:flex',
           isCollapsed ? 'w-20' : 'w-64'
         )}
       >
@@ -253,19 +257,26 @@ export function Sidebar() {
 
       {/* Mobile Drawer (Sheet) */}
       <Sheet open={isMobileOpen} onOpenChange={(open) => setIsMobileOpen(open)}>
-        <SheetContent side="left" className="w-72 p-0 flex flex-col h-full lg:hidden bg-card border-border">
-          <SheetHeader className="h-16 border-b border-border px-4 flex flex-row items-center gap-3 space-y-0">
+        <SheetContent
+          id="mobile-dashboard-navigation"
+          side="left"
+          className="flex h-dvh max-h-dvh w-[min(18rem,calc(100vw-1rem))] max-w-none flex-col gap-0 border-border bg-card p-0 lg:hidden"
+        >
+          <SheetHeader className="flex h-[calc(4rem+env(safe-area-inset-top))] shrink-0 flex-row items-center gap-3 space-y-0 border-b border-border px-4 pt-[env(safe-area-inset-top)]">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
               <Image src="/smti_logo.svg" alt="Gaskan Logo" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />
             </div>
             <SheetTitle className="text-lg font-black text-primary">GASKAN</SheetTitle>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto">
+          <nav
+            aria-label="Navigasi dashboard"
+            className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain custom-scrollbar"
+          >
             {renderNavItems(false, () => setIsMobileOpen(false))}
-          </div>
+          </nav>
 
-          <div className="border-t border-border p-4 shrink-0">
+          <div className="shrink-0 border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center gap-3 rounded-2xl p-2 bg-muted/40">
               <Avatar className="h-9 w-9 shrink-0">
                 {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
@@ -280,6 +291,8 @@ export function Sidebar() {
                 size="icon"
                 onClick={logout}
                 className="h-8 w-8 text-muted-foreground hover:text-rose-500"
+                aria-label="Keluar dari akun"
+                title="Logout"
               >
                 <Icon icon="mingcute:exit-line" className="text-base" />
               </Button>

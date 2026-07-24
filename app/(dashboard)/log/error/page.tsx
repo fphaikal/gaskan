@@ -117,7 +117,7 @@ export default function LogErrorPage() {
       {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
             Log Sistem (Error)
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20">
               <span className="relative flex h-2 w-2">
@@ -134,7 +134,7 @@ export default function LogErrorPage() {
       </div>
 
       {errorGroups.length === 0 ? (
-        <div className="bg-card border border-border rounded-3xl p-16 shadow-sm flex flex-col items-center justify-center text-muted-foreground/40 space-y-3">
+        <div className="flex flex-col items-center justify-center space-y-3 rounded-3xl border border-border bg-card px-4 py-14 text-center text-muted-foreground/40 shadow-sm sm:p-16">
           <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center">
             <Icon icon="mingcute:bug-line" className="text-3xl text-emerald-500" />
           </div>
@@ -156,7 +156,7 @@ export default function LogErrorPage() {
                   <div
                     key={i}
                     onClick={() => setSelectedLog(d)}
-                    className="bg-card border border-border hover:border-rose-500/40 rounded-3xl p-5 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between gap-4 group cursor-pointer relative overflow-hidden"
+                    className="group relative flex min-w-0 cursor-pointer flex-col justify-between gap-4 overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm transition-all hover:border-rose-500/40 hover:shadow-lg sm:p-5"
                   >
                     <div className="flex gap-4 items-start relative z-10">
                       <div className="w-12 h-12 rounded-2xl overflow-hidden bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 border border-rose-500/20">
@@ -214,9 +214,9 @@ export default function LogErrorPage() {
       {/* UNIFORM DASHBOARD DIALOG STRUCTURE */}
       {selectedLog && (
         <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-          <DialogContent className="sm:max-w-2xl flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-            <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card flex flex-row items-center justify-between">
-              <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-2xl">
+            <DialogHeader className="flex shrink-0 flex-col gap-3 border-b border-border bg-card p-4 pb-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:p-6 sm:pb-4">
+              <DialogTitle className="flex items-center gap-2 text-xl font-black text-foreground">
                 <Icon icon="mingcute:warning-fill" className="text-rose-500 text-2xl" />
                 <span>Detail Kejadian Error</span>
               </DialogTitle>
@@ -230,11 +230,11 @@ export default function LogErrorPage() {
               </div>
             </DialogHeader>
 
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Image Section */}
                 <div
-                  className="w-full h-56 rounded-2xl bg-muted/40 border border-border flex items-center justify-center relative overflow-hidden group cursor-pointer"
+                  className="group relative flex aspect-video h-auto max-h-56 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted/40"
                   onClick={() => {
                     if (selectedLog.image) setActivePreviewImage(selectedLog.image);
                   }}
@@ -293,7 +293,7 @@ export default function LogErrorPage() {
               </div>
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md">
+            <DialogFooter className="shrink-0 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
               <Button
                 variant="ghost"
                 onClick={() => setSelectedLog(null)}
@@ -309,11 +309,11 @@ export default function LogErrorPage() {
       {/* FULL-SCREEN IMAGE LIGHTBOX ZOOM MODAL */}
       {activePreviewImage && (
         <Dialog open={!!activePreviewImage} onOpenChange={() => setActivePreviewImage(null)}>
-          <DialogContent className="sm:max-w-4xl p-2 bg-black/90 border border-white/10 rounded-3xl text-center flex items-center justify-center">
+          <DialogContent className="flex max-h-[calc(100dvh-1rem)] items-center justify-center rounded-3xl border border-white/10 bg-black/90 p-2 text-center sm:max-w-4xl">
             <img
               src={activePreviewImage}
               alt="Zoomed Capture"
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+              className="max-h-[calc(100dvh-2rem)] max-w-full rounded-2xl object-contain shadow-2xl"
             />
           </DialogContent>
         </Dialog>

@@ -1,6 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -28,7 +35,23 @@ export const SidebarProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, []);
 
-  const toggleSidebar = () => {
+  useEffect(() => {
+    const desktopMedia = window.matchMedia('(min-width: 1024px)');
+    const closeMobileSidebar = () => {
+      if (desktopMedia.matches) {
+        setIsMobileOpenState(false);
+      }
+    };
+
+    closeMobileSidebar();
+    desktopMedia.addEventListener('change', closeMobileSidebar);
+
+    return () => {
+      desktopMedia.removeEventListener('change', closeMobileSidebar);
+    };
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
     setIsCollapsedState((prev) => {
       const next = !prev;
       try {
@@ -38,24 +61,24 @@ export const SidebarProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       return next;
     });
-  };
+  }, []);
 
-  const toggleMobileSidebar = () => {
+  const toggleMobileSidebar = useCallback(() => {
     setIsMobileOpenState((prev) => !prev);
-  };
+  }, []);
 
-  const setIsCollapsed = (collapsed: boolean) => {
+  const setIsCollapsed = useCallback((collapsed: boolean) => {
     setIsCollapsedState(collapsed);
     try {
       localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
     } catch (error) {
       console.error('Failed to save sidebar state:', error);
     }
-  };
+  }, []);
 
-  const setIsMobileOpen = (open: boolean) => {
+  const setIsMobileOpen = useCallback((open: boolean) => {
     setIsMobileOpenState(open);
-  };
+  }, []);
 
   return (
     <SidebarContext.Provider

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:seo": "tsx --test tests/seo/seo.test.mjs"
+    "test:seo": "tsx --test tests/seo/seo.test.mjs",
+    "test:responsive": "tsx --test --test-isolation=none tests/responsive/*.test.mjs",
+    "test:responsive:browser": "node scripts/responsive-browser-smoke.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

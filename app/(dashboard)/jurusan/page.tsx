@@ -174,16 +174,16 @@ export default function JurusanPage() {
             Kelola daftar jurusan dan departemen sekolah
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/kelas">
-            <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs">
+        <div className="flex w-full flex-col gap-2 min-[420px]:flex-row sm:w-auto sm:items-center">
+          <Link href="/kelas" className="w-full">
+            <Button variant="outline" className="h-11 w-full gap-2 rounded-2xl text-xs font-bold">
               <Icon icon="mingcute:arrow-left-line" className="text-base" /> Kembali ke Kelas
             </Button>
           </Link>
           {isAdmin && (
             <Button
               onClick={openCreate}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs shadow-lg shadow-primary/20"
+              className="h-11 w-full gap-2 rounded-2xl bg-primary text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
             >
               <Icon icon="mingcute:add-circle-fill" className="text-lg" /> Tambah Jurusan
             </Button>
@@ -205,11 +205,11 @@ export default function JurusanPage() {
 
       {/* Major Bento Grid matching Nuxt */}
       {majors.length === 0 ? (
-        <div className="bg-card border border-border rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-3">
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-12 text-center flex flex-col items-center justify-center space-y-3">
           <Icon icon="mingcute:school-line" className="text-5xl text-muted-foreground/30" />
           <p className="text-sm font-bold text-muted-foreground">Belum ada jurusan yang terdaftar</p>
           {isAdmin && (
-            <Button onClick={openCreate} className="rounded-xl font-bold text-xs">
+            <Button onClick={openCreate} className="w-full max-w-xs rounded-xl font-bold text-xs sm:w-auto">
               Tambah Jurusan Pertama
             </Button>
           )}
@@ -219,7 +219,7 @@ export default function JurusanPage() {
           {majors.map((m: any) => (
             <div
               key={m.id}
-              className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between"
+              className="group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md sm:p-5"
             >
               {/* Background Watermark Icon */}
               <Icon
@@ -238,7 +238,8 @@ export default function JurusanPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full"
+                      className="h-11 w-11 rounded-xl text-muted-foreground hover:bg-primary/10 hover:text-primary sm:h-8 sm:w-8"
+                      aria-label={`Edit ${m.name}`}
                       onClick={() => openEdit(m)}
                     >
                       <Icon icon="mingcute:edit-2-fill" className="text-base" />
@@ -246,7 +247,8 @@ export default function JurusanPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-full"
+                      className="h-11 w-11 rounded-xl text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 sm:h-8 sm:w-8"
+                      aria-label={`Hapus ${m.name}`}
                       onClick={() => setDeleteId(m.id)}
                     >
                       <Icon icon="mingcute:delete-2-fill" className="text-base" />
@@ -260,12 +262,12 @@ export default function JurusanPage() {
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black tracking-widest uppercase">
                   {m.alias}
                 </Badge>
-                <h3 className="text-lg font-black text-foreground group-hover:text-primary transition-colors leading-snug">
+                <h3 className="break-words text-lg font-black leading-snug text-foreground transition-colors group-hover:text-primary">
                   {m.name}
                 </h3>
 
                 {/* Stats Row */}
-                <div className="flex items-center gap-4 py-3 border-y border-border/60 my-3 text-xs font-bold text-muted-foreground">
+                <div className="my-3 flex flex-wrap items-center gap-3 border-y border-border/60 py-3 text-xs font-bold text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <Icon icon="mingcute:school-line" className="text-primary text-base" />
                     <span>{m.totalClasses || m._count?.classes || 0} Kelas</span>
@@ -287,14 +289,14 @@ export default function JurusanPage() {
 
       {/* ═══ CREATE / EDIT MODAL ═══ */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">
               {editMode ? 'Edit Jurusan' : 'Tambah Jurusan Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6 sm:text-sm">
             {/* Nama Jurusan */}
             <div className="space-y-2">
               <Label htmlFor="majorName">Nama Jurusan / Departemen</Label>
@@ -328,13 +330,13 @@ export default function JurusanPage() {
             {/* Icon Selector Grid */}
             <div className="space-y-2">
               <Label>Pilih Ikon Jurusan</Label>
-              <div className="grid grid-cols-6 gap-2 bg-muted/30 p-3 rounded-2xl border border-border">
+              <div className="grid grid-cols-4 gap-2 rounded-2xl border border-border bg-muted/30 p-3 min-[420px]:grid-cols-6">
                 {availableIcons.map((ic) => (
                   <button
                     key={ic.id}
                     type="button"
                     onClick={() => setForm({ ...form, icon: ic.name })}
-                    className={`h-10 rounded-xl flex items-center justify-center transition-all ${
+                    className={`flex h-11 items-center justify-center rounded-xl transition-all ${
                       form.icon === ic.name
                         ? 'bg-primary text-primary-foreground shadow-md scale-105'
                         : 'bg-card text-muted-foreground hover:bg-muted'
@@ -347,7 +349,7 @@ export default function JurusanPage() {
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowModal(false)}>
               Batal
             </Button>
@@ -364,8 +366,8 @@ export default function JurusanPage() {
 
       {/* ═══ CONFIRM DELETE MODAL ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <div className="p-6 space-y-4 text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <div className="space-y-4 overflow-y-auto p-4 text-center sm:p-6">
             <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
               <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
             </div>
@@ -376,7 +378,7 @@ export default function JurusanPage() {
               Data jurusan yang dihapus tidak dapat dikembalikan. Seluruh asosiasi kelas dan siswa akan diperbarui.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteId(null)}>
               Batal
             </Button>

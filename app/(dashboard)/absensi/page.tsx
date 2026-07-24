@@ -207,7 +207,7 @@ export default function AbsensiPage() {
       </div>
 
       {/* 7 Summary Stat Widgets matching Nuxt 1-to-1 */}
-      <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:[&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
         <div className="bg-card rounded-2xl p-3 border border-border text-center col-span-1 shadow-xs">
           <p className="text-lg font-black text-foreground">{summary.total || students.length}</p>
           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">Total</p>
@@ -249,7 +249,113 @@ export default function AbsensiPage() {
             <p className="text-xs text-muted-foreground/60">Pilih kelas atau sesuaikan pencarian Anda</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="divide-y divide-border md:hidden">
+              {students.map((std, idx) => {
+                const sId = String(std.id);
+                const photo = getImageUrl(std.photoUrl || std.user?.photoUrl);
+                const statusInfo = getStatusBadge(std.attendance?.status);
+
+                return (
+                  <div key={std.id} className="min-w-0 space-y-3 p-4">
+                    <button
+                      type="button"
+                      onClick={() => openDetail(std)}
+                      className="flex w-full min-w-0 items-center gap-3 text-left"
+                    >
+                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-border bg-primary/10 flex items-center justify-center font-black text-primary">
+                        {photo ? (
+                          <img src={photo} alt={std.name || std.nama} className="h-full w-full object-cover" />
+                        ) : (
+                          <span>{(std.name || std.nama || 'S').charAt(0)}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-foreground">{std.name || std.nama}</p>
+                        <p className="truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          {std.nis || std.NIS || '-'} · {std.class?.className || std.className || '-'}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-black text-muted-foreground">
+                        #{(currentPage - 1) * itemsPerPage + idx + 1}
+                      </span>
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-muted/30 p-3">
+                        <span className="block text-[9px] font-black uppercase text-muted-foreground">Status</span>
+                        {std.attendance ? (
+                          <span className={`mt-1 inline-flex rounded-md border px-2 py-1 text-[9px] font-black uppercase ${statusInfo.bg}`}>
+                            {statusInfo.label}
+                          </span>
+                        ) : (
+                          <span className="mt-1 block text-xs font-bold text-muted-foreground">Belum absen</span>
+                        )}
+                      </div>
+                      <div className="rounded-xl bg-muted/30 p-3">
+                        <span className="block text-[9px] font-black uppercase text-muted-foreground">Waktu</span>
+                        <span className="mt-1 block font-mono text-xs font-bold text-foreground">
+                          {std.attendance
+                            ? `${formatTime(std.attendance.firstIn?.timestamp || std.attendance.time)} / ${formatTime(std.attendance.lastOut?.timestamp || std.attendance.lastOutTime)}`
+                            : '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex min-h-11 items-center justify-between gap-3 border-t border-border pt-3">
+                      <span className="min-w-0 truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {std.attendance
+                          ? std.attendance.method === 'FACE_RECOGNITION'
+                            ? 'Face ID'
+                            : std.attendance.method === 'QR_CODE'
+                            ? 'QR'
+                            : 'Manual'
+                          : 'Pilih status kehadiran'}
+                      </span>
+                      {!std.attendance ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="flex h-11 min-w-28 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-3 text-xs font-black text-slate-950 shadow-sm shadow-amber-500/20 hover:bg-amber-400">
+                            {markingId === sId ? (
+                              <Icon icon="mingcute:loading-fill" className="animate-spin text-sm" />
+                            ) : (
+                              <Icon icon="mingcute:check-2-fill" className="text-sm" />
+                            )}
+                            Absen
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl bg-card p-1.5 border-border">
+                            <DropdownMenuLabel className="px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
+                              Pilih Status
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {[
+                              ['HADIR', 'Hadir', 'mingcute:check-circle-line', 'text-emerald-500'],
+                              ['TERLAMBAT', 'Terlambat', 'mingcute:time-line', 'text-amber-500'],
+                              ['IZIN', 'Izin', 'mingcute:document-line', 'text-sky-400'],
+                              ['SAKIT', 'Sakit', 'mingcute:heart-line', 'text-orange-400'],
+                              ['ALPHA', 'Alpha', 'mingcute:close-circle-line', 'text-rose-500'],
+                            ].map(([status, label, icon, color]) => (
+                              <DropdownMenuItem
+                                key={status}
+                                onClick={() => markAttendance(sId, status)}
+                                className={`${color} rounded-lg text-xs font-bold`}
+                              >
+                                <Icon icon={icon} className="mr-2" /> {label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <Button type="button" variant="outline" onClick={() => openDetail(std)} className="shrink-0 rounded-xl text-xs font-bold">
+                          Detail
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-muted/30 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-border">
@@ -354,7 +460,7 @@ export default function AbsensiPage() {
                       <td className="pr-6 text-right" onClick={(e) => e.stopPropagation()}>
                         {!std.attendance ? (
                           <DropdownMenu>
-                            <DropdownMenuTrigger className="bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black px-3 h-8 flex items-center justify-center gap-1.5 shadow-sm shadow-amber-500/20 text-xs transition-colors cursor-pointer">
+                            <DropdownMenuTrigger className="bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black px-3 h-11 sm:h-8 flex items-center justify-center gap-1.5 shadow-sm shadow-amber-500/20 text-xs transition-colors cursor-pointer">
                               {markingId === sId ? (
                                 <Icon icon="mingcute:loading-fill" className="animate-spin text-sm" />
                               ) : (
@@ -410,7 +516,8 @@ export default function AbsensiPage() {
                 })}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
 
         <PaginationControls

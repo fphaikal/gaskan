@@ -10,13 +10,13 @@ export function SystemMetricsSkeleton() {
   return (
     <Card className="border-border bg-card rounded-2xl shadow-sm mb-6">
       <CardHeader className="pb-2">
-        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-5 w-40 max-w-full" />
       </CardHeader>
       <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="p-4 rounded-xl bg-muted/20 space-y-2">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-6 w-24" />
+          <div key={i} className="min-w-0 p-3 sm:p-4 rounded-xl bg-muted/20 space-y-2">
+            <Skeleton className="h-3 w-16 max-w-full" />
+            <Skeleton className="h-6 w-24 max-w-full" />
           </div>
         ))}
       </CardContent>

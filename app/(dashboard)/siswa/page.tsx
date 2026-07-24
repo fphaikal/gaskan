@@ -401,7 +401,7 @@ export default function SiswaPage() {
   ];
 
   if (isLoading) {
-    return <DataMasterTablePageSkeleton actionCount={5} />;
+    return <DataMasterTablePageSkeleton actionCount={5} mobileList />;
   }
 
   return (
@@ -417,38 +417,44 @@ export default function SiswaPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3 md:flex md:w-auto">
           <Button
             variant="outline"
             size="icon"
             onClick={fetchData}
-            className="h-10 w-10 rounded-2xl border-border bg-card shadow-sm"
+            className="h-11 w-full rounded-2xl border-border bg-card shadow-sm md:h-10 md:w-10"
             title="Refresh Data"
           >
             <Icon icon="mingcute:refresh-3-line" className="text-lg" />
           </Button>
 
           {/* Nuxt Navigation Buttons */}
-          <Link href="/siswa/import">
-            <Button variant="outline" className="rounded-2xl border-border bg-card font-bold text-xs gap-2 h-10 px-3.5 shadow-sm">
+          <Link href="/siswa/import" className="w-full">
+            <Button variant="outline" className="w-full rounded-2xl border-border bg-card font-bold text-xs gap-2 h-11 px-3.5 shadow-sm md:h-10">
               <Icon icon="mingcute:file-import-line" className="text-lg" />
               Import Excel
             </Button>
           </Link>
 
-          <Link href="/siswa/import-foto">
-            <Button variant="outline" className="rounded-2xl border-border bg-card font-bold text-xs gap-2 h-10 px-3.5 shadow-sm">
+          <Link href="/siswa/import-foto" className="w-full">
+            <Button variant="outline" className="w-full rounded-2xl border-border bg-card font-bold text-xs gap-2 h-11 px-3.5 shadow-sm md:h-10">
               <Icon icon="mingcute:pic-line" className="text-lg" />
               Bulk Upload Foto
             </Button>
           </Link>
 
-          <ExportButtons data={exportData} columns={exportColumns} fileName="direktori_siswa" title="Data Siswa" />
+          <ExportButtons
+            data={exportData}
+            columns={exportColumns}
+            fileName="direktori_siswa"
+            title="Data Siswa"
+            className="col-span-2 grid w-full grid-cols-2 [&>button]:w-full md:flex md:w-auto"
+          />
 
           {isAdmin && (
             <Button
               onClick={openCreate}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs h-10 px-4 shadow-lg shadow-primary/20"
+              className="col-span-2 w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs h-11 px-4 shadow-lg shadow-primary/20 md:w-auto md:h-10"
             >
               <Icon icon="mingcute:user-add-fill" className="text-lg" />
               Tambah Siswa
@@ -631,15 +637,15 @@ export default function SiswaPage() {
 
       {/* Bulk Action Bar matching Nuxt */}
       {selectedStudents.length > 0 && isAdmin && (
-        <div className="bg-primary/10 border border-primary/20 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-2">
+        <div className="bg-primary/10 border border-primary/20 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex min-w-0 items-start gap-2 sm:items-center">
             <Badge className="bg-primary text-primary-foreground font-mono font-bold text-xs">
               {selectedStudents.length} Terpilih
             </Badge>
-            <span className="text-xs font-bold text-foreground">Siswa telah dipilih untuk aksi massal</span>
+            <span className="min-w-0 break-words text-xs font-bold text-foreground">Siswa telah dipilih untuk aksi massal</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <Button
               size="sm"
               onClick={() => {
@@ -647,7 +653,7 @@ export default function SiswaPage() {
                 setSyncFinished(false);
                 setShowRegisterDeviceModal(true);
               }}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold gap-1.5"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold gap-1.5 sm:w-auto"
             >
               <Icon icon="mingcute:fingerprint-fill" className="text-base" /> Daftarkan ke Perangkat
             </Button>
@@ -655,7 +661,7 @@ export default function SiswaPage() {
               size="sm"
               variant="destructive"
               onClick={() => setShowBulkDeleteModal(true)}
-              className="rounded-xl text-xs font-bold gap-1.5"
+              className="w-full rounded-xl text-xs font-bold gap-1.5 sm:w-auto"
             >
               <Icon icon="mingcute:delete-2-line" className="text-base" /> Hapus Terpilih
             </Button>
@@ -666,7 +672,7 @@ export default function SiswaPage() {
       {/* List Container matching Nuxt 1-to-1 */}
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm flex flex-col">
         {/* Top Summary Bar */}
-        <div className="px-6 py-3.5 bg-muted/20 border-b border-border flex justify-between items-center">
+        <div className="px-4 sm:px-6 py-3.5 bg-muted/20 border-b border-border flex min-w-0 justify-between items-center gap-3">
           <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
             Ditemukan {totalStudents} Siswa
           </p>
@@ -715,7 +721,7 @@ export default function SiswaPage() {
                 setSortBy('name-asc');
                 setCurrentPage(1);
               }}
-              className="rounded-2xl px-6 font-bold text-xs"
+              className="w-full max-w-xs rounded-2xl px-6 font-bold text-xs sm:w-auto"
             >
               Tampilkan Semua Siswa
             </Button>
@@ -868,16 +874,27 @@ export default function SiswaPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-xs text-primary truncate">{stdName}</p>
-                      <p className="text-[10px] font-mono text-muted-foreground">{stdNis} · {stdClass}</p>
+                      <p className="truncate text-[10px] font-mono text-muted-foreground">{stdNis} · {stdClass}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Link href={`/siswa/${stdNis}`}>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-11 w-11 rounded-xl"
+                          aria-label={`Lihat detail ${stdName}`}
+                        >
                           <Icon icon="mingcute:eye-2-line" className="text-sm" />
                         </Button>
                       </Link>
                       {isAdmin && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500" onClick={() => setDeleteStudentItem(s)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-11 w-11 rounded-xl text-rose-500"
+                          onClick={() => setDeleteStudentItem(s)}
+                          aria-label={`Hapus ${stdName}`}
+                        >
                           <Icon icon="mingcute:delete-2-line" className="text-sm" />
                         </Button>
                       )}
@@ -890,13 +907,13 @@ export default function SiswaPage() {
         )}
 
         {/* Footer Pagination Bar */}
-        <div className="px-6 py-3 border-t border-border bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <span className="text-muted-foreground font-semibold">
+        <div className="flex flex-col gap-3 border-t border-border bg-muted/10 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <span className="text-center font-semibold text-muted-foreground sm:text-left">
             Menampilkan {totalStudents > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{' '}
             {Math.min(currentPage * itemsPerPage, totalStudents)} dari {totalStudents} siswa
           </span>
 
-          <div className="flex items-center gap-4">
+          <div className="flex w-full items-center justify-between gap-4 sm:w-auto">
             <div className="w-28">
               <CustomSelect
                 options={[
@@ -909,7 +926,7 @@ export default function SiswaPage() {
                   setItemsPerPage(Number(val));
                   setCurrentPage(1);
                 }}
-                triggerClassName="h-8 rounded-xl px-2 text-[11px]"
+                triggerClassName="h-11 rounded-xl px-2 text-[11px] sm:h-8"
               />
             </div>
 
@@ -917,7 +934,8 @@ export default function SiswaPage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="w-7 h-7 rounded-lg"
+                className="h-11 w-11 rounded-xl sm:h-8 sm:w-8"
+                aria-label="Halaman siswa sebelumnya"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               >
@@ -929,7 +947,8 @@ export default function SiswaPage() {
               <Button
                 variant="outline"
                 size="icon"
-                className="w-7 h-7 rounded-lg"
+                className="h-11 w-11 rounded-xl sm:h-8 sm:w-8"
+                aria-label="Halaman siswa berikutnya"
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               >
@@ -946,16 +965,16 @@ export default function SiswaPage() {
 
       {/* MODAL 1: ADD / EDIT STUDENT MODAL */}
       <Dialog open={showFormModal} onOpenChange={setShowFormModal}>
-        <DialogContent className="sm:max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-3xl">
           {/* Sticky Header */}
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-2xl font-black text-foreground">
               {isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}
             </DialogTitle>
           </DialogHeader>
 
           {/* Scrollable Body */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs sm:text-sm">
+          <div className="flex-1 space-y-6 overflow-y-auto p-4 text-xs sm:p-6 sm:text-sm">
             {/* Section 1: Informasi Akademik */}
             <div>
               <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-3">
@@ -1035,7 +1054,7 @@ export default function SiswaPage() {
                               setForm({ ...form, classId: c.id });
                               setShowClassDropdown(false);
                             }}
-                            className={`px-3 py-2 rounded-xl cursor-pointer transition-colors font-bold text-xs flex items-center justify-between ${
+                            className={`flex min-h-11 cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
                               form.classId === c.id ? 'bg-primary/15 text-primary' : 'hover:bg-muted hover:text-primary'
                             }`}
                           >
@@ -1190,7 +1209,7 @@ export default function SiswaPage() {
           </div>
 
           {/* Sticky Footer */}
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowFormModal(false)}>
               Batal
             </Button>
@@ -1219,7 +1238,7 @@ export default function SiswaPage() {
               Apakah Anda yakin ingin menghapus <span className="text-foreground font-black">{deleteStudentItem?.name || deleteStudentItem?.Nama}</span>? Tindakan ini tidak dapat dibatalkan.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteStudentItem(null)}>
               Batal
             </Button>
@@ -1244,7 +1263,7 @@ export default function SiswaPage() {
               Apakah Anda yakin ingin menghapus <span className="text-primary font-black">{selectedStudents.length}</span> siswa terpilih? Tindakan ini tidak dapat dibatalkan.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setShowBulkDeleteModal(false)}>
               Batal
             </Button>
@@ -1257,14 +1276,14 @@ export default function SiswaPage() {
 
       {/* MODAL 4: DEVICE REGISTER & TERMINAL PROGRESS MODAL */}
       <Dialog open={showRegisterDeviceModal} onOpenChange={setShowRegisterDeviceModal}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">
               {studentToRegister ? 'Daftarkan Wajah ke Alat' : 'Daftarkan Wajah Siswa (Bulk)'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
             {isSyncing ? (
               /* Progress & Live Terminal Screen */
               <div className="space-y-5 text-center">
@@ -1369,7 +1388,7 @@ export default function SiswaPage() {
           </div>
 
           {!isSyncing && (
-            <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
               <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowRegisterDeviceModal(false)}>
                 {syncFinished ? 'Tutup' : 'Batal'}
               </Button>

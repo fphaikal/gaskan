@@ -14,6 +14,7 @@ export function LandingNavbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -26,20 +27,24 @@ export function LandingNavbar() {
 
   const navLinks = [
     { label: 'Beranda', href: '/' },
+    { label: 'Fitur', href: '/#fitur' },
+    { label: 'Statistik', href: '/#statistik' },
+    { label: 'FAQ', href: '/#faq' },
     { label: 'Tim', href: '/team' },
   ];
 
   return (
     <nav
+      aria-label="Navigasi publik"
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? 'backdrop-blur-md shadow-sm border-b border-border bg-background/80'
           : 'bg-transparent'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="relative max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
+        <Link href="/" className="flex min-w-0 items-center gap-2 group">
           <Icon
             icon="Key"
             className="text-primary text-2xl transition-transform group-hover:rotate-12 duration-300"
@@ -63,7 +68,19 @@ export function LandingNavbar() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="rounded-full md:hidden"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="landing-mobile-menu"
+            aria-label={mobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
+          >
+            <Icon icon={mobileMenuOpen ? 'mingcute:close-line' : 'mingcute:menu-line'} className="text-xl" />
+          </Button>
+
           {/* Theme Toggle */}
           <Button
             variant="ghost"
@@ -83,12 +100,31 @@ export function LandingNavbar() {
           {/* Login / Dashboard CTA */}
           <Link
             href={mounted && user ? '/home' : '/login'}
-            className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2 text-sm shadow-md hover:shadow-primary/30 transition-all"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold px-3 sm:px-4 py-2 text-xs sm:text-sm shadow-md hover:shadow-primary/30 transition-all"
           >
             {mounted && user ? 'Dashboard' : 'Masuk'}
           </Link>
-
         </div>
+
+        {mobileMenuOpen && (
+          <div
+            id="landing-mobile-menu"
+            className="absolute left-4 right-4 top-[calc(100%+0.5rem)] grid grid-cols-2 gap-2 rounded-2xl border border-border bg-background/95 p-2 shadow-xl backdrop-blur-xl md:hidden"
+          >
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex min-h-11 items-center rounded-xl px-3 text-sm font-bold transition-colors hover:bg-primary/10 hover:text-primary ${
+                  pathname === link.href ? 'bg-primary/10 text-primary' : 'text-foreground/75'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </nav>
   );

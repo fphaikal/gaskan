@@ -305,10 +305,10 @@ export default function SystemManagePage() {
   }, [metrics]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 pb-16 text-left animate-in fade-in duration-500">
+    <div className="mx-auto max-w-7xl space-y-6 pb-16 text-left animate-in fade-in duration-500">
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
-        <div>
+        <div className="min-w-0">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-2">
             <Icon icon="mingcute:server-2-fill" className="text-sm" />
             <span>Super Admin & Developer Dashboard</span>
@@ -321,13 +321,13 @@ export default function SystemManagePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-muted/40 border-border">
+        <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 md:flex md:w-auto md:items-center">
+          <div className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-bold">
             <span className={`w-2 h-2 rounded-full animate-pulse ${isWsConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             <span className="opacity-80">{isWsConnected ? 'WebSocket Live' : 'HTTP Mode'}</span>
           </div>
 
-          <label className="flex items-center gap-2 bg-muted/40 px-3 py-2 rounded-xl border border-border cursor-pointer">
+          <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
             <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
             <span className="text-xs font-bold text-muted-foreground">Auto Sync</span>
           </label>
@@ -335,7 +335,7 @@ export default function SystemManagePage() {
           <Button
             onClick={() => fetchMetrics(true)}
             disabled={refreshing}
-            className="rounded-2xl font-bold text-xs gap-2 h-11 bg-primary text-primary-foreground shadow-md"
+            className="h-11 w-full gap-2 rounded-2xl bg-primary text-xs font-bold text-primary-foreground shadow-md min-[420px]:col-span-2 md:w-auto"
           >
             <Icon icon="mingcute:refresh-1-line" className={`text-base ${refreshing ? 'animate-spin' : ''}`} />
             <span>{refreshing ? 'Memuat...' : 'Refresh'}</span>
@@ -352,7 +352,7 @@ export default function SystemManagePage() {
           {/* Top Metrik Highlight Grid (5 Bento Cards) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Card 1: Total Storage */}
-            <div className="bg-card rounded-3xl p-5 border border-border shadow-sm relative overflow-hidden space-y-4">
+            <div className="relative min-w-0 space-y-4 overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5">
               <div className="flex items-start justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                   <Icon icon="mingcute:drive-fill" className="text-2xl" />
@@ -540,7 +540,7 @@ export default function SystemManagePage() {
 
                 <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-3">
                   <p className="text-[10px] font-black uppercase text-muted-foreground">Memori Proses Node.js</p>
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="grid grid-cols-1 gap-2 text-center min-[380px]:grid-cols-3">
                     <div className="p-2.5 rounded-xl bg-card border border-border">
                       <p className="text-[9px] font-bold text-muted-foreground uppercase">Heap Used</p>
                       <p className="font-black text-sm text-primary mt-0.5">{metrics.hardware?.process?.heapUsedMB || 268} MB</p>
@@ -596,7 +596,7 @@ export default function SystemManagePage() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-muted/30 border border-border flex items-center justify-between text-xs font-bold">
+              <div className="flex flex-col gap-1 rounded-2xl border border-border bg-muted/30 p-4 text-xs font-bold min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                 <span className="text-muted-foreground">Total Record Presensi DB:</span>
                 <span className="text-primary font-black text-base">{metrics.database?.counts?.attendance || 1875} Log</span>
               </div>
@@ -616,9 +616,9 @@ export default function SystemManagePage() {
                     Dua jalur backup independen: Google Drive untuk semua berkas baru & Hugging Face CDN untuk penghemat memori saat disk penuh.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Link href="/admin/file-explorer">
-                    <Button variant="outline" size="sm" className="rounded-full text-xs font-bold gap-1">
+                <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:shrink-0">
+                  <Link href="/admin/file-explorer" className="w-full min-[420px]:w-auto">
+                    <Button variant="outline" size="sm" className="h-11 w-full gap-1 rounded-full text-xs font-bold min-[420px]:w-auto">
                       <Icon icon="mingcute:folder-open-fill" className="text-sm" />
                       Buka File Explorer
                     </Button>
@@ -716,8 +716,8 @@ export default function SystemManagePage() {
                 {/* Pipeline 1: Google Drive */}
                 <div className="space-y-4 bg-muted/30 p-5 rounded-2xl border border-border flex flex-col justify-between">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-border pb-3">
-                      <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                      <h3 className="flex min-w-0 items-center gap-2 break-words text-sm font-black text-foreground">
                         <Icon icon="mingcute:drive-fill" className="text-emerald-500 text-lg" />
                         1. Google Drive (Semua Berkas Baru)
                       </h3>
@@ -805,6 +805,7 @@ export default function SystemManagePage() {
                               size="icon"
                               onClick={() => copyToClipboard(googleRedirectUri)}
                               className="h-6 w-6 text-primary"
+                              aria-label="Salin redirect URI Google"
                             >
                               <Icon icon="mingcute:copy-2-fill" className="text-xs" />
                             </Button>
@@ -846,7 +847,7 @@ export default function SystemManagePage() {
                   <Button
                     onClick={() => triggerBackupNow('GOOGLE_DRIVE')}
                     disabled={startingBackupProvider === 'GOOGLE_DRIVE' || backupProgress?.gdrive?.active}
-                    className="w-full rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white shadow-md h-10 mt-4 gap-1.5"
+                    className="mt-4 h-11 w-full gap-1.5 rounded-xl bg-emerald-500 text-xs font-bold text-white shadow-md hover:bg-emerald-600"
                   >
                     <Icon icon="mingcute:drive-fill" className="text-base" />
                     Upload Manual ke Google Drive Sekarang
@@ -856,8 +857,8 @@ export default function SystemManagePage() {
                 {/* Pipeline 2: Hugging Face CDN */}
                 <div className="space-y-4 bg-muted/30 p-5 rounded-2xl border border-border flex flex-col justify-between">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-border pb-3">
-                      <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                      <h3 className="flex min-w-0 items-center gap-2 break-words text-sm font-black text-foreground">
                         <Icon icon="mingcute:upload-3-fill" className="text-sky-500 text-lg" />
                         2. Hugging Face CDN (Khusus Foto / Low Storage)
                       </h3>
@@ -960,7 +961,7 @@ export default function SystemManagePage() {
                     <Button
                       onClick={() => triggerBackupNow('HUGGINGFACE')}
                       disabled={startingBackupProvider === 'HUGGINGFACE' || backupProgress?.huggingface?.active}
-                      className="rounded-xl font-bold text-xs bg-sky-500 hover:bg-sky-600 text-white h-10 shadow-md gap-1.5"
+                      className="h-11 gap-1.5 rounded-xl bg-sky-500 text-xs font-bold text-white shadow-md hover:bg-sky-600"
                     >
                       <Icon icon="mingcute:upload-3-fill" className="text-base" />
                       Upload Manual HF
@@ -970,7 +971,7 @@ export default function SystemManagePage() {
                       onClick={syncHuggingFaceRemoteNow}
                       disabled={isSyncingHfRemote}
                       variant="outline"
-                      className="rounded-xl font-bold text-xs border-sky-500 text-sky-400 hover:bg-sky-500/10 h-10 gap-1.5"
+                      className="h-11 gap-1.5 rounded-xl border-sky-500 text-xs font-bold text-sky-400 hover:bg-sky-500/10"
                     >
                       <Icon icon="mingcute:sync-fill" className="text-base" />
                       Sync DB dari HF Hub
@@ -984,7 +985,7 @@ export default function SystemManagePage() {
                 <Button
                   onClick={saveBackupConfigSettings}
                   disabled={savingBackupConfig}
-                  className="rounded-2xl font-bold text-xs bg-primary text-primary-foreground px-6 h-11 shadow-md gap-2"
+                  className="h-11 w-full gap-2 rounded-2xl bg-primary px-6 text-xs font-bold text-primary-foreground shadow-md sm:w-auto"
                 >
                   <Icon icon="mingcute:save-fill" className="text-base" />
                   {savingBackupConfig ? 'Memproses...' : 'Simpan Semua Konfigurasi Cloud'}
@@ -994,7 +995,7 @@ export default function SystemManagePage() {
                   onClick={purgeLocalFilesNow}
                   disabled={purgingLocalFiles || backupProgress?.gdrive?.active || backupProgress?.huggingface?.active}
                   variant="outline"
-                  className="rounded-2xl font-bold text-xs text-rose-500 border-rose-500/30 hover:bg-rose-500/10 px-5 h-11 gap-2"
+                  className="h-11 w-full gap-2 rounded-2xl border-rose-500/30 px-5 text-xs font-bold text-rose-500 hover:bg-rose-500/10 sm:w-auto"
                 >
                   <Icon icon="mingcute:delete-2-fill" className="text-base" />
                   {purgingLocalFiles ? 'Memproses...' : 'Hapus File Lokal Ter-backup (Purge Storage)'}

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CustomSelect } from '@/components/shared/CustomSelect';
-import { DataMasterTablePageSkeleton } from '@/components/shared/DataMasterSkeletons';
+import { DataMasterTableContentSkeleton } from '@/components/shared/DataMasterSkeletons';
 import {
   Dialog,
   DialogContent,
@@ -121,9 +121,9 @@ export default function UsersManagementPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:p-6">
+        <div className="min-w-0">
+          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
             Manajemen Pengguna (User Management)
             <Badge className="bg-primary/15 text-primary border-primary/30 text-xs font-black">
               {totalCount} Total User
@@ -134,9 +134,9 @@ export default function UsersManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link href="/admin/import-staff">
-            <Button variant="outline" className="rounded-2xl font-bold text-xs gap-2 h-11 border-border">
+        <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:items-center">
+          <Link href="/admin/import-staff" className="w-full">
+            <Button variant="outline" className="h-11 w-full gap-2 rounded-2xl border-border text-xs font-bold">
               <Icon icon="mingcute:upload-3-line" className="text-base text-violet-500" />
               Import Staff Excel
             </Button>
@@ -144,7 +144,7 @@ export default function UsersManagementPage() {
 
           <Button
             onClick={() => setIsAddOpen(true)}
-            className="rounded-2xl font-black text-xs bg-primary text-primary-foreground gap-2 h-11 px-5"
+            className="h-11 w-full gap-2 rounded-2xl bg-primary px-5 text-xs font-black text-primary-foreground"
           >
             <Icon icon="mingcute:add-circle-fill" className="text-lg" />
             Tambah User
@@ -183,10 +183,65 @@ export default function UsersManagementPage() {
 
       {/* Users Table */}
       {loading ? (
-        <DataMasterTablePageSkeleton />
+        <DataMasterTableContentSkeleton mobileList />
       ) : (
         <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="divide-y divide-border lg:hidden">
+            {users.length === 0 ? (
+              <div className="p-10 text-center text-xs font-bold text-muted-foreground">
+                Tidak ada pengguna ditemukan.
+              </div>
+            ) : (
+              users.map((u: any) => {
+                const avatar = getAvatarUrl(u.photoUrl || u.avatar);
+                const userName = u.name || u.nama || 'Pengguna';
+
+                return (
+                  <article key={u.id} className="min-w-0 space-y-3 p-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <Avatar className="h-11 w-11 shrink-0 border border-border">
+                        <AvatarImage src={avatar} alt={userName} />
+                        <AvatarFallback className="bg-primary/10 text-xs font-black text-primary">
+                          {userName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="break-words text-sm font-bold text-foreground">{userName}</p>
+                        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                          {u.email || u.nis || u.username || `ID: ${u.id}`}
+                        </p>
+                      </div>
+                      <Badge className={`shrink-0 border text-[9px] font-black ${roleBadgeClass(u.role)}`}>
+                        {(u.role || 'SISWA').toUpperCase()}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="text-[9px] font-bold">
+                        {u.nis || u.username || '-'}
+                      </Badge>
+                      {u.faceEmbedding ? (
+                        <Badge className="border-emerald-500/30 bg-emerald-500/15 text-[9px] text-emerald-500">
+                          REGISTERED
+                        </Badge>
+                      ) : (
+                        <Badge className="border-amber-500/30 bg-amber-500/15 text-[9px] text-amber-500">
+                          NO FACE
+                        </Badge>
+                      )}
+                    </div>
+                    <Link href={`/admin/users/detail/${u.id}`} className="block w-full">
+                      <Button variant="outline" className="h-11 w-full rounded-xl text-xs font-bold text-primary">
+                        <Icon icon="mingcute:eye-line" className="mr-1 text-sm" />
+                        Detail Profil
+                      </Button>
+                    </Link>
+                  </article>
+                );
+              })
+            )}
+          </div>
+
+          <div className="hidden max-w-full overflow-x-auto lg:block">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/50 text-muted-foreground font-black uppercase text-[10px] tracking-wider border-b border-border">
                 <tr>
@@ -254,7 +309,7 @@ export default function UsersManagementPage() {
 
       {/* Add User Modal */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl p-6">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-3xl p-4 sm:max-w-md sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-black text-foreground flex items-center gap-2">
               <Icon icon="mingcute:user-add-line" className="text-primary text-xl" />
@@ -322,14 +377,14 @@ export default function UsersManagementPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="rounded-2xl font-bold text-xs h-10">
+          <div className="grid grid-cols-1 gap-3 pt-2 min-[420px]:grid-cols-2">
+            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="h-11 w-full rounded-2xl text-xs font-bold">
               Batal
             </Button>
             <Button
               onClick={handleCreateUser}
               disabled={isSubmitting}
-              className="rounded-2xl font-bold text-xs bg-primary text-primary-foreground px-6 h-10"
+              className="h-11 w-full rounded-2xl bg-primary px-6 text-xs font-bold text-primary-foreground"
             >
               {isSubmitting ? 'Menyimpan...' : 'Simpan User'}
             </Button>

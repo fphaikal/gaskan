@@ -17,7 +17,12 @@ import {
 } from 'lucide-react';
 
 export function Header() {
-  const { isCollapsed, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const {
+    isCollapsed,
+    isMobileOpen,
+    toggleSidebar,
+    toggleMobileSidebar,
+  } = useSidebar();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
@@ -51,37 +56,40 @@ export function Header() {
   const pageTitle = getPageTitle(pathname);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 md:px-6 backdrop-blur-md">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-40 flex h-[calc(4rem+env(safe-area-inset-top))] w-full min-w-0 shrink-0 items-center justify-between border-b border-border bg-background/80 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-md sm:px-4 md:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-3">
         {/* Mobile toggle */}
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
+          className="shrink-0 lg:hidden"
           onClick={toggleMobileSidebar}
-          aria-label="Toggle mobile sidebar"
+          aria-label={isMobileOpen ? 'Tutup navigasi' : 'Buka navigasi'}
+          aria-controls="mobile-dashboard-navigation"
+          aria-expanded={isMobileOpen}
         >
           <Menu className="h-5 w-5" />
         </Button>
 
         {/* Mobile logo */}
-        <Link href="/home" className="flex items-center gap-2 lg:hidden">
+        <Link href="/home" className="flex min-w-0 shrink items-center gap-2 lg:hidden">
           <Image
             src="/smti_logo.svg"
-            alt="Logo"
+            alt="GASKAN"
             width={28}
             height={28}
-            style={{ width: 'auto', height: 'auto' }}
-            className="dark:invert-0"
+            className="h-7 w-7 shrink-0 object-contain dark:invert-0"
           />
-          <span className="font-bold text-primary">GASKAN</span>
+          <span className="hidden truncate font-bold text-primary min-[360px]:inline">
+            GASKAN
+          </span>
         </Link>
 
         {/* Desktop Collapse Toggle */}
         <Button
           variant="ghost"
           size="icon"
-          className="hidden lg:flex"
+          className="hidden shrink-0 lg:flex"
           onClick={toggleSidebar}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -93,20 +101,20 @@ export function Header() {
         </Button>
 
         {/* Desktop Page Title */}
-        <h1 className="hidden sm:block text-base font-semibold text-foreground ml-2">
+        <h1 className="ml-2 hidden min-w-0 truncate text-base font-semibold text-foreground sm:block">
           {pageTitle}
         </h1>
       </div>
 
       {/* Right side actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {/* Theme Toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           aria-label="Toggle theme"
-          className="rounded-xl"
+          className="shrink-0 rounded-xl"
         >
           {mounted && theme === 'dark' ? (
             <Sun className="h-5 w-5 text-amber-400 transition-all" />
@@ -115,7 +123,7 @@ export function Header() {
           )}
         </Button>
 
-        <div className="h-6 w-px bg-border mx-1" />
+        <div className="mx-0.5 hidden h-6 w-px bg-border min-[360px]:block sm:mx-1" />
 
         {/* User Navigation */}
         <UserNav />

@@ -194,16 +194,19 @@ export default function KelasPage() {
             Kelola daftar kelas dan rombel siswa
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/jurusan">
-            <Button variant="outline" className="rounded-2xl gap-2 font-bold text-xs">
+        <div className="flex w-full flex-col gap-2 min-[420px]:flex-row sm:w-auto sm:items-center">
+          <Link
+            href="/jurusan"
+            className="w-full min-w-0 min-[420px]:flex-1 sm:w-auto sm:flex-none"
+          >
+            <Button variant="outline" className="h-11 w-full gap-2 rounded-2xl text-xs font-bold">
               <Icon icon="mingcute:building-2-fill" className="text-base" /> Kelola Jurusan
             </Button>
           </Link>
           {isAdmin && (
             <Button
               onClick={openCreate}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs shadow-lg shadow-primary/20"
+              className="h-11 w-full min-w-0 gap-2 rounded-2xl bg-primary text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 min-[420px]:flex-1 sm:w-auto sm:flex-none"
             >
               <Icon icon="mingcute:add-circle-fill" className="text-lg" /> Tambah Kelas
             </Button>
@@ -268,16 +271,16 @@ export default function KelasPage() {
             return (
               <div
                 key={cls.id}
-                className="bg-card rounded-3xl p-5 border border-border shadow-sm hover:shadow-md transition-all group flex flex-col justify-between"
+                className="group flex min-w-0 flex-col justify-between rounded-3xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md sm:p-5"
               >
                 <div>
                   {/* Top Bar */}
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex min-w-0 items-center gap-2.5">
                       <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
                         <Icon icon={majorIcon} className="text-xl" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                           Kelas {cls.grade}
                         </p>
@@ -292,7 +295,8 @@ export default function KelasPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-primary rounded-full"
+                          className="h-11 w-11 rounded-xl text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
+                          aria-label={`Edit ${clsName}`}
                           onClick={() => openEdit(cls)}
                         >
                           <Icon icon="mingcute:edit-2-fill" className="text-sm" />
@@ -300,7 +304,8 @@ export default function KelasPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-rose-500 rounded-full"
+                          className="h-11 w-11 rounded-xl text-muted-foreground hover:text-rose-500 sm:h-8 sm:w-8"
+                          aria-label={`Hapus ${clsName}`}
                           onClick={() => setDeleteId(cls.id)}
                         >
                           <Icon icon="mingcute:delete-2-fill" className="text-sm" />
@@ -310,7 +315,7 @@ export default function KelasPage() {
                   </div>
 
                   {/* Main Class Name */}
-                  <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors my-2">
+                  <h3 className="my-2 break-words text-xl font-black text-foreground transition-colors group-hover:text-primary">
                     {clsName}
                   </h3>
                 </div>
@@ -333,14 +338,14 @@ export default function KelasPage() {
 
       {/* ═══ CREATE / EDIT MODAL ═══ */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">
               {editMode ? 'Edit Data Kelas' : 'Tambah Kelas Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6 sm:text-sm">
             {/* Jurusan Dropdown */}
             <div className="space-y-2">
               <Label>Jurusan</Label>
@@ -380,7 +385,7 @@ export default function KelasPage() {
 
             {/* Computed Preview */}
             {computedClassName && (
-              <div className="p-3 bg-muted/40 border border-border rounded-2xl flex items-center justify-between">
+              <div className="flex flex-col gap-1 rounded-2xl border border-border bg-muted/40 p-3 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between">
                 <span className="text-xs text-muted-foreground font-semibold">Nama Kelas Dihasilkan:</span>
                 <span className="text-sm font-black text-primary">{computedClassName}</span>
               </div>
@@ -390,7 +395,7 @@ export default function KelasPage() {
             )}
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowModal(false)}>
               Batal
             </Button>
@@ -407,8 +412,8 @@ export default function KelasPage() {
 
       {/* ═══ CONFIRM DELETE MODAL ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <div className="p-6 space-y-4 text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <div className="space-y-4 overflow-y-auto p-4 text-center sm:p-6">
             <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
               <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
             </div>
@@ -419,7 +424,7 @@ export default function KelasPage() {
               Data kelas ini akan dihapus dari sistem. Pastikan siswa di dalamnya telah dialokasikan ulang.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteId(null)}>
               Batal
             </Button>

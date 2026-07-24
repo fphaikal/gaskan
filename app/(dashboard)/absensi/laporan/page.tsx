@@ -208,8 +208,8 @@ export default function AbsensiLaporanPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Top Header Card matching Nuxt 1-to-1 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 sm:p-6 rounded-3xl border border-border shadow-sm">
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
             Laporan Rekapitulasi Absensi Siswa
           </h1>
@@ -220,7 +220,7 @@ export default function AbsensiLaporanPage() {
       </div>
 
       {/* Filter Control Box matching Nuxt 1-to-1 */}
-      <div className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-sm">
+      <div className="bg-card border border-border rounded-3xl p-4 sm:p-6 space-y-4 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-black uppercase text-muted-foreground/60">Pilih Kelas</label>
@@ -269,11 +269,11 @@ export default function AbsensiLaporanPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-end gap-3 pt-2">
           <Button
             onClick={handlePreview}
             disabled={isPreviewing}
-            className="rounded-2xl font-bold px-6 bg-primary text-primary-foreground shadow-lg shadow-primary/20 h-11"
+            className="w-full sm:w-auto rounded-2xl font-bold px-6 bg-primary text-primary-foreground shadow-lg shadow-primary/20 h-11"
           >
             {isPreviewing ? (
               <Icon icon="mingcute:loading-fill" className="animate-spin text-base mr-2" />
@@ -286,7 +286,7 @@ export default function AbsensiLaporanPage() {
           <Button
             onClick={handleExportExcel}
             disabled={!previewData || isExportingExcel}
-            className="rounded-2xl font-bold px-6 bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 h-11"
+            className="w-full sm:w-auto rounded-2xl font-bold px-6 bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 h-11"
           >
             <Icon icon="mingcute:file-export-fill" className="text-base mr-2" />
             <span>Export Rekap Excel (.XLSX)</span>
@@ -297,8 +297,8 @@ export default function AbsensiLaporanPage() {
       {/* Preview Matrix Table */}
       {previewData && (
         <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm space-y-4">
-          <div className="p-5 bg-muted/20 border-b border-border flex justify-between items-center">
-            <div>
+          <div className="p-4 sm:p-5 bg-muted/20 border-b border-border flex justify-between items-center">
+            <div className="min-w-0">
               <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
                 Preview Matriks Kehadiran Siswa — Kelas {selectedClassName}
               </h3>
@@ -308,12 +308,21 @@ export default function AbsensiLaporanPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
+          <p id="attendance-report-scroll-hint" className="px-4 text-[10px] font-bold text-muted-foreground sm:hidden">
+            Nama siswa tetap terlihat. Geser tabel ke samping untuk melihat seluruh tanggal dan total.
+          </p>
+
+          <div
+            className="relative max-w-full overflow-x-auto overscroll-x-contain custom-scrollbar"
+            aria-describedby="attendance-report-scroll-hint"
+          >
+            <table className="min-w-max w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-muted/40 text-[10px] font-black uppercase tracking-wider text-muted-foreground border-b border-border">
-                  <th className="py-3 px-3 w-10 text-center">No</th>
-                  <th className="py-3 px-4 text-left">Nama Siswa</th>
+                  <th className="sticky left-0 z-20 w-12 min-w-12 bg-muted py-3 px-3 text-center">No</th>
+                  <th className="sticky left-12 z-20 min-w-[180px] bg-muted py-3 px-4 text-left shadow-[8px_0_12px_-12px_rgba(15,23,42,0.7)]">
+                    Nama Siswa
+                  </th>
                   <th className="py-3 px-3 text-left">Kelas</th>
                   {previewData.dates?.map((d: string) => (
                     <th key={d} className="py-3 px-1 text-center font-mono w-8">
@@ -329,9 +338,13 @@ export default function AbsensiLaporanPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {paginatedRows.map((r: any) => (
-                  <tr key={r.no} className="hover:bg-muted/30 font-bold">
-                    <td className="py-3 px-3 text-center text-muted-foreground/50 font-mono">{r.no}</td>
-                    <td className="py-3 px-4 text-foreground truncate max-w-[180px]">{r.name}</td>
+                  <tr key={r.no} className="group hover:bg-muted/30 font-bold">
+                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted py-3 px-3 text-center text-muted-foreground/50 font-mono">
+                      {r.no}
+                    </td>
+                    <td className="sticky left-12 z-10 max-w-[180px] bg-card group-hover:bg-muted py-3 px-4 text-foreground truncate shadow-[8px_0_12px_-12px_rgba(15,23,42,0.7)]">
+                      {r.name}
+                    </td>
                     <td className="py-3 px-3 text-muted-foreground">{r.className}</td>
                     {previewData.dates?.map((d: string) => {
                       const code = r.cells?.[d];

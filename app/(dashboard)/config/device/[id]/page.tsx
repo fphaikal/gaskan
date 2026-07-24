@@ -121,7 +121,7 @@ export default function DeviceDetailPage() {
           variant="ghost"
           size="sm"
           onClick={() => router.push('/config/device')}
-          className="rounded-xl gap-1.5 font-bold hover:bg-muted text-xs"
+          className="h-11 gap-1.5 rounded-xl text-xs font-bold hover:bg-muted"
         >
           <Icon icon="mingcute:arrow-left-line" className="text-base" />
           Kembali ke Daftar Mesin
@@ -130,8 +130,8 @@ export default function DeviceDetailPage() {
 
       {/* Header Area matching Nuxt 1-to-1 */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3 tracking-tight">
+        <div className="min-w-0">
+          <h1 className="flex min-w-0 items-center gap-3 break-words text-2xl font-black tracking-tight text-foreground sm:text-3xl">
             <Icon icon="mingcute:chip-fill" className="text-primary text-3xl animate-pulse" />
             {device?.name || 'Samping bengkel 1'}
           </h1>
@@ -143,7 +143,7 @@ export default function DeviceDetailPage() {
         <Button
           onClick={fetchDeviceDetails}
           disabled={loading}
-          className="bg-primary text-primary-foreground rounded-2xl px-6 h-12 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-xs"
+          className="h-11 w-full rounded-2xl bg-primary px-6 text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] md:w-auto"
         >
           <Icon icon="mingcute:refresh-1-line" className={`text-base mr-1.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh Data
@@ -155,7 +155,7 @@ export default function DeviceDetailPage() {
         {/* Left Column: Stream preview and door access control */}
         <div className="md:col-span-5 flex flex-col gap-6">
           {/* Live Video Stream */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6">
             <div className="flex justify-between items-center">
               <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
                 <Icon icon="mingcute:video-camera-fill" className="text-rose-500 text-base" />
@@ -184,7 +184,7 @@ export default function DeviceDetailPage() {
           </div>
 
           {/* Door Controls matching Nuxt 1-to-1 */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6">
             <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
               <Icon icon="mingcute:key-2-fill" className="text-emerald-500 text-base" />
               Kontrol Pintu Akses
@@ -192,7 +192,7 @@ export default function DeviceDetailPage() {
 
             <div className="flex flex-col gap-2.5">
               {/* Normal open/close row */}
-              <div className="flex gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 min-[380px]:grid-cols-2">
                 <Button
                   onClick={() => sendDoorCommand('open')}
                   disabled={sendingDoorCmd}
@@ -211,7 +211,7 @@ export default function DeviceDetailPage() {
                 </Button>
               </div>
               {/* Permanent lock/unlock row */}
-              <div className="flex gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 min-[380px]:grid-cols-2">
                 <Button
                   variant="outline"
                   onClick={() => sendDoorCommand('alwaysOpen')}
@@ -236,7 +236,7 @@ export default function DeviceDetailPage() {
         {/* Right Column: Device Specs, Capacity, Stream ID Configuration */}
         <div className="md:col-span-7 space-y-6">
           {/* Specs Info */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-5 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6">
             <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
               <Icon icon="mingcute:settings-6-fill" className="text-primary text-base" />
               Informasi & Spesifikasi Perangkat
@@ -270,7 +270,7 @@ export default function DeviceDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-muted-foreground border-t border-border pt-4">
               <div className="flex items-center gap-2">
                 <Icon icon="mingcute:link-2-line" className="text-base text-muted-foreground/60" />
-                <span>
+                <span className="min-w-0 break-all">
                   IP / Url:{' '}
                   <span className="font-mono text-xs bg-muted/60 px-2 py-0.5 rounded-lg text-foreground font-bold">
                     {device?.url || 'http://192.168.55.136'}
@@ -329,7 +329,7 @@ export default function DeviceDetailPage() {
           </div>
 
           {/* go2rtc Stream ID configuration box */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+          <div className="flex min-w-0 flex-col gap-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6">
             <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
               <Icon icon="mingcute:code-fill" className="text-amber-500 text-base" />
               Konfigurasi Stream go2rtc
@@ -352,7 +352,7 @@ export default function DeviceDetailPage() {
                   <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
                     ID Perangkat (Cadangan)
                   </span>
-                  <p className="text-xs font-bold text-muted-foreground font-mono mt-0.5">{device?.id || 'cmroch133000ot390ebsm3449'}</p>
+                  <p className="mt-0.5 break-all font-mono text-xs font-bold text-muted-foreground">{device?.id || 'cmroch133000ot390ebsm3449'}</p>
                 </div>
                 <span className="text-[10px] text-muted-foreground/50 italic">ID unik permanen perangkat</span>
               </div>
@@ -360,7 +360,7 @@ export default function DeviceDetailPage() {
           </div>
 
           {/* Biometric Capacity details matching Nuxt 1-to-1 */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+          <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6">
             <h3 className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
               <Icon icon="mingcute:dashboard-3-fill" className="text-sky-400 text-base" />
               Kapasitas & Penggunaan Biometrik

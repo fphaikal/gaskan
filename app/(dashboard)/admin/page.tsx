@@ -299,6 +299,11 @@ export default function AdminPage() {
         pageCount={pageCount}
         pagination={pagination}
         onPaginationChange={setPagination}
+        mobileColumnIds={["username", "nama", "role"]}
+        mobileActionColumnId="actions"
+        stickyColumnId="username"
+        actionColumnId="actions"
+        emptyLabel="Tidak ada akun admin ditemukan."
       />
 
       {/* Add / Edit Admin Dialog */}

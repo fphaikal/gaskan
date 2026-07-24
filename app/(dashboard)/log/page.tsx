@@ -223,6 +223,9 @@ export default function LogPage() {
           searchKey="aktivitas"
           searchPlaceholder="Cari aktivitas..."
           isLoading={isLoading}
+          mobileColumnIds={["username", "created_at", "level", "aktivitas"]}
+          stickyColumnId="created_at"
+          emptyLabel="Tidak ada log aktivitas ditemukan."
         />
       </div>
     </div>

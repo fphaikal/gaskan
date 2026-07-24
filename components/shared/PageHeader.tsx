@@ -26,34 +26,37 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   const subText = subtitle || description
+  const hasActions = Boolean(actions || (onAction && actionLabel))
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6 border-b mb-6",
+        "mb-6 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between sm:pb-6",
         className
       )}
     >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+      <div className="min-w-0 space-y-1">
+        <h1 className="break-words text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {title}
         </h1>
         {subText && (
-          <p className="text-sm text-muted-foreground">
+          <p className="max-w-3xl break-words text-sm text-muted-foreground">
             {subText}
           </p>
         )}
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {actions}
-        {onAction && actionLabel && (
-          <Button onClick={onAction} className="flex items-center gap-2">
-            {actionIcon && <span className="shrink-0">{actionIcon}</span>}
-            <span>{actionLabel}</span>
-          </Button>
-        )}
-      </div>
+      {hasActions && (
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
+          {actions}
+          {onAction && actionLabel && (
+            <Button onClick={onAction} className="flex w-full items-center gap-2 sm:w-auto">
+              {actionIcon && <span className="shrink-0">{actionIcon}</span>}
+              <span className="truncate">{actionLabel}</span>
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

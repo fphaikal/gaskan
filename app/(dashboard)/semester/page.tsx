@@ -224,24 +224,24 @@ export default function SemesterPage() {
           </p>
         </div>
         {isAdmin && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <Button
               variant="outline"
               onClick={() => setShowAYModal(true)}
-              className="rounded-2xl gap-2 font-bold text-xs"
+              className="h-11 w-full gap-2 rounded-2xl text-xs font-bold"
             >
               <Icon icon="mingcute:add-line" className="text-base" /> Tambah Tahun Ajaran
             </Button>
             <Button
               variant="outline"
               onClick={() => setShowPromotionModal(true)}
-              className="rounded-2xl gap-2 font-bold text-xs text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
+              className="h-11 w-full gap-2 rounded-2xl border-amber-500/30 text-xs font-bold text-amber-500 hover:bg-amber-500/10"
             >
               <Icon icon="mingcute:arrow-to-up-line" className="text-base" /> Proses Kenaikan Kelas
             </Button>
             <Button
               onClick={openCreateSemester}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl gap-2 font-black text-xs shadow-lg shadow-primary/20"
+              className="h-11 w-full gap-2 rounded-2xl bg-primary text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 min-[420px]:col-span-2 sm:w-auto"
             >
               <Icon icon="mingcute:add-circle-fill" className="text-lg" /> Tambah Semester
             </Button>
@@ -251,11 +251,11 @@ export default function SemesterPage() {
 
       {/* Semester Bento Grid matching Nuxt */}
       {semesters.length === 0 ? (
-        <div className="bg-card border border-border rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-3">
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-12 text-center flex flex-col items-center justify-center space-y-3">
           <Icon icon="mingcute:calendar-line" className="text-5xl text-muted-foreground/30" />
           <p className="text-sm font-bold text-muted-foreground">Belum ada semester yang terdaftar</p>
           {isAdmin && (
-            <Button onClick={openCreateSemester} className="rounded-xl font-bold text-xs">
+            <Button onClick={openCreateSemester} className="w-full max-w-xs rounded-xl font-bold text-xs sm:w-auto">
               Tambah Semester Pertama
             </Button>
           )}
@@ -269,7 +269,7 @@ export default function SemesterPage() {
             return (
               <div
                 key={sem.id}
-                className={`bg-card rounded-3xl p-5 border shadow-sm transition-all group flex flex-col justify-between ${
+                className={`group flex min-w-0 flex-col justify-between rounded-3xl border bg-card p-4 shadow-sm transition-all sm:p-5 ${
                   isCurrentActive ? 'border-primary shadow-primary/10 ring-2 ring-primary/20' : 'border-border'
                 }`}
               >
@@ -285,7 +285,8 @@ export default function SemesterPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-primary rounded-full"
+                          className="h-11 w-11 rounded-xl text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
+                          aria-label={`Edit ${sem.name}`}
                           onClick={() => openEditSemester(sem)}
                         >
                           <Icon icon="mingcute:edit-2-fill" className="text-base" />
@@ -293,7 +294,8 @@ export default function SemesterPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-rose-500 rounded-full"
+                          className="h-11 w-11 rounded-xl text-muted-foreground hover:text-rose-500 sm:h-8 sm:w-8"
+                          aria-label={`Hapus ${sem.name}`}
                           onClick={() => setDeleteId(sem.id)}
                         >
                           <Icon icon="mingcute:delete-2-fill" className="text-base" />
@@ -304,14 +306,14 @@ export default function SemesterPage() {
 
                   {/* Title & Dates */}
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors">
+                    <h3 className="break-words text-xl font-black text-foreground transition-colors group-hover:text-primary">
                       {sem.name}
                     </h3>
 
                     <div className="space-y-1 py-2 text-xs font-semibold text-muted-foreground">
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-start gap-2">
                         <Icon icon="mingcute:calendar-fill" className="text-primary text-base shrink-0" />
-                        <span>
+                        <span className="break-words">
                           {sem.startDate ? format(parseISO(sem.startDate), 'd MMM yyyy', { locale: localeId }) : '—'}
                           {' s/d '}
                           {sem.endDate ? format(parseISO(sem.endDate), 'd MMM yyyy', { locale: localeId }) : '—'}
@@ -322,7 +324,7 @@ export default function SemesterPage() {
                 </div>
 
                 {/* Bottom Status & Activate Action */}
-                <div className="pt-4 border-t border-border flex items-center justify-between mt-4">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
                   {isCurrentActive ? (
                     <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-black uppercase px-3 py-1">
                       Status: Aktif
@@ -338,7 +340,7 @@ export default function SemesterPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => activateSemester(sem)}
-                      className="text-xs font-bold text-primary hover:bg-primary/10 gap-1 rounded-xl"
+                      className="min-h-11 gap-1 rounded-xl text-xs font-bold text-primary hover:bg-primary/10"
                     >
                       <Icon icon="mingcute:check-circle-fill" className="text-base" /> Aktifkan
                     </Button>
@@ -352,14 +354,14 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 1: ADD / EDIT SEMESTER ═══ */}
       <Dialog open={showSemesterModal} onOpenChange={setShowSemesterModal}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">
               {editMode ? 'Edit Semester' : 'Tambah Semester Baru'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6 sm:text-sm">
             <div className="space-y-2">
               <Label htmlFor="semName">Nama Semester</Label>
               <Input
@@ -384,7 +386,7 @@ export default function SemesterPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="startDate">Tanggal Mulai</Label>
                 <Input
@@ -421,7 +423,7 @@ export default function SemesterPage() {
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowSemesterModal(false)}>
               Batal
             </Button>
@@ -438,11 +440,11 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 2: ADD ACADEMIC YEAR ═══ */}
       <Dialog open={showAYModal} onOpenChange={setShowAYModal}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-foreground">Tambah Tahun Ajaran</DialogTitle>
           </DialogHeader>
-          <div className="p-6 space-y-4">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
             <div className="space-y-2">
               <Label htmlFor="ayInput">Tahun Ajaran (Tahun/Tahun)</Label>
               <Input
@@ -454,7 +456,7 @@ export default function SemesterPage() {
               />
             </div>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowAYModal(false)}>
               Batal
             </Button>
@@ -467,13 +469,13 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 3: PROMOTION PROCESS ═══ */}
       <Dialog open={showPromotionModal} onOpenChange={setShowPromotionModal}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0 bg-card">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <DialogHeader className="shrink-0 border-b border-border bg-card p-4 pb-4 sm:p-6 sm:pb-4">
             <DialogTitle className="text-xl font-black text-amber-500">
               Proses Kenaikan Kelas & Kelulusan
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs sm:text-sm">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs sm:p-6 sm:text-sm">
             <p className="text-muted-foreground font-semibold leading-relaxed">
               Proses ini akan memindahkan siswa tingkat X ke XI, XI ke XII, dan meluluskan siswa tingkat XII ke semester tujuan yang dipilih.
             </p>
@@ -490,7 +492,7 @@ export default function SemesterPage() {
               />
             </div>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold" onClick={() => setShowPromotionModal(false)}>
               Batal
             </Button>
@@ -507,8 +509,8 @@ export default function SemesterPage() {
 
       {/* ═══ MODAL 4: CONFIRM DELETE ═══ */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-md flex flex-col p-0 overflow-hidden border-border bg-card rounded-3xl shadow-2xl">
-          <div className="p-6 space-y-4 text-center">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border-border bg-card p-0 shadow-2xl sm:max-w-md">
+          <div className="space-y-4 overflow-y-auto p-4 text-center sm:p-6">
             <div className="w-16 h-16 bg-rose-500/15 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-1">
               <Icon icon="mingcute:delete-2-fill" className="text-3xl" />
             </div>
@@ -519,7 +521,7 @@ export default function SemesterPage() {
               Data semester ini akan dihapus. Perubahan ini dapat mempengaruhi histori absensi siswa.
             </p>
           </div>
-          <DialogFooter className="p-6 pt-4 border-t border-border shrink-0 bg-card/90 backdrop-blur-md gap-3 sm:gap-4">
+          <DialogFooter className="shrink-0 gap-3 border-t border-border bg-card/90 p-4 pt-4 backdrop-blur-md sm:gap-4 sm:p-6 sm:pt-4">
             <Button variant="ghost" className="rounded-2xl flex-1 font-bold text-xs" onClick={() => setDeleteId(null)}>
               Batal
             </Button>
