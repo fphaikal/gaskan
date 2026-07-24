@@ -30,7 +30,8 @@ const getImageUrl = (url?: string) => {
 export function LiveAttendanceFeed() {
   const [countData, setCountData] = useState<any>(null);
   const [classList, setClassList] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'attendance' | 'failures'>('attendance');
   const [selectedAttendance, setSelectedAttendance] = useState<any>(null);
@@ -73,7 +74,7 @@ export function LiveAttendanceFeed() {
   });
 
   const fetchData = useCallback(async () => {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const params = new URLSearchParams({
         page: String(currentPage),
@@ -97,7 +98,8 @@ export function LiveAttendanceFeed() {
       setCountData(null);
       setPagination({ page: 1, limit: itemsPerPage, total: 0, totalPages: 1 });
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoading(false);
     }
   }, [currentPage, itemsPerPage, debouncedSearch, selectedClass, statusFilter]);
 
@@ -268,7 +270,7 @@ export function LiveAttendanceFeed() {
     return colors[Math.abs(hash) % colors.length];
   };
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="bg-card rounded-3xl border border-border shadow-sm flex flex-col min-h-[500px]">
         <div className="p-6 border-b border-border flex items-center gap-4">
@@ -355,7 +357,12 @@ export function LiveAttendanceFeed() {
           <div className="flex-1 flex flex-col">
             <div className="px-6 py-3 bg-muted/20 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
               <div className="relative flex-1 min-w-[180px] max-w-xs">
-                <Icon icon="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs" />
+                <Icon
+                  icon={isFetching ? 'mingcute:loading-fill' : 'Search'}
+                  className={`absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs ${
+                    isFetching ? 'animate-spin text-primary' : ''
+                  }`}
+                />
                 <Input
                   type="text"
                   placeholder="Cari nama / NIS..."
