@@ -245,7 +245,7 @@ export default function LoginPage() {
                       placeholder="Masukkan NIS / Email kamu"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      className="pl-9"
+                      className="input-leading-icon"
                       required
                     />
                   </div>
@@ -269,7 +269,7 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-9 pr-10"
+                      className="input-leading-icon input-trailing-action"
                       required
                     />
                     <button

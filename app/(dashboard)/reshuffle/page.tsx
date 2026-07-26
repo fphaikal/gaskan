@@ -422,7 +422,7 @@ export default function ReshufflePage() {
                   placeholder="Cari nama, NIS, rombel..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-11 rounded-xl bg-background pl-9 text-xs font-semibold sm:h-9"
+                  className="input-leading-icon h-11 rounded-xl bg-background text-xs font-semibold sm:h-9"
                 />
               </div>
             </div>

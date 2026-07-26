@@ -214,8 +214,8 @@ export default function SemesterPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in duration-500">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
             Manajemen Semester
           </h1>
@@ -224,24 +224,24 @@ export default function SemesterPage() {
           </p>
         </div>
         {isAdmin && (
-          <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+          <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:flex lg:w-auto lg:shrink-0 lg:flex-nowrap lg:items-center">
             <Button
               variant="outline"
               onClick={() => setShowAYModal(true)}
-              className="h-11 w-full gap-2 rounded-2xl text-xs font-bold"
+              className="h-11 w-full gap-2 whitespace-nowrap rounded-2xl px-4 text-xs font-bold lg:w-auto"
             >
               <Icon icon="mingcute:add-line" className="text-base" /> Tambah Tahun Ajaran
             </Button>
             <Button
               variant="outline"
               onClick={() => setShowPromotionModal(true)}
-              className="h-11 w-full gap-2 rounded-2xl border-amber-500/30 text-xs font-bold text-amber-500 hover:bg-amber-500/10"
+              className="h-11 w-full gap-2 whitespace-nowrap rounded-2xl border-amber-500/30 px-4 text-xs font-bold text-amber-500 hover:bg-amber-500/10 lg:w-auto"
             >
               <Icon icon="mingcute:arrow-to-up-line" className="text-base" /> Proses Kenaikan Kelas
             </Button>
             <Button
               onClick={openCreateSemester}
-              className="h-11 w-full gap-2 rounded-2xl bg-primary text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 min-[420px]:col-span-2 sm:w-auto"
+              className="h-11 w-full gap-2 whitespace-nowrap rounded-2xl bg-primary px-4 text-xs font-black text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 min-[420px]:col-span-2 lg:col-span-1 lg:w-auto"
             >
               <Icon icon="mingcute:add-circle-fill" className="text-lg" /> Tambah Semester
             </Button>

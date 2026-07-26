@@ -76,7 +76,7 @@ function ResetPasswordForm() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-9 pr-10"
+                className="input-leading-icon input-trailing-action"
                 required
               />
               <button
@@ -100,7 +100,7 @@ function ResetPasswordForm() {
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-9"
+                className="input-leading-icon"
                 required
               />
             </div>

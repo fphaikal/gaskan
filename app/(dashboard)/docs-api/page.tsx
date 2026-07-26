@@ -397,7 +397,7 @@ export default function DocsApiPage() {
                 placeholder="Cari rute API / kata kunci..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 rounded-2xl h-10 bg-muted/40 font-semibold text-xs"
+                className="input-leading-icon rounded-2xl h-10 bg-muted/40 font-semibold text-xs"
               />
             </div>
 

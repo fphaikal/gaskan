@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useSidebar } from '@/context/SidebarContext';
-import { UserNav } from '@/components/layout/UserNav';
 import { Button } from '@/components/ui/button';
 import {
   PanelLeftClose,
@@ -124,10 +123,6 @@ export function Header() {
           )}
         </Button>
 
-        <div className="mx-0.5 hidden h-6 w-px bg-border min-[360px]:block sm:mx-1" />
-
-        {/* User Navigation */}
-        <UserNav />
       </div>
     </header>
   );

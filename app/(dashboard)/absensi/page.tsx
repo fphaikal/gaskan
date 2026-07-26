@@ -189,7 +189,7 @@ export default function AbsensiPage() {
               placeholder="Cari Siswa / NIS..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 w-full rounded-xl bg-card font-bold border-border text-xs"
+              className="input-leading-icon h-10 w-full rounded-xl bg-card font-bold border-border text-xs"
             />
           </div>
           <div className="w-full sm:w-48">

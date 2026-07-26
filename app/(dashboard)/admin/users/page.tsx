@@ -161,7 +161,7 @@ export default function UsersManagementPage() {
             placeholder="Cari berdasarkan nama, email, NIS, NIP, atau username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 rounded-2xl h-11 bg-muted/30 text-xs font-bold"
+            className="input-leading-icon rounded-2xl h-11 bg-muted/30 text-xs font-bold"
           />
         </div>
 

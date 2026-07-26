@@ -587,7 +587,7 @@ export function LiveAttendanceFeed() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="pl-8 rounded-xl bg-background border-border text-xs font-medium h-9"
+                  className="input-leading-icon-compact rounded-xl bg-background border-border text-xs font-medium h-9"
                 />
               </div>
 

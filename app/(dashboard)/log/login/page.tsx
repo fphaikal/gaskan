@@ -123,7 +123,7 @@ export default function LogLoginPage() {
               placeholder="Cari NIS / Username..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10 rounded-2xl bg-muted/30 font-bold border-border text-xs w-full"
+              className="input-leading-icon h-10 rounded-2xl bg-muted/30 font-bold border-border text-xs w-full"
             />
           </div>
 

@@ -262,7 +262,7 @@ export default function AdminTeamPage() {
             placeholder="Cari Nama atau Peran..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11 h-11 bg-background rounded-2xl text-xs font-bold border-border"
+            className="input-leading-icon h-11 bg-background rounded-2xl text-xs font-bold border-border"
           />
         </div>
         <div className="flex items-center justify-center font-black text-xs text-muted-foreground/60 uppercase tracking-widest">

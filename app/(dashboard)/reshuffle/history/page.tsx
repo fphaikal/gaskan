@@ -86,7 +86,7 @@ export default function ReshuffleHistoryPage() {
             placeholder="Cari operator / nama kelas..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-11 bg-background rounded-2xl text-xs font-bold"
+            className="input-leading-icon h-11 bg-background rounded-2xl text-xs font-bold"
           />
         </div>
         <div className="w-full sm:w-48">

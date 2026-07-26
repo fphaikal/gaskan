@@ -380,7 +380,7 @@ export default function WorkspaceTeamsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 pb-16 animate-in fade-in duration-500">
       {loadingProfile ? (
         <WorkspaceTeamsSkeleton />
       ) : !isTeamMember ? (
@@ -400,9 +400,13 @@ export default function WorkspaceTeamsPage() {
         </div>
       ) : (
         <>
-          {/* Header Banner matching Nuxt 1-to-1 */}
-          <div className="bg-gradient-to-br from-primary/20 via-card to-background p-6 sm:p-8 rounded-3xl border border-primary/20 shadow-xl relative overflow-hidden">
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3" style={{ direction: 'rtl' }}>
+          {/* Platform summary: first on mobile, right column on desktop */}
+          <aside
+            className="relative w-full overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/20 via-card to-background p-6 shadow-xl lg:col-span-1 xl:p-8"
+            style={{ direction: 'ltr' }}
+          >
+            <div className="relative z-10 flex flex-col gap-5">
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 text-primary border border-primary/30 text-xs font-black">
                   <Icon icon="mingcute:group-fill" className="text-sm" />
@@ -417,7 +421,7 @@ export default function WorkspaceTeamsPage() {
               </div>
 
               {myTeamProfile && (
-                <div className="flex w-full min-w-0 items-center gap-3 rounded-2xl border border-border bg-card/80 p-3 backdrop-blur-md sm:w-auto sm:shrink-0">
+                <div className="flex w-full min-w-0 items-center gap-3 rounded-2xl border border-border bg-card/80 p-3 backdrop-blur-md">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                     {myTeamProfile.photoUrl ? (
                       <img src={resolvePhoto(myTeamProfile.photoUrl) || ''} alt={myTeamProfile.name} className="w-full h-full object-cover" />
@@ -432,8 +436,12 @@ export default function WorkspaceTeamsPage() {
                 </div>
               )}
             </div>
-          </div>
+          </aside>
 
+          <div
+            className="min-w-0 space-y-6 overflow-hidden lg:col-span-2"
+            style={{ direction: 'ltr' }}
+          >
           {/* Navigation Tabs matching Nuxt 1-to-1 */}
           <div className="flex w-full max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain border-b border-border pb-2">
             <Button
@@ -853,6 +861,8 @@ export default function WorkspaceTeamsPage() {
               </div>
             </div>
           )}
+          </div>
+          </div>
         </>
       )}
 

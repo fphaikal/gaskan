@@ -210,7 +210,7 @@ export function ReusableDataTable<TData, TValue>({
               onChange={(event) =>
                 table.getColumn(searchKey)?.setFilterValue(event.target.value)
               }
-              className="pl-9"
+              className="input-leading-icon"
             />
           </div>
         ) : (

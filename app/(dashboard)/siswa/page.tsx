@@ -486,12 +486,12 @@ export default function SiswaPage() {
 
       {/* Filters Section with CustomSelect */}
       <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row gap-3 bg-card p-4 rounded-3xl border border-border shadow-sm">
+        <div className="flex flex-nowrap items-center gap-3 overflow-x-auto rounded-3xl border border-border bg-card p-3 shadow-sm sm:p-4">
           {/* Search Input */}
-          <div className="relative flex-1">
+          <div className="relative min-w-56 flex-1">
             <Icon
               icon={isFetching ? 'mingcute:loading-fill' : 'mingcute:search-line'}
-              className={`absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg ${
+              className={`pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-lg text-muted-foreground ${
                 isFetching ? 'animate-spin text-primary' : ''
               }`}
             />
@@ -503,40 +503,39 @@ export default function SiswaPage() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-11 h-11 bg-muted/30 border-transparent rounded-2xl text-xs font-bold focus:border-primary transition-all"
+              className="input-leading-icon h-11 rounded-2xl border-border/70 bg-muted/30 pr-4 text-xs font-bold transition-all placeholder:font-semibold focus:border-primary sm:h-11 sm:pr-4"
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {/* Custom Class Select */}
-            <div className="w-full sm:w-48">
-              <CustomSelect
-                options={[
-                  { value: '', label: 'Semua Kelas' },
-                  ...classOptions,
-                ]}
-                value={selectedClass}
-                onChange={(value) => {
-                  setSelectedClass(value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Semua Kelas"
-                icon="mingcute:filter-2-line"
-              />
-            </div>
-
-            {/* Filter Lanjutan Toggle */}
-            <Button
-              variant={showAdvanceFilters ? 'default' : 'ghost'}
-              onClick={() => setShowAdvanceFilters(!showAdvanceFilters)}
-              className={`h-11 rounded-2xl gap-2 font-bold text-xs border ${
-                showAdvanceFilters ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground border-border'
-              }`}
-            >
-              <Icon icon={showAdvanceFilters ? 'mingcute:settings-6-fill' : 'mingcute:settings-6-line'} className="text-base" />
-              <span className="hidden sm:inline">Filter Lanjutan</span>
-            </Button>
+          {/* Custom Class Select */}
+          <div className="w-48 shrink-0">
+            <CustomSelect
+              options={[
+                { value: '', label: 'Semua Kelas' },
+                ...classOptions,
+              ]}
+              value={selectedClass}
+              onChange={(value) => {
+                setSelectedClass(value);
+                setCurrentPage(1);
+              }}
+              placeholder="Semua Kelas"
+              icon="mingcute:filter-2-line"
+              triggerClassName="border-border/70 bg-muted/30"
+            />
           </div>
+
+          {/* Filter Lanjutan Toggle */}
+          <Button
+            variant={showAdvanceFilters ? 'default' : 'ghost'}
+            onClick={() => setShowAdvanceFilters(!showAdvanceFilters)}
+            className={`h-11 shrink-0 rounded-2xl border px-4 text-xs font-bold ${
+              showAdvanceFilters ? 'bg-primary text-primary-foreground' : 'border-border/70 bg-muted/30 text-foreground'
+            }`}
+          >
+            <Icon icon={showAdvanceFilters ? 'mingcute:settings-6-fill' : 'mingcute:settings-6-line'} className="text-base" />
+            <span>Filter Lanjutan</span>
+          </Button>
         </div>
 
         {/* Advance Filter Panel with CustomSelect */}
@@ -1086,7 +1085,7 @@ export default function SiswaPage() {
                             placeholder="Cari kelas..."
                             value={classSearch}
                             onChange={(e) => setClassSearch(e.target.value)}
-                            className="pl-8 h-8 text-xs rounded-xl bg-muted/40"
+                            className="input-leading-icon-compact h-8 text-xs rounded-xl bg-muted/40"
                           />
                         </div>
                       </div>

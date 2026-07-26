@@ -145,7 +145,7 @@ export function LoginLogsTableSection() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-9 h-10 rounded-xl bg-muted/30 text-xs"
+              className="input-leading-icon h-10 rounded-xl bg-muted/30 text-xs"
             />
           </div>
         </div>

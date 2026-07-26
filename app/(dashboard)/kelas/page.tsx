@@ -217,14 +217,19 @@ export default function KelasPage() {
       {/* Filters Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 bg-card p-4 rounded-3xl border border-border shadow-sm">
         {/* Search */}
-        <div className="relative flex-1">
-          <Icon icon="mingcute:search-line" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-base" />
-          <Input
+        <div className="flex h-11 flex-1 items-center gap-2.5 rounded-2xl border border-border bg-background px-3.5 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+          <Icon
+            icon="mingcute:search-line"
+            size={18}
+            className="shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
             type="text"
             placeholder="Cari nama kelas..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-11 bg-background border-border rounded-2xl text-xs font-bold"
+            className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-xs font-bold leading-none text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
 

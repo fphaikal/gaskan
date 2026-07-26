@@ -160,7 +160,7 @@ export default function FileExplorerPage() {
             placeholder="Cari nama berkas / path..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10 rounded-xl bg-card font-bold border-border text-xs"
+            className="input-leading-icon h-10 rounded-xl bg-card font-bold border-border text-xs"
           />
         </div>
 

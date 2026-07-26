@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
                       placeholder="nama@smtijogja.sch.id"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-9"
+                      className="input-leading-icon"
                       required
                     />
                   </div>

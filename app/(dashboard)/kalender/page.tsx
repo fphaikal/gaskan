@@ -407,7 +407,7 @@ export default function KalenderPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari agenda / catatan..."
-              className="pl-8 rounded-xl bg-muted/40 border-border text-xs font-medium h-11 min-[640px]:h-9"
+              className="input-leading-icon-compact rounded-xl bg-muted/40 border-border text-xs font-medium h-11 min-[640px]:h-9"
             />
           </div>
 

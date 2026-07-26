@@ -124,6 +124,19 @@
   }
 }
 
+/* Reserve space for icons positioned on top of input elements. */
+.input-leading-icon {
+  padding-left: 2.75rem !important;
+}
+
+.input-leading-icon-compact {
+  padding-left: 2.25rem !important;
+}
+
+.input-trailing-action {
+  padding-right: 2.5rem !important;
+}
+
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
