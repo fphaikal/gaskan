@@ -2,8 +2,8 @@ import { cache } from "react";
 
 export const TEAM_API_ORIGIN = "https://gaskan-api.smtijogja.my.id";
 
-const TEAM_REVALIDATE_SECONDS = 3600;
-const TEAM_REQUEST_TIMEOUT_MS = 5000;
+const TEAM_REQUEST_TIMEOUT_MS = 15000;
+const TEAM_REQUEST_ATTEMPTS = 2;
 
 export type TeamCustomLink = {
   label: string;
@@ -171,34 +171,44 @@ export async function fetchPublicTeamMembers({
   fetcher = fetch,
 }: FetchPublicTeamMembersOptions = {}): Promise<PublicTeamMember[]> {
   const baseUrl = apiBase.replace(/\/+$/, "");
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    TEAM_REQUEST_TIMEOUT_MS,
+  const endpoint = `${baseUrl}/api/team`;
+  let lastFailure = "unknown error";
+
+  for (let attempt = 1; attempt <= TEAM_REQUEST_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      TEAM_REQUEST_TIMEOUT_MS,
+    );
+
+    try {
+      const response = await fetcher(endpoint, {
+        cache: "no-store",
+        headers: {
+          accept: "application/json",
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        lastFailure = `HTTP ${response.status} ${response.statusText}`.trim();
+        continue;
+      }
+
+      return normalizeTeamMembers(await response.json(), baseUrl);
+    } catch (error) {
+      lastFailure =
+        error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  console.error(
+    `[public-team] Failed to fetch ${endpoint} after ${TEAM_REQUEST_ATTEMPTS} attempts: ${lastFailure}`,
   );
 
-  try {
-    const response = await fetcher(`${baseUrl}/api/team`, {
-      headers: {
-        accept: "application/json",
-      },
-      next: {
-        revalidate: TEAM_REVALIDATE_SECONDS,
-        tags: ["public-team"],
-      },
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    return normalizeTeamMembers(await response.json(), baseUrl);
-  } catch {
-    return [];
-  } finally {
-    clearTimeout(timeout);
-  }
+  return [];
 }
 
 export const getPublicTeamMembers = cache(fetchPublicTeamMembers);
