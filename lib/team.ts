@@ -2,6 +2,7 @@ import { cache } from "react";
 
 export const TEAM_API_ORIGIN = "https://gaskan-api.smtijogja.my.id";
 
+const TEAM_REVALIDATE_SECONDS = 3600;
 const TEAM_REQUEST_TIMEOUT_MS = 15000;
 const TEAM_REQUEST_ATTEMPTS = 2;
 
@@ -183,9 +184,12 @@ export async function fetchPublicTeamMembers({
 
     try {
       const response = await fetcher(endpoint, {
-        cache: "no-store",
         headers: {
           accept: "application/json",
+        },
+        next: {
+          revalidate: TEAM_REVALIDATE_SECONDS,
+          tags: ["public-team"],
         },
         signal: controller.signal,
       });
