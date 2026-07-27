@@ -4,6 +4,8 @@ import { createPublicPageMetadata } from "@/lib/seo";
 import { getPublicTeamMembers } from "@/lib/team";
 import { buildTeamMetadataDescription } from "@/lib/team-seo";
 
+export const maxDuration = 30;
+
 export async function generateMetadata(): Promise<Metadata> {
   await connection();
 

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://api.tierkun.my.id';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://gaskan-api.smtijogja.my.id';
+const UPSTREAM_TIMEOUT_MS = 25_000;
+
+export const maxDuration = 30;
 
 export async function POST(request: Request) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
   try {
     const body = await request.json();
     const identifier = (body.NIS || body.identifier || '').toString();
@@ -23,6 +29,8 @@ export async function POST(request: Request) {
         identifier,
         password,
       }),
+      cache: 'no-store',
+      signal: controller.signal,
     });
 
     if (!upstreamRes.ok && upstreamRes.status === 404) {
@@ -35,6 +43,8 @@ export async function POST(request: Request) {
           Password: password,
           force: body.force || false,
         }),
+        cache: 'no-store',
+        signal: controller.signal,
       });
     }
 
@@ -81,9 +91,21 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
+    const timedOut =
+      error?.name === 'AbortError' ||
+      error?.name === 'TimeoutError' ||
+      controller.signal.aborted;
+
     return NextResponse.json(
-      { success: false, message: error?.message || 'Internal Server Error' },
-      { status: 500 }
+      {
+        success: false,
+        message: timedOut
+          ? 'Server backend terlalu lama merespons. Silakan coba lagi.'
+          : error?.message || 'Tidak dapat menghubungi server backend.',
+      },
+      { status: timedOut ? 504 : 502 }
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }

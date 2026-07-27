@@ -19,7 +19,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorData, setErrorData] = useState<{ message?: string; code?: number; canForce?: boolean; is502?: boolean } | null>(null);
+  const [errorData, setErrorData] = useState<{
+    message?: string;
+    code?: number;
+    canForce?: boolean;
+    isServerError?: boolean;
+  } | null>(null);
 
   const performLogin = async (force: boolean = false) => {
     if (!identifier || !password) {
@@ -87,16 +92,27 @@ export default function LoginPage() {
 
       const errResponseData = err?.response?.data;
       const statusCode = err?.response?.status;
-      const is502Error = statusCode === 502 || errResponseData?.status === 502 || errResponseData?.error_code === 502;
+      const upstreamCode = Number(
+        errResponseData?.status ||
+        errResponseData?.error_code ||
+        errResponseData?.error?.code,
+      );
+      const isServerError =
+        statusCode === 502 ||
+        statusCode === 504 ||
+        upstreamCode === 502 ||
+        upstreamCode === 504;
       
       let apiMessage = 'NIS/Email atau password yang Anda masukkan salah.';
-      if (is502Error) {
+      if (statusCode === 504 || upstreamCode === 504) {
+        apiMessage = 'Server backend terlalu lama merespons. Silakan coba lagi.';
+      } else if (isServerError) {
         apiMessage = 'Server Backend sedang mengalami gangguan 502 Bad Gateway (Server sedang mati / dalam pemeliharaan).';
       } else if (err?.code === 'ERR_NETWORK') {
         apiMessage = 'Koneksi jaringan terputus (Network Error). Silakan periksa jaringan Anda.';
       } else if (errResponseData?.message) {
         apiMessage = errResponseData.message;
-      } else if (errResponseData?.error) {
+      } else if (typeof errResponseData?.error === 'string') {
         apiMessage = errResponseData.error;
       }
 
@@ -106,7 +122,7 @@ export default function LoginPage() {
         message: apiMessage,
         code: statusCode,
         canForce: canForceLogin,
-        is502: is502Error,
+        isServerError,
       });
 
       toast.error(apiMessage);
@@ -200,7 +216,9 @@ export default function LoginPage() {
                     <Icon icon="mingcute:warning-fill" className="text-lg shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-sm">
-                        {errorData.is502 ? 'Server Error (502 Bad Gateway)' : 'Login Gagal'}
+                        {errorData.isServerError
+                          ? `Server Error (${errorData.code || 'Gateway'})`
+                          : 'Login Gagal'}
                       </p>
                       <p className="break-words text-xs leading-snug opacity-90 [overflow-wrap:anywhere]">{errorData.message}</p>
                     </div>
@@ -218,7 +236,7 @@ export default function LoginPage() {
                     </Button>
                   )}
 
-                  {errorData.is502 && (
+                  {errorData.isServerError && (
                     <div className="flex flex-col gap-2 border-t border-destructive/20 pt-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                       <span className="min-w-0 break-words text-[11px] opacity-80">Gunakan backend lokal atau mode demo:</span>
                       <Button
